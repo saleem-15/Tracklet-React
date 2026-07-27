@@ -1,0 +1,53 @@
+{
+  "entities": {
+    "application": {
+      "title": "Application",
+      "description": "Job application item tracked by a job seeker",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "company": { "type": "string" },
+        "role": { "type": "string" },
+        "platform": { "type": "string" },
+        "dateApplied": { "type": "string" },
+        "status": { "type": "string" },
+        "jobLink": { "type": "string" },
+        "notes": { "type": "string" },
+        "contactEmail": { "type": "string" },
+        "contacts": { 
+          "type": "array",
+          "items": { "type": "object" }
+        },
+        "tasks": {
+          "type": "array",
+          "items": { "type": "object" }
+        },
+        "stageUpdatedAt": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["userId", "company", "role", "platform", "dateApplied", "status"]
+    },
+    "history": {
+      "title": "StatusHistory",
+      "description": "Log of status changes for a job application",
+      "type": "object",
+      "properties": {
+        "fromStatus": { "type": "string" },
+        "toStatus": { "type": "string" },
+        "timestamp": { "type": "string" }
+      },
+      "required": ["toStatus", "timestamp"]
+    }
+  },
+  "firestore": {
+    "applications": {
+      "entity": "application",
+      "schema": "applications/{applicationId}"
+    },
+    "applications/{applicationId}/history": {
+      "entity": "history",
+      "schema": "applications/{applicationId}/history/{historyId}"
+    }
+  }
+}

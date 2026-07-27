@@ -1,0 +1,6 @@
+{
+  "name": "Tracklet",
+  "description": "A high-volume job application tracker for job seekers with Linear-inspired density and Firestore persistence.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
