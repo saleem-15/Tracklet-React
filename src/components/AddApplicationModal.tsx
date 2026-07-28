@@ -127,32 +127,38 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/25 backdrop-blur-xs p-4 animate-in fade-in duration-150">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-900/30 backdrop-blur-xs animate-in fade-in duration-150 overflow-y-auto"
+      onClick={onClose}
+    >
       <div 
-        className="w-full max-w-md bg-white border border-slate-200/80 rounded-2xl shadow-2xl text-slate-900 overflow-hidden text-xs"
+        className="w-full max-w-md max-h-[88vh] bg-white border border-slate-200/90 rounded-2xl shadow-2xl text-slate-900 text-xs flex flex-col my-auto overflow-hidden animate-in zoom-in-95 duration-150"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="h-14 px-6 border-b border-slate-200/80 bg-slate-50/80 flex items-center justify-between">
+        <div className="h-14 px-6 border-b border-slate-200/80 bg-slate-50/80 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="w-6 h-6 rounded-lg bg-blue-600 flex items-center justify-center text-white shadow-xs">
               <Plus className="w-4 h-4 stroke-[2.5]" />
             </div>
-            <h3 className="font-bold text-slate-900 text-sm tracking-tight">
+            <h3 className="font-bold text-slate-900 text-sm tracking-tight font-heading">
               Add New Job Application
             </h3>
           </div>
 
           <button
+            type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-900 hover:bg-slate-200/60 transition-colors"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-900 hover:bg-slate-200/60 transition-colors cursor-pointer"
+            title="Close modal (Esc)"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0 overflow-hidden">
+          <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4">
           {/* Company Name & Logo Preview */}
           <div>
             <label className="block text-[11px] font-mono text-slate-500 uppercase tracking-wider mb-1 font-medium">
@@ -378,20 +384,21 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
               className="w-full bg-slate-50 text-slate-900 placeholder-slate-400 p-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white font-sans text-xs resize-none shadow-2xs transition-all"
             />
           </div>
+          </div>
 
           {/* Footer Actions */}
-          <div className="pt-3 flex items-center justify-end gap-2.5 border-t border-slate-200/80">
+          <div className="p-4 sm:px-6 sm:py-3.5 border-t border-slate-200/80 bg-slate-50/60 flex items-center justify-end gap-2.5 shrink-0">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl text-slate-600 hover:text-slate-900 bg-white hover:bg-slate-100 border border-slate-200 font-medium transition-all shadow-2xs"
+              className="px-4 py-2 rounded-xl text-slate-600 hover:text-slate-900 bg-white hover:bg-slate-100 border border-slate-200 font-medium transition-all shadow-2xs cursor-pointer text-xs"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting || !company.trim() || !role.trim()}
-              className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold px-4 py-2 rounded-xl transition-all shadow-xs"
+              className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold px-4.5 py-2 rounded-xl transition-all shadow-xs cursor-pointer text-xs"
             >
               {isSubmitting ? 'Saving...' : 'Add Application'}
             </button>
