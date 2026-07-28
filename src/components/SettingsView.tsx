@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   Settings, 
   Clock, 
@@ -12,10 +12,13 @@ import {
   ExternalLink,
   ChevronRight,
   RefreshCw,
-  Download
+  Download,
+  Upload,
+  FileSpreadsheet
 } from 'lucide-react';
 import { Application, ExpiryNotificationSettings } from '../types';
 import { getExpiringSoonTasks } from '../lib/expiryUtils';
+import { ImportCSVModal } from './ImportCSVModal';
 
 interface SettingsViewProps {
   settings: ExpiryNotificationSettings;
@@ -23,6 +26,9 @@ interface SettingsViewProps {
   applications: Application[];
   onSelectApplication?: (appId: string) => void;
   onExportCSV?: () => void;
+  onImportCSV?: (
+    apps: Omit<Application, 'id' | 'userId' | 'createdAt' | 'updatedAt' | 'stageUpdatedAt'>[]
+  ) => Promise<void>;
   onSeedDemoData?: () => void;
 }
 
@@ -34,8 +40,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   applications,
   onSelectApplication,
   onExportCSV,
+  onImportCSV,
   onSeedDemoData,
 }) => {
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const expiringTasks = getExpiringSoonTasks(applications, settings.expiryThresholdHours);
 
   const handleToggle = () => {
@@ -314,27 +322,44 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </div>
       </div>
 
-      {/* Additional Settings: Data Management & CSV Export */}
+      {/* Additional Settings: Data Management, CSV Import & Export */}
       <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-2xs space-y-4">
         <h3 className="text-sm font-bold text-slate-900 font-mono uppercase tracking-wider">
           Data & System Operations
         </h3>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <button
+            type="button"
+            onClick={() => setIsImportModalOpen(true)}
+            className="flex items-center justify-between p-3.5 rounded-xl border border-blue-200/90 bg-gradient-to-br from-blue-50/80 via-indigo-50/30 to-blue-50/50 hover:bg-blue-100/60 hover:border-blue-300 text-slate-900 transition-all cursor-pointer shadow-2xs group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform">
+                <Upload className="w-4 h-4" />
+              </div>
+              <div className="text-left">
+                <span className="block font-bold text-xs text-slate-900">Import Applications CSV</span>
+                <span className="text-[11px] text-slate-500">Bulk upload applications file</span>
+              </div>
+            </div>
+            <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-transform" />
+          </button>
+
           {onExportCSV && (
             <button
               type="button"
               onClick={onExportCSV}
-              className="flex items-center justify-between p-3.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-blue-50/50 hover:border-blue-200 text-slate-800 transition-all cursor-pointer shadow-2xs group"
+              className="flex items-center justify-between p-3.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100/80 hover:border-slate-300 text-slate-800 transition-all cursor-pointer shadow-2xs group"
             >
               <div className="flex items-center gap-3">
-                <Download className="w-4 h-4 text-blue-600 group-hover:scale-110 transition-transform" />
+                <Download className="w-4 h-4 text-slate-600 group-hover:scale-110 transition-transform" />
                 <div className="text-left">
                   <span className="block font-bold text-xs text-slate-900">Export Applications CSV</span>
                   <span className="text-[11px] text-slate-500">Download all data as tabular CSV</span>
                 </div>
               </div>
-              <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-blue-600" />
+              <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-slate-700" />
             </button>
           )}
 
@@ -356,6 +381,17 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           )}
         </div>
       </div>
+
+      {/* CSV Import Modal */}
+      <ImportCSVModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onImport={async (newApps) => {
+          if (onImportCSV) {
+            await onImportCSV(newApps);
+          }
+        }}
+      />
     </div>
   );
 };

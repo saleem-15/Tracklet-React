@@ -39,6 +39,8 @@ import { SettingsView } from './components/SettingsView';
 import { loadExpirySettings, saveExpirySettings } from './lib/expiryUtils';
 import { ExpiryNotificationSettings } from './types';
 
+import { ToastContainer, ToastMessage } from './components/Toast';
+
 const LOCAL_STORAGE_KEY = 'tracklet_guest_apps_v1';
 
 export default function App() {
@@ -48,6 +50,18 @@ export default function App() {
   const [selectedAppId, setSelectedAppId] = useState<string | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  // Toast notifications
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
+
+  const addToast = (type: 'success' | 'error' | 'info', title: string, description?: string) => {
+    const id = `toast-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+    setToasts((prev) => [...prev, { id, type, title, description }]);
+  };
+
+  const dismissToast = (id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  };
 
   // Expiry notification settings
   const [expirySettings, setExpirySettings] = useState<ExpiryNotificationSettings>(() => loadExpirySettings());
@@ -211,6 +225,7 @@ export default function App() {
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(initial));
     }
     setSelectedAppId(null);
+    addToast('info', 'Workspace Reset', 'Sample job application dataset loaded.');
   };
 
   // Add Application
@@ -259,6 +274,65 @@ export default function App() {
     if (createdId) {
       await addStatusHistoryEntry(createdId, newApp.status, undefined, now);
     }
+
+    addToast('success', 'Application Added', `Logged ${newApp.company} (${newApp.role})`);
+  };
+
+  // Batch Import Applications from CSV
+  const handleBatchImportApplications = async (
+    newApps: Omit<Application, 'id' | 'userId' | 'createdAt' | 'updatedAt' | 'stageUpdatedAt'>[]
+  ) => {
+    const now = new Date().toISOString();
+
+    if (user) {
+      try {
+        const batch = writeBatch(db);
+        const createdList: Application[] = [];
+
+        for (const appItem of newApps) {
+          const docRef = doc(collection(db, 'applications'));
+          const appObj: Omit<Application, 'id'> = {
+            ...appItem,
+            userId: user.uid,
+            stageUpdatedAt: now,
+            createdAt: now,
+            updatedAt: now,
+          };
+          batch.set(docRef, appObj);
+          createdList.push({ id: docRef.id, ...appObj });
+        }
+
+        await batch.commit();
+        setApplications((prev) => [...createdList, ...prev]);
+
+        for (const app of createdList) {
+          await addStatusHistoryEntry(app.id, app.status, undefined, now);
+        }
+      } catch (err) {
+        console.error('Failed batch import in Firestore:', err);
+      }
+    } else {
+      const createdList: Application[] = newApps.map((appItem, index) => ({
+        id: `imported-${Date.now()}-${index}`,
+        userId: 'guest',
+        ...appItem,
+        stageUpdatedAt: now,
+        createdAt: now,
+        updatedAt: now,
+      }));
+
+      setApplications((prev) => {
+        const updated = [...createdList, ...prev];
+        saveGuestAppsToStorage(updated);
+        return updated;
+      });
+
+      for (const app of createdList) {
+        await addStatusHistoryEntry(app.id, app.status, undefined, now);
+      }
+    }
+
+    addToast('success', 'Batch Import Complete', `Successfully imported ${newApps.length} job applications.`);
   };
 
   // Update Application
@@ -290,11 +364,13 @@ export default function App() {
     // Record status history if status changed
     if (isStatusChanged && updates.status && currentApp) {
       await addStatusHistoryEntry(id, updates.status, currentApp.status, now);
+      addToast('info', 'Status Updated', `${currentApp.company} moved to ${updates.status}`);
     }
   };
 
   // Delete Application
   const handleDeleteApplication = async (id: string) => {
+    const targetApp = applications.find((a) => a.id === id);
     setApplications((prev) => prev.filter((a) => a.id !== id));
     if (selectedAppId === id) setSelectedAppId(null);
 
@@ -307,6 +383,10 @@ export default function App() {
     } else {
       const updatedList = applications.filter((a) => a.id !== id);
       saveGuestAppsToStorage(updatedList);
+    }
+
+    if (targetApp) {
+      addToast('info', 'Application Removed', `Deleted ${targetApp.company} record.`);
     }
   };
 
@@ -346,9 +426,12 @@ export default function App() {
         await addStatusHistoryEntry(id, newStatus, prevStatus, now);
       }
     }
+
+    addToast('success', 'Bulk Status Updated', `Moved ${ids.length} applications to ${newStatus}`);
   };
 
   const handleBulkDelete = async (ids: string[]) => {
+    const count = ids.length;
     setApplications((prev) => prev.filter((a) => !ids.includes(a.id)));
     if (selectedAppId && ids.includes(selectedAppId)) setSelectedAppId(null);
 
@@ -366,6 +449,8 @@ export default function App() {
       const updatedList = applications.filter((a) => !ids.includes(a.id));
       saveGuestAppsToStorage(updatedList);
     }
+
+    addToast('info', 'Bulk Deleted', `Removed ${count} applications.`);
   };
 
   // Sorting
@@ -551,6 +636,7 @@ export default function App() {
                   applications={applications}
                   onSelectApplication={(id) => setSelectedAppId(id)}
                   onExportCSV={() => exportApplicationsToCSV(filteredAndSortedApplications)}
+                  onImportCSV={handleBatchImportApplications}
                   onSeedDemoData={handleSeedDemoData}
                 />
               </div>
@@ -573,6 +659,9 @@ export default function App() {
         onClose={() => setIsAddModalOpen(false)}
         onAdd={handleAddApplication}
       />
+
+      {/* Global Toast Feedback Container */}
+      <ToastContainer toasts={toasts} onDismiss={dismissToast} />
     </div>
   );
 }
