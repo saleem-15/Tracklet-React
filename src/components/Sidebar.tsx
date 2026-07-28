@@ -3,7 +3,6 @@ import {
   Table, 
   Kanban, 
   BarChart3, 
-  Briefcase, 
   LogIn, 
   LogOut, 
   User as UserIcon, 
@@ -78,25 +77,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
     >
       <div>
         {/* Brand Header */}
-        <div className={`h-13 px-3.5 flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} border-b border-slate-200/80`}>
+        <div className={`h-13 px-3 flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} border-b border-slate-200/80`}>
           {!isCollapsed ? (
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-6 h-6 rounded-md bg-blue-600 flex items-center justify-center text-white shadow-xs shadow-blue-500/20 font-bold shrink-0">
-                <Briefcase className="w-3.5 h-3.5 stroke-[2.2]" />
-              </div>
+              <img src="/logo.svg" alt="Tracklet Logo" className="w-7 h-7 shrink-0" />
               <div className="flex flex-col truncate">
-                <span className="font-bold text-slate-900 tracking-tight text-xs sm:text-[13px] leading-none">
+                <span className="font-bold text-slate-900 tracking-tight text-xs sm:text-[14px] leading-none font-heading">
                   Tracklet
                 </span>
-                <span className="text-[10px] text-slate-400 font-medium tracking-wide mt-0.5">
+                <span className="text-[10px] text-slate-400 font-medium tracking-wide mt-0.5 font-mono">
                   Job OS
                 </span>
               </div>
             </div>
           ) : (
-            <div className="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center text-white shadow-xs shadow-blue-500/20 font-bold shrink-0">
-              <Briefcase className="w-4 h-4 stroke-[2.2]" />
-            </div>
+            <img src="/logo.svg" alt="Tracklet Logo" className="w-7.5 h-7.5 shrink-0" />
           )}
 
           <button
