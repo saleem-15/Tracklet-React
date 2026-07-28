@@ -5,7 +5,6 @@ import { EmptyState } from './EmptyState';
 import { 
   Clock, 
   Building2, 
-  GripVertical, 
   Sparkles,
   CheckCircle2,
   ArrowRight,
@@ -72,7 +71,6 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
 }) => {
   const [draggedAppId, setDraggedAppId] = useState<string | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<ApplicationStatus | null>(null);
-  const [cardSort, setCardSort] = useState<'staleness' | 'dateApplied' | 'company'>('staleness');
   const [isAttentionDismissed, setIsAttentionDismissed] = useState(false);
   const [lastMovedNotice, setLastMovedNotice] = useState<{
     id: string;
@@ -184,49 +182,18 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
                 </span>
               </div>
 
-              <div className="flex items-center gap-2 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setCardSort('staleness')}
-                  className="bg-amber-600 hover:bg-amber-700 text-white font-semibold px-2.5 py-1 rounded-md text-[11px] transition-colors shadow-2xs cursor-pointer"
-                >
-                  Focus Urgent Cards
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsAttentionDismissed(true)}
-                  className="text-amber-700 hover:text-amber-950 p-1 rounded transition-colors cursor-pointer"
-                  title="Dismiss announcement"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() => setIsAttentionDismissed(true)}
+                className="text-amber-700 hover:text-amber-950 p-1 rounded transition-colors cursor-pointer"
+                title="Dismiss announcement"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
             </div>
           )}
 
-          {/* Drag & Drop Hint Banner + Column Sorting Selector */}
-          <div className="bg-slate-50/70 border-b border-slate-200/80 px-4 py-1.5 flex items-center justify-between text-xs text-slate-500 shrink-0">
-            <div className="flex items-center gap-1.5 text-[11px] font-medium">
-              <GripVertical className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-              <span><strong className="text-slate-700 font-semibold">Tip:</strong> Drag and drop cards between columns or bottom drop zones to advance stages</span>
-            </div>
-
-            <div className="flex items-center gap-2 font-sans text-[11px]">
-              <span className="text-slate-400 font-medium hidden sm:inline">Sort columns by:</span>
-              <select
-                value={cardSort}
-                onChange={(e) => setCardSort(e.target.value as any)}
-                className="bg-white text-slate-700 font-medium px-2 py-0.5 rounded border border-slate-200/90 focus:outline-none focus:ring-1 focus:ring-blue-500 text-[11px] cursor-pointer shadow-2xs"
-              >
-                <option value="staleness">🔥 Staleness (Urgent First)</option>
-                <option value="dateApplied">📅 Date Applied (Newest)</option>
-                <option value="company">🏢 Company Name (A-Z)</option>
-              </select>
-              <span className="font-mono text-[10px] text-slate-400 ml-1">{applications.length} active</span>
-            </div>
-          </div>
-
-          {/* Table Header Row */}
+          {/* Table Header Row - Streamlined with inline counts */}
           <div className="grid grid-cols-5 bg-slate-50/90 border-b border-slate-200/80 sticky top-0 z-10 backdrop-blur-xs">
             {PIPELINE_COLUMNS.map((col) => {
               const count = applications.filter((app) => app.status === col.status).length;
@@ -235,38 +202,28 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
               return (
                 <div
                   key={col.status}
-                  className={`px-5 py-3.5 flex items-center justify-between transition-colors ${
+                  className={`px-4 py-3 flex items-center justify-between transition-colors ${
                     isTargeting ? 'bg-blue-50/80' : ''
                   }`}
                 >
-                  <div className="flex items-center gap-2.5">
-                    <span className={`w-2 h-2 rounded-full ${col.dot} shadow-xs`} />
-                    <span className="font-heading font-bold text-slate-800 text-xs tracking-tight">
-                      {col.title}
+                  <div className="flex items-center gap-2 font-heading font-bold text-slate-800 text-xs tracking-tight">
+                    <span className={`w-2 h-2 rounded-full ${col.dot} shadow-xs shrink-0`} />
+                    <span>{col.title}</span>
+                    <span className="font-mono text-[11px] font-semibold text-slate-400 ml-0.5">
+                      ({count})
                     </span>
                   </div>
-                  <span className={`font-mono text-[11px] px-2 py-0.5 rounded-md font-semibold ${col.tagBg}`}>
-                    {count}
-                  </span>
                 </div>
               );
             })}
           </div>
 
-          {/* Table Body Columns Area - Seamless with no dividing vertical borders */}
+          {/* Table Body Columns Area - Cards ordered by Staleness (Most Urgent First) */}
           <div className="grid grid-cols-5 flex-1 items-stretch min-h-0 divide-x-0">
             {PIPELINE_COLUMNS.map((col) => {
               const columnApps = applications
                 .filter((app) => app.status === col.status)
-                .sort((a, b) => {
-                  if (cardSort === 'staleness') {
-                    return calculateDaysInStage(b.stageUpdatedAt) - calculateDaysInStage(a.stageUpdatedAt);
-                  }
-                  if (cardSort === 'company') {
-                    return a.company.localeCompare(b.company);
-                  }
-                  return new Date(b.dateApplied).getTime() - new Date(a.dateApplied).getTime();
-                });
+                .sort((a, b) => calculateDaysInStage(b.stageUpdatedAt) - calculateDaysInStage(a.stageUpdatedAt));
               const isTargeting = dragOverColumn === col.status;
 
               return (
