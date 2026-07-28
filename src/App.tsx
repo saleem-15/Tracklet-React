@@ -583,6 +583,7 @@ export default function App() {
             onOpenAddModal={() => setIsAddModalOpen(true)}
             totalFilteredCount={filteredAndSortedApplications.length}
             onExportCSV={() => exportApplicationsToCSV(filteredAndSortedApplications)}
+            activeTab={activeTab}
           />
         )}
 

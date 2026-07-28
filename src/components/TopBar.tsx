@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import { Search, Plus, Filter, X, ChevronDown } from 'lucide-react';
-import { FilterState, JobPlatform, ApplicationStatus } from '../types';
+import { FilterState, JobPlatform, ApplicationStatus, ActiveTab } from '../types';
 import { FilterSelectDropdown } from './FilterSelectDropdown';
 
 interface TopBarProps {
@@ -9,6 +9,7 @@ interface TopBarProps {
   onOpenAddModal: () => void;
   totalFilteredCount: number;
   onExportCSV?: () => void;
+  activeTab?: ActiveTab;
 }
 
 const PLATFORMS: JobPlatform[] = [
@@ -60,6 +61,7 @@ export const TopBar: React.FC<TopBarProps> = ({
   onOpenAddModal,
   totalFilteredCount,
   onExportCSV,
+  activeTab,
 }) => {
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -139,14 +141,16 @@ export const TopBar: React.FC<TopBarProps> = ({
           isActive={filter.platform !== 'All'}
         />
 
-        {/* Status Filter */}
-        <FilterSelectDropdown
-          labelPrefix="Status"
-          value={filter.status}
-          onChange={(val) => setFilter((prev) => ({ ...prev, status: val as any }))}
-          options={STATUS_OPTIONS}
-          isActive={filter.status !== 'All'}
-        />
+        {/* Status Filter - Only render in All view or when active filter present */}
+        {(activeTab !== 'pipeline' || filter.status !== 'All') && (
+          <FilterSelectDropdown
+            labelPrefix="Status"
+            value={filter.status}
+            onChange={(val) => setFilter((prev) => ({ ...prev, status: val as any }))}
+            options={STATUS_OPTIONS}
+            isActive={filter.status !== 'All'}
+          />
+        )}
 
         {/* Date Filter */}
         <FilterSelectDropdown
