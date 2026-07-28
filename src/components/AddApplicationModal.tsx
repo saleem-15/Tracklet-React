@@ -391,7 +391,7 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
             <button
               type="submit"
               disabled={isSubmitting || !company.trim() || !role.trim()}
-              className="bg-blue-600 hover:bg-blue-700 disabled:bg-slate-100 disabled:text-slate-400 disabled:border-slate-200 text-white font-semibold px-4 py-2 rounded-xl transition-all shadow-xs"
+              className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold px-4 py-2 rounded-xl transition-all shadow-xs"
             >
               {isSubmitting ? 'Saving...' : 'Add Application'}
             </button>

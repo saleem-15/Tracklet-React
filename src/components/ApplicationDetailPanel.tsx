@@ -439,7 +439,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
             <div className="h-4 w-px bg-slate-200 mx-0.5 hidden sm:block" />
             <button
               onClick={handleDelete}
-              className="p-2 rounded-xl hover:bg-rose-50 text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
+              className="p-2 rounded-xl hover:bg-rose-100/60 text-slate-500 hover:text-rose-700 transition-colors cursor-pointer"
               title="Delete application"
             >
               <Trash2 className="w-4 h-4" />
@@ -783,7 +783,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
                           <button
                             type="button"
                             onClick={() => handleDeleteTask(task.id)}
-                            className="p-1 text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors cursor-pointer"
+                            className="p-1 text-slate-400 hover:text-rose-700 hover:bg-rose-100/60 rounded transition-colors cursor-pointer"
                             title="Delete task"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -817,7 +817,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
                     <button
                       type="submit"
                       disabled={!newTaskTitle.trim()}
-                      className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-200 disabled:text-slate-400 text-white rounded-xl font-semibold transition-all shadow-2xs cursor-pointer shrink-0 flex items-center gap-1"
+                      className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl font-semibold transition-all shadow-2xs cursor-pointer shrink-0 flex items-center gap-1"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       <span>Add</span>
@@ -969,7 +969,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
                           <button
                             type="button"
                             onClick={() => handleDeleteContact(contact.id)}
-                            className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded cursor-pointer"
+                            className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-slate-400 hover:text-rose-700 hover:bg-rose-100/60 rounded cursor-pointer"
                             title="Remove contact"
                           >
                             <Trash2 className="w-3.5 h-3.5" />

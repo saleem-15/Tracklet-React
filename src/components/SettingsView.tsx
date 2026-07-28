@@ -303,7 +303,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         <button
                           type="button"
                           onClick={() => onSelectApplication(item.application.id)}
-                          className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                          className="p-1.5 text-slate-500 hover:text-blue-700 hover:bg-blue-100/80 rounded-lg transition-colors cursor-pointer"
                           title="Open Application Details"
                         >
                           <ChevronRight className="w-4 h-4" />
@@ -332,7 +332,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           <button
             type="button"
             onClick={() => setIsImportModalOpen(true)}
-            className="flex items-center justify-between p-3.5 rounded-xl border border-blue-200/90 bg-gradient-to-br from-blue-50/80 via-indigo-50/30 to-blue-50/50 hover:bg-blue-100/60 hover:border-blue-300 text-slate-900 transition-all cursor-pointer shadow-2xs group"
+            className="flex items-center justify-between p-3.5 rounded-xl border border-blue-200/90 bg-gradient-to-br from-blue-50/80 via-indigo-50/30 to-blue-50/50 hover:bg-blue-100/60 hover:border-blue-300 text-blue-950 transition-all cursor-pointer shadow-2xs group"
           >
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform">
@@ -367,7 +367,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <button
               type="button"
               onClick={onSeedDemoData}
-              className="flex items-center justify-between p-3.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-amber-50/50 hover:border-amber-200 text-slate-800 transition-all cursor-pointer shadow-2xs group"
+              className="flex items-center justify-between p-3.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-amber-100/60 hover:border-amber-300 text-amber-950 transition-all cursor-pointer shadow-2xs group"
             >
               <div className="flex items-center gap-3">
                 <RefreshCw className="w-4 h-4 text-amber-600 group-hover:rotate-180 transition-transform duration-500" />

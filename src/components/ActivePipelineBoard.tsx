@@ -247,7 +247,7 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   onClick={(e) => e.stopPropagation()}
-                                  className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                                  className="p-1 text-slate-400 hover:text-blue-700 hover:bg-blue-100/80 rounded transition-colors"
                                   title="Open job link"
                                 >
                                   <ExternalLink className="w-3.5 h-3.5" />
@@ -358,7 +358,7 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
                   ? 'bg-amber-100/90 border-amber-500 text-amber-900 ring-2 ring-amber-400/30 shadow-md scale-[1.01]'
                   : draggedAppId !== null
                   ? 'bg-amber-50/60 border-amber-300/80 text-amber-800 animate-pulse'
-                  : 'bg-white border-slate-200 text-slate-500 hover:border-amber-300 hover:text-amber-800 hover:bg-amber-50/40'
+                  : 'bg-white border-slate-200 text-slate-600 hover:border-amber-400 hover:text-amber-900 hover:bg-amber-100/60'
               }`}
             >
               <Archive className={`w-4 h-4 shrink-0 ${dragOverColumn === 'Archived' ? 'text-amber-700' : 'text-slate-400'}`} />
@@ -376,7 +376,7 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
                   ? 'bg-rose-100/90 border-rose-500 text-rose-900 ring-2 ring-rose-400/30 shadow-md scale-[1.01]'
                   : draggedAppId !== null
                   ? 'bg-rose-50/60 border-rose-300/80 text-rose-800 animate-pulse'
-                  : 'bg-white border-slate-200 text-slate-500 hover:border-rose-300 hover:text-rose-800 hover:bg-rose-50/40'
+                  : 'bg-white border-slate-200 text-slate-600 hover:border-rose-400 hover:text-rose-900 hover:bg-rose-100/60'
               }`}
             >
               <XCircle className={`w-4 h-4 shrink-0 ${dragOverColumn === 'Rejected' ? 'text-rose-700' : 'text-slate-400'}`} />

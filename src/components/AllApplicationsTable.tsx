@@ -161,7 +161,7 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
     <div className="flex-1 flex flex-col min-h-0 bg-white text-slate-900 select-none">
       {/* Floating Bulk Actions & Table Toolbar Bar */}
       {selectedIds.size > 0 ? (
-        <div className="bg-blue-50/90 border-b border-blue-200/80 px-4 py-2 flex items-center justify-between gap-3 text-xs text-slate-900 animate-in fade-in slide-in-from-top-1 duration-150 backdrop-blur-xs shrink-0">
+        <div className="bg-blue-50/90 border-b border-blue-200/80 px-4 py-2 flex items-center justify-between gap-3 text-xs text-blue-950 animate-in fade-in slide-in-from-top-1 duration-150 backdrop-blur-xs shrink-0">
           <div className="flex items-center gap-2.5">
             <span className="font-mono text-blue-600 bg-white px-2 py-0.5 rounded-md border border-blue-200 font-semibold shadow-2xs">
               {selectedIds.size} selected
@@ -197,7 +197,7 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
 
             <button
               onClick={handleBulkDeleteAction}
-              className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white hover:bg-rose-50 text-slate-500 hover:text-rose-600 border border-slate-200 hover:border-rose-200 transition-all shadow-2xs font-medium cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white hover:bg-rose-100/60 text-slate-600 hover:text-rose-700 border border-slate-200 hover:border-rose-200 transition-all shadow-2xs font-medium cursor-pointer"
             >
               <Trash2 className="w-3.5 h-3.5" />
               <span>Delete</span>
@@ -322,7 +322,7 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
                     onClick={() => onSelectApp(app)}
                     className={`h-[38px] transition-all cursor-pointer group ${
                       isCurrentRowActive
-                        ? 'bg-blue-50/70 text-slate-900 font-medium'
+                        ? 'bg-blue-50/70 text-blue-950 font-semibold'
                         : isSelected
                         ? 'bg-slate-50'
                         : 'hover:bg-slate-50/80 text-slate-700'
