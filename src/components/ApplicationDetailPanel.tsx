@@ -30,6 +30,7 @@ import { Application, ApplicationStatus, StatusHistoryEntry, Contact, Applicatio
 import { StatusBadge } from './StatusBadge';
 import { StageSelectorDropdown } from './StageSelectorDropdown';
 import { CompanyLogo } from './CompanyLogo';
+import { CustomSelectDropdown } from './CustomSelectDropdown';
 import { calculateDaysInStage } from '../lib/sampleData';
 import { fetchStatusHistory } from '../lib/historyService';
 
@@ -511,15 +512,12 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
                     <label className="block text-[11px] font-mono font-medium text-slate-600 mb-1">
                       Job Platform
                     </label>
-                    <select
+                    <CustomSelectDropdown<JobPlatform>
                       value={editPlatform}
-                      onChange={(e) => setEditPlatform(e.target.value as JobPlatform)}
-                      className="w-full bg-white text-slate-900 font-medium px-3 py-1.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-xs cursor-pointer"
-                    >
-                      {ALL_PLATFORMS.map((p) => (
-                        <option key={p} value={p}>{p}</option>
-                      ))}
-                    </select>
+                      onChange={(val) => setEditPlatform(val)}
+                      options={ALL_PLATFORMS.map((p) => ({ label: p, value: p }))}
+                      className="w-full"
+                    />
                   </div>
 
                   <div>

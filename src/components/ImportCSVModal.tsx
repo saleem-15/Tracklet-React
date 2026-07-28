@@ -15,6 +15,7 @@ import {
   ChevronDown
 } from 'lucide-react';
 import { Application, ApplicationStatus, JobPlatform } from '../types';
+import { CustomSelectDropdown, SelectOption } from './CustomSelectDropdown';
 import { 
   parseRawCSV, 
   autoDetectFieldMapping, 
@@ -403,16 +404,15 @@ export const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
                     <label className="block text-[11px] font-mono text-slate-700 font-bold mb-1">
                       Company Name <span className="text-rose-500">*</span>
                     </label>
-                    <select
+                    <CustomSelectDropdown<number>
                       value={mapping.company}
-                      onChange={(e) => setMapping((m) => ({ ...m, company: parseInt(e.target.value) }))}
-                      className="w-full bg-white border border-slate-200 text-slate-800 text-xs rounded-lg p-2 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    >
-                      <option value={-1}>-- Not Mapped --</option>
-                      {headers.map((h, idx) => (
-                        <option key={idx} value={idx}>{h}</option>
-                      ))}
-                    </select>
+                      onChange={(val) => setMapping((m) => ({ ...m, company: val }))}
+                      options={[
+                        { label: '-- Not Mapped --', value: -1 },
+                        ...headers.map((h, idx) => ({ label: h, value: idx })),
+                      ]}
+                      className="w-full"
+                    />
                   </div>
 
                   {/* Role */}
@@ -420,16 +420,15 @@ export const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
                     <label className="block text-[11px] font-mono text-slate-700 font-bold mb-1">
                       Role / Position <span className="text-rose-500">*</span>
                     </label>
-                    <select
+                    <CustomSelectDropdown<number>
                       value={mapping.role}
-                      onChange={(e) => setMapping((m) => ({ ...m, role: parseInt(e.target.value) }))}
-                      className="w-full bg-white border border-slate-200 text-slate-800 text-xs rounded-lg p-2 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    >
-                      <option value={-1}>-- Not Mapped --</option>
-                      {headers.map((h, idx) => (
-                        <option key={idx} value={idx}>{h}</option>
-                      ))}
-                    </select>
+                      onChange={(val) => setMapping((m) => ({ ...m, role: val }))}
+                      options={[
+                        { label: '-- Not Mapped --', value: -1 },
+                        ...headers.map((h, idx) => ({ label: h, value: idx })),
+                      ]}
+                      className="w-full"
+                    />
                   </div>
 
                   {/* Platform */}
@@ -437,16 +436,15 @@ export const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
                     <label className="block text-[11px] font-mono text-slate-600 font-medium mb-1">
                       Platform / Source
                     </label>
-                    <select
+                    <CustomSelectDropdown<number>
                       value={mapping.platform}
-                      onChange={(e) => setMapping((m) => ({ ...m, platform: parseInt(e.target.value) }))}
-                      className="w-full bg-white border border-slate-200 text-slate-800 text-xs rounded-lg p-2 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    >
-                      <option value={-1}>-- Default: LinkedIn --</option>
-                      {headers.map((h, idx) => (
-                        <option key={idx} value={idx}>{h}</option>
-                      ))}
-                    </select>
+                      onChange={(val) => setMapping((m) => ({ ...m, platform: val }))}
+                      options={[
+                        { label: '-- Default: LinkedIn --', value: -1 },
+                        ...headers.map((h, idx) => ({ label: h, value: idx })),
+                      ]}
+                      className="w-full"
+                    />
                   </div>
 
                   {/* Status */}
@@ -454,16 +452,15 @@ export const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
                     <label className="block text-[11px] font-mono text-slate-600 font-medium mb-1">
                       Application Status
                     </label>
-                    <select
+                    <CustomSelectDropdown<number>
                       value={mapping.status}
-                      onChange={(e) => setMapping((m) => ({ ...m, status: parseInt(e.target.value) }))}
-                      className="w-full bg-white border border-slate-200 text-slate-800 text-xs rounded-lg p-2 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    >
-                      <option value={-1}>-- Default: Applied --</option>
-                      {headers.map((h, idx) => (
-                        <option key={idx} value={idx}>{h}</option>
-                      ))}
-                    </select>
+                      onChange={(val) => setMapping((m) => ({ ...m, status: val }))}
+                      options={[
+                        { label: '-- Default: Applied --', value: -1 },
+                        ...headers.map((h, idx) => ({ label: h, value: idx })),
+                      ]}
+                      className="w-full"
+                    />
                   </div>
 
                   {/* Date Applied */}
@@ -471,16 +468,15 @@ export const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
                     <label className="block text-[11px] font-mono text-slate-600 font-medium mb-1">
                       Date Applied
                     </label>
-                    <select
+                    <CustomSelectDropdown<number>
                       value={mapping.dateApplied}
-                      onChange={(e) => setMapping((m) => ({ ...m, dateApplied: parseInt(e.target.value) }))}
-                      className="w-full bg-white border border-slate-200 text-slate-800 text-xs rounded-lg p-2 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    >
-                      <option value={-1}>-- Default: Today's Date --</option>
-                      {headers.map((h, idx) => (
-                        <option key={idx} value={idx}>{h}</option>
-                      ))}
-                    </select>
+                      onChange={(val) => setMapping((m) => ({ ...m, dateApplied: val }))}
+                      options={[
+                        { label: "-- Default: Today's Date --", value: -1 },
+                        ...headers.map((h, idx) => ({ label: h, value: idx })),
+                      ]}
+                      className="w-full"
+                    />
                   </div>
 
                   {/* Job Listing URL */}
@@ -488,16 +484,15 @@ export const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
                     <label className="block text-[11px] font-mono text-slate-600 font-medium mb-1">
                       Job Listing URL
                     </label>
-                    <select
+                    <CustomSelectDropdown<number>
                       value={mapping.jobLink}
-                      onChange={(e) => setMapping((m) => ({ ...m, jobLink: parseInt(e.target.value) }))}
-                      className="w-full bg-white border border-slate-200 text-slate-800 text-xs rounded-lg p-2 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    >
-                      <option value={-1}>-- Not Mapped --</option>
-                      {headers.map((h, idx) => (
-                        <option key={idx} value={idx}>{h}</option>
-                      ))}
-                    </select>
+                      onChange={(val) => setMapping((m) => ({ ...m, jobLink: val }))}
+                      options={[
+                        { label: '-- Not Mapped --', value: -1 },
+                        ...headers.map((h, idx) => ({ label: h, value: idx })),
+                      ]}
+                      className="w-full"
+                    />
                   </div>
 
                   {/* Notes */}
@@ -505,16 +500,15 @@ export const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
                     <label className="block text-[11px] font-mono text-slate-600 font-medium mb-1">
                       Notes / Comments
                     </label>
-                    <select
+                    <CustomSelectDropdown<number>
                       value={mapping.notes}
-                      onChange={(e) => setMapping((m) => ({ ...m, notes: parseInt(e.target.value) }))}
-                      className="w-full bg-white border border-slate-200 text-slate-800 text-xs rounded-lg p-2 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    >
-                      <option value={-1}>-- Not Mapped --</option>
-                      {headers.map((h, idx) => (
-                        <option key={idx} value={idx}>{h}</option>
-                      ))}
-                    </select>
+                      onChange={(val) => setMapping((m) => ({ ...m, notes: val }))}
+                      options={[
+                        { label: '-- Not Mapped --', value: -1 },
+                        ...headers.map((h, idx) => ({ label: h, value: idx })),
+                      ]}
+                      className="w-full"
+                    />
                   </div>
 
                   {/* Contact Email */}
@@ -522,16 +516,15 @@ export const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
                     <label className="block text-[11px] font-mono text-slate-600 font-medium mb-1">
                       Contact Email
                     </label>
-                    <select
+                    <CustomSelectDropdown<number>
                       value={mapping.contactEmail}
-                      onChange={(e) => setMapping((m) => ({ ...m, contactEmail: parseInt(e.target.value) }))}
-                      className="w-full bg-white border border-slate-200 text-slate-800 text-xs rounded-lg p-2 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    >
-                      <option value={-1}>-- Not Mapped --</option>
-                      {headers.map((h, idx) => (
-                        <option key={idx} value={idx}>{h}</option>
-                      ))}
-                    </select>
+                      onChange={(val) => setMapping((m) => ({ ...m, contactEmail: val }))}
+                      options={[
+                        { label: '-- Not Mapped --', value: -1 },
+                        ...headers.map((h, idx) => ({ label: h, value: idx })),
+                      ]}
+                      className="w-full"
+                    />
                   </div>
                 </div>
               </div>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Plus, Building2, Briefcase, Calendar, Link, Mail, UserCheck, CheckSquare, ChevronDown, Globe } from 'lucide-react';
 import { JobPlatform, ApplicationStatus, Application, Contact, ApplicationTask } from '../types';
 import { CompanyLogo } from './CompanyLogo';
+import { CustomSelectDropdown } from './CustomSelectDropdown';
 
 interface AddApplicationModalProps {
   isOpen: boolean;
@@ -226,20 +227,12 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
               <label className="block text-[11px] font-mono text-slate-500 uppercase tracking-wider mb-1 font-medium">
                 Platform
               </label>
-              <div className="relative">
-                <select
-                  value={platform}
-                  onChange={(e) => setPlatform(e.target.value as JobPlatform)}
-                  className="w-full appearance-none bg-slate-50 text-slate-700 pl-3 pr-8 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white font-sans text-xs cursor-pointer shadow-2xs"
-                >
-                  {PLATFORMS.map((p) => (
-                    <option key={p} value={p}>
-                      {p}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-              </div>
+              <CustomSelectDropdown<JobPlatform>
+                value={platform}
+                onChange={(val) => setPlatform(val)}
+                options={PLATFORMS.map((p) => ({ label: p, value: p }))}
+                className="w-full"
+              />
             </div>
 
             <div>
@@ -260,20 +253,13 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
             <label className="block text-[11px] font-mono text-slate-500 uppercase tracking-wider mb-1 font-medium">
               Initial Status
             </label>
-            <div className="relative">
-              <select
-                value={status}
-                onChange={(e) => setStatus(e.target.value as ApplicationStatus)}
-                className="w-full appearance-none bg-slate-50 text-slate-700 pl-3 pr-8 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white font-sans text-xs cursor-pointer shadow-2xs"
-              >
-                {STATUSES.map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-            </div>
+            <CustomSelectDropdown<ApplicationStatus>
+              value={status}
+              onChange={(val) => setStatus(val)}
+              options={STATUSES.map((s) => ({ label: s, value: s }))}
+              className="w-full"
+            />
+          </div>
           </div>
 
           {/* Job Link */}
@@ -383,7 +369,6 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
               placeholder="Referral name, salary range, custom notes..."
               className="w-full bg-slate-50 text-slate-900 placeholder-slate-400 p-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white font-sans text-xs resize-none shadow-2xs transition-all"
             />
-          </div>
           </div>
 
           {/* Footer Actions */}

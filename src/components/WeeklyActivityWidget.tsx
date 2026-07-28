@@ -12,6 +12,7 @@ import {
   BarChart2
 } from 'lucide-react';
 import { Application } from '../types';
+import { CustomSelectDropdown, SelectOption } from './CustomSelectDropdown';
 
 interface WeeklyActivityWidgetProps {
   applications: Application[];
@@ -287,29 +288,19 @@ export const WeeklyActivityWidget: React.FC<WeeklyActivityWidgetProps> = ({
 
           {/* Quick Dropdown Select */}
           {periodType === 'week' ? (
-            <select
+            <CustomSelectDropdown<number>
               value={weekOffset}
-              onChange={(e) => setWeekOffset(Number(e.target.value))}
-              className="bg-white border border-slate-200 hover:border-slate-300 text-slate-800 font-medium px-2.5 py-1 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 shadow-2xs cursor-pointer"
-            >
-              {weekOptions.map((opt) => (
-                <option key={opt.offset} value={opt.offset}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
+              onChange={(val) => setWeekOffset(val)}
+              options={weekOptions.map((opt) => ({ label: opt.label, value: opt.offset }))}
+              size="sm"
+            />
           ) : (
-            <select
+            <CustomSelectDropdown<number>
               value={monthOffset}
-              onChange={(e) => setMonthOffset(Number(e.target.value))}
-              className="bg-white border border-slate-200 hover:border-slate-300 text-slate-800 font-medium px-2.5 py-1 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 shadow-2xs cursor-pointer"
-            >
-              {monthOptions.map((opt) => (
-                <option key={opt.offset} value={opt.offset}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
+              onChange={(val) => setMonthOffset(val)}
+              options={monthOptions.map((opt) => ({ label: opt.label, value: opt.offset }))}
+              size="sm"
+            />
           )}
 
           {/* Prev / Next Chevrons */}
