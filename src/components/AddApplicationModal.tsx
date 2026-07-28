@@ -23,6 +23,7 @@ const PLATFORMS: JobPlatform[] = [
 ];
 
 const STATUSES: ApplicationStatus[] = [
+  'Wishlist',
   'Applied',
   'Screening',
   'Interview',

@@ -10,6 +10,13 @@ interface StageSelectorDropdownProps {
 }
 
 const STAGE_CONFIG: Record<ApplicationStatus, { label: string; bg: string; text: string; border: string; dot: string }> = {
+  Wishlist: {
+    label: 'Wishlist',
+    bg: 'bg-purple-50 hover:bg-purple-100/80',
+    text: 'text-purple-700',
+    border: 'border-purple-200/80',
+    dot: 'bg-purple-500',
+  },
   Applied: {
     label: 'Applied',
     bg: 'bg-slate-100 hover:bg-slate-200/80',
@@ -55,6 +62,7 @@ const STAGE_CONFIG: Record<ApplicationStatus, { label: string; bg: string; text:
 };
 
 const ALL_STATUSES: ApplicationStatus[] = [
+  'Wishlist',
   'Applied',
   'Screening',
   'Interview',

@@ -64,6 +64,7 @@ export const StatsView: React.FC<StatsViewProps> = ({ applications }) => {
 
   // Stage breakdown
   const stageCounts = {
+    Wishlist: applications.filter((a) => a.status === 'Wishlist').length,
     Applied: applications.filter((a) => a.status === 'Applied').length,
     Screening: applications.filter((a) => a.status === 'Screening').length,
     Interview: applications.filter((a) => a.status === 'Interview').length,
@@ -71,6 +72,15 @@ export const StatsView: React.FC<StatsViewProps> = ({ applications }) => {
     Rejected: applications.filter((a) => a.status === 'Rejected').length,
     Archived: applications.filter((a) => a.status === 'Archived').length,
   };
+
+  // Funnel conversion percentages
+  const wishlistToAppliedRate = stageCounts.Wishlist + stageCounts.Applied > 0
+    ? Math.round((stageCounts.Applied / (stageCounts.Wishlist + stageCounts.Applied)) * 100)
+    : 0;
+
+  const appliedToScreeningRate = stageCounts.Applied > 0
+    ? Math.round((stageCounts.Screening / stageCounts.Applied) * 100)
+    : 0;
 
   return (
     <div className="flex-1 bg-slate-50/50 p-6 overflow-y-auto space-y-6 text-slate-900 select-none">
@@ -80,7 +90,7 @@ export const StatsView: React.FC<StatsViewProps> = ({ applications }) => {
           Job Search Performance & Analytics
         </h2>
         <p className="text-xs text-slate-500 font-mono mt-0.5">
-          Metrics calculated across {totalNonArchived} active applications
+          Metrics calculated across <span className="font-semibold text-slate-700 font-mono">{totalNonArchived}</span> active applications
         </p>
       </div>
 
@@ -104,7 +114,7 @@ export const StatsView: React.FC<StatsViewProps> = ({ applications }) => {
               {activeApps.length}
             </span>
             <span className="text-[11px] font-mono text-slate-400">
-              of {totalNonArchived} total
+              of <span className="font-semibold text-slate-700">{totalNonArchived}</span> total
             </span>
           </div>
         </div>
@@ -124,7 +134,7 @@ export const StatsView: React.FC<StatsViewProps> = ({ applications }) => {
               {responseRatePct}%
             </span>
             <span className="text-[11px] font-mono text-slate-400">
-              {responseCount} progression calls
+              <span className="font-semibold text-slate-700">{responseCount}</span> progression calls
             </span>
           </div>
         </div>
@@ -181,8 +191,8 @@ export const StatsView: React.FC<StatsViewProps> = ({ applications }) => {
               <span className="text-[11px] font-mono uppercase tracking-wider text-slate-500 font-semibold block">
                 Tasks & Follow-ups
               </span>
-              <span className="text-sm font-bold text-slate-900">
-                {pendingTasks} Pending <span className="text-slate-400 font-normal">({completedTasks} completed)</span>
+              <span className="text-sm font-bold text-slate-900 font-mono">
+                {pendingTasks} Pending <span className="text-slate-400 font-normal text-xs font-sans">({completedTasks} completed)</span>
               </span>
             </div>
           </div>
@@ -202,7 +212,7 @@ export const StatsView: React.FC<StatsViewProps> = ({ applications }) => {
               <span className="text-[11px] font-mono uppercase tracking-wider text-slate-500 font-semibold block">
                 Recruiters & Contacts
               </span>
-              <span className="text-sm font-bold text-slate-900">
+              <span className="text-sm font-bold text-slate-900 font-mono">
                 {totalContacts} Saved Contact{totalContacts !== 1 ? 's' : ''}
               </span>
             </div>
@@ -234,12 +244,15 @@ export const StatsView: React.FC<StatsViewProps> = ({ applications }) => {
             ) : (
               sortedPlatforms.map(([platform, count]) => {
                 const percentage = Math.round((count / maxPlatformCount) * 100);
+                const totalShare = Math.round((count / totalNonArchived) * 100);
 
                 return (
                   <div key={platform} className="space-y-1.5 text-xs">
                     <div className="flex justify-between font-mono text-[11px]">
                       <span className="text-slate-700 font-semibold">{platform}</span>
-                      <span className="text-slate-500 font-medium">{count} applications</span>
+                      <span className="text-slate-500 font-medium">
+                        {count} apps <span className="text-blue-600 font-semibold">({totalShare}%)</span>
+                      </span>
                     </div>
 
                     <div className="h-2 bg-slate-100 rounded-full overflow-hidden border border-slate-200/60">
@@ -267,6 +280,12 @@ export const StatsView: React.FC<StatsViewProps> = ({ applications }) => {
           </div>
 
           <div className="space-y-2.5 pt-1 text-xs font-mono">
+            {/* Wishlist */}
+            <div className="flex items-center justify-between p-2.5 rounded-lg bg-purple-50/70 border border-purple-200/70">
+              <span className="text-purple-800 font-medium">Wishlist / Bookmarked</span>
+              <span className="text-purple-800 font-bold">{stageCounts.Wishlist}</span>
+            </div>
+
             {/* Applied */}
             <div className="flex items-center justify-between p-2.5 rounded-lg bg-slate-50 border border-slate-200/80">
               <span className="text-slate-700 font-medium">Applied</span>

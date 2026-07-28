@@ -31,6 +31,12 @@ interface ActivePipelineBoardProps {
 
 const PIPELINE_COLUMNS: { status: ApplicationStatus; title: string; dot: string; tagBg: string }[] = [
   { 
+    status: 'Wishlist', 
+    title: 'Wishlist / Saved', 
+    dot: 'bg-purple-500',
+    tagBg: 'text-purple-700 bg-purple-50'
+  },
+  { 
     status: 'Applied', 
     title: 'Applied', 
     dot: 'bg-slate-400',
@@ -147,7 +153,7 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
           </div>
 
           {/* Table Header Row */}
-          <div className="grid grid-cols-4 bg-slate-50/90 border-b border-slate-200/80 sticky top-0 z-10 backdrop-blur-xs">
+          <div className="grid grid-cols-5 bg-slate-50/90 border-b border-slate-200/80 sticky top-0 z-10 backdrop-blur-xs">
             {PIPELINE_COLUMNS.map((col) => {
               const count = applications.filter((app) => app.status === col.status).length;
               const isTargeting = dragOverColumn === col.status;
@@ -174,7 +180,7 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
           </div>
 
           {/* Table Body Columns Area - Seamless with no dividing vertical borders */}
-          <div className="grid grid-cols-4 flex-1 items-stretch min-h-0 divide-x-0">
+          <div className="grid grid-cols-5 flex-1 items-stretch min-h-0 divide-x-0">
             {PIPELINE_COLUMNS.map((col) => {
               const columnApps = applications.filter((app) => app.status === col.status);
               const isTargeting = dragOverColumn === col.status;
