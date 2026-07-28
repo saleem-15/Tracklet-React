@@ -260,7 +260,6 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
               className="w-full"
             />
           </div>
-          </div>
 
           {/* Job Link */}
           <div>
@@ -369,6 +368,7 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
               placeholder="Referral name, salary range, custom notes..."
               className="w-full bg-slate-50 text-slate-900 placeholder-slate-400 p-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white font-sans text-xs resize-none shadow-2xs transition-all"
             />
+          </div>
           </div>
 
           {/* Footer Actions */}
