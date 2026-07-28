@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Application, ApplicationStatus } from '../types';
 import { CompanyLogo } from './CompanyLogo';
 import { EmptyState } from './EmptyState';
@@ -13,7 +13,8 @@ import {
   CheckSquare,
   Users,
   Archive,
-  XCircle
+  XCircle,
+  X
 } from 'lucide-react';
 import { calculateDaysInStage } from '../lib/sampleData';
 
@@ -72,12 +73,22 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
   const [draggedAppId, setDraggedAppId] = useState<string | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<ApplicationStatus | null>(null);
   const [cardSort, setCardSort] = useState<'staleness' | 'dateApplied' | 'company'>('staleness');
+  const [isAttentionDismissed, setIsAttentionDismissed] = useState(false);
   const [lastMovedNotice, setLastMovedNotice] = useState<{
     id: string;
     company: string;
     fromStatus: ApplicationStatus;
     toStatus: ApplicationStatus;
   } | null>(null);
+
+  const staleApps = useMemo(() => {
+    return applications.filter(
+      (a) =>
+        a.status !== 'Rejected' &&
+        a.status !== 'Archived' &&
+        calculateDaysInStage(a.stageUpdatedAt) > 14
+    );
+  }, [applications]);
 
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>, id: string) => {
     e.dataTransfer.setData('text/plain', id);
@@ -162,6 +173,37 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
         /* Main Single Table Frame (No visible outer column borders) */
         <div className="flex-1 flex flex-col min-h-0 overflow-auto">
         <div className="min-w-[900px] w-full flex-1 flex flex-col">
+          {/* "Needs Attention Today" Hero Aggregation Bar */}
+          {!isAttentionDismissed && staleApps.length > 0 && (
+            <div className="bg-amber-500/10 border-b border-amber-500/20 px-4 py-2 flex items-center justify-between text-xs text-amber-900 shrink-0">
+              <div className="flex items-center gap-2 font-medium">
+                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse shrink-0" />
+                <span>
+                  <strong className="font-semibold text-amber-950">Attention Needed:</strong>{' '}
+                  <span className="font-semibold">{staleApps.length} application{staleApps.length > 1 ? 's' : ''}</span> have been in active hiring stages for over 14 days without progress updates.
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setCardSort('staleness')}
+                  className="bg-amber-600 hover:bg-amber-700 text-white font-semibold px-2.5 py-1 rounded-md text-[11px] transition-colors shadow-2xs cursor-pointer"
+                >
+                  Focus Urgent Cards
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsAttentionDismissed(true)}
+                  className="text-amber-700 hover:text-amber-950 p-1 rounded transition-colors cursor-pointer"
+                  title="Dismiss announcement"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Drag & Drop Hint Banner + Column Sorting Selector */}
           <div className="bg-slate-50/70 border-b border-slate-200/80 px-4 py-1.5 flex items-center justify-between text-xs text-slate-500 shrink-0">
             <div className="flex items-center gap-1.5 text-[11px] font-medium">
