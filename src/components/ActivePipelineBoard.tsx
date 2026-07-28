@@ -137,8 +137,17 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
         /* Main Single Table Frame (No visible outer column borders) */
         <div className="flex-1 flex flex-col min-h-0 overflow-auto">
         <div className="min-w-[900px] w-full flex-1 flex flex-col">
+          {/* Drag & Drop Hint Banner */}
+          <div className="bg-slate-50/70 border-b border-slate-200/80 px-4 py-1.5 flex items-center justify-between text-xs text-slate-500 shrink-0">
+            <div className="flex items-center gap-1.5 text-[11px] font-medium">
+              <GripVertical className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+              <span><strong className="text-slate-700 font-semibold">Tip:</strong> Drag and drop application cards between columns or bottom drop zones to advance stages</span>
+            </div>
+            <span className="font-mono text-[10px] text-slate-400">{applications.length} active</span>
+          </div>
+
           {/* Table Header Row */}
-          <div className="grid grid-cols-4 bg-slate-50/80 border-b border-slate-200/80 sticky top-0 z-10 backdrop-blur-xs">
+          <div className="grid grid-cols-4 bg-slate-50/90 border-b border-slate-200/80 sticky top-0 z-10 backdrop-blur-xs">
             {PIPELINE_COLUMNS.map((col) => {
               const count = applications.filter((app) => app.status === col.status).length;
               const isTargeting = dragOverColumn === col.status;

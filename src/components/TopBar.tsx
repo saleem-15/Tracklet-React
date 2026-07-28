@@ -46,14 +46,22 @@ export const TopBar: React.FC<TopBarProps> = ({
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         searchInputRef.current?.focus();
-      } else if (e.key === '/' && document.activeElement?.tagName !== 'INPUT' && document.activeElement?.tagName !== 'TEXTAREA') {
+      } else if (
+        (e.key === '/' || e.key.toLowerCase() === 'n') &&
+        document.activeElement?.tagName !== 'INPUT' &&
+        document.activeElement?.tagName !== 'TEXTAREA'
+      ) {
         e.preventDefault();
-        searchInputRef.current?.focus();
+        if (e.key.toLowerCase() === 'n') {
+          onOpenAddModal();
+        } else {
+          searchInputRef.current?.focus();
+        }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [onOpenAddModal]);
 
   const hasActiveFilters =
     filter.search !== '' ||
@@ -190,10 +198,12 @@ export const TopBar: React.FC<TopBarProps> = ({
       <div className="flex items-center gap-2 shrink-0">
         <button
           onClick={onOpenAddModal}
-          className="bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-semibold px-3.5 py-1.5 rounded-lg flex items-center gap-1.5 transition-all shadow-xs text-xs shadow-blue-500/20 cursor-pointer"
+          title="Add new application (Press 'N')"
+          className="bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all shadow-xs text-xs shadow-blue-500/20 cursor-pointer"
         >
           <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
           <span>Add application</span>
+          <kbd className="hidden sm:inline-block font-mono text-[10px] bg-blue-700/80 px-1.5 py-0.2 rounded border border-blue-400/40 text-blue-100 font-normal">N</kbd>
         </button>
       </div>
     </header>
