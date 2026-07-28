@@ -71,7 +71,12 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
 }) => {
   const [draggedAppId, setDraggedAppId] = useState<string | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<ApplicationStatus | null>(null);
-  const [lastMovedNotice, setLastMovedNotice] = useState<{ company: string; toStatus: ApplicationStatus } | null>(null);
+  const [lastMovedNotice, setLastMovedNotice] = useState<{
+    id: string;
+    company: string;
+    fromStatus: ApplicationStatus;
+    toStatus: ApplicationStatus;
+  } | null>(null);
 
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>, id: string) => {
     e.dataTransfer.setData('text/plain', id);
@@ -106,9 +111,14 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
     if (id) {
       const app = applications.find((a) => a.id === id);
       if (app && app.status !== targetStatus) {
+        const prevStatus = app.status;
         onUpdateStatus(id, targetStatus);
-        setLastMovedNotice({ company: app.company, toStatus: targetStatus });
-        setTimeout(() => setLastMovedNotice(null), 3500);
+        setLastMovedNotice({
+          id,
+          company: app.company,
+          fromStatus: prevStatus,
+          toStatus: targetStatus,
+        });
       }
     }
     setDraggedAppId(null);
@@ -121,11 +131,21 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
     <div className="flex-1 bg-white flex flex-col h-full min-h-0 select-none overflow-hidden relative">
       {/* Status move notification toast */}
       {lastMovedNotice && (
-        <div className="absolute bottom-4 right-6 z-30 bg-slate-900 text-white px-4 py-2.5 rounded-xl shadow-xl flex items-center gap-2.5 text-xs animate-in fade-in slide-in-from-bottom-2 duration-200">
+        <div className="absolute bottom-4 right-6 z-30 bg-slate-900 text-white px-4 py-2.5 rounded-xl shadow-xl flex items-center gap-3 text-xs animate-in fade-in slide-in-from-bottom-2 duration-200">
           <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
           <span>
             Moved <strong className="font-semibold text-white">{lastMovedNotice.company}</strong> to <span className="font-mono text-blue-300 font-semibold">{lastMovedNotice.toStatus}</span>
           </span>
+          <button
+            type="button"
+            onClick={() => {
+              onUpdateStatus(lastMovedNotice.id, lastMovedNotice.fromStatus);
+              setLastMovedNotice(null);
+            }}
+            className="ml-1 bg-slate-800 hover:bg-slate-700 text-amber-300 hover:text-amber-200 font-semibold px-2 py-0.5 rounded border border-slate-700 text-[11px] transition-colors cursor-pointer"
+          >
+            Undo
+          </button>
         </div>
       )}
 
