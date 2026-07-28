@@ -106,7 +106,11 @@ export const TopBar: React.FC<TopBarProps> = ({
             onChange={(e) =>
               setFilter((prev) => ({ ...prev, platform: e.target.value as any }))
             }
-            className="appearance-none bg-slate-50 hover:bg-slate-100/80 text-slate-700 border border-slate-200/90 rounded-xl pl-3 pr-8 py-1.5 font-sans text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 cursor-pointer transition-all shadow-2xs font-medium"
+            className={`appearance-none border rounded-xl pl-3 pr-8 py-1.5 font-sans text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 cursor-pointer transition-all shadow-2xs ${
+              filter.platform !== 'All'
+                ? 'bg-blue-50/90 text-blue-900 border-blue-300 font-bold ring-1 ring-blue-400/20'
+                : 'bg-slate-50 hover:bg-slate-100/80 text-slate-700 border-slate-200/90 font-medium'
+            }`}
           >
             <option value="All">Platform: All</option>
             {PLATFORMS.map((p) => (
@@ -115,7 +119,7 @@ export const TopBar: React.FC<TopBarProps> = ({
               </option>
             ))}
           </select>
-          <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <ChevronDown className={`w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none ${filter.platform !== 'All' ? 'text-blue-600' : 'text-slate-400'}`} />
         </div>
 
         {/* Status Filter */}
@@ -125,7 +129,11 @@ export const TopBar: React.FC<TopBarProps> = ({
             onChange={(e) =>
               setFilter((prev) => ({ ...prev, status: e.target.value as any }))
             }
-            className="appearance-none bg-slate-50 hover:bg-slate-100/80 text-slate-700 border border-slate-200/90 rounded-xl pl-3 pr-8 py-1.5 font-sans text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 cursor-pointer transition-all shadow-2xs font-medium"
+            className={`appearance-none border rounded-xl pl-3 pr-8 py-1.5 font-sans text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 cursor-pointer transition-all shadow-2xs ${
+              filter.status !== 'All'
+                ? 'bg-blue-50/90 text-blue-900 border-blue-300 font-bold ring-1 ring-blue-400/20'
+                : 'bg-slate-50 hover:bg-slate-100/80 text-slate-700 border-slate-200/90 font-medium'
+            }`}
           >
             <option value="All">Status: All</option>
             <option value="Active">Status: Active Only</option>
@@ -135,7 +143,7 @@ export const TopBar: React.FC<TopBarProps> = ({
               </option>
             ))}
           </select>
-          <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <ChevronDown className={`w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none ${filter.status !== 'All' ? 'text-blue-600' : 'text-slate-400'}`} />
         </div>
 
         {/* Date Filter */}
@@ -145,7 +153,11 @@ export const TopBar: React.FC<TopBarProps> = ({
             onChange={(e) =>
               setFilter((prev) => ({ ...prev, dateRange: e.target.value as any }))
             }
-            className="appearance-none bg-slate-50 hover:bg-slate-100/80 text-slate-700 border border-slate-200/90 rounded-xl pl-3 pr-8 py-1.5 font-sans text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 cursor-pointer transition-all shadow-2xs font-medium"
+            className={`appearance-none border rounded-xl pl-3 pr-8 py-1.5 font-sans text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 cursor-pointer transition-all shadow-2xs ${
+              filter.dateRange !== 'all'
+                ? 'bg-blue-50/90 text-blue-900 border-blue-300 font-bold ring-1 ring-blue-400/20'
+                : 'bg-slate-50 hover:bg-slate-100/80 text-slate-700 border-slate-200/90 font-medium'
+            }`}
           >
             <option value="all">Date: All time</option>
             <option value="this_week">This Week</option>
@@ -156,16 +168,16 @@ export const TopBar: React.FC<TopBarProps> = ({
             <option value="30days">Last 30 days</option>
             <option value="60days">Last 60 days</option>
           </select>
-          <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <ChevronDown className={`w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none ${filter.dateRange !== 'all' ? 'text-blue-600' : 'text-slate-400'}`} />
         </div>
 
         {hasActiveFilters && (
           <button
             onClick={resetFilters}
-            className="text-slate-600 hover:text-slate-900 flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200/80 border border-slate-200 font-mono text-[11px] transition-all font-medium"
+            className="text-blue-700 hover:text-blue-900 flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 font-sans text-xs transition-all font-semibold cursor-pointer shadow-2xs"
           >
-            <Filter className="w-3 h-3 text-blue-600" />
-            <span>Clear</span>
+            <Filter className="w-3.5 h-3.5 text-blue-600" />
+            <span>Reset Filters</span>
           </button>
         )}
 

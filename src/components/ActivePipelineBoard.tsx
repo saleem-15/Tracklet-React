@@ -13,7 +13,9 @@ import {
   ArrowRight,
   Mail,
   CheckSquare,
-  Users
+  Users,
+  Archive,
+  XCircle
 } from 'lucide-react';
 import { calculateDaysInStage } from '../lib/sampleData';
 
@@ -343,6 +345,45 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
                 </div>
               );
             })}
+          </div>
+
+          {/* Quick-Drop Zones Bar (Archive & Mark Rejected) */}
+          <div className="border-t border-slate-200/90 bg-slate-50/90 p-3 grid grid-cols-2 gap-3 sticky bottom-0 z-20 backdrop-blur-xs">
+            <div
+              onDragOver={(e) => handleDragOver(e, 'Archived')}
+              onDragLeave={(e) => handleDragLeave(e, 'Archived')}
+              onDrop={(e) => handleDrop(e, 'Archived')}
+              className={`p-3 rounded-xl border-2 border-dashed flex items-center justify-center gap-2.5 transition-all duration-150 text-xs font-semibold ${
+                dragOverColumn === 'Archived'
+                  ? 'bg-amber-100/90 border-amber-500 text-amber-900 ring-2 ring-amber-400/30 shadow-md scale-[1.01]'
+                  : draggedAppId !== null
+                  ? 'bg-amber-50/60 border-amber-300/80 text-amber-800 animate-pulse'
+                  : 'bg-white border-slate-200 text-slate-500 hover:border-amber-300 hover:text-amber-800 hover:bg-amber-50/40'
+              }`}
+            >
+              <Archive className={`w-4 h-4 shrink-0 ${dragOverColumn === 'Archived' ? 'text-amber-700' : 'text-slate-400'}`} />
+              <span>
+                {dragOverColumn === 'Archived' ? 'Release to Archive Application' : 'Quick Drop Zone: Drag here to Archive'}
+              </span>
+            </div>
+
+            <div
+              onDragOver={(e) => handleDragOver(e, 'Rejected')}
+              onDragLeave={(e) => handleDragLeave(e, 'Rejected')}
+              onDrop={(e) => handleDrop(e, 'Rejected')}
+              className={`p-3 rounded-xl border-2 border-dashed flex items-center justify-center gap-2.5 transition-all duration-150 text-xs font-semibold ${
+                dragOverColumn === 'Rejected'
+                  ? 'bg-rose-100/90 border-rose-500 text-rose-900 ring-2 ring-rose-400/30 shadow-md scale-[1.01]'
+                  : draggedAppId !== null
+                  ? 'bg-rose-50/60 border-rose-300/80 text-rose-800 animate-pulse'
+                  : 'bg-white border-slate-200 text-slate-500 hover:border-rose-300 hover:text-rose-800 hover:bg-rose-50/40'
+              }`}
+            >
+              <XCircle className={`w-4 h-4 shrink-0 ${dragOverColumn === 'Rejected' ? 'text-rose-700' : 'text-slate-400'}`} />
+              <span>
+                {dragOverColumn === 'Rejected' ? 'Release to Mark as Rejected' : 'Quick Drop Zone: Drag here to Mark Rejected'}
+              </span>
+            </div>
           </div>
         </div>
       </div>

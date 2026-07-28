@@ -264,15 +264,31 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
     };
   }, [app.id, app.status]);
 
+  const [showUnsavedPrompt, setShowUnsavedPrompt] = useState(false);
+
+  const isDirty = hasUnsavedNotes || isEditingInfo || cName.trim() !== '' || cEmail.trim() !== '';
+
+  const handleRequestClose = () => {
+    if (isDirty) {
+      setShowUnsavedPrompt(true);
+    } else {
+      onClose();
+    }
+  };
+
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        onClose();
+        if (showUnsavedPrompt) {
+          setShowUnsavedPrompt(false);
+        } else {
+          handleRequestClose();
+        }
       }
     };
     window.addEventListener('keydown', handleGlobalKeyDown);
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
-  }, [onClose]);
+  }, [showUnsavedPrompt, isDirty]);
 
   const daysInStage = calculateDaysInStage(app.stageUpdatedAt);
 
@@ -318,8 +334,47 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
   return (
     <div 
       className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 md:p-6 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200 overflow-y-auto"
-      onClick={onClose}
+      onClick={handleRequestClose}
     >
+      {/* Unsaved Changes Guard Dialog */}
+      {showUnsavedPrompt && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 backdrop-blur-xs p-4 animate-in fade-in duration-150"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="w-full max-w-sm bg-white border border-slate-200 rounded-2xl shadow-2xl p-5 space-y-4 text-center animate-in zoom-in-95 duration-150">
+            <div className="w-10 h-10 rounded-full bg-amber-100 text-amber-600 mx-auto flex items-center justify-center shadow-2xs">
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="font-bold text-slate-900 text-sm">Discard unsaved changes?</h3>
+              <p className="text-xs text-slate-500">
+                You have unsaved edits in notes or form fields. Are you sure you want to exit without saving?
+              </p>
+            </div>
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setShowUnsavedPrompt(false)}
+                className="flex-1 py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition-all cursor-pointer"
+              >
+                Keep Editing
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowUnsavedPrompt(false);
+                  onClose();
+                }}
+                className="flex-1 py-2 px-3 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs transition-all cursor-pointer shadow-xs"
+              >
+                Discard & Exit
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div 
         className="w-full max-w-5xl max-h-[92vh] bg-white border border-slate-200/90 rounded-2xl flex flex-col shadow-2xl text-slate-900 animate-in zoom-in-95 duration-200 overflow-hidden my-auto"
         onClick={(e) => e.stopPropagation()}
@@ -390,7 +445,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
               <Trash2 className="w-4 h-4" />
             </button>
             <button
-              onClick={onClose}
+              onClick={handleRequestClose}
               className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200/80 text-slate-600 hover:text-slate-900 transition-colors cursor-pointer border border-slate-200/80"
               title="Close dialog (Esc)"
             >

@@ -87,6 +87,11 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
         });
       }
 
+      let formattedJobLink = jobLink.trim();
+      if (formattedJobLink && !formattedJobLink.startsWith('http://') && !formattedJobLink.startsWith('https://')) {
+        formattedJobLink = `https://${formattedJobLink}`;
+      }
+
       await onAdd({
         company: company.trim(),
         companyDomain: companyDomain.trim() || undefined,
@@ -94,7 +99,7 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
         platform,
         dateApplied: dateApplied || todayStr,
         status,
-        jobLink: jobLink.trim() || undefined,
+        jobLink: formattedJobLink || undefined,
         contactEmail: contactEmail.trim() || undefined,
         contacts: contacts.length > 0 ? contacts : undefined,
         tasks: tasks.length > 0 ? tasks : undefined,
@@ -168,9 +173,26 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
                   value={company}
                   onChange={(e) => setCompany(e.target.value)}
                   placeholder="e.g. Linear, Stripe, OpenAI"
-                  className="w-full bg-slate-50 text-slate-900 placeholder-slate-400 pl-9 pr-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white font-sans text-xs transition-all shadow-2xs"
+                  className="w-full bg-slate-50 text-slate-900 placeholder-slate-400 pl-9 pr-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white font-sans text-xs transition-all shadow-2xs font-semibold"
                 />
               </div>
+            </div>
+          </div>
+
+          {/* Company Domain (Optional) */}
+          <div>
+            <label className="block text-[11px] font-mono text-slate-500 uppercase tracking-wider mb-1 font-medium">
+              Company Domain (Optional)
+            </label>
+            <div className="relative">
+              <Globe className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                value={companyDomain}
+                onChange={(e) => setCompanyDomain(e.target.value.toLowerCase().trim())}
+                placeholder="e.g. linear.app or stripe.com"
+                className="w-full bg-slate-50 text-slate-900 placeholder-slate-400 pl-9 pr-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white font-mono text-xs transition-all shadow-2xs"
+              />
             </div>
           </div>
 
@@ -250,16 +272,42 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
 
           {/* Job Link */}
           <div>
-            <label className="block text-[11px] font-mono text-slate-500 uppercase tracking-wider mb-1 font-medium">
-              Job Listing URL (Optional)
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-[11px] font-mono text-slate-500 uppercase tracking-wider font-medium">
+                Job Listing URL (Optional)
+              </label>
+              {jobLink.trim() && (
+                <span className="text-[10px] font-mono text-slate-400">
+                  {jobLink.startsWith('http://') || jobLink.startsWith('https://') ? (
+                    <span className="text-emerald-600 font-semibold">Valid URL format</span>
+                  ) : (
+                    <span className="text-amber-600 font-semibold">Will auto-prefix https://</span>
+                  )}
+                </span>
+              )}
+            </div>
             <div className="relative">
               <Link className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
-                type="url"
+                type="text"
                 value={jobLink}
-                onChange={(e) => setJobLink(e.target.value)}
-                placeholder="https://..."
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setJobLink(val);
+                  // Optional auto-detect domain if domain is empty
+                  if (!companyDomain && val.includes('.')) {
+                    try {
+                      const urlToParse = val.startsWith('http') ? val : `https://${val}`;
+                      const host = new URL(urlToParse).hostname.replace(/^www\./, '');
+                      if (host && host.includes('.')) {
+                        setCompanyDomain(host);
+                      }
+                    } catch {
+                      // ignore parse errors
+                    }
+                  }
+                }}
+                placeholder="https://linkedin.com/jobs/... or company.com/careers"
                 className="w-full bg-slate-50 text-slate-900 placeholder-slate-400 pl-9 pr-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white font-mono text-xs transition-all shadow-2xs"
               />
             </div>
