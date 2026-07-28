@@ -585,7 +585,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
             <div className="bg-slate-50/80 p-3 rounded-xl border border-slate-200/80 flex items-center justify-between">
               <div>
                 <span className="text-[10px] font-mono uppercase text-slate-400 font-medium block">Platform</span>
-                <span className="font-bold text-slate-800 text-xs mt-0.5 block">{app.platform}</span>
+                <span className="font-bold text-slate-800 text-xs mt-0.5 block font-mono">{app.platform}</span>
               </div>
               <Globe className="w-4 h-4 text-slate-400" />
             </div>

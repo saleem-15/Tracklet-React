@@ -170,7 +170,7 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
                 company={company || 'Company'}
                 jobLink={jobLink}
                 companyDomain={companyDomain}
-                size="md"
+                size="sm"
               />
               <div className="relative flex-1">
                 <Building2 className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
