@@ -1,6 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import { Search, Plus, Filter, X, ChevronDown } from 'lucide-react';
 import { FilterState, JobPlatform, ApplicationStatus } from '../types';
+import { FilterSelectDropdown } from './FilterSelectDropdown';
 
 interface TopBarProps {
   filter: FilterState;
@@ -29,6 +30,28 @@ const STATUSES: ApplicationStatus[] = [
   'Offer',
   'Rejected',
   'Archived',
+];
+
+const PLATFORM_OPTIONS = [
+  { label: 'All', value: 'All' },
+  ...PLATFORMS.map((p) => ({ label: p, value: p })),
+];
+
+const STATUS_OPTIONS = [
+  { label: 'All', value: 'All' },
+  { label: 'Active Only', value: 'Active' },
+  ...STATUSES.map((s) => ({ label: s, value: s })),
+];
+
+const DATE_OPTIONS = [
+  { label: 'All time', value: 'all' },
+  { label: 'This Week', value: 'this_week' },
+  { label: 'Last Week', value: 'last_week' },
+  { label: 'This Month', value: 'this_month' },
+  { label: 'Last Month', value: 'last_month' },
+  { label: 'Last 7 days', value: '7days' },
+  { label: 'Last 30 days', value: '30days' },
+  { label: 'Last 60 days', value: '60days' },
 ];
 
 export const TopBar: React.FC<TopBarProps> = ({
@@ -108,76 +131,31 @@ export const TopBar: React.FC<TopBarProps> = ({
         </div>
 
         {/* Platform Filter */}
-        <div className="relative">
-          <select
-            value={filter.platform}
-            onChange={(e) =>
-              setFilter((prev) => ({ ...prev, platform: e.target.value as any }))
-            }
-            className={`appearance-none border rounded-xl pl-3 pr-8 py-1.5 font-sans text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 cursor-pointer transition-all shadow-2xs ${
-              filter.platform !== 'All'
-                ? 'bg-blue-50/90 text-blue-900 border-blue-300 font-bold ring-1 ring-blue-400/20'
-                : 'bg-slate-50 hover:bg-slate-100/80 text-slate-700 border-slate-200/90 font-medium'
-            }`}
-          >
-            <option value="All">Platform: All</option>
-            {PLATFORMS.map((p) => (
-              <option key={p} value={p}>
-                {p}
-              </option>
-            ))}
-          </select>
-          <ChevronDown className={`w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none ${filter.platform !== 'All' ? 'text-blue-600' : 'text-slate-400'}`} />
-        </div>
+        <FilterSelectDropdown
+          labelPrefix="Platform"
+          value={filter.platform}
+          onChange={(val) => setFilter((prev) => ({ ...prev, platform: val as any }))}
+          options={PLATFORM_OPTIONS}
+          isActive={filter.platform !== 'All'}
+        />
 
         {/* Status Filter */}
-        <div className="relative">
-          <select
-            value={filter.status}
-            onChange={(e) =>
-              setFilter((prev) => ({ ...prev, status: e.target.value as any }))
-            }
-            className={`appearance-none border rounded-xl pl-3 pr-8 py-1.5 font-sans text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 cursor-pointer transition-all shadow-2xs ${
-              filter.status !== 'All'
-                ? 'bg-blue-50/90 text-blue-900 border-blue-300 font-bold ring-1 ring-blue-400/20'
-                : 'bg-slate-50 hover:bg-slate-100/80 text-slate-700 border-slate-200/90 font-medium'
-            }`}
-          >
-            <option value="All">Status: All</option>
-            <option value="Active">Status: Active Only</option>
-            {STATUSES.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
-          <ChevronDown className={`w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none ${filter.status !== 'All' ? 'text-blue-600' : 'text-slate-400'}`} />
-        </div>
+        <FilterSelectDropdown
+          labelPrefix="Status"
+          value={filter.status}
+          onChange={(val) => setFilter((prev) => ({ ...prev, status: val as any }))}
+          options={STATUS_OPTIONS}
+          isActive={filter.status !== 'All'}
+        />
 
         {/* Date Filter */}
-        <div className="relative">
-          <select
-            value={filter.dateRange}
-            onChange={(e) =>
-              setFilter((prev) => ({ ...prev, dateRange: e.target.value as any }))
-            }
-            className={`appearance-none border rounded-xl pl-3 pr-8 py-1.5 font-sans text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 cursor-pointer transition-all shadow-2xs ${
-              filter.dateRange !== 'all'
-                ? 'bg-blue-50/90 text-blue-900 border-blue-300 font-bold ring-1 ring-blue-400/20'
-                : 'bg-slate-50 hover:bg-slate-100/80 text-slate-700 border-slate-200/90 font-medium'
-            }`}
-          >
-            <option value="all">Date: All time</option>
-            <option value="this_week">This Week</option>
-            <option value="last_week">Last Week</option>
-            <option value="this_month">This Month</option>
-            <option value="last_month">Last Month</option>
-            <option value="7days">Last 7 days</option>
-            <option value="30days">Last 30 days</option>
-            <option value="60days">Last 60 days</option>
-          </select>
-          <ChevronDown className={`w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none ${filter.dateRange !== 'all' ? 'text-blue-600' : 'text-slate-400'}`} />
-        </div>
+        <FilterSelectDropdown
+          labelPrefix="Date"
+          value={filter.dateRange}
+          onChange={(val) => setFilter((prev) => ({ ...prev, dateRange: val as any }))}
+          options={DATE_OPTIONS}
+          isActive={filter.dateRange !== 'all'}
+        />
 
         {hasActiveFilters && (
           <button
