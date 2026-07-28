@@ -79,7 +79,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
       {onAddApplication && (
         <button
           onClick={onAddApplication}
-          className="inline-flex items-center gap-2 px-5 py-2.5 text-xs sm:text-sm font-bold text-white bg-slate-900 hover:bg-slate-800 rounded-2xl shadow-md hover:shadow-lg transition-all cursor-pointer transform hover:-translate-y-0.5"
+          className="inline-flex items-center gap-2 px-5 py-2.5 text-xs sm:text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-2xl shadow-md hover:shadow-lg transition-all cursor-pointer transform hover:-translate-y-0.5 shadow-blue-500/20"
         >
           <Plus className="w-4 h-4 stroke-[2.5]" />
           <span>Add Your First Application</span>

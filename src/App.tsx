@@ -157,6 +157,7 @@ export default function App() {
       }
     } catch (err) {
       console.error('Error fetching Firestore applications:', err);
+      addToast('error', 'Cloud Sync Warning', 'Could not connect to database. Showing offline local storage copy.');
       loadGuestApplications();
     }
   };

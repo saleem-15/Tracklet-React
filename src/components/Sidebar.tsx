@@ -216,10 +216,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1.5 text-amber-900 font-bold text-xs">
-                      <Clock className="w-3.5 h-3.5 text-amber-600 animate-bounce" />
+                      <Clock className="w-3.5 h-3.5 text-amber-600" />
                       <span>Soon to Expire</span>
                     </div>
-                    <span className="font-mono text-xs font-extrabold bg-amber-500 text-white px-1.5 py-0.2 rounded-full shadow-2xs">
+                    <span className="font-mono text-xs font-extrabold bg-amber-500 text-white px-1.5 py-0.2 rounded-full shadow-2xs animate-pulse">
                       {expiringTasksCount}
                     </span>
                   </div>
@@ -245,9 +245,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <button
                 onClick={() => setActiveTab('settings')}
                 title={`${expiringTasksCount} tasks expiring soon!`}
-                className="w-full flex justify-center p-2 rounded-xl bg-amber-100 border border-amber-300 text-amber-700"
+                className="w-full flex justify-center p-2 rounded-xl bg-amber-100 border border-amber-300 text-amber-700 animate-pulse"
               >
-                <Clock className="w-4 h-4 text-amber-600 animate-bounce" />
+                <Clock className="w-4 h-4 text-amber-600" />
               </button>
             ) : null}
           </div>

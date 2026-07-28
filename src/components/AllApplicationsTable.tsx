@@ -35,6 +35,51 @@ interface AllApplicationsTableProps {
   onBulkDelete: (ids: string[]) => void;
 }
 
+function formatAppDate(dateStr: string): string {
+  if (!dateStr) return '';
+  try {
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+      const year = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1;
+      const day = parseInt(parts[2], 10);
+      const date = new Date(year, month, day);
+      if (!isNaN(date.getTime())) {
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      }
+    }
+    const date = new Date(dateStr);
+    if (!isNaN(date.getTime())) {
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+  } catch {
+    // fallback
+  }
+  return dateStr;
+}
+
+function getStageUrgencyClass(status: ApplicationStatus, daysInStage: number): string {
+  if (status === 'Rejected' || status === 'Archived') {
+    return 'text-slate-400';
+  }
+  if (status === 'Applied') {
+    if (daysInStage > 21) return 'text-amber-700 bg-amber-50 font-semibold border border-amber-200/60';
+    if (daysInStage > 10) return 'text-slate-700 font-medium';
+    return 'text-slate-400';
+  }
+  if (status === 'Screening' || status === 'Interview') {
+    if (daysInStage > 14) return 'text-rose-700 bg-rose-50 font-semibold border border-rose-200/60';
+    if (daysInStage > 7) return 'text-amber-700 bg-amber-50 font-semibold border border-amber-200/60';
+    return 'text-slate-700 font-medium';
+  }
+  if (status === 'Offer') {
+    if (daysInStage > 3) return 'text-rose-700 bg-rose-50 font-semibold border border-rose-200/60';
+    return 'text-emerald-700 bg-emerald-50 font-semibold border border-emerald-200/60';
+  }
+  if (daysInStage > 14) return 'text-amber-700 bg-amber-50 font-semibold border border-amber-200/60';
+  return 'text-slate-400';
+}
+
 export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
   applications,
   totalAppCount = 0,
@@ -317,35 +362,6 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
                             <ExternalLink className="w-3 h-3 text-slate-400 hover:text-blue-600" />
                           </a>
                         )}
-                        {app.contactEmail ? (
-                          <a
-                            href={`mailto:${app.contactEmail}`}
-                            onClick={(e) => e.stopPropagation()}
-                            className="text-slate-400 hover:text-blue-600 transition-colors shrink-0"
-                            title={`Contact email: ${app.contactEmail}`}
-                          >
-                            <Mail className="w-3 h-3 text-blue-500" />
-                          </a>
-                        ) : null}
-                        {app.contacts && app.contacts.length > 0 ? (
-                          <span className="inline-flex items-center gap-0.5 text-[10px] font-mono text-slate-500 bg-slate-100 px-1 py-0.5 rounded border border-slate-200" title={`${app.contacts.length} contact(s)`}>
-                            <Users className="w-2.5 h-2.5 text-slate-400" />
-                            <span>{app.contacts.length}</span>
-                          </span>
-                        ) : null}
-                        {app.tasks && app.tasks.length > 0 ? (
-                          <span 
-                            className={`inline-flex items-center gap-0.5 text-[10px] font-mono px-1 py-0.5 rounded border ${
-                              app.tasks.every(t => t.completed)
-                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200/60'
-                                : 'bg-blue-50 text-blue-700 border-blue-200/60 font-semibold'
-                            }`}
-                            title={`${app.tasks.filter(t => t.completed).length}/${app.tasks.length} tasks completed`}
-                          >
-                            <CheckSquare className="w-2.5 h-2.5" />
-                            <span>{app.tasks.filter(t => t.completed).length}/{app.tasks.length}</span>
-                          </span>
-                        ) : null}
                       </div>
                     </td>
 
@@ -362,8 +378,8 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
                     </td>
 
                     {/* Date Applied */}
-                    <td className="px-3 py-1 font-mono text-[11px] text-slate-500">
-                      {app.dateApplied}
+                    <td className="px-3 py-1 font-mono text-[11px] text-slate-500" title={`Applied on ${app.dateApplied}`}>
+                      {formatAppDate(app.dateApplied)}
                     </td>
 
                     {/* Status */}
@@ -378,13 +394,8 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
                     {/* Days in stage */}
                     <td className="px-3 py-1 font-mono text-[11px] text-right pr-6">
                       <span
-                        className={`px-2 py-0.5 rounded-md ${
-                          daysInStage > 14
-                            ? 'text-amber-700 bg-amber-50 font-semibold border border-amber-200/60'
-                            : daysInStage > 7
-                            ? 'text-slate-700 font-medium'
-                            : 'text-slate-400'
-                        }`}
+                        className={`px-2 py-0.5 rounded-md ${getStageUrgencyClass(app.status, daysInStage)}`}
+                        title={`${daysInStage} days in ${app.status} stage`}
                       >
                         {daysInStage}d
                       </span>
