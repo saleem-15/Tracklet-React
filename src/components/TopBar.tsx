@@ -102,7 +102,7 @@ export const TopBar: React.FC<TopBarProps> = ({
   };
 
   return (
-    <header className="h-13 bg-white/95 border-b border-slate-200/80 px-4 flex items-center justify-between gap-3 sticky top-0 z-10 text-xs backdrop-blur-xs">
+    <header className="h-13 bg-white/95 border-b border-slate-200/80 px-4 flex items-center justify-between gap-3 sticky top-0 z-30 text-xs backdrop-blur-xs">
       {/* Search & Filters */}
       <div className="flex items-center gap-2 flex-1 max-w-3xl">
         {/* Search Input */}
