@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
 import { Application, ApplicationStatus } from '../types';
-import { StageSelectorDropdown } from './StageSelectorDropdown';
 import { CompanyLogo } from './CompanyLogo';
 import { EmptyState } from './EmptyState';
 import { 
-  ExternalLink, 
   Clock, 
   Building2, 
   GripVertical, 
@@ -167,7 +165,7 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
                 >
                   <div className="flex items-center gap-2.5">
                     <span className={`w-2 h-2 rounded-full ${col.dot} shadow-xs`} />
-                    <span className="font-bold text-slate-800 text-xs tracking-tight">
+                    <span className="font-heading font-bold text-slate-800 text-xs tracking-tight">
                       {col.title}
                     </span>
                   </div>
@@ -197,6 +195,14 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
                       : 'bg-white hover:bg-slate-50/30'
                   }`}
                 >
+                  {/* Drop zone placeholder indicator when dragging over column with existing items */}
+                  {isTargeting && columnApps.length > 0 && (
+                    <div className="py-2 px-3 rounded-xl border-2 border-dashed border-blue-400 bg-blue-50/80 text-blue-700 text-[11px] font-semibold flex items-center justify-center gap-1.5 animate-pulse shrink-0">
+                      <ArrowRight className="w-3.5 h-3.5" />
+                      <span>Move application to {col.title}</span>
+                    </div>
+                  )}
+
                   {/* Column container with stable DOM structure during drag */}
                   {columnApps.length === 0 ? (
                     <div className="flex-1 min-h-[120px] flex items-center justify-center p-6 text-center text-slate-400 font-mono text-[11px] border border-dashed border-slate-200/60 rounded-xl my-1 bg-slate-50/20">
@@ -225,69 +231,63 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
                       return (
                         <div
                           key={app.id}
+                          tabIndex={0}
+                          role="button"
+                          aria-label={`${app.company}, ${app.role}, in ${col.title}`}
                           draggable
                           onDragStart={(e) => handleDragStart(e, app.id)}
                           onDragEnd={handleDragEnd}
                           onClick={() => onSelectApp(app)}
-                          className={`p-3.5 rounded-xl border transition-all cursor-grab active:cursor-grabbing group relative ${
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              onSelectApp(app);
+                            }
+                          }}
+                          className={`p-3.5 rounded-xl border transition-all cursor-grab active:cursor-grabbing group relative focus:outline-none focus:ring-2 focus:ring-blue-500/50 ${
                             isBeingDragged
                               ? 'opacity-40 scale-98 border-dashed border-blue-400 bg-blue-50/30'
                               : isSelected
                               ? 'bg-blue-50/70 border-blue-500/80 ring-1 ring-blue-500/20 shadow-xs'
-                              : 'bg-white hover:bg-slate-50/90 border-slate-200/80 hover:border-blue-300 shadow-2xs hover:shadow-xs'
+                              : daysInStage > 14
+                              ? 'bg-white hover:bg-slate-50/90 border-slate-200/80 border-l-4 border-l-rose-500 hover:border-blue-300 shadow-2xs hover:shadow-xs hover:-translate-y-0.5'
+                              : daysInStage > 7
+                              ? 'bg-white hover:bg-slate-50/90 border-slate-200/80 border-l-4 border-l-amber-500 hover:border-blue-300 shadow-2xs hover:shadow-xs hover:-translate-y-0.5'
+                              : 'bg-white hover:bg-slate-50/90 border-slate-200/80 hover:border-blue-300 shadow-2xs hover:shadow-xs hover:-translate-y-0.5'
                           }`}
                         >
-                          {/* Top Row: Grip Handle, Company Avatar & Name, External Link */}
-                          <div className="flex items-start justify-between gap-2 mb-1.5">
-                            <div className="flex items-center gap-2 min-w-0">
-                              <GripVertical className="w-3.5 h-3.5 text-slate-300 group-hover:text-slate-500 shrink-0 transition-colors" />
-                              
-                              <CompanyLogo
-                                company={app.company}
-                                jobLink={app.jobLink}
-                                logoUrl={app.logoUrl}
-                                companyDomain={app.companyDomain}
-                                size="xs"
-                              />
+                          {/* Top Row: Company Avatar & Name */}
+                          <div className="flex items-center gap-2 mb-1 min-w-0">
+                            <CompanyLogo
+                              company={app.company}
+                              jobLink={app.jobLink}
+                              logoUrl={app.logoUrl}
+                              companyDomain={app.companyDomain}
+                              size="sm"
+                            />
 
-                              <span className="font-bold text-slate-900 text-xs truncate">
-                                {app.company}
-                              </span>
-                            </div>
-
-                            <div className="flex items-center gap-1 shrink-0">
-                              {app.jobLink && (
-                                <a
-                                  href={app.jobLink}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  onClick={(e) => e.stopPropagation()}
-                                  className="p-1 text-slate-400 hover:text-blue-700 hover:bg-blue-100/80 rounded transition-colors"
-                                  title="Open job link"
-                                >
-                                  <ExternalLink className="w-3.5 h-3.5" />
-                                </a>
-                              )}
-                            </div>
+                            <span className="font-heading font-bold text-slate-900 text-xs truncate">
+                              {app.company}
+                            </span>
                           </div>
 
-                          {/* Role Title */}
-                          <p className="text-slate-700 text-xs font-semibold truncate mb-2 pl-5">
+                          {/* Role Title - Flush left alignment */}
+                          <p className="text-slate-700 text-xs font-semibold truncate mb-2">
                             {app.role}
                           </p>
 
                           {/* Notes snippet or Tasks/Contacts chips */}
                           {Boolean(app.tasks?.length || app.contacts?.length || app.contactEmail) ? (
-                            <div className="flex items-center gap-1.5 flex-wrap pl-5 mb-2 font-mono text-[10px]">
+                            <div className="flex items-center gap-1.5 flex-wrap mb-2 font-mono text-[10px]">
                               {app.contactEmail ? (
                                 <a
                                   href={`mailto:${app.contactEmail}`}
                                   onClick={(e) => e.stopPropagation()}
-                                  className="inline-flex items-center gap-1 text-slate-600 hover:text-blue-600 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-200/80"
+                                  className="inline-flex items-center gap-1 text-slate-600 hover:text-blue-800 bg-slate-50 hover:bg-blue-50 px-1.5 py-0.5 rounded border border-slate-200/80 transition-colors"
                                   title={`Contact email: ${app.contactEmail}`}
                                 >
                                   <Mail className="w-2.5 h-2.5 text-blue-500" />
-                                  <span className="truncate max-w-[120px]">{app.contactEmail}</span>
+                                  <span className="truncate max-w-[110px]">Contact</span>
                                 </a>
                               ) : null}
                               {app.tasks && app.tasks.length > 0 ? (
@@ -319,39 +319,25 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
                             </p>
                           ) : null}
 
-                          {/* Footer Metadata & Quick Action */}
-                          <div className="flex items-center justify-between text-[11px] pt-2 border-t border-slate-100/80 pl-5 gap-1.5">
+                          {/* Footer Metadata: Platform Tag + Days in Stage Recency Badge */}
+                          <div className="flex items-center justify-between text-[11px] pt-2 border-t border-slate-100/80 gap-1.5">
                             <span className="font-mono text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200/80 font-medium text-[10px] shrink-0">
                               {app.platform}
                             </span>
 
-                            <div className="flex items-center gap-1.5">
-                              <span
-                                className={`flex items-center gap-1 font-mono text-[10px] px-1.5 py-0.5 rounded font-medium ${
-                                  daysInStage > 14
-                                    ? 'text-rose-700 font-semibold bg-rose-50 border border-rose-200/80'
-                                    : daysInStage > 7
-                                    ? 'text-amber-700 font-semibold bg-amber-50 border border-amber-200/80'
-                                    : 'text-slate-500 bg-slate-100 border border-slate-200/60'
-                                }`}
-                                title={`In ${app.status} stage for ${daysInStage} days`}
-                              >
-                                <Clock className="w-3 h-3 shrink-0" />
-                                <span>{daysInStage}d</span>
-                              </span>
-
-                              <div onClick={(e) => e.stopPropagation()}>
-                                <StageSelectorDropdown
-                                  currentStatus={app.status}
-                                  onSelectStatus={(newStatus) => {
-                                    onUpdateStatus(app.id, newStatus);
-                                    setLastMovedNotice({ company: app.company, toStatus: newStatus });
-                                    setTimeout(() => setLastMovedNotice(null), 3500);
-                                  }}
-                                  size="sm"
-                                />
-                              </div>
-                            </div>
+                            <span
+                              className={`flex items-center gap-1 font-mono text-[11px] px-2 py-0.5 rounded-md font-semibold ${
+                                daysInStage > 14
+                                  ? 'text-rose-700 font-semibold bg-rose-50 border border-rose-200/80'
+                                  : daysInStage > 7
+                                  ? 'text-amber-700 font-semibold bg-amber-50 border border-amber-200/80'
+                                  : 'text-slate-500 bg-slate-100 border border-slate-200/60'
+                              }`}
+                              title={`In ${app.status} stage for ${daysInStage} days`}
+                            >
+                              <Clock className="w-3 h-3 shrink-0" />
+                              <span>{daysInStage}d</span>
+                            </span>
                           </div>
                         </div>
                       );
