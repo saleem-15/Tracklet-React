@@ -71,6 +71,7 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
 }) => {
   const [draggedAppId, setDraggedAppId] = useState<string | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<ApplicationStatus | null>(null);
+  const [cardSort, setCardSort] = useState<'staleness' | 'dateApplied' | 'company'>('staleness');
   const [lastMovedNotice, setLastMovedNotice] = useState<{
     id: string;
     company: string;
@@ -161,13 +162,26 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
         /* Main Single Table Frame (No visible outer column borders) */
         <div className="flex-1 flex flex-col min-h-0 overflow-auto">
         <div className="min-w-[900px] w-full flex-1 flex flex-col">
-          {/* Drag & Drop Hint Banner */}
+          {/* Drag & Drop Hint Banner + Column Sorting Selector */}
           <div className="bg-slate-50/70 border-b border-slate-200/80 px-4 py-1.5 flex items-center justify-between text-xs text-slate-500 shrink-0">
             <div className="flex items-center gap-1.5 text-[11px] font-medium">
               <GripVertical className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-              <span><strong className="text-slate-700 font-semibold">Tip:</strong> Drag and drop application cards between columns or bottom drop zones to advance stages</span>
+              <span><strong className="text-slate-700 font-semibold">Tip:</strong> Drag and drop cards between columns or bottom drop zones to advance stages</span>
             </div>
-            <span className="font-mono text-[10px] text-slate-400">{applications.length} active</span>
+
+            <div className="flex items-center gap-2 font-sans text-[11px]">
+              <span className="text-slate-400 font-medium hidden sm:inline">Sort columns by:</span>
+              <select
+                value={cardSort}
+                onChange={(e) => setCardSort(e.target.value as any)}
+                className="bg-white text-slate-700 font-medium px-2 py-0.5 rounded border border-slate-200/90 focus:outline-none focus:ring-1 focus:ring-blue-500 text-[11px] cursor-pointer shadow-2xs"
+              >
+                <option value="staleness">🔥 Staleness (Urgent First)</option>
+                <option value="dateApplied">📅 Date Applied (Newest)</option>
+                <option value="company">🏢 Company Name (A-Z)</option>
+              </select>
+              <span className="font-mono text-[10px] text-slate-400 ml-1">{applications.length} active</span>
+            </div>
           </div>
 
           {/* Table Header Row */}
@@ -200,7 +214,17 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
           {/* Table Body Columns Area - Seamless with no dividing vertical borders */}
           <div className="grid grid-cols-5 flex-1 items-stretch min-h-0 divide-x-0">
             {PIPELINE_COLUMNS.map((col) => {
-              const columnApps = applications.filter((app) => app.status === col.status);
+              const columnApps = applications
+                .filter((app) => app.status === col.status)
+                .sort((a, b) => {
+                  if (cardSort === 'staleness') {
+                    return calculateDaysInStage(b.stageUpdatedAt) - calculateDaysInStage(a.stageUpdatedAt);
+                  }
+                  if (cardSort === 'company') {
+                    return a.company.localeCompare(b.company);
+                  }
+                  return new Date(b.dateApplied).getTime() - new Date(a.dateApplied).getTime();
+                });
               const isTargeting = dragOverColumn === col.status;
 
               return (
