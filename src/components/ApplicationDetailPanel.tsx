@@ -62,6 +62,16 @@ const ALL_PLATFORMS: JobPlatform[] = [
   'Other',
 ];
 
+const STATUS_ACTIVE_STYLES: Record<ApplicationStatus, string> = {
+  Wishlist: 'bg-indigo-600 text-white border-indigo-600 shadow-indigo-500/20 shadow-xs',
+  Applied: 'bg-slate-700 text-white border-slate-700 shadow-xs',
+  Screening: 'bg-amber-600 text-white border-amber-600 shadow-amber-500/20 shadow-xs',
+  Interview: 'bg-blue-600 text-white border-blue-600 shadow-blue-500/20 shadow-xs',
+  Offer: 'bg-emerald-600 text-white border-emerald-600 shadow-emerald-500/20 shadow-xs',
+  Rejected: 'bg-rose-600 text-white border-rose-600 shadow-rose-500/20 shadow-xs',
+  Archived: 'bg-slate-500 text-white border-slate-500 shadow-xs',
+};
+
 function formatTimestamp(isoString: string): string {
   try {
     const d = new Date(isoString);
@@ -382,11 +392,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
       >
         {/* Header */}
         <div className="px-6 py-4 border-b border-slate-200/80 flex items-center justify-between bg-gradient-to-r from-slate-50/90 via-white to-slate-50/90 shrink-0">
-          <div 
-            className="flex items-center gap-3.5 min-w-0 group cursor-pointer hover:opacity-90 transition-opacity"
-            onClick={() => setIsEditingInfo(!isEditingInfo)}
-            title="Click to edit application details"
-          >
+          <div className="flex items-center gap-3.5 min-w-0">
             <CompanyLogo
               company={app.company}
               jobLink={app.jobLink}
@@ -396,7 +402,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
             />
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <h2 className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight truncate">
+                <h2 className="text-lg sm:text-xl font-bold font-display text-slate-900 tracking-tight truncate">
                   {app.company}
                 </h2>
                 {app.jobLink && (
@@ -411,10 +417,6 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
                     <ExternalLink className="w-4 h-4" />
                   </a>
                 )}
-                <span className="opacity-0 group-hover:opacity-100 transition-opacity text-blue-600 bg-blue-50 p-1 rounded-md text-[10px] font-mono font-medium flex items-center gap-1 shrink-0">
-                  <Pencil className="w-3 h-3" />
-                  <span className="hidden sm:inline">Edit</span>
-                </span>
               </div>
               <p className="text-xs sm:text-sm font-semibold text-slate-600 truncate">
                 {app.role}
@@ -628,31 +630,24 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
               {/* Stage Advancement & Stepper */}
               <div className="bg-slate-50/70 border border-slate-200/80 rounded-2xl p-4 space-y-4 shadow-2xs">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[11px] font-mono text-slate-800 uppercase tracking-wider font-bold">
-                      Stage Advancement
-                    </span>
-                    <StageSelectorDropdown
-                      currentStatus={app.status}
-                      onSelectStatus={handleStatusChange}
-                      size="sm"
-                    />
-                  </div>
+                  <span className="text-xs font-display text-slate-800 uppercase tracking-wider font-bold">
+                    Stage Advancement
+                  </span>
                   <span className="text-[11px] font-mono text-slate-500 flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-xl border border-slate-200/80 shadow-2xs">
                     <Clock className="w-3 h-3 text-slate-400 shrink-0" />
                     <span>{daysInStage} {daysInStage === 1 ? 'day' : 'days'} in stage</span>
                   </span>
                 </div>
 
-                {/* Visual Linear Pipeline Stepper */}
+                {/* Visual Linear Pipeline Stepper (5 Active Stages) */}
                 <div className="relative pt-1 pb-2">
                   <div className="absolute top-1/2 left-4 right-4 h-1 bg-slate-200 -translate-y-1/2 rounded-full z-0" />
                   <div className="relative z-10 flex justify-between items-center px-1">
-                    {(['Applied', 'Screening', 'Interview', 'Offer'] as ApplicationStatus[]).map((stg, idx) => {
-                      const stagesOrder: ApplicationStatus[] = ['Applied', 'Screening', 'Interview', 'Offer'];
-                      const currentIndex = stagesOrder.indexOf(app.status as ApplicationStatus);
+                    {(['Wishlist', 'Applied', 'Screening', 'Interview', 'Offer'] as ApplicationStatus[]).map((stg, idx) => {
+                      const activeStages: ApplicationStatus[] = ['Wishlist', 'Applied', 'Screening', 'Interview', 'Offer'];
+                      const currentIndex = activeStages.indexOf(app.status as ApplicationStatus);
                       const isCurrent = app.status === stg;
-                      const isCompleted = currentIndex > idx;
+                      const isCompleted = currentIndex > idx && currentIndex !== -1;
 
                       return (
                         <button
@@ -660,6 +655,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
                           type="button"
                           onClick={() => handleStatusChange(stg)}
                           className="group flex flex-col items-center cursor-pointer focus:outline-none"
+                          title={`Move to ${stg}`}
                         >
                           <div
                             className={`w-7 h-7 rounded-full flex items-center justify-center font-mono text-[10px] font-bold transition-all shadow-xs ${
@@ -693,33 +689,45 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
                   </div>
                 </div>
 
-                {/* Quick Select Preset Buttons */}
-                <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5 pt-1">
-                  {ALL_STATUSES.map((s) => {
-                    const isActive = app.status === s;
-                    return (
-                      <button
-                        key={s}
-                        type="button"
-                        onClick={() => handleStatusChange(s)}
-                        className={`px-2.5 py-1.5 rounded-xl text-[11px] font-semibold border transition-all text-center flex items-center justify-center gap-1 cursor-pointer ${
-                          isActive
-                            ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
-                            : 'bg-white hover:bg-slate-100/80 text-slate-700 border-slate-200/90'
-                        }`}
-                      >
-                        {isActive && <Check className="w-3 h-3 text-white stroke-[2.5]" />}
-                        <span className="truncate">{s}</span>
-                      </button>
-                    );
-                  })}
+                {/* Terminal Outcome Quick Actions */}
+                <div className="flex items-center justify-between pt-2 border-t border-slate-200/60">
+                  <span className="text-[10px] font-mono text-slate-500 font-medium uppercase tracking-wider">
+                    Terminal Outcomes:
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleStatusChange('Rejected')}
+                      className={`px-3 py-1 rounded-xl text-xs font-semibold border transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs ${
+                        app.status === 'Rejected'
+                          ? 'bg-rose-600 text-white border-rose-600 shadow-rose-500/20'
+                          : 'bg-white hover:bg-rose-50 text-rose-700 border-rose-200/80'
+                      }`}
+                    >
+                      {app.status === 'Rejected' && <Check className="w-3 h-3 text-white stroke-[2.5]" />}
+                      <span>Mark Rejected</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleStatusChange('Archived')}
+                      className={`px-3 py-1 rounded-xl text-xs font-semibold border transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs ${
+                        app.status === 'Archived'
+                          ? 'bg-slate-700 text-white border-slate-700'
+                          : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200/90'
+                      }`}
+                    >
+                      <Archive className="w-3.5 h-3.5" />
+                      <span>Archive</span>
+                    </button>
+                  </div>
                 </div>
               </div>
 
               {/* Actionable Tasks & Checklist Section */}
               <div className="bg-slate-50/70 border border-slate-200/80 rounded-2xl p-4 space-y-3.5 shadow-2xs">
                 <div className="flex items-center justify-between">
-                  <label className="text-[11px] font-mono text-slate-700 uppercase tracking-wider font-bold flex items-center gap-1.5">
+                  <label className="text-xs font-display text-slate-800 uppercase tracking-wider font-bold flex items-center gap-1.5">
                     <CheckSquare className="w-3.5 h-3.5 text-blue-600" />
                     <span>Tasks & Action Items</span>
                   </label>
@@ -758,7 +766,14 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
                           <button
                             type="button"
                             onClick={() => handleToggleTask(task.id)}
-                            className={`p-0.5 rounded transition-colors cursor-pointer shrink-0 ${
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                handleToggleTask(task.id);
+                              }
+                            }}
+                            aria-label={`Mark task ${task.title} as ${task.completed ? 'incomplete' : 'complete'}`}
+                            className={`p-0.5 rounded transition-colors cursor-pointer shrink-0 focus:outline-none focus:ring-2 focus:ring-blue-500/40 ${
                               task.completed ? 'text-blue-600' : 'text-slate-300 hover:text-slate-500'
                             }`}
                           >
@@ -827,7 +842,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
               {/* Notes Textarea & Scratchpad */}
               <div className="bg-slate-50/70 border border-slate-200/80 rounded-2xl p-4 space-y-3 shadow-2xs">
                 <div className="flex items-center justify-between">
-                  <label className="text-[11px] font-mono text-slate-700 uppercase tracking-wider font-bold flex items-center gap-1.5">
+                  <label className="text-xs font-display text-slate-800 uppercase tracking-wider font-bold flex items-center gap-1.5">
                     <FileText className="w-3.5 h-3.5 text-blue-600" />
                     <span>Notes & Interview Scratchpad</span>
                   </label>
@@ -931,7 +946,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
               {/* Contacts & Recruiters Section */}
               <div className="bg-slate-50/70 border border-slate-200/80 rounded-2xl p-4 space-y-3 shadow-2xs">
                 <div className="flex items-center justify-between">
-                  <label className="text-[11px] font-mono text-slate-700 uppercase tracking-wider font-bold flex items-center gap-1.5">
+                  <label className="text-xs font-display text-slate-800 uppercase tracking-wider font-bold flex items-center gap-1.5">
                     <Users className="w-3.5 h-3.5 text-blue-600" />
                     <span>Recruiters & Contacts</span>
                   </label>
@@ -1093,7 +1108,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
               {/* Status Change History */}
               <div className="bg-slate-50/70 border border-slate-200/80 rounded-2xl p-4 space-y-3 shadow-2xs">
                 <div className="flex items-center justify-between">
-                  <label className="text-[11px] font-mono text-slate-700 uppercase tracking-wider font-bold flex items-center gap-1.5">
+                  <label className="text-xs font-display text-slate-800 uppercase tracking-wider font-bold flex items-center gap-1.5">
                     <History className="w-3.5 h-3.5 text-blue-600" />
                     <span>Status Change History</span>
                   </label>
@@ -1102,7 +1117,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
                   </span>
                 </div>
 
-                <div className="bg-white border border-slate-200/80 rounded-xl p-3.5">
+                <div className="bg-white border border-slate-200/80 rounded-xl p-3.5 max-h-[220px] overflow-y-auto pr-1.5">
                   {isLoadingHistory ? (
                     <div className="text-slate-400 font-mono text-[11px] text-center py-2">
                       Loading history logs...

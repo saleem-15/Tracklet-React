@@ -62,15 +62,35 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
   const [taskTitle, setTaskTitle] = useState('');
   const [taskDueDate, setTaskDueDate] = useState('');
 
+  const isDirty =
+    company.trim() !== '' ||
+    role.trim() !== '' ||
+    notes.trim() !== '' ||
+    jobLink.trim() !== '' ||
+    contacts.length > 0 ||
+    tasks.length > 0 ||
+    cName.trim() !== '' ||
+    taskTitle.trim() !== '';
+
+  const handleRequestClose = () => {
+    if (isDirty) {
+      if (confirm('Discard unsaved job application entry?')) {
+        onClose();
+      }
+    } else {
+      onClose();
+    }
+  };
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        onClose();
+        handleRequestClose();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onClose]);
+  }, [onClose, isDirty]);
 
   const handleAddContactItem = () => {
     if (!cName.trim() && !cEmail.trim()) return;
@@ -189,7 +209,7 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
   return (
     <div 
       className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-150 overflow-y-auto"
-      onClick={onClose}
+      onClick={handleRequestClose}
     >
       <div 
         className="w-full max-w-2xl max-h-[90vh] bg-white border border-slate-200/90 rounded-2xl shadow-2xl text-slate-900 text-xs flex flex-col my-auto overflow-hidden animate-in zoom-in-95 duration-150"
@@ -202,7 +222,7 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
               <Plus className="w-4 h-4 stroke-[2.5]" />
             </div>
             <div>
-              <h3 className="font-bold text-slate-900 text-sm tracking-tight font-heading">
+              <h3 className="font-bold text-slate-900 text-sm tracking-tight font-display">
                 Add Job Application
               </h3>
               <p className="text-[11px] text-slate-500 font-mono">Create pipeline entry with tasks & contacts</p>
@@ -211,8 +231,8 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
 
           <button
             type="button"
-            onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-900 hover:bg-slate-200/60 transition-colors cursor-pointer"
+            onClick={handleRequestClose}
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-900 hover:bg-slate-200/60 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500/40"
             title="Close modal (Esc)"
           >
             <X className="w-4 h-4" />
@@ -226,7 +246,7 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
             {/* Section 1: Core Info */}
             <div className="space-y-3">
               <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
-                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-blue-600">
+                <span className="text-xs font-display font-bold uppercase tracking-wider text-blue-600">
                   01. Role & Company Info
                 </span>
                 <span className="text-[10px] font-mono text-slate-400">* Required</span>
@@ -328,7 +348,7 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
             {/* Section 2: Pipeline Metadata */}
             <div className="space-y-3 pt-1">
               <div className="border-b border-slate-100 pb-1.5">
-                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-blue-600">
+                <span className="text-xs font-display font-bold uppercase tracking-wider text-blue-600">
                   02. Pipeline Metadata
                 </span>
               </div>
@@ -377,7 +397,7 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
             {/* Section 3: Dynamic Multiple Tasks */}
             <div className="space-y-3 pt-1">
               <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
-                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-blue-600 flex items-center gap-1.5">
+                <span className="text-xs font-display font-bold uppercase tracking-wider text-blue-600 flex items-center gap-1.5">
                   <ListTodo className="w-3.5 h-3.5 text-blue-600" />
                   03. Pipeline Tasks ({tasks.length})
                 </span>
@@ -440,7 +460,7 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
                   type="button"
                   onClick={handleAddTaskItem}
                   disabled={!taskTitle.trim()}
-                  className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 disabled:opacity-40 text-blue-700 font-semibold border border-blue-200/80 rounded-xl transition-all shadow-2xs cursor-pointer flex items-center gap-1 shrink-0 text-xs"
+                  className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 disabled:opacity-40 text-blue-700 font-semibold border border-blue-200/80 rounded-xl transition-all shadow-2xs cursor-pointer flex items-center gap-1 shrink-0 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/40"
                 >
                   <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
                   <span>Add Task</span>
@@ -451,7 +471,7 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
             {/* Section 4: Dynamic Multiple Contacts */}
             <div className="space-y-3 pt-1">
               <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
-                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-blue-600 flex items-center gap-1.5">
+                <span className="text-xs font-display font-bold uppercase tracking-wider text-blue-600 flex items-center gap-1.5">
                   <UserPlus className="w-3.5 h-3.5 text-blue-600" />
                   04. Key Contacts ({contacts.length})
                 </span>
@@ -522,7 +542,7 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
                     type="button"
                     onClick={handleAddContactItem}
                     disabled={!cName.trim() && !cEmail.trim()}
-                    className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 disabled:opacity-40 text-blue-700 font-semibold border border-blue-200/80 rounded-xl transition-all shadow-2xs cursor-pointer flex items-center gap-1 shrink-0 text-xs"
+                    className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 disabled:opacity-40 text-blue-700 font-semibold border border-blue-200/80 rounded-xl transition-all shadow-2xs cursor-pointer flex items-center gap-1 shrink-0 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/40"
                   >
                     <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
                     <span>Add</span>
@@ -534,7 +554,7 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
             {/* Section 5: Initial Notes */}
             <div className="space-y-2 pt-1">
               <div className="border-b border-slate-100 pb-1.5">
-                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400">
+                <span className="text-xs font-display font-bold uppercase tracking-wider text-slate-500">
                   05. Additional Notes
                 </span>
               </div>
@@ -554,8 +574,8 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={onClose}
-                className="px-3.5 py-1.5 rounded-xl text-slate-600 hover:text-slate-900 bg-white hover:bg-slate-100 border border-slate-200 font-medium transition-all shadow-2xs cursor-pointer text-xs"
+                onClick={handleRequestClose}
+                className="px-3.5 py-1.5 rounded-xl text-slate-600 hover:text-slate-900 bg-white hover:bg-slate-100 border border-slate-200 font-medium transition-all shadow-2xs cursor-pointer text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/40"
               >
                 Cancel
               </button>
