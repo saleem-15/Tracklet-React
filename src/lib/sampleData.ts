@@ -32,6 +32,10 @@ export const INITIAL_SAMPLE_APPLICATIONS: Omit<Application, 'id' | 'userId'>[] =
       { id: 't3', title: 'Send follow-up thank you email to Karla', completed: false }
     ],
     notes: 'Completed technical take-home design system task. Scheduled system design panel on Thursday.',
+    emails: [
+      { id: 'em1', subject: 'Interview Confirmation — System Design Panel', sender: 'karla@linear.app', date: 'Jul 20', snippet: 'Hi! We are excited to move forward with the system design interview...' },
+      { id: 'em2', subject: 'Next Steps: Technical Take-Home Review', sender: 'karla@linear.app', date: 'Jul 16', snippet: 'Thanks for applying! Here is your assignment link...' }
+    ],
     stageUpdatedAt: '2026-07-20T10:00:00Z',
     createdAt: '2026-07-15T09:00:00Z',
     updatedAt: '2026-07-20T10:00:00Z',

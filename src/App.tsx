@@ -38,6 +38,7 @@ import { StatsView } from './components/StatsView';
 import { SettingsView } from './components/SettingsView';
 import { loadExpirySettings, saveExpirySettings } from './lib/expiryUtils';
 import { ExpiryNotificationSettings } from './types';
+import { setupExtensionSync } from './lib/extensionSync';
 
 import { ToastContainer, ToastMessage } from './components/Toast';
 
@@ -97,6 +98,49 @@ export default function App() {
     });
     return () => unsubscribe();
   }, []);
+
+  // Browser Extension Sync Listener
+  useEffect(() => {
+    const cleanup = setupExtensionSync({
+      onApplicationReceived: async (clippedApp) => {
+        setApplications((prev) => {
+          const existsIndex = prev.findIndex(
+            (a) => a.id === clippedApp.id || (a.jobLink && clippedApp.jobLink && a.jobLink === clippedApp.jobLink)
+          );
+
+          let updated: Application[];
+          if (existsIndex >= 0) {
+            updated = [...prev];
+            updated[existsIndex] = { ...updated[existsIndex], ...clippedApp };
+          } else {
+            updated = [clippedApp, ...prev];
+          }
+
+          saveGuestAppsToStorage(updated);
+          return updated;
+        });
+
+        if (user) {
+          try {
+            await addDoc(collection(db, 'applications'), {
+              ...clippedApp,
+              userId: user.uid,
+            });
+          } catch (e) {
+            console.warn('Failed to sync extension application to Firestore:', e);
+          }
+        }
+
+        addToast(
+          'success',
+          'Clipped via Tracklet Extension',
+          `Saved "${clippedApp.role}" at ${clippedApp.company}`
+        );
+      },
+    });
+
+    return () => cleanup();
+  }, [user]);
 
   // Load from Guest localStorage or initial sample data
   const loadGuestApplications = () => {

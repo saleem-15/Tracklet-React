@@ -216,13 +216,13 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="px-6 py-3.5 border-b border-slate-200/80 bg-slate-50/90 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-xs">
+        <div className="px-6 py-4 border-b border-slate-200/80 bg-gradient-to-r from-slate-50/90 via-white to-slate-50/90 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-xs">
               <Plus className="w-4 h-4 stroke-[2.5]" />
             </div>
             <div>
-              <h3 className="font-bold text-slate-900 text-sm tracking-tight font-display">
+              <h3 className="font-bold text-slate-900 text-sm sm:text-base tracking-tight font-display">
                 Add Job Application
               </h3>
               <p className="text-[11px] text-slate-500 font-mono">Create pipeline entry with tasks & contacts</p>
@@ -232,10 +232,10 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
           <button
             type="button"
             onClick={handleRequestClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-900 hover:bg-slate-200/60 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+            className="p-2 rounded-xl text-slate-400 hover:text-slate-900 hover:bg-slate-200/60 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500/40"
             title="Close modal (Esc)"
           >
-            <X className="w-4 h-4" />
+            <X className="w-4 h-4 stroke-[2.5]" />
           </button>
         </div>
 
@@ -244,18 +244,18 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
           <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-5">
             
             {/* Section 1: Core Info */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                 <span className="text-xs font-display font-bold uppercase tracking-wider text-blue-600">
                   01. Role & Company Info
                 </span>
-                <span className="text-[10px] font-mono text-slate-400">* Required</span>
+                <span className="text-[10px] font-mono text-slate-400 font-medium">* Required</span>
               </div>
 
               {/* Company & Domain Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
-                  <label className="block text-[11px] font-mono text-slate-600 mb-1 font-medium">
+                  <label className="block text-[11px] font-mono text-slate-600 mb-1 font-semibold">
                     Company Name <span className="text-rose-500">*</span>
                   </label>
                   <div className="flex items-center gap-2">
@@ -273,14 +273,14 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
                         value={company}
                         onChange={(e) => setCompany(e.target.value)}
                         placeholder="e.g. Linear, Stripe"
-                        className="w-full bg-slate-50/80 text-slate-900 placeholder-slate-400 pl-8 pr-3 py-1.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white font-sans text-xs transition-all shadow-2xs font-semibold"
+                        className="w-full bg-slate-50/80 text-slate-900 placeholder-slate-400 pl-8 pr-3 py-1.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white font-sans text-xs transition-all shadow-2xs font-semibold h-9"
                       />
                     </div>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-mono text-slate-600 mb-1 font-medium">
+                  <label className="block text-[11px] font-mono text-slate-600 mb-1 font-semibold">
                     Company Domain (Optional)
                   </label>
                   <div className="relative">
@@ -290,16 +290,16 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
                       value={companyDomain}
                       onChange={(e) => setCompanyDomain(e.target.value.toLowerCase().trim())}
                       placeholder="e.g. linear.app"
-                      className="w-full bg-slate-50/80 text-slate-900 placeholder-slate-400 pl-8 pr-3 py-1.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white font-mono text-xs transition-all shadow-2xs"
+                      className="w-full bg-slate-50/80 text-slate-900 placeholder-slate-400 pl-8 pr-3 py-1.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white font-mono text-xs transition-all shadow-2xs h-9"
                     />
                   </div>
                 </div>
               </div>
 
               {/* Role Title & Job Link */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
-                  <label className="block text-[11px] font-mono text-slate-600 mb-1 font-medium">
+                  <label className="block text-[11px] font-mono text-slate-600 mb-1 font-semibold">
                     Role Title <span className="text-rose-500">*</span>
                   </label>
                   <div className="relative">
@@ -310,13 +310,13 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
                       value={role}
                       onChange={(e) => setRole(e.target.value)}
                       placeholder="e.g. Senior Frontend Developer"
-                      className="w-full bg-slate-50/80 text-slate-900 placeholder-slate-400 pl-8 pr-3 py-1.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white font-sans text-xs transition-all shadow-2xs"
+                      className="w-full bg-slate-50/80 text-slate-900 placeholder-slate-400 pl-8 pr-3 py-1.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white font-sans text-xs transition-all shadow-2xs h-9"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-mono text-slate-600 mb-1 font-medium">
+                  <label className="block text-[11px] font-mono text-slate-600 mb-1 font-semibold">
                     Job Listing Link
                   </label>
                   <div className="relative">
@@ -338,7 +338,7 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
                         }
                       }}
                       placeholder="https://company.com/jobs/..."
-                      className="w-full bg-slate-50/80 text-slate-900 placeholder-slate-400 pl-8 pr-3 py-1.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white font-mono text-xs transition-all shadow-2xs"
+                      className="w-full bg-slate-50/80 text-slate-900 placeholder-slate-400 pl-8 pr-3 py-1.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white font-mono text-xs transition-all shadow-2xs h-9"
                     />
                   </div>
                 </div>
@@ -346,16 +346,16 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
             </div>
 
             {/* Section 2: Pipeline Metadata */}
-            <div className="space-y-3 pt-1">
-              <div className="border-b border-slate-100 pb-1.5">
+            <div className="space-y-3.5 pt-1">
+              <div className="border-b border-slate-100 pb-2">
                 <span className="text-xs font-display font-bold uppercase tracking-wider text-blue-600">
                   02. Pipeline Metadata
                 </span>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
                 <div>
-                  <label className="block text-[11px] font-mono text-slate-600 mb-1 font-medium">
+                  <label className="block text-[11px] font-mono text-slate-600 mb-1 font-semibold">
                     Platform
                   </label>
                   <CustomSelectDropdown<JobPlatform>
@@ -368,7 +368,7 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-mono text-slate-600 mb-1 font-medium">
+                  <label className="block text-[11px] font-mono text-slate-600 mb-1 font-semibold">
                     Initial Status
                   </label>
                   <CustomSelectDropdown<ApplicationStatus>
@@ -381,27 +381,27 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-mono text-slate-600 mb-1 font-medium">
+                  <label className="block text-[11px] font-mono text-slate-600 mb-1 font-semibold">
                     Date Applied
                   </label>
                   <input
                     type="date"
                     value={dateApplied}
                     onChange={(e) => setDateApplied(e.target.value)}
-                    className="w-full bg-slate-50/80 text-slate-700 px-3 py-1 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white font-mono cursor-pointer shadow-2xs h-[30px]"
+                    className="w-full bg-slate-50/80 text-slate-800 px-3 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-mono cursor-pointer shadow-2xs h-9"
                   />
                 </div>
               </div>
             </div>
 
             {/* Section 3: Dynamic Multiple Tasks */}
-            <div className="space-y-3 pt-1">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
-                <span className="text-xs font-display font-bold uppercase tracking-wider text-blue-600 flex items-center gap-1.5">
-                  <ListTodo className="w-3.5 h-3.5 text-blue-600" />
+            <div className="space-y-3.5 pt-1">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                <span className="text-xs font-display font-bold uppercase tracking-wider text-blue-600 flex items-center gap-2">
+                  <ListTodo className="w-4 h-4 text-blue-600" />
                   03. Pipeline Tasks ({tasks.length})
                 </span>
-                <span className="text-[10px] font-mono text-slate-400">Add action items</span>
+                <span className="text-[10px] font-mono text-slate-400 font-medium">Add action items</span>
               </div>
 
               {/* Added Tasks List */}
@@ -469,13 +469,13 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
             </div>
 
             {/* Section 4: Dynamic Multiple Contacts */}
-            <div className="space-y-3 pt-1">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
-                <span className="text-xs font-display font-bold uppercase tracking-wider text-blue-600 flex items-center gap-1.5">
-                  <UserPlus className="w-3.5 h-3.5 text-blue-600" />
+            <div className="space-y-3.5 pt-1">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                <span className="text-xs font-display font-bold uppercase tracking-wider text-blue-600 flex items-center gap-2">
+                  <UserPlus className="w-4 h-4 text-blue-600" />
                   04. Key Contacts ({contacts.length})
                 </span>
-                <span className="text-[10px] font-mono text-slate-400">Recruiters, hiring managers</span>
+                <span className="text-[10px] font-mono text-slate-400 font-medium">Recruiters, hiring managers</span>
               </div>
 
               {/* Added Contacts List */}
@@ -552,18 +552,18 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
             </div>
 
             {/* Section 5: Initial Notes */}
-            <div className="space-y-2 pt-1">
-              <div className="border-b border-slate-100 pb-1.5">
-                <span className="text-xs font-display font-bold uppercase tracking-wider text-slate-500">
+            <div className="space-y-3 pt-1">
+              <div className="border-b border-slate-100 pb-2">
+                <span className="text-xs font-display font-bold uppercase tracking-wider text-slate-600">
                   05. Additional Notes
                 </span>
               </div>
               <textarea
-                rows={2}
+                rows={3}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Referral name, salary range, custom tech stack notes..."
-                className="w-full bg-slate-50/80 text-slate-900 placeholder-slate-400 p-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white font-sans text-xs resize-none shadow-2xs transition-all"
+                className="w-full bg-slate-50/80 text-slate-900 placeholder-slate-400 p-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white font-sans text-xs resize-none shadow-2xs transition-all leading-relaxed"
               />
             </div>
           </div>

@@ -35,6 +35,14 @@ export interface ApplicationTask {
   dueDate?: string; // YYYY-MM-DD
 }
 
+export interface EmailLog {
+  id: string;
+  subject: string;
+  sender: string;
+  date: string;
+  snippet?: string;
+}
+
 export interface Application {
   id: string;
   userId: string;
@@ -48,6 +56,7 @@ export interface Application {
   contactEmail?: string;
   contacts?: Contact[];
   tasks?: ApplicationTask[];
+  emails?: EmailLog[];
   logoUrl?: string;
   companyDomain?: string;
   stageUpdatedAt: string; // ISO date string or YYYY-MM-DD

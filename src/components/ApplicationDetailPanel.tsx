@@ -89,6 +89,13 @@ function formatTimestamp(isoString: string): string {
   }
 }
 
+function getInitials(name: string): string {
+  if (!name.trim()) return '??';
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
 export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
   app,
   onClose,
@@ -583,41 +590,49 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
           )}
 
           {/* Quick Metrics Bar */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="bg-slate-50/80 p-3 rounded-xl border border-slate-200/80 flex items-center justify-between">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+            <div className="bg-slate-50/90 p-3.5 rounded-xl border border-slate-200/90 hover:border-slate-300 transition-colors flex items-center justify-between shadow-2xs">
               <div>
-                <span className="text-[10px] font-mono uppercase text-slate-400 font-medium block">Platform</span>
-                <span className="font-bold text-slate-800 text-xs mt-0.5 block font-mono">{app.platform}</span>
+                <span className="text-[11px] font-mono uppercase text-slate-500 font-semibold tracking-wider block">Platform</span>
+                <span className="font-bold text-slate-900 text-xs mt-0.5 block font-mono">{app.platform}</span>
               </div>
-              <Globe className="w-4 h-4 text-slate-400" />
+              <div className="w-8 h-8 rounded-lg bg-white border border-slate-200/80 flex items-center justify-center text-slate-500 shadow-2xs">
+                <Globe className="w-4 h-4 text-slate-500" />
+              </div>
             </div>
 
-            <div className="bg-slate-50/80 p-3 rounded-xl border border-slate-200/80 flex items-center justify-between">
+            <div className="bg-slate-50/90 p-3.5 rounded-xl border border-slate-200/90 hover:border-slate-300 transition-colors flex items-center justify-between shadow-2xs">
               <div>
-                <span className="text-[10px] font-mono uppercase text-slate-400 font-medium block">Date Applied</span>
-                <span className="font-bold text-slate-800 text-xs mt-0.5 block font-mono">{app.dateApplied}</span>
+                <span className="text-[11px] font-mono uppercase text-slate-500 font-semibold tracking-wider block">Date Applied</span>
+                <span className="font-bold text-slate-900 text-xs mt-0.5 block font-mono">{app.dateApplied}</span>
               </div>
-              <Calendar className="w-4 h-4 text-slate-400" />
+              <div className="w-8 h-8 rounded-lg bg-white border border-slate-200/80 flex items-center justify-center text-slate-500 shadow-2xs">
+                <Calendar className="w-4 h-4 text-slate-500" />
+              </div>
             </div>
 
-            <div className="bg-slate-50/80 p-3 rounded-xl border border-slate-200/80 flex items-center justify-between">
+            <div className="bg-slate-50/90 p-3.5 rounded-xl border border-slate-200/90 hover:border-slate-300 transition-colors flex items-center justify-between shadow-2xs">
               <div>
-                <span className="text-[10px] font-mono uppercase text-slate-400 font-medium block">Time in Stage</span>
-                <span className="font-bold text-slate-800 text-xs mt-0.5 block font-mono">
+                <span className="text-[11px] font-mono uppercase text-slate-500 font-semibold tracking-wider block">Time in Stage</span>
+                <span className="font-bold text-slate-900 text-xs mt-0.5 block font-mono">
                   {daysInStage} {daysInStage === 1 ? 'day' : 'days'}
                 </span>
               </div>
-              <Clock className="w-4 h-4 text-slate-400" />
+              <div className="w-8 h-8 rounded-lg bg-white border border-slate-200/80 flex items-center justify-center text-slate-500 shadow-2xs">
+                <Clock className="w-4 h-4 text-slate-500" />
+              </div>
             </div>
 
-            <div className="bg-slate-50/80 p-3 rounded-xl border border-slate-200/80 flex items-center justify-between">
+            <div className="bg-slate-50/90 p-3.5 rounded-xl border border-slate-200/90 hover:border-slate-300 transition-colors flex items-center justify-between shadow-2xs">
               <div>
-                <span className="text-[10px] font-mono uppercase text-slate-400 font-medium block">Task Progress</span>
-                <span className="font-bold text-slate-800 text-xs mt-0.5 block font-mono">
+                <span className="text-[11px] font-mono uppercase text-slate-500 font-semibold tracking-wider block">Task Progress</span>
+                <span className="font-bold text-slate-900 text-xs mt-0.5 block font-mono">
                   {totalTasksCount > 0 ? `${completedTasksCount}/${totalTasksCount} Done` : 'No tasks'}
                 </span>
               </div>
-              <CheckSquare className="w-4 h-4 text-slate-400" />
+              <div className="w-8 h-8 rounded-lg bg-white border border-slate-200/80 flex items-center justify-center text-slate-500 shadow-2xs">
+                <CheckSquare className="w-4 h-4 text-slate-500" />
+              </div>
             </div>
           </div>
 
@@ -628,221 +643,203 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
             <div className="lg:col-span-7 space-y-6">
               
               {/* Stage Advancement & Stepper */}
-              <div className="bg-slate-50/70 border border-slate-200/80 rounded-2xl p-4 space-y-4 shadow-2xs">
+              <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-display text-slate-800 uppercase tracking-wider font-bold">
+                  <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-500">
                     Stage Advancement
                   </span>
-                  <span className="text-[11px] font-mono text-slate-500 flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-xl border border-slate-200/80 shadow-2xs">
+                  <span className="text-[11px] font-mono text-slate-500 flex items-center gap-1.5 bg-slate-100 px-2.5 py-0.5 rounded-full border border-slate-200/80">
                     <Clock className="w-3 h-3 text-slate-400 shrink-0" />
                     <span>{daysInStage} {daysInStage === 1 ? 'day' : 'days'} in stage</span>
                   </span>
                 </div>
 
-                {/* Visual Linear Pipeline Stepper (5 Active Stages) */}
-                <div className="relative pt-1 pb-2">
-                  <div className="absolute top-1/2 left-4 right-4 h-1 bg-slate-200 -translate-y-1/2 rounded-full z-0" />
-                  <div className="relative z-10 flex justify-between items-center px-1">
-                    {(['Wishlist', 'Applied', 'Screening', 'Interview', 'Offer'] as ApplicationStatus[]).map((stg, idx) => {
-                      const activeStages: ApplicationStatus[] = ['Wishlist', 'Applied', 'Screening', 'Interview', 'Offer'];
-                      const currentIndex = activeStages.indexOf(app.status as ApplicationStatus);
-                      const isCurrent = app.status === stg;
-                      const isCompleted = currentIndex > idx && currentIndex !== -1;
+                <div className="bg-slate-50/70 border border-slate-200/80 rounded-xl p-4 space-y-4 shadow-2xs">
+                  {/* Visual Linear Pipeline Stepper (5 Active Stages) */}
+                  <div className="relative pt-1 pb-1">
+                    <div className="absolute top-1/2 left-4 right-4 h-1 bg-slate-200 -translate-y-1/2 rounded-full z-0" />
+                    <div className="relative z-10 flex justify-between items-center px-1">
+                      {(['Wishlist', 'Applied', 'Screening', 'Interview', 'Offer'] as ApplicationStatus[]).map((stg, idx) => {
+                        const activeStages: ApplicationStatus[] = ['Wishlist', 'Applied', 'Screening', 'Interview', 'Offer'];
+                        const currentIndex = activeStages.indexOf(app.status as ApplicationStatus);
+                        const isCurrent = app.status === stg;
+                        const isCompleted = currentIndex > idx && currentIndex !== -1;
 
-                      return (
-                        <button
-                          key={stg}
-                          type="button"
-                          onClick={() => handleStatusChange(stg)}
-                          className="group flex flex-col items-center cursor-pointer focus:outline-none"
-                          title={`Move to ${stg}`}
-                        >
-                          <div
-                            className={`w-7 h-7 rounded-full flex items-center justify-center font-mono text-[10px] font-bold transition-all shadow-xs ${
-                              isCurrent
-                                ? 'bg-blue-600 text-white ring-4 ring-blue-500/20 scale-110'
-                                : isCompleted
-                                ? 'bg-emerald-500 text-white'
-                                : 'bg-white border-2 border-slate-300 text-slate-500 group-hover:border-blue-400 group-hover:text-blue-600'
-                            }`}
+                        return (
+                          <button
+                            key={stg}
+                            type="button"
+                            onClick={() => handleStatusChange(stg)}
+                            className="group flex flex-col items-center cursor-pointer focus:outline-none"
+                            title={`Move to ${stg}`}
                           >
-                            {isCompleted ? (
-                              <Check className="w-3.5 h-3.5 stroke-[3]" />
-                            ) : (
-                              <span>{idx + 1}</span>
-                            )}
-                          </div>
-                          <span
-                            className={`mt-1.5 text-[10px] font-medium font-mono ${
-                              isCurrent
-                                ? 'text-blue-600 font-bold'
-                                : isCompleted
-                                ? 'text-emerald-700'
-                                : 'text-slate-500 group-hover:text-slate-800'
-                            }`}
-                          >
-                            {stg}
-                          </span>
-                        </button>
-                      );
-                    })}
+                            <div
+                              className={`w-7 h-7 rounded-full flex items-center justify-center font-mono text-[10px] font-bold transition-all shadow-xs ${
+                                isCurrent
+                                  ? 'bg-blue-600 text-white ring-4 ring-blue-500/20 scale-110'
+                                  : isCompleted
+                                  ? 'bg-emerald-500 text-white'
+                                  : 'bg-white border-2 border-slate-300 text-slate-500 group-hover:border-blue-400 group-hover:text-blue-600'
+                              }`}
+                            >
+                              {isCompleted ? (
+                                <Check className="w-3.5 h-3.5 stroke-[3]" />
+                              ) : (
+                                <span>{idx + 1}</span>
+                              )}
+                            </div>
+                            <span
+                              className={`mt-1.5 text-[10px] font-medium font-mono ${
+                                isCurrent
+                                  ? 'text-blue-600 font-bold'
+                                  : isCompleted
+                                  ? 'text-emerald-700'
+                                  : 'text-slate-500 group-hover:text-slate-800'
+                              }`}
+                            >
+                              {stg}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
 
-                {/* Terminal Outcome Quick Actions */}
-                <div className="flex items-center justify-between pt-2 border-t border-slate-200/60">
-                  <span className="text-[10px] font-mono text-slate-500 font-medium uppercase tracking-wider">
-                    Terminal Outcomes:
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => handleStatusChange('Rejected')}
-                      className={`px-3 py-1 rounded-xl text-xs font-semibold border transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs ${
-                        app.status === 'Rejected'
-                          ? 'bg-rose-600 text-white border-rose-600 shadow-rose-500/20'
-                          : 'bg-white hover:bg-rose-50 text-rose-700 border-rose-200/80'
-                      }`}
-                    >
-                      {app.status === 'Rejected' && <Check className="w-3 h-3 text-white stroke-[2.5]" />}
-                      <span>Mark Rejected</span>
-                    </button>
+                  {/* Terminal Outcome Quick Actions */}
+                  <div className="flex items-center justify-between pt-2 border-t border-slate-200/60">
+                    <span className="text-[10px] font-mono text-slate-500 font-medium uppercase tracking-wider">
+                      Terminal Outcomes:
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleStatusChange('Rejected')}
+                        className={`px-3 py-1 rounded-xl text-xs font-semibold border transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs ${
+                          app.status === 'Rejected'
+                            ? 'bg-rose-600 text-white border-rose-600 shadow-rose-500/20'
+                            : 'bg-white hover:bg-rose-50 text-rose-700 border-rose-200/80'
+                        }`}
+                      >
+                        {app.status === 'Rejected' && <Check className="w-3 h-3 text-white stroke-[2.5]" />}
+                        <span>Mark Rejected</span>
+                      </button>
 
-                    <button
-                      type="button"
-                      onClick={() => handleStatusChange('Archived')}
-                      className={`px-3 py-1 rounded-xl text-xs font-semibold border transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs ${
-                        app.status === 'Archived'
-                          ? 'bg-slate-700 text-white border-slate-700'
-                          : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200/90'
-                      }`}
-                    >
-                      <Archive className="w-3.5 h-3.5" />
-                      <span>Archive</span>
-                    </button>
+                      <button
+                        type="button"
+                        onClick={() => handleStatusChange('Archived')}
+                        className={`px-3 py-1 rounded-xl text-xs font-semibold border transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs ${
+                          app.status === 'Archived'
+                            ? 'bg-slate-700 text-white border-slate-700'
+                            : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200/90'
+                        }`}
+                      >
+                        <Archive className="w-3.5 h-3.5" />
+                        <span>Archive</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* Actionable Tasks & Checklist Section */}
-              <div className="bg-slate-50/70 border border-slate-200/80 rounded-2xl p-4 space-y-3.5 shadow-2xs">
+              {/* Actionable Tasks & Checklist Section (Stitch Style) */}
+              <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-display text-slate-800 uppercase tracking-wider font-bold flex items-center gap-1.5">
+                  <label className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
                     <CheckSquare className="w-3.5 h-3.5 text-blue-600" />
-                    <span>Tasks & Action Items</span>
+                    <span>Tasks ({totalTasksCount})</span>
                   </label>
-                  {totalTasksCount > 0 ? (
-                    <span className="font-mono text-[10px] text-slate-600 font-semibold bg-white px-2 py-0.5 rounded border border-slate-200 shadow-2xs">
-                      {completedTasksCount}/{totalTasksCount} Completed
+                  {totalTasksCount > 0 && (
+                    <span className="font-mono text-[10px] text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full font-semibold border border-blue-200/60 shadow-2xs">
+                      {completedTasksCount}/{totalTasksCount} Done
                     </span>
-                  ) : null}
-                </div>
-
-                {/* Task Progress Bar */}
-                {totalTasksCount > 0 ? (
-                  <div className="w-full h-1.5 bg-slate-200/80 rounded-full overflow-hidden border border-slate-200/60">
-                    <div
-                      className="h-full bg-blue-600 transition-all duration-300"
-                      style={{
-                        width: `${Math.round((completedTasksCount / totalTasksCount) * 100)}%`,
-                      }}
-                    />
-                  </div>
-                ) : null}
-
-                {/* Task List */}
-                <div className="space-y-1.5">
-                  {app.tasks && app.tasks.length > 0 ? (
-                    app.tasks.map((task) => (
-                      <div
-                        key={task.id}
-                        className={`flex items-center justify-between gap-2 p-2.5 rounded-xl border transition-all ${
-                          task.completed
-                            ? 'bg-slate-100/60 border-slate-200/60 text-slate-400 line-through'
-                            : 'bg-white border-slate-200 text-slate-800 shadow-2xs hover:border-slate-300'
-                        }`}
-                      >
-                        <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                          <button
-                            type="button"
-                            onClick={() => handleToggleTask(task.id)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter' || e.key === ' ') {
-                                e.preventDefault();
-                                handleToggleTask(task.id);
-                              }
-                            }}
-                            aria-label={`Mark task ${task.title} as ${task.completed ? 'incomplete' : 'complete'}`}
-                            className={`p-0.5 rounded transition-colors cursor-pointer shrink-0 focus:outline-none focus:ring-2 focus:ring-blue-500/40 ${
-                              task.completed ? 'text-blue-600' : 'text-slate-300 hover:text-slate-500'
-                            }`}
-                          >
-                            {task.completed ? (
-                              <CheckSquare className="w-4 h-4 fill-blue-50" />
-                            ) : (
-                              <Square className="w-4 h-4" />
-                            )}
-                          </button>
-                          <span className="font-medium text-xs truncate">{task.title}</span>
-                        </div>
-
-                        <div className="flex items-center gap-2 shrink-0">
-                          {task.dueDate && (
-                            <span className="font-mono text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200/80 flex items-center gap-1">
-                              <Calendar className="w-3 h-3 text-slate-400" />
-                              <span>{task.dueDate}</span>
-                            </span>
-                          )}
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteTask(task.id)}
-                            className="p-1 text-slate-400 hover:text-rose-700 hover:bg-rose-100/60 rounded transition-colors cursor-pointer"
-                            title="Delete task"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-slate-400 font-mono text-[11px] text-center py-3 bg-white rounded-xl border border-dashed border-slate-200">
-                      No pending tasks yet. Add a follow-up or preparation task below.
-                    </div>
                   )}
                 </div>
 
-                {/* Add Task Form */}
-                <form onSubmit={handleAddTask} className="flex flex-col sm:flex-row items-center gap-2 pt-1">
-                  <input
-                    type="text"
-                    value={newTaskTitle}
-                    onChange={(e) => setNewTaskTitle(e.target.value)}
-                    placeholder="Add task (e.g. Prepare system design slides)"
-                    className="w-full sm:flex-1 bg-white text-slate-900 placeholder-slate-400 px-3 py-1.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-sans text-xs transition-all shadow-2xs"
-                  />
-                  <div className="w-full sm:w-auto flex items-center gap-2">
+                <div className="bg-slate-50/70 rounded-xl border border-slate-200/80 overflow-hidden shadow-2xs">
+                  <div className="p-3.5 space-y-2.5">
+                    {app.tasks && app.tasks.length > 0 ? (
+                      app.tasks.map((task) => (
+                        <div key={task.id} className="flex items-center justify-between gap-3 group">
+                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                            <button
+                              type="button"
+                              onClick={() => handleToggleTask(task.id)}
+                              aria-label={`Toggle task ${task.title}`}
+                              className={`w-5 h-5 rounded border transition-all flex items-center justify-center cursor-pointer shrink-0 ${
+                                task.completed
+                                  ? 'bg-blue-600 border-blue-600 text-white shadow-2xs'
+                                  : 'bg-white border-slate-300 hover:border-blue-400 hover:bg-blue-50/30'
+                              }`}
+                            >
+                              {task.completed && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                            </button>
+                            <span
+                              className={`text-xs font-semibold truncate ${
+                                task.completed
+                                  ? 'text-slate-400 line-through opacity-70'
+                                  : 'text-slate-900'
+                              }`}
+                            >
+                              {task.title}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-2 shrink-0">
+                            {task.dueDate && (
+                              <div className="flex items-center gap-1 text-[10px] font-mono font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200/60 shadow-2xs">
+                                <Clock className="w-3 h-3 text-blue-500" />
+                                <span>Due {task.dueDate}</span>
+                              </div>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteTask(task.id)}
+                              className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-slate-400 hover:text-rose-600 rounded cursor-pointer"
+                              title="Delete task"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-slate-400 font-mono text-[11px] text-center py-2">
+                        No pending tasks yet.
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Add Task Input / Button */}
+                  <form onSubmit={handleAddTask} className="border-t border-slate-200/80 bg-slate-100/40 p-2.5 flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={newTaskTitle}
+                      onChange={(e) => setNewTaskTitle(e.target.value)}
+                      placeholder="+ Add Task (e.g. Follow up with recruiter)"
+                      className="flex-1 bg-white text-slate-900 placeholder-slate-400 px-3 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-sans text-xs transition-all shadow-2xs"
+                    />
                     <input
                       type="date"
                       value={newTaskDueDate}
                       onChange={(e) => setNewTaskDueDate(e.target.value)}
-                      className="flex-1 sm:w-28 bg-white text-slate-700 px-2 py-1.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-mono text-[11px] cursor-pointer shadow-2xs"
+                      className="w-28 bg-white text-slate-700 px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 font-mono text-[11px] cursor-pointer shadow-2xs"
                     />
                     <button
                       type="submit"
                       disabled={!newTaskTitle.trim()}
-                      className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl font-semibold transition-all shadow-2xs cursor-pointer shrink-0 flex items-center gap-1"
+                      className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white rounded-lg font-bold text-xs transition-all shadow-2xs cursor-pointer flex items-center gap-1 shrink-0"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       <span>Add</span>
                     </button>
-                  </div>
-                </form>
+                  </form>
+                </div>
               </div>
 
-              {/* Notes Textarea & Scratchpad */}
-              <div className="bg-slate-50/70 border border-slate-200/80 rounded-2xl p-4 space-y-3 shadow-2xs">
+              {/* Notes Textarea & Scratchpad (Flat Style) */}
+              <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-display text-slate-800 uppercase tracking-wider font-bold flex items-center gap-1.5">
+                  <label className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
                     <FileText className="w-3.5 h-3.5 text-blue-600" />
                     <span>Notes & Interview Scratchpad</span>
                   </label>
@@ -868,7 +865,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
                     }
                   }}
                   placeholder="Add interview feedback, contact names, salary details, prep links..."
-                  className="w-full bg-white text-slate-900 placeholder-slate-400 p-3.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-sans text-xs leading-relaxed resize-y shadow-2xs transition-all"
+                  className="w-full bg-slate-50/80 text-slate-900 placeholder-slate-400 p-3.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white font-mono text-xs leading-relaxed resize-y shadow-2xs transition-all"
                 />
               </div>
 
@@ -877,9 +874,9 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
             {/* Right Column (Job Link, Primary Email, Contacts, Status History) */}
             <div className="lg:col-span-5 space-y-6">
 
-              {/* Job Link Box */}
-              <div className="bg-slate-50/70 border border-slate-200/80 rounded-2xl p-4 space-y-2 shadow-2xs">
-                <label className="block text-[11px] font-mono text-slate-700 uppercase tracking-wider font-bold">
+              {/* Job Link Box (Flat Style) */}
+              <div className="space-y-2">
+                <label className="block text-[11px] font-mono text-slate-500 uppercase tracking-wider font-bold">
                   Job Listing Link
                 </label>
                 <div className="flex items-center gap-2">
@@ -891,14 +888,14 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
                       setHasUnsavedNotes(true);
                     }}
                     placeholder="https://company.com/careers/job-id"
-                    className="flex-1 bg-white text-slate-900 placeholder-slate-400 px-3 py-1.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-mono text-xs transition-all shadow-2xs"
+                    className="flex-1 bg-slate-50/80 text-slate-900 placeholder-slate-400 px-3 py-1.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white font-mono text-xs transition-all shadow-2xs h-9"
                   />
                   {app.jobLink && (
                     <a
                       href={app.jobLink}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="p-2 rounded-xl bg-white text-blue-600 hover:text-blue-700 border border-slate-200 transition-colors shrink-0 shadow-2xs"
+                      className="p-2 rounded-xl bg-white text-blue-600 hover:text-blue-700 border border-slate-200 transition-colors shrink-0 shadow-2xs h-9 w-9 flex items-center justify-center"
                       title="Open job link in new tab"
                     >
                       <ExternalLink className="w-4 h-4" />
@@ -907,10 +904,10 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
                 </div>
               </div>
 
-              {/* Primary Contact Email Bar */}
-              <div className="bg-slate-50/70 border border-slate-200/80 rounded-2xl p-4 space-y-2.5 shadow-2xs">
+              {/* Primary Contact Email Bar (Flat Style) */}
+              <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className="text-[11px] font-mono text-slate-700 uppercase tracking-wider font-bold flex items-center gap-1.5">
+                  <label className="text-[11px] font-mono text-slate-500 uppercase tracking-wider font-bold flex items-center gap-1.5">
                     <Mail className="w-3.5 h-3.5 text-blue-600" />
                     <span>Primary Contact Email</span>
                   </label>
@@ -924,13 +921,6 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
                         <Copy className="w-3 h-3 text-slate-400" />
                         <span>{copiedEmail ? 'Copied!' : 'Copy'}</span>
                       </button>
-                      <a
-                        href={`mailto:${contactEmail}`}
-                        className="flex items-center gap-1 text-[10px] font-mono bg-blue-600 hover:bg-blue-700 text-white font-semibold px-2 py-0.5 rounded shadow-2xs cursor-pointer"
-                      >
-                        <Mail className="w-3 h-3" />
-                        <span>Email</span>
-                      </a>
                     </div>
                   )}
                 </div>
@@ -939,16 +929,73 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
                   value={contactEmail}
                   onChange={(e) => handleUpdateContactEmail(e.target.value)}
                   placeholder="e.g. recruiter@company.com"
-                  className="w-full bg-white text-slate-900 placeholder-slate-400 px-3 py-1.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-mono text-xs transition-all shadow-2xs"
+                  className="w-full bg-slate-50/80 text-slate-900 placeholder-slate-400 px-3 py-1.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white font-mono text-xs transition-all shadow-2xs h-9"
                 />
               </div>
 
-              {/* Contacts & Recruiters Section */}
-              <div className="bg-slate-50/70 border border-slate-200/80 rounded-2xl p-4 space-y-3 shadow-2xs">
+              {/* Emails Section (Stitch Style) */}
+              <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-display text-slate-800 uppercase tracking-wider font-bold flex items-center gap-1.5">
+                  <label className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                    <Mail className="w-3.5 h-3.5 text-blue-600" />
+                    <span>Emails ({app.emails ? app.emails.length : (app.contactEmail ? 1 : 0)})</span>
+                  </label>
+                  {app.contactEmail && (
+                    <a
+                      href={`mailto:${app.contactEmail}`}
+                      className="flex items-center gap-1 text-[10px] font-mono bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold px-2 py-0.5 rounded border border-blue-200/60 shadow-2xs transition-colors"
+                    >
+                      <Mail className="w-3 h-3 text-blue-600" />
+                      <span>Compose Mail</span>
+                    </a>
+                  )}
+                </div>
+
+                <div className="bg-slate-50/70 rounded-xl border border-slate-200/80 divide-y divide-slate-200/60 overflow-hidden shadow-2xs">
+                  {app.emails && app.emails.length > 0 ? (
+                    app.emails.map((email) => (
+                      <div key={email.id} className="p-3 flex items-center justify-between gap-3 hover:bg-slate-100/50 cursor-pointer transition-colors group">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-bold text-slate-900 truncate group-hover:text-blue-600 transition-colors">
+                            {email.subject}
+                          </p>
+                          <p className="text-[11px] text-slate-500 font-mono truncate mt-0.5">
+                            From: {email.sender}
+                          </p>
+                        </div>
+                        <span className="text-[11px] font-mono text-slate-400 font-semibold shrink-0">
+                          {email.date}
+                        </span>
+                      </div>
+                    ))
+                  ) : app.contactEmail ? (
+                    <div className="p-3 flex items-center justify-between gap-3 hover:bg-slate-100/50 cursor-pointer transition-colors group">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-bold text-slate-900 truncate group-hover:text-blue-600 transition-colors">
+                          Application Correspondence
+                        </p>
+                        <p className="text-[11px] text-slate-500 font-mono truncate mt-0.5">
+                          From: {app.contactEmail}
+                        </p>
+                      </div>
+                      <span className="text-[11px] font-mono text-slate-400 font-semibold shrink-0">
+                        {app.dateApplied || 'Active'}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="text-slate-400 font-mono text-[11px] text-center py-3 bg-white">
+                      No emails logged yet.
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Contacts & Recruiters Section (Stitch Style) */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
                     <Users className="w-3.5 h-3.5 text-blue-600" />
-                    <span>Recruiters & Contacts</span>
+                    <span>Contacts ({app.contacts ? app.contacts.length : 0})</span>
                   </label>
                   <button
                     type="button"
@@ -960,80 +1007,68 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
                   </button>
                 </div>
 
-                {/* Contacts List */}
-                {app.contacts && app.contacts.length > 0 ? (
-                  <div className="space-y-2.5">
-                    {app.contacts.map((contact) => (
-                      <div
-                        key={contact.id}
-                        className="p-3 bg-white rounded-xl border border-slate-200/80 space-y-2 relative group shadow-2xs"
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className="font-bold text-slate-900 text-xs">{contact.name}</span>
-                              {contact.role && (
-                                <span className="font-mono text-[10px] text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200/80 font-medium">
-                                  {contact.role}
-                                </span>
-                              )}
+                <div className="bg-slate-50/70 rounded-xl border border-slate-200/80 divide-y divide-slate-200/60 overflow-hidden shadow-2xs">
+                  {app.contacts && app.contacts.length > 0 ? (
+                    app.contacts.map((contact, idx) => {
+                      const avatarColors = [
+                        'bg-blue-100 text-blue-700 border-blue-200',
+                        'bg-amber-100 text-amber-700 border-amber-200',
+                        'bg-emerald-100 text-emerald-700 border-emerald-200',
+                        'bg-indigo-100 text-indigo-700 border-indigo-200',
+                      ];
+                      const avatarColor = avatarColors[idx % avatarColors.length];
+
+                      return (
+                        <div key={contact.id} className="p-3 flex items-center justify-between gap-3 hover:bg-slate-100/40 transition-colors group">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className={`w-8 h-8 rounded-full border font-bold font-mono text-xs flex items-center justify-center shrink-0 shadow-2xs ${avatarColor}`}>
+                              {getInitials(contact.name)}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-xs font-bold text-slate-900 truncate">{contact.name}</p>
+                              <p className="text-[11px] text-slate-500 font-medium truncate">{contact.role || 'Recruiter / Contact'}</p>
                             </div>
                           </div>
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteContact(contact.id)}
-                            className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-slate-400 hover:text-rose-700 hover:bg-rose-100/60 rounded cursor-pointer"
-                            title="Remove contact"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
 
-                        <div className="flex items-center gap-2 text-[11px] flex-wrap text-slate-600 pt-0.5">
-                          {contact.email && (
-                            <a
-                              href={`mailto:${contact.email}`}
-                              className="flex items-center gap-1 hover:text-blue-600 font-mono text-[10px] bg-slate-50 px-2 py-0.5 rounded border border-slate-200 shadow-2xs"
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            {contact.email && (
+                              <a
+                                href={`mailto:${contact.email}`}
+                                className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                                title={`Email ${contact.email}`}
+                              >
+                                <Mail className="w-3.5 h-3.5" />
+                              </a>
+                            )}
+                            {contact.linkedIn && (
+                              <a
+                                href={contact.linkedIn}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                                title="Open LinkedIn Profile"
+                              >
+                                <Linkedin className="w-3.5 h-3.5 text-blue-600" />
+                              </a>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteContact(contact.id)}
+                              className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-slate-400 hover:text-rose-600 rounded cursor-pointer"
+                              title="Remove contact"
                             >
-                              <Mail className="w-3 h-3 text-slate-400" />
-                              <span>{contact.email}</span>
-                            </a>
-                          )}
-                          {contact.phone && (
-                            <a
-                              href={`tel:${contact.phone}`}
-                              className="flex items-center gap-1 hover:text-blue-600 font-mono text-[10px] bg-slate-50 px-2 py-0.5 rounded border border-slate-200 shadow-2xs"
-                            >
-                              <Phone className="w-3 h-3 text-slate-400" />
-                              <span>{contact.phone}</span>
-                            </a>
-                          )}
-                          {contact.linkedIn && (
-                            <a
-                              href={contact.linkedIn}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-1 hover:text-blue-600 font-mono text-[10px] bg-slate-50 px-2 py-0.5 rounded border border-slate-200 shadow-2xs"
-                            >
-                              <Linkedin className="w-3 h-3 text-blue-500" />
-                              <span>LinkedIn</span>
-                            </a>
-                          )}
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </div>
-
-                        {contact.notes && (
-                          <p className="text-[11px] text-slate-500 italic bg-slate-50 p-2 rounded-lg border border-slate-100">
-                            "{contact.notes}"
-                          </p>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                ) : !showAddContact ? (
-                  <div className="text-slate-400 font-mono text-[11px] text-center py-2.5 bg-white rounded-xl border border-dashed border-slate-200">
-                    No contacts saved yet.
-                  </div>
-                ) : null}
+                      );
+                    })
+                  ) : !showAddContact ? (
+                    <div className="text-slate-400 font-mono text-[11px] text-center py-3 bg-white">
+                      No contacts saved yet.
+                    </div>
+                  ) : null}
+                </div>
 
                 {/* Add Contact Form Expandable */}
                 {showAddContact && (
@@ -1105,19 +1140,19 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
                 )}
               </div>
 
-              {/* Status Change History */}
-              <div className="bg-slate-50/70 border border-slate-200/80 rounded-2xl p-4 space-y-3 shadow-2xs">
+              {/* Status Change History (Flat Style) */}
+              <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-display text-slate-800 uppercase tracking-wider font-bold flex items-center gap-1.5">
+                  <label className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
                     <History className="w-3.5 h-3.5 text-blue-600" />
                     <span>Status Change History</span>
                   </label>
-                  <span className="font-mono text-[10px] text-slate-500 font-medium bg-white px-2 py-0.5 rounded border border-slate-200 shadow-2xs">
+                  <span className="font-mono text-[10px] text-slate-500 font-medium bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200 shadow-2xs">
                     {historyEntries.length} {historyEntries.length === 1 ? 'event' : 'events'}
                   </span>
                 </div>
 
-                <div className="bg-white border border-slate-200/80 rounded-xl p-3.5 max-h-[220px] overflow-y-auto pr-1.5">
+                <div className="bg-slate-50/70 border border-slate-200/80 rounded-xl p-3.5 max-h-[220px] overflow-y-auto pr-1.5 shadow-2xs">
                   {isLoadingHistory ? (
                     <div className="text-slate-400 font-mono text-[11px] text-center py-2">
                       Loading history logs...
