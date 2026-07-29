@@ -10,10 +10,10 @@
   --neutral-muted: #64748b;
   --neutral-subtle: #94a3b8;
   --neutral-border: #e2e8f0;
-  --neutral-bg: #f8fafc;
+  --neutral-bg: #ffffff;
   --surface: #ffffff;
   
-  /* Exact Stage Tints from StageSelectorDropdown.tsx */
+  /* Stage Tints from StageSelectorDropdown.tsx */
   --stage-wishlist-bg: #faf5ff;
   --stage-wishlist-text: #7e22ce;
   --stage-wishlist-border: #e9d5ff;
@@ -60,9 +60,16 @@
   padding: 0;
 }
 
+/* Flush Native Browser Extension Window */
+html {
+  background-color: var(--neutral-bg);
+  margin: 0;
+  padding: 0;
+}
+
 body {
   width: 390px;
-  max-height: 580px;
+  max-height: 590px;
   overflow-y: auto;
   font-family: var(--font-body);
   background-color: var(--neutral-bg);
@@ -70,21 +77,23 @@ body {
   font-size: 13px;
   line-height: 1.4;
   -webkit-font-smoothing: antialiased;
+  margin: 0;
+  padding: 0;
 }
 
 .container {
   padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
 }
 
-/* Header */
+/* Header Bar */
 .header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-bottom: 12px;
+  padding-bottom: 10px;
   border-bottom: 1px solid var(--neutral-border);
 }
 
@@ -94,19 +103,11 @@ body {
   gap: 10px;
 }
 
-.brand-icon {
-  width: 32px;
-  height: 32px;
-  background: linear-gradient(135deg, #2563eb, #1d4ed8);
-  color: white;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-display);
-  font-weight: 800;
-  font-size: 16px;
-  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+.brand-logo-img {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+  flex-shrink: 0;
 }
 
 .brand-info {
@@ -117,7 +118,7 @@ body {
 .brand-title {
   font-family: var(--font-display);
   font-weight: 800;
-  font-size: 16px;
+  font-size: 15.5px;
   letter-spacing: -0.025em;
   color: var(--neutral-dark);
   line-height: 1.2;
@@ -129,9 +130,12 @@ body {
   color: var(--neutral-muted);
 }
 
-.platform-pill {
+/* Header Platform Status Badge (Non-interactive) */
+.platform-status-badge {
+  display: inline-flex;
+  align-items: center;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 10.5px;
   font-weight: 600;
   padding: 3px 9px;
   border-radius: 9999px;
@@ -142,47 +146,63 @@ body {
   letter-spacing: 0.03em;
 }
 
+/* Polished Compact Autofill Status Pill */
+.autofill-signal {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #2563eb;
+  background-color: #eff6ff;
+  padding: 3px 9px;
+  border-radius: 9999px;
+  border: 1px solid #dbeafe;
+  box-shadow: 0 1px 2px rgba(37, 99, 235, 0.04);
+}
+
+.autofill-signal svg {
+  width: 12px;
+  height: 12px;
+  color: #2563eb;
+}
+
 /* Duplicate Banner */
 .duplicate-banner {
   display: none;
   align-items: center;
   gap: 8px;
-  padding: 10px 12px;
+  padding: 9px 12px;
   background-color: #fffbeb;
   border: 1px solid #fde68a;
   border-radius: 12px;
   font-size: 11.5px;
   font-weight: 500;
   color: #92400e;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
 }
 
 .duplicate-banner.visible {
   display: flex;
 }
 
-/* Section Grouping Card */
-.card {
-  background: var(--surface);
-  border: 1px solid var(--neutral-border);
-  border-radius: 16px;
-  padding: 16px;
+/* Direct Form Layout */
+.form-layout {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04);
+  gap: 11px;
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
 }
 
 .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  gap: 10px;
 }
 
 label {
@@ -190,21 +210,21 @@ label {
   align-items: center;
   gap: 5px;
   font-family: var(--font-display);
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 700;
   color: var(--neutral-dark);
   letter-spacing: -0.01em;
 }
 
 label svg {
-  width: 14px;
-  height: 14px;
+  width: 13.5px;
+  height: 13.5px;
   color: var(--neutral-muted);
 }
 
 .required-star {
   color: #e11d48;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 /* Input Fields with Icon Anchors */
@@ -212,15 +232,6 @@ label svg {
   position: relative;
   display: flex;
   align-items: center;
-}
-
-.input-icon {
-  position: absolute;
-  left: 11px;
-  width: 15px;
-  height: 15px;
-  color: var(--neutral-muted);
-  pointer-events: none;
 }
 
 .company-avatar-box {
@@ -251,7 +262,7 @@ input[type="text"],
 input[type="date"],
 textarea {
   width: 100%;
-  padding: 8.5px 12px;
+  padding: 8px 12px;
   font-family: var(--font-body);
   font-size: 12.5px;
   font-weight: 500;
@@ -261,10 +272,6 @@ textarea {
   border-radius: 12px;
   outline: none;
   transition: all 0.15s ease;
-}
-
-.has-icon {
-  padding-left: 34px !important;
 }
 
 input[type="text"]:hover,
@@ -279,13 +286,13 @@ input[type="date"]:focus,
 textarea:focus {
   background-color: #ffffff;
   border-color: var(--primary);
-  box-shadow: 0 0 0 3.5px rgba(37, 99, 235, 0.12);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
 }
 
 textarea {
   resize: vertical;
-  min-height: 56px;
-  max-height: 110px;
+  min-height: 52px;
+  max-height: 100px;
   line-height: 1.45;
 }
 
@@ -297,7 +304,7 @@ textarea {
 
 .custom-select-trigger {
   width: 100%;
-  padding: 8.5px 12px;
+  padding: 8px 12px;
   font-family: var(--font-body);
   font-size: 12.5px;
   font-weight: 500;
@@ -356,7 +363,7 @@ textarea {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  transition: all 0.1s ease;
+  transition: all 0.15s ease;
 }
 
 .custom-select-option:hover {
@@ -368,6 +375,11 @@ textarea {
   background-color: #eff6ff;
   color: var(--primary);
   font-weight: 700;
+}
+
+/* Custom Platform Input Field */
+.custom-platform-input {
+  border-color: var(--primary) !important;
 }
 
 /* Stage Selector Component matching StageSelectorDropdown.tsx */
@@ -391,7 +403,6 @@ textarea {
   justify-content: space-between;
   cursor: pointer;
   transition: all 0.15s ease;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
 }
 
 .stage-trigger-btn:hover {
@@ -452,7 +463,7 @@ textarea {
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.1s ease;
+  transition: all 0.10s ease;
 }
 
 .stage-option-item:hover {
@@ -484,8 +495,9 @@ textarea {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  box-shadow: 0 2px 4px 0 rgba(37, 99, 235, 0.25);
+  box-shadow: 0 2px 5px 0 rgba(37, 99, 235, 0.25);
   transition: all 0.15s ease;
+  margin-top: 4px;
 }
 
 .btn-primary:hover {

@@ -8,16 +8,23 @@
 </head>
 <body>
   <div class="container" id="main-container">
-    <!-- Header matching Tracklet Modal Style -->
+    <!-- Header matching Tracklet Brand -->
     <div class="header">
       <div class="brand">
-        <div class="brand-icon">T</div>
+        <img src="icons/logo.svg" alt="Tracklet Logo" class="brand-logo-img">
         <div class="brand-info">
           <span class="brand-title">Tracklet</span>
           <span class="brand-subtitle">Job Application Clipper</span>
         </div>
       </div>
-      <span class="platform-pill" id="platform-pill">Company Site</span>
+      <!-- Clean Non-interactive Status Badge -->
+      <span class="platform-status-badge" id="header-platform-badge">LinkedIn</span>
+    </div>
+
+    <!-- Autofill Signal Banner -->
+    <div class="autofill-signal" id="autofill-signal" style="display: none;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+      <span>Auto-filled from page</span>
     </div>
 
     <!-- Duplicate Warning Banner -->
@@ -26,12 +33,12 @@
       <span>Already in Tracklet! Saving will update this entry.</span>
     </div>
 
-    <!-- Form Section Card -->
-    <div class="card" id="form-card">
+    <!-- Clean Direct Form Layout -->
+    <div class="form-layout">
       <!-- Company Name -->
       <div class="form-group">
         <label for="company">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="16" height="20" x="4" y="2" rx="2" ry="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M12 6h.01"/><path d="M12 10h.01"/><path d="M12 14h.01"/><path d="M16 10h.01"/><path d="M16 14h.01"/><path d="M8 10h.01"/><path d="M8 14h.01"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="16" height="20" x="4" y="2" rx="2" ry="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M12 6h.01"/><path d="M12 10h.01"/><path d="M16 10h.01"/><path d="M16 14h.01"/><path d="M8 10h.01"/><path d="M8 14h.01"/></svg>
           <span>Company Name</span>
           <span class="required-star">*</span>
         </label>
@@ -55,7 +62,7 @@
 
       <!-- Platform & Date Applied Row -->
       <div class="form-row">
-        <!-- Custom Platform Dropdown -->
+        <!-- Single Authoritative Platform Selector -->
         <div class="form-group">
           <label>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
@@ -75,9 +82,11 @@
               <div class="custom-select-option" data-value="Wellfound">Wellfound</div>
               <div class="custom-select-option" data-value="Company Site">Company Site</div>
               <div class="custom-select-option" data-value="Referral">Referral</div>
-              <div class="custom-select-option" data-value="Other">Other</div>
+              <div class="custom-select-option" data-value="Other">Other (Custom)</div>
             </div>
           </div>
+          <!-- Custom Platform Text Input (shows when 'Other' or custom selected) -->
+          <input type="text" id="custom-platform-input" class="custom-platform-input" placeholder="Type custom platform name..." style="display: none; margin-top: 6px;">
         </div>
 
         <!-- Date Applied -->

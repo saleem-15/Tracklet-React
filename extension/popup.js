@@ -1,6 +1,6 @@
 /**
  * Tracklet Popup Controller
- * Manages form state, live page extraction, custom stage & platform dropdowns, and cross-tab broadcasts.
+ * Manages form state, live page extraction, custom stage & editable platform dropdowns, and cross-tab broadcasts.
  */
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -11,23 +11,25 @@ document.addEventListener('DOMContentLoaded', async () => {
   const jobLinkInput = document.getElementById('jobLink');
   const notesInput = document.getElementById('notes');
   const saveBtn = document.getElementById('save-btn');
-  const platformPill = document.getElementById('platform-pill');
+  const headerPlatformBadge = document.getElementById('header-platform-badge');
   const companyAvatar = document.getElementById('company-avatar');
   const duplicateBanner = document.getElementById('duplicate-banner');
+  const autofillSignal = document.getElementById('autofill-signal');
   const mainContainer = document.getElementById('main-container');
   const successView = document.getElementById('success-view');
   const successTitle = document.getElementById('success-title');
   const successSubtitle = document.getElementById('success-subtitle');
   const openTrackletLink = document.getElementById('open-tracklet-link');
 
-  // Custom Platform Dropdown Elements
+  // Custom Platform Elements
   const platformSelectContainer = document.getElementById('platform-select-container');
   const platformTrigger = document.getElementById('platform-trigger');
   const platformValueText = document.getElementById('platform-value-text');
   const platformDropdown = document.getElementById('platform-dropdown');
   const platformOptions = document.querySelectorAll('#platform-dropdown .custom-select-option');
+  const customPlatformInput = document.getElementById('custom-platform-input');
 
-  // Custom Stage Dropdown Elements
+  // Custom Stage Elements
   const stageSelectorContainer = document.getElementById('stage-selector-container');
   const stageTriggerBtn = document.getElementById('stage-trigger-btn');
   const stageLabelText = document.getElementById('stage-label-text');
@@ -64,15 +66,42 @@ document.addEventListener('DOMContentLoaded', async () => {
   platformOptions.forEach(option => {
     option.addEventListener('click', (e) => {
       e.stopPropagation();
-      platformOptions.forEach(o => o.classList.remove('selected'));
-      option.classList.add('selected');
-      
-      selectedPlatform = option.getAttribute('data-value');
-      platformValueText.textContent = selectedPlatform;
-      platformPill.textContent = selectedPlatform;
+      const val = option.getAttribute('data-value');
+      setPlatform(val);
       platformSelectContainer.classList.remove('open');
     });
   });
+
+  customPlatformInput.addEventListener('input', () => {
+    const val = customPlatformInput.value.trim() || 'Other';
+    selectedPlatform = val;
+    headerPlatformBadge.textContent = val;
+    platformValueText.textContent = val;
+  });
+
+  function setPlatform(platformName) {
+    selectedPlatform = platformName;
+    headerPlatformBadge.textContent = platformName;
+    platformValueText.textContent = platformName;
+
+    platformOptions.forEach(o => {
+      if (o.getAttribute('data-value') === platformName) {
+        o.classList.add('selected');
+      } else {
+        o.classList.remove('selected');
+      }
+    });
+
+    if (platformName === 'Other' || !Array.from(platformOptions).some(o => o.getAttribute('data-value') === platformName)) {
+      customPlatformInput.style.display = 'block';
+      if (platformName !== 'Other') {
+        customPlatformInput.value = platformName;
+      }
+    } else {
+      customPlatformInput.style.display = 'none';
+      customPlatformInput.value = '';
+    }
+  }
 
   // Custom Stage Dropdown Handlers
   stageTriggerBtn.addEventListener('click', (e) => {
@@ -159,17 +188,14 @@ document.addEventListener('DOMContentLoaded', async () => {
           companyInput.value = response.company || '';
           roleInput.value = response.role || '';
           
-          selectedPlatform = response.platform || 'Company Site';
-          platformValueText.textContent = selectedPlatform;
-          platformPill.textContent = selectedPlatform;
-
-          platformOptions.forEach(opt => {
-            if (opt.getAttribute('data-value') === selectedPlatform) opt.classList.add('selected');
-            else opt.classList.remove('selected');
-          });
+          setPlatform(response.platform || 'Company Site');
 
           notesInput.value = response.notes || '';
           currentDomain = response.domain || '';
+
+          if (response.company || response.role) {
+            autofillSignal.style.display = 'flex';
+          }
 
           updateCompanyAvatar(response.company, response.domain);
           checkForDuplicates(tab.url);
@@ -181,6 +207,14 @@ document.addEventListener('DOMContentLoaded', async () => {
           updateCompanyAvatar(companyInput.value, currentDomain);
           checkForDuplicates(tab.url);
         }
+
+        // Auto focus first empty required field
+        if (!companyInput.value.trim()) {
+          companyInput.focus();
+        } else if (!roleInput.value.trim()) {
+          roleInput.focus();
+        }
+
         validateInputs();
       });
     }
@@ -200,6 +234,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         saveBtn.querySelector('span').textContent = 'Update Application';
         if (match.status) {
           updateStageUI(match.status);
+        }
+        if (match.platform) {
+          setPlatform(match.platform);
         }
       }
     });
@@ -226,13 +263,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     saveBtn.disabled = true;
     saveBtn.querySelector('span').textContent = 'Saving...';
 
+    const finalPlatform = (selectedPlatform === 'Other' && customPlatformInput.value.trim()) 
+      ? customPlatformInput.value.trim() 
+      : selectedPlatform;
+
     const nowISO = new Date().toISOString();
     const applicationPayload = {
       id: existingAppId || `ext-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
       userId: 'guest',
       company,
       role,
-      platform: selectedPlatform,
+      platform: finalPlatform,
       dateApplied: dateAppliedInput.value || today,
       status: selectedStage,
       jobLink: jobLinkInput.value,
@@ -316,6 +357,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     return name.charAt(0).toUpperCase() + name.slice(1);
   }
 
-  // Initialize Stage UI
+  // Initialize Stage & Platform UI
   updateStageUI('Applied');
+  setPlatform('Company Site');
 });
