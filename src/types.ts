@@ -39,6 +39,7 @@ export interface EmailLog {
   id: string;
   subject: string;
   sender: string;
+  recipient?: string;
   date: string;
   snippet?: string;
 }
