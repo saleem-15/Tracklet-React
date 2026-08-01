@@ -358,11 +358,6 @@ export const INITIAL_SAMPLE_APPLICATIONS: Omit<Application, 'id' | 'userId'>[] =
   }
 ];
 
-export function calculateDaysInStage(stageUpdatedAtStr: string): number {
-  if (!stageUpdatedAtStr) return 0;
-  const stageDate = new Date(stageUpdatedAtStr).getTime();
-  const now = new Date().getTime();
-  const diffTime = Math.max(0, now - stageDate);
-  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-  return diffDays;
-}
+import { calculateDaysInStage } from './dateUtils';
+
+export { calculateDaysInStage };
