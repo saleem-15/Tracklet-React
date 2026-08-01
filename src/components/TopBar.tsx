@@ -2,6 +2,7 @@ import React, { useRef, useEffect } from 'react';
 import { Search, Plus, Filter, X, ChevronDown } from 'lucide-react';
 import { FilterState, JobPlatform, ApplicationStatus, ActiveTab } from '../types';
 import { FilterSelectDropdown } from './FilterSelectDropdown';
+import { JOB_PLATFORMS, APPLICATION_STATUSES } from '../lib/constants';
 
 interface TopBarProps {
   filter: FilterState;
@@ -12,36 +13,15 @@ interface TopBarProps {
   activeTab?: ActiveTab;
 }
 
-const PLATFORMS: JobPlatform[] = [
-  'LinkedIn',
-  'Indeed',
-  'Lever',
-  'Greenhouse',
-  'Otta',
-  'Company Site',
-  'Referral',
-  'Wellfound',
-  'Other',
-];
-
-const STATUSES: ApplicationStatus[] = [
-  'Applied',
-  'Screening',
-  'Interview',
-  'Offer',
-  'Rejected',
-  'Archived',
-];
-
 const PLATFORM_OPTIONS = [
   { label: 'All', value: 'All' },
-  ...PLATFORMS.map((p) => ({ label: p, value: p })),
+  ...JOB_PLATFORMS.map((p) => ({ label: p, value: p })),
 ];
 
 const STATUS_OPTIONS = [
   { label: 'All', value: 'All' },
   { label: 'Active Only', value: 'Active' },
-  ...STATUSES.map((s) => ({ label: s, value: s })),
+  ...APPLICATION_STATUSES.map((s) => ({ label: s, value: s })),
 ];
 
 const DATE_OPTIONS = [

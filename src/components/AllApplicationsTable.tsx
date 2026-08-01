@@ -19,7 +19,7 @@ import { StatusBadge } from './StatusBadge';
 import { StageSelectorDropdown } from './StageSelectorDropdown';
 import { CompanyLogo } from './CompanyLogo';
 import { EmptyState } from './EmptyState';
-import { calculateDaysInStage } from '../lib/sampleData';
+import { calculateDaysInStage, formatAppDate } from '../lib/dateUtils';
 import { exportApplicationsToCSV } from '../lib/exportCsv';
 
 interface AllApplicationsTableProps {
@@ -33,29 +33,6 @@ interface AllApplicationsTableProps {
   onSortChange: (field: SortField) => void;
   onBulkUpdateStatus: (ids: string[], newStatus: ApplicationStatus) => void;
   onBulkDelete: (ids: string[]) => void;
-}
-
-function formatAppDate(dateStr: string): string {
-  if (!dateStr) return '';
-  try {
-    const parts = dateStr.split('-');
-    if (parts.length === 3) {
-      const year = parseInt(parts[0], 10);
-      const month = parseInt(parts[1], 10) - 1;
-      const day = parseInt(parts[2], 10);
-      const date = new Date(year, month, day);
-      if (!isNaN(date.getTime())) {
-        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-      }
-    }
-    const date = new Date(dateStr);
-    if (!isNaN(date.getTime())) {
-      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    }
-  } catch {
-    // fallback
-  }
-  return dateStr;
 }
 
 function getStageUrgencyClass(status: ApplicationStatus, daysInStage: number): string {
