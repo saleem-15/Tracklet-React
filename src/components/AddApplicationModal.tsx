@@ -3,6 +3,7 @@ import { X, Plus, Building2, Briefcase, Calendar, Link, Mail, UserCheck, CheckSq
 import { JobPlatform, ApplicationStatus, Application, Contact, ApplicationTask } from '../types';
 import { CompanyLogo } from './CompanyLogo';
 import { CustomSelectDropdown } from './CustomSelectDropdown';
+import { JOB_PLATFORMS, APPLICATION_STATUSES } from '../lib/constants';
 
 interface AddApplicationModalProps {
   isOpen: boolean;
@@ -10,35 +11,11 @@ interface AddApplicationModalProps {
   onAdd: (newApp: Omit<Application, 'id' | 'userId' | 'createdAt' | 'updatedAt' | 'stageUpdatedAt'>) => Promise<void>;
 }
 
-const PLATFORMS: JobPlatform[] = [
-  'LinkedIn',
-  'Indeed',
-  'Lever',
-  'Greenhouse',
-  'Otta',
-  'Company Site',
-  'Referral',
-  'Wellfound',
-  'Other',
-];
-
-const STATUSES: ApplicationStatus[] = [
-  'Wishlist',
-  'Applied',
-  'Screening',
-  'Interview',
-  'Offer',
-  'Rejected',
-  'Archived',
-];
-
 export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
   isOpen,
   onClose,
   onAdd,
 }) => {
-  if (!isOpen) return null;
-
   const todayStr = new Date().toISOString().split('T')[0];
 
   const [company, setCompany] = useState('');
@@ -91,6 +68,8 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [onClose, isDirty]);
+
+  if (!isOpen) return null;
 
   const handleAddContactItem = () => {
     if (!cName.trim() && !cEmail.trim()) return;
@@ -361,7 +340,7 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
                   <CustomSelectDropdown<JobPlatform>
                     value={platform}
                     onChange={(val) => setPlatform(val)}
-                    options={PLATFORMS.map((p) => ({ label: p, value: p }))}
+                    options={JOB_PLATFORMS.map((p) => ({ label: p, value: p }))}
                     className="w-full"
                     size="sm"
                   />
@@ -374,7 +353,7 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
                   <CustomSelectDropdown<ApplicationStatus>
                     value={status}
                     onChange={(val) => setStatus(val)}
-                    options={STATUSES.map((s) => ({ label: s, value: s }))}
+                    options={APPLICATION_STATUSES.map((s) => ({ label: s, value: s }))}
                     className="w-full"
                     size="sm"
                   />
