@@ -94,11 +94,12 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({ 
   const [editPlatform, setEditPlatform] = useState<JobPlatform>(app?.platform || 'LinkedIn');
   const [editDateApplied, setEditDateApplied] = useState(app?.dateApplied || '');
   const [editJobLink, setEditJobLink] = useState(app?.jobLink || '');
-  const [editCompanyDomain, setEditCompanyDomain] = useState(app.companyDomain || '');
-  const [editContactEmail, setEditContactEmail] = useState(app.contactEmail || '');
+  const [editCompanyDomain, setEditCompanyDomain] = useState(app?.companyDomain || '');
+  const [editContactEmail, setEditContactEmail] = useState(app?.contactEmail || '');
   const [isSavingInfo, setIsSavingInfo] = useState(false);
 
   useEffect(() => {
+    if (!app) return;
     setNotes(app.notes || '');
     setHasUnsavedNotes(false);
     setEmailSender(app.contactEmail || '');
@@ -110,7 +111,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({ 
     setEditJobLink(app.jobLink || '');
     setEditCompanyDomain(app.companyDomain || '');
     setEditContactEmail(app.contactEmail || '');
-  }, [app.id, app.notes, app.contactEmail, app.company, app.role, app.platform, app.dateApplied, app.companyDomain, app.jobLink]);
+  }, [app?.id, app?.notes, app?.contactEmail, app?.company, app?.role, app?.platform, app?.dateApplied, app?.companyDomain, app?.jobLink]);
 
   const handleSaveInfo = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -227,7 +228,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({ 
         .finally(() => { if (isMounted) setIsLoadingHistory(false); });
     }
     return () => { isMounted = false; };
-  }, [app.id, app.status]);
+  }, [app?.id, app?.status]);
 
   // Unsaved changes guard
   const [showUnsavedPrompt, setShowUnsavedPrompt] = useState(false);
