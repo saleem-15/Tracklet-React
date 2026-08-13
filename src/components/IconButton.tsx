@@ -5,7 +5,7 @@ export interface IconButtonProps extends React.ButtonHTMLAttributes<HTMLButtonEl
   icon: LucideIcon;
   variant?: 'default' | 'danger' | 'primary' | 'subtle';
   size?: 'sm' | 'md';
-  title: string;
+  title?: string;
 }
 
 export const IconButton: React.FC<IconButtonProps> = ({

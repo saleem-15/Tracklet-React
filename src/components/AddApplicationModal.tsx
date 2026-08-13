@@ -61,7 +61,7 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
   const [cRole, setCRole] = useState('');
 
   // Dynamic Multiple Tasks State
-  const [tasks, setTasks] = useState<{ id: string; title: string; dueDate: string }[]>([]);
+  const [tasks, setTasks] = useState<ApplicationTask[]>([]);
   const [taskTitle, setTaskTitle] = useState('');
   const [taskDueDate, setTaskDueDate] = useState('');
 
@@ -165,7 +165,7 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
 
       // Include any un-added draft task if user typed without pressing +
       const finalTasks: ApplicationTask[] = [
-        ...tasks.map((t) => ({ id: t.id, title: t.title, completed: false, dueDate: t.dueDate || undefined })),
+        ...tasks.map((t) => ({ id: t.id, title: t.title, completed: Boolean(t.completed), dueDate: t.dueDate || undefined })),
       ];
       if (taskTitle.trim() && !tasks.some((t) => t.title === taskTitle.trim())) {
         finalTasks.push({
