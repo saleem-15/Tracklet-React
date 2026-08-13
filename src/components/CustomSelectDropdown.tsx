@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDown, Check } from 'lucide-react';
+import { UI_TOKENS } from '../theme/tokens';
 
 export interface SelectOption<T = string | number> {
   label: string;
@@ -90,9 +91,9 @@ export function CustomSelectDropdown<T extends string | number = string>({
 
   const getSizeStyles = () => {
     if (size === 'sm') {
-      return 'px-2.5 py-1 text-xs rounded-lg';
+      return `${UI_TOKENS.controlSm} px-2.5 text-xs`;
     }
-    return 'px-3 py-1.5 text-xs rounded-xl';
+    return `${UI_TOKENS.controlMd} px-3 text-xs`;
   };
 
   return (
@@ -122,7 +123,7 @@ export function CustomSelectDropdown<T extends string | number = string>({
 
       {isOpen && (
         <div
-          className={`absolute top-full left-0 mt-1.5 z-50 min-w-[160px] max-h-60 overflow-y-auto bg-white border border-slate-200/90 rounded-xl shadow-xl p-1 animate-in fade-in zoom-in-95 duration-150 ${menuClassName}`}
+          className={`absolute top-full left-0 mt-1.5 z-50 min-w-[160px] max-h-60 overflow-y-auto bg-white border border-slate-200/90 rounded-[12px] shadow-xl p-1.5 animate-in fade-in zoom-in-95 duration-150 ${menuClassName}`}
         >
           {options.map((opt) => {
             const isSelected = opt.value === value;
@@ -131,7 +132,7 @@ export function CustomSelectDropdown<T extends string | number = string>({
                 key={String(opt.value)}
                 type="button"
                 onClick={() => handleSelect(opt.value)}
-                className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-medium flex items-center justify-between transition-colors cursor-pointer ${
+                className={`w-full text-left px-3 py-1.5 rounded-[8px] text-xs font-medium flex items-center justify-between transition-colors cursor-pointer ${
                   isSelected
                     ? 'bg-blue-50 text-blue-900 font-bold'
                     : 'text-slate-700 hover:bg-slate-100/80'

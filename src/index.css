@@ -15,6 +15,22 @@
   }
 }
 
+@layer components {
+  /* Tracklet Design System Single-Source Tokens */
+  .control-sm {
+    height: 32px;
+    border-radius: 10px;
+  }
+  .control-md {
+    height: 34px;
+    border-radius: 10px;
+  }
+  .control-lg {
+    height: 36px;
+    border-radius: 10px;
+  }
+}
+
 /* Premium micro scrollbars */
 ::-webkit-scrollbar {
   width: 6px;

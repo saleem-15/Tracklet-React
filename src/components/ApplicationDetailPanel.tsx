@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import { Application, ApplicationStatus, StatusHistoryEntry, Contact, ApplicationTask, JobPlatform } from '../types';
 import { StatusBadge } from './StatusBadge';
+import { UI_TOKENS } from '../theme/tokens';
 import { StageSelectorDropdown } from './StageSelectorDropdown';
 import { CompanyLogo } from './CompanyLogo';
 import { CustomSelectDropdown } from './CustomSelectDropdown';
@@ -335,14 +336,14 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({ 
             <button
               type="button"
               onClick={() => { setIsEditingInfo(!isEditingInfo); }}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer shadow-2xs ${isEditingInfo ? 'bg-blue-600 text-white border-blue-600' : 'bg-white hover:bg-slate-50 text-slate-600 border-slate-200 hover:border-slate-300'}`}
+              className={`flex items-center gap-1.5 px-3 ${UI_TOKENS.controlMd} text-xs font-semibold border transition-all cursor-pointer shadow-2xs ${isEditingInfo ? 'bg-blue-600 text-white border-blue-600' : 'bg-white hover:bg-slate-50 text-slate-600 border-slate-200 hover:border-slate-300'}`}
             >
               <Pencil className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">{isEditingInfo ? 'Cancel' : 'Edit Info'}</span>
             </button>
-            <StageSelectorDropdown currentStatus={app.status} onStatusChange={handleStatusChange} size="md" />
+            <StageSelectorDropdown currentStatus={app.status} onSelectStatus={handleStatusChange} size="md" />
             <div className="h-5 w-px bg-slate-200 hidden sm:block" />
-            <button onClick={handleRequestClose} className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200/80 text-slate-500 hover:text-slate-900 transition-colors cursor-pointer border border-slate-200/80" title="Close (Esc)">
+            <button onClick={handleRequestClose} className="p-2 rounded-[10px] bg-slate-100 hover:bg-slate-200/80 text-slate-500 hover:text-slate-900 transition-colors cursor-pointer border border-slate-200/80" title="Close (Esc)">
               <X className="w-4 h-4 stroke-[2.5]" />
             </button>
           </div>

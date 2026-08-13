@@ -3,6 +3,7 @@ import { X, Plus, Building2, Briefcase, Calendar, Link, Mail, UserCheck, CheckSq
 import { JobPlatform, ApplicationStatus, Application, Contact, ApplicationTask } from '../types';
 import { CompanyLogo } from './CompanyLogo';
 import { CustomSelectDropdown } from './CustomSelectDropdown';
+import { UI_TOKENS } from '../theme/tokens';
 
 interface AddApplicationModalProps {
   isOpen: boolean;
@@ -273,7 +274,7 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
                         value={company}
                         onChange={(e) => setCompany(e.target.value)}
                         placeholder="e.g. Linear, Stripe"
-                        className="w-full bg-slate-50/80 text-slate-900 placeholder-slate-400 pl-8 pr-3 py-1.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white font-sans text-xs transition-all shadow-2xs font-semibold h-9"
+                        className="w-full bg-slate-50/80 text-slate-900 placeholder-slate-400 pl-8 pr-3 rounded-[10px] border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white font-sans text-xs transition-all shadow-2xs font-semibold h-9"
                       />
                     </div>
                   </div>
@@ -575,14 +576,14 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
               <button
                 type="button"
                 onClick={handleRequestClose}
-                className="px-3.5 py-1.5 rounded-xl text-slate-600 hover:text-slate-900 bg-white hover:bg-slate-100 border border-slate-200 font-medium transition-all shadow-2xs cursor-pointer text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+                className="h-[34px] px-3.5 rounded-[10px] text-slate-600 hover:text-slate-900 bg-white hover:bg-slate-100 border border-slate-200 font-medium transition-all shadow-2xs cursor-pointer text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/40"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={isSubmitting || !company.trim() || !role.trim()}
-                className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold px-4 py-1.5 rounded-xl transition-all shadow-xs cursor-pointer text-xs"
+                className={`${UI_TOKENS.btnPrimary} disabled:opacity-50 disabled:cursor-not-allowed`}
               >
                 {isSubmitting ? 'Adding...' : 'Add Application'}
               </button>

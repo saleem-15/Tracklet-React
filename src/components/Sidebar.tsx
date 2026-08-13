@@ -119,7 +119,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <button
             onClick={() => setActiveTab('all')}
             title="All Applications"
-            className={`w-full flex items-center ${isCollapsed ? 'justify-center py-2.5 px-0' : 'justify-between px-2.5 py-2'} rounded-xl transition-all text-left group cursor-pointer ${
+            className={`w-full flex items-center ${isCollapsed ? 'justify-center py-2.5 px-0' : 'justify-between px-2.5 py-2'} rounded-[10px] transition-all text-left group cursor-pointer ${
               activeTab === 'all'
                 ? 'bg-white text-slate-900 font-bold border border-slate-200/90 shadow-xs ring-1 ring-slate-950/5'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
@@ -145,7 +145,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <button
             onClick={() => setActiveTab('pipeline')}
             title="Active Pipeline"
-            className={`w-full flex items-center ${isCollapsed ? 'justify-center py-2.5 px-0' : 'justify-between px-2.5 py-2'} rounded-xl transition-all text-left group cursor-pointer ${
+            className={`w-full flex items-center ${isCollapsed ? 'justify-center py-2.5 px-0' : 'justify-between px-2.5 py-2'} rounded-[10px] transition-all text-left group cursor-pointer ${
               activeTab === 'pipeline'
                 ? 'bg-white text-slate-900 font-bold border border-slate-200/90 shadow-xs ring-1 ring-slate-950/5'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
@@ -169,7 +169,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <button
             onClick={() => setActiveTab('stats')}
             title="Analytics & Stats"
-            className={`w-full flex items-center ${isCollapsed ? 'justify-center py-2.5 px-0' : 'justify-between px-2.5 py-2'} rounded-xl transition-all text-left group cursor-pointer ${
+            className={`w-full flex items-center ${isCollapsed ? 'justify-center py-2.5 px-0' : 'justify-between px-2.5 py-2'} rounded-[10px] transition-all text-left group cursor-pointer ${
               activeTab === 'stats'
                 ? 'bg-white text-slate-900 font-bold border border-slate-200/90 shadow-xs ring-1 ring-slate-950/5'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
@@ -184,7 +184,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <button
             onClick={() => setActiveTab('settings')}
             title="Settings"
-            className={`w-full flex items-center ${isCollapsed ? 'justify-center py-2.5 px-0' : 'justify-between px-2.5 py-2'} rounded-xl transition-all text-left group cursor-pointer ${
+            className={`w-full flex items-center ${isCollapsed ? 'justify-center py-2.5 px-0' : 'justify-between px-2.5 py-2'} rounded-[10px] transition-all text-left group cursor-pointer ${
               activeTab === 'settings'
                 ? 'bg-white text-slate-900 font-bold border border-slate-200/90 shadow-xs ring-1 ring-slate-950/5'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
@@ -297,7 +297,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <button
             onClick={onSignIn}
             title="Sign In with Google"
-            className={`w-full flex items-center justify-center gap-2 ${isCollapsed ? 'p-2' : 'px-2.5 py-2'} rounded-xl bg-white hover:bg-slate-100/80 text-slate-900 border border-slate-200 transition-all font-semibold text-xs shadow-2xs hover:shadow-xs active:scale-[0.99] cursor-pointer`}
+            className={`w-full flex items-center justify-center gap-2 ${isCollapsed ? 'p-2' : 'px-2.5 py-2'} rounded-[10px] bg-white hover:bg-slate-100/80 text-slate-900 border border-slate-200 transition-all font-semibold text-xs shadow-2xs hover:shadow-xs active:scale-[0.99] cursor-pointer`}
           >
             <LogIn className="w-3.5 h-3.5 text-blue-600 shrink-0" />
             {!isCollapsed && <span>Sign In with Google</span>}

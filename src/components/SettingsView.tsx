@@ -19,6 +19,7 @@ import {
 import { Application, ExpiryNotificationSettings } from '../types';
 import { getExpiringSoonTasks } from '../lib/expiryUtils';
 import { ImportCSVModal } from './ImportCSVModal';
+import { UI_TOKENS } from '../theme/tokens';
 
 interface SettingsViewProps {
   settings: ExpiryNotificationSettings;
@@ -323,7 +324,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       </div>
 
       {/* Additional Settings: Data Management, CSV Import & Export */}
-      <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-2xs space-y-4">
+      <div className={`p-6 space-y-4 ${UI_TOKENS.card}`}>
         <h3 className="text-sm font-bold text-slate-900 font-mono uppercase tracking-wider">
           Data & System Operations
         </h3>
@@ -332,10 +333,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           <button
             type="button"
             onClick={() => setIsImportModalOpen(true)}
-            className="flex items-center justify-between p-3.5 rounded-xl border border-blue-200/90 bg-gradient-to-br from-blue-50/80 via-indigo-50/30 to-blue-50/50 hover:bg-blue-100/60 hover:border-blue-300 text-blue-950 transition-all cursor-pointer shadow-2xs group"
+            className="flex items-center justify-between p-3.5 rounded-[10px] border border-blue-200/90 bg-gradient-to-br from-blue-50/80 via-indigo-50/30 to-blue-50/50 hover:bg-blue-100/60 hover:border-blue-300 text-blue-950 transition-all cursor-pointer shadow-2xs group"
           >
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform">
+              <div className="w-8 h-8 rounded-[8px] bg-blue-600 text-white flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform">
                 <Upload className="w-4 h-4" />
               </div>
               <div className="text-left">
@@ -350,7 +351,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <button
               type="button"
               onClick={onExportCSV}
-              className="flex items-center justify-between p-3.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100/80 hover:border-slate-300 text-slate-800 transition-all cursor-pointer shadow-2xs group"
+              className="flex items-center justify-between p-3.5 rounded-[10px] border border-slate-200 bg-slate-50 hover:bg-slate-100/80 hover:border-slate-300 text-slate-800 transition-all cursor-pointer shadow-2xs group"
             >
               <div className="flex items-center gap-3">
                 <Download className="w-4 h-4 text-slate-600 group-hover:scale-110 transition-transform" />
@@ -367,7 +368,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <button
               type="button"
               onClick={onSeedDemoData}
-              className="flex items-center justify-between p-3.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-amber-100/60 hover:border-amber-300 text-amber-950 transition-all cursor-pointer shadow-2xs group"
+              className="flex items-center justify-between p-3.5 rounded-[10px] border border-slate-200 bg-slate-50 hover:bg-amber-100/60 hover:border-amber-300 text-amber-950 transition-all cursor-pointer shadow-2xs group"
             >
               <div className="flex items-center gap-3">
                 <RefreshCw className="w-4 h-4 text-amber-600 group-hover:rotate-180 transition-transform duration-500" />

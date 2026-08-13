@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ApplicationStatus } from '../types';
 import { ChevronDown, Check } from 'lucide-react';
+import { UI_TOKENS } from '../theme/tokens';
 
 interface StageSelectorDropdownProps {
   currentStatus: ApplicationStatus;
@@ -106,8 +107,8 @@ export const StageSelectorDropdown: React.FC<StageSelectorDropdownProps> = ({
 
   const sizeClasses =
     size === 'sm'
-      ? 'text-[11px] px-2 py-1 rounded-xl'
-      : 'text-xs px-2.5 py-1.5 rounded-xl';
+      ? 'h-7 text-[11px] px-2 rounded-[10px]'
+      : `${UI_TOKENS.controlMd} text-xs px-2.5`;
 
   return (
     <div className={`relative inline-block text-left ${className}`} ref={dropdownRef}>
@@ -131,7 +132,7 @@ export const StageSelectorDropdown: React.FC<StageSelectorDropdownProps> = ({
 
       {/* Floating Menu */}
       {isOpen && (
-        <div className="absolute right-0 sm:left-0 mt-1.5 w-44 rounded-2xl bg-white/95 backdrop-blur-md border border-slate-200/90 shadow-xl z-50 p-1.5 space-y-0.5 animate-in fade-in zoom-in-95 duration-150">
+        <div className="absolute right-0 sm:left-0 mt-1.5 w-44 rounded-[12px] bg-white/95 backdrop-blur-md border border-slate-200/90 shadow-xl z-50 p-1.5 space-y-0.5 animate-in fade-in zoom-in-95 duration-150">
           <div className="px-2 py-1 text-[10px] font-mono font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-100 mb-1">
             Advance Stage
           </div>
@@ -144,7 +145,7 @@ export const StageSelectorDropdown: React.FC<StageSelectorDropdownProps> = ({
                 key={status}
                 type="button"
                 onClick={(e) => handleSelect(status, e)}
-                className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-[8px] text-xs font-semibold transition-all cursor-pointer ${
                   isSelected
                     ? `${config.bg} ${config.text} font-bold ring-1 ring-slate-900/10`
                     : 'hover:bg-slate-100/80 text-slate-700'
