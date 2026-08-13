@@ -12,7 +12,7 @@ interface StageSelectorDropdownProps {
 
 const STAGE_CONFIG: Record<ApplicationStatus, { label: string; bg: string; text: string; border: string; dot: string }> = {
   Wishlist: {
-    label: 'Wishlist',
+    label: 'Saved',
     bg: 'bg-purple-50 hover:bg-purple-100/80',
     text: 'text-purple-700',
     border: 'border-purple-200/80',

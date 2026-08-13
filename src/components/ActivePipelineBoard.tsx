@@ -30,7 +30,7 @@ interface ActivePipelineBoardProps {
 const PIPELINE_COLUMNS: { status: ApplicationStatus; title: string; dot: string; tagBg: string }[] = [
   { 
     status: 'Wishlist', 
-    title: 'Wishlist / Saved', 
+    title: 'Saved', 
     dot: 'bg-purple-500',
     tagBg: 'text-purple-700 bg-purple-50'
   },
@@ -42,19 +42,19 @@ const PIPELINE_COLUMNS: { status: ApplicationStatus; title: string; dot: string;
   },
   { 
     status: 'Screening', 
-    title: 'Screening Call', 
+    title: 'Screening', 
     dot: 'bg-amber-500',
     tagBg: 'text-amber-700 bg-amber-50'
   },
   { 
     status: 'Interview', 
-    title: 'Interview Loop', 
+    title: 'Interview', 
     dot: 'bg-blue-500',
     tagBg: 'text-blue-700 bg-blue-50'
   },
   { 
     status: 'Offer', 
-    title: 'Offer Received', 
+    title: 'Offer', 
     dot: 'bg-emerald-500',
     tagBg: 'text-emerald-700 bg-emerald-50'
   },
@@ -259,7 +259,7 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
                       )}
                     </div>
                   ) : (
-                    columnApps.map((app, index) => {
+                    columnApps.map((app) => {
                       const daysInStage = calculateDaysInStage(app.stageUpdatedAt);
                       const isSelected = selectedAppId === app.id;
                       const isBeingDragged = draggedAppId === app.id;
@@ -287,19 +287,16 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
                               onSelectApp(app);
                             }
                           }}
-                          style={{
-                            animationDelay: `${Math.min(index * 45, 300)}ms`,
-                          }}
-                          className={`p-3.5 rounded-xl border transition-all duration-200 ease-out cursor-grab active:cursor-grabbing group relative focus:outline-none focus:ring-2 focus:ring-blue-500/50 animate-card-entrance ${
+                          className={`p-3.5 rounded-xl border transition-all cursor-grab active:cursor-grabbing group relative focus:outline-none focus:ring-2 focus:ring-blue-500/50 ${
                             isBeingDragged
-                              ? 'opacity-30 scale-95 border-dashed border-blue-400 bg-blue-50/40 shadow-inner'
+                              ? 'opacity-40 scale-98 border-dashed border-blue-400 bg-blue-50/30'
                               : isSelected
-                              ? 'bg-blue-50/80 border-blue-500 ring-2 ring-blue-500/20 shadow-md -translate-y-0.5'
+                              ? 'bg-blue-50/70 border-blue-500/80 ring-1 ring-blue-500/20 shadow-xs'
                               : daysInStage > 14
-                              ? 'bg-white hover:bg-slate-50/90 border-slate-200/90 border-l-4 border-l-rose-500 hover:border-blue-400 shadow-2xs hover:shadow-md hover:-translate-y-1'
+                              ? 'bg-white hover:bg-slate-50/90 border-slate-200/80 border-l-4 border-l-rose-500 hover:border-blue-300 shadow-2xs hover:shadow-xs hover:-translate-y-0.5'
                               : daysInStage > 7
-                              ? 'bg-white hover:bg-slate-50/90 border-slate-200/90 border-l-4 border-l-amber-500 hover:border-blue-400 shadow-2xs hover:shadow-md hover:-translate-y-1'
-                              : 'bg-white hover:bg-slate-50/90 border-slate-200/90 hover:border-blue-400 shadow-2xs hover:shadow-md hover:-translate-y-1'
+                              ? 'bg-white hover:bg-slate-50/90 border-slate-200/80 border-l-4 border-l-amber-500 hover:border-blue-300 shadow-2xs hover:shadow-xs hover:-translate-y-0.5'
+                              : 'bg-white hover:bg-slate-50/90 border-slate-200/80 hover:border-blue-300 shadow-2xs hover:shadow-xs hover:-translate-y-0.5'
                           }`}
                         >
                           {/* Top Row: Company Avatar & Name */}

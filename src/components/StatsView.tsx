@@ -280,9 +280,9 @@ export const StatsView: React.FC<StatsViewProps> = ({ applications }) => {
           </div>
 
           <div className="space-y-2.5 pt-1 text-xs font-mono">
-            {/* Wishlist */}
+            {/* Wishlist / Saved */}
             <div className="flex items-center justify-between p-2.5 rounded-lg bg-purple-50/70 border border-purple-200/70">
-              <span className="text-purple-800 font-medium">Wishlist / Bookmarked</span>
+              <span className="text-purple-800 font-medium">Saved</span>
               <span className="text-purple-800 font-bold">{stageCounts.Wishlist}</span>
             </div>
 
@@ -294,19 +294,19 @@ export const StatsView: React.FC<StatsViewProps> = ({ applications }) => {
 
             {/* Screening */}
             <div className="flex items-center justify-between p-2.5 rounded-lg bg-amber-50/70 border border-amber-200/70">
-              <span className="text-amber-800 font-medium">Screening Call</span>
+              <span className="text-amber-800 font-medium">Screening</span>
               <span className="text-amber-800 font-bold">{stageCounts.Screening}</span>
             </div>
 
             {/* Interview */}
             <div className="flex items-center justify-between p-2.5 rounded-lg bg-blue-50/70 border border-blue-200/70">
-              <span className="text-blue-800 font-medium">Interview Loop</span>
+              <span className="text-blue-800 font-medium">Interview</span>
               <span className="text-blue-800 font-bold">{stageCounts.Interview}</span>
             </div>
 
             {/* Offer */}
             <div className="flex items-center justify-between p-2.5 rounded-lg bg-emerald-50/70 border border-emerald-200/70">
-              <span className="text-emerald-800 font-medium">Offer Received</span>
+              <span className="text-emerald-800 font-medium">Offer</span>
               <span className="text-emerald-800 font-bold">{stageCounts.Offer}</span>
             </div>
 

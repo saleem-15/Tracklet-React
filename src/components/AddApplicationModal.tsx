@@ -375,7 +375,7 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
                   <CustomSelectDropdown<ApplicationStatus>
                     value={status}
                     onChange={(val) => setStatus(val)}
-                    options={STATUSES.map((s) => ({ label: s, value: s }))}
+                    options={STATUSES.map((s) => ({ label: s === 'Wishlist' ? 'Saved' : s, value: s }))}
                     className="w-full"
                     size="sm"
                   />

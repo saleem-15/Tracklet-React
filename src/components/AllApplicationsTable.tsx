@@ -311,7 +311,7 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
                 </td>
               </tr>
             ) : (
-              applications.map((app, index) => {
+              applications.map((app) => {
                 const isSelected = selectedIds.has(app.id);
                 const isCurrentRowActive = selectedAppId === app.id;
                 const daysInStage = calculateDaysInStage(app.stageUpdatedAt);
@@ -320,10 +320,7 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
                   <tr
                     key={app.id}
                     onClick={() => onSelectApp(app)}
-                    style={{
-                      animationDelay: `${Math.min(index * 30, 250)}ms`,
-                    }}
-                    className={`group cursor-pointer transition-all duration-150 animate-card-entrance ${
+                    className={`group cursor-pointer transition-colors ${
                       isCurrentRowActive
                         ? 'bg-blue-50/80 font-medium'
                         : isSelected

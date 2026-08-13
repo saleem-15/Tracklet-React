@@ -62,7 +62,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, size = 'sm' })
       className={`inline-flex items-center gap-1.5 border tracking-tight transition-all ${sizeClasses} ${style.bg}`}
     >
       <span className={`w-1.5 h-1.5 rounded-full ${style.dot} shrink-0`} />
-      <span className="whitespace-nowrap">{status}</span>
+      <span className="whitespace-nowrap">{status === 'Wishlist' ? 'Saved' : status}</span>
     </span>
   );
 };
