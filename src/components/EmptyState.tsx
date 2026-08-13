@@ -1,5 +1,6 @@
 import React from 'react';
 import { Plus, SearchX, Briefcase, Sparkles, FilterX, CheckCircle2, Building2 } from 'lucide-react';
+import { UI_TOKENS } from '../theme/tokens';
 
 interface EmptyStateProps {
   isFiltered?: boolean;
@@ -32,7 +33,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
           {onResetFilters && (
             <button
               onClick={onResetFilters}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200/80 rounded-xl transition-all cursor-pointer border border-slate-200"
+              className={UI_TOKENS.btnSecondary}
             >
               <FilterX className="w-3.5 h-3.5 text-slate-500" />
               <span>Reset Filters</span>
@@ -41,7 +42,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
           {onAddApplication && (
             <button
               onClick={onAddApplication}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-xs transition-all cursor-pointer"
+              className={UI_TOKENS.btnPrimary}
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Add New Application</span>
@@ -79,7 +80,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
       {onAddApplication && (
         <button
           onClick={onAddApplication}
-          className="inline-flex items-center gap-2 px-5 py-2.5 text-xs sm:text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-2xl shadow-md hover:shadow-lg transition-all cursor-pointer transform hover:-translate-y-0.5 shadow-blue-500/20"
+          className={UI_TOKENS.btnPrimary}
         >
           <Plus className="w-4 h-4 stroke-[2.5]" />
           <span>Add Your First Application</span>
