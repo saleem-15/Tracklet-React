@@ -35,6 +35,7 @@ import { CustomSelectDropdown } from './CustomSelectDropdown';
 import { calculateDaysInStage } from '../lib/sampleData';
 import { fetchStatusHistory } from '../lib/historyService';
 import { TaskItem } from './TaskItem';
+import { IconButton, DeleteIconButton, CopyIconButton, EmailIconButton, CloseIconButton } from './IconButton';
 
 interface ApplicationDetailPanelProps {
   app: Application | null;
@@ -155,6 +156,11 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({ 
   // Tasks
   const handleToggleTask = async (taskId: string) => {
     const updatedTasks = (app.tasks || []).map((t) => t.id === taskId ? { ...t, completed: !t.completed } : t);
+    await onUpdateApp(app.id, { tasks: updatedTasks, updatedAt: new Date().toISOString() });
+  };
+
+  const handleEditTask = async (taskId: string, updatedFields: Partial<ApplicationTask>) => {
+    const updatedTasks = (app.tasks || []).map((t) => t.id === taskId ? { ...t, ...updatedFields } : t);
     await onUpdateApp(app.id, { tasks: updatedTasks, updatedAt: new Date().toISOString() });
   };
 
@@ -343,9 +349,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({ 
             </button>
             <StageSelectorDropdown currentStatus={app.status} onSelectStatus={handleStatusChange} size="md" />
             <div className="h-5 w-px bg-slate-200 hidden sm:block" />
-            <button onClick={handleRequestClose} className="p-2 rounded-[10px] bg-slate-100 hover:bg-slate-200/80 text-slate-500 hover:text-slate-900 transition-colors cursor-pointer border border-slate-200/80" title="Close (Esc)">
-              <X className="w-4 h-4 stroke-[2.5]" />
-            </button>
+            <CloseIconButton onClick={handleRequestClose} title="Close (Esc)" />
           </div>
         </div>
 
@@ -470,7 +474,13 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({ 
                   <div className="divide-y divide-slate-100">
                     {app.tasks && app.tasks.length > 0 ? (
                       app.tasks.map((task) => (
-                        <TaskItem key={task.id} task={task} onToggle={handleToggleTask} onDelete={handleDeleteTask} />
+                        <TaskItem
+                          key={task.id}
+                          task={task}
+                          onToggle={handleToggleTask}
+                          onEdit={handleEditTask}
+                          onDelete={handleDeleteTask}
+                        />
                       ))
                     ) : (
                       <div className="text-slate-400 font-mono text-[11px] text-center py-4">No tasks yet.</div>
@@ -536,14 +546,11 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({ 
                   <div className="flex items-center justify-between gap-2 bg-slate-50/80 border border-slate-200/80 rounded-xl px-3.5 py-2.5 group hover:border-slate-300 transition-colors shadow-2xs">
                     <p className="text-xs font-mono text-slate-700 truncate min-w-0 flex-1">{app.jobLink}</p>
                     <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button
-                        type="button"
+                      <CopyIconButton
                         onClick={handleCopyLink}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer"
+                        isCopied={copiedLink}
                         title="Copy link"
-                      >
-                        {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
-                      </button>
+                      />
                       <a
                         href={app.jobLink}
                         target="_blank"
@@ -576,23 +583,14 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({ 
                   <div className="flex items-center justify-between gap-2 bg-slate-50/80 border border-slate-200/80 rounded-xl px-3.5 py-2.5 group hover:border-slate-300 transition-colors shadow-2xs">
                     <p className="text-xs font-mono text-slate-700 truncate min-w-0 flex-1">{app.contactEmail}</p>
                     <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button
-                        type="button"
+                      <CopyIconButton
                         onClick={handleCopyEmail}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer"
+                        isCopied={copiedEmail}
                         title="Copy email"
-                      >
-                        {copiedEmail ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
-                      </button>
-                      <a
-                        href={`mailto:${app.contactEmail}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
-                        title="Open email client"
-                      >
-                        <Mail className="w-3.5 h-3.5" />
-                      </a>
+                      />
+                      <EmailIconButton
+                        email={app.contactEmail}
+                      />
                     </div>
                   </div>
                 ) : (
@@ -740,21 +738,24 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({ 
                             </div>
                             <div className="flex items-center gap-0.5 shrink-0">
                               {contact.email && (
-                                <a href={`mailto:${contact.email}`} target="_blank" rel="noopener noreferrer" className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title={contact.email}>
-                                  <Mail className="w-3.5 h-3.5" />
-                                </a>
+                                <EmailIconButton email={contact.email} title={`Email ${contact.name}`} />
                               )}
                               {contact.linkedIn && (
                                 <a href={contact.linkedIn} target="_blank" rel="noopener noreferrer" className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="LinkedIn">
                                   <Linkedin className="w-3.5 h-3.5" />
                                 </a>
                               )}
-                              <button type="button" onClick={() => handleStartEditContact(contact)} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100 cursor-pointer" title="Edit">
-                                <Pencil className="w-3.5 h-3.5" />
-                              </button>
-                              <button type="button" onClick={() => handleDeleteContact(contact.id)} className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100 cursor-pointer" title="Remove">
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
+                              <IconButton
+                                icon={Pencil}
+                                onClick={() => handleStartEditContact(contact)}
+                                title="Edit contact"
+                                className="opacity-0 group-hover:opacity-100"
+                              />
+                              <DeleteIconButton
+                                onClick={() => handleDeleteContact(contact.id)}
+                                title="Remove contact"
+                                className="opacity-0 group-hover:opacity-100"
+                              />
                             </div>
                           </div>
 

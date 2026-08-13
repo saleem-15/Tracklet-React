@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { Application, ApplicationStatus, JobPlatform } from '../types';
 import { CustomSelectDropdown, SelectOption } from './CustomSelectDropdown';
+import { CloseIconButton } from './IconButton';
 import { UI_TOKENS } from '../theme/tokens';
 import { 
   parseRawCSV, 
@@ -258,12 +259,7 @@ export const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
               </p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-[10px] text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-colors cursor-pointer"
-          >
-            <X className="w-4 h-4" />
-          </button>
+          <CloseIconButton onClick={onClose} title="Close CSV import (Esc)" />
         </div>
 
         {/* Modal Body */}

@@ -3,6 +3,8 @@ import { X, Plus, Building2, Briefcase, Calendar, Link, Mail, UserCheck, CheckSq
 import { JobPlatform, ApplicationStatus, Application, Contact, ApplicationTask } from '../types';
 import { CompanyLogo } from './CompanyLogo';
 import { CustomSelectDropdown } from './CustomSelectDropdown';
+import { DeleteIconButton, CloseIconButton } from './IconButton';
+import { TaskItem } from './TaskItem';
 import { UI_TOKENS } from '../theme/tokens';
 
 interface AddApplicationModalProps {
@@ -120,11 +122,24 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
       {
         id: `t-${Date.now()}-${Math.random().toString(36).substring(2, 5)}`,
         title: taskTitle.trim(),
-        dueDate: taskDueDate,
+        completed: false,
+        dueDate: taskDueDate || undefined,
       },
     ]);
     setTaskTitle('');
     setTaskDueDate('');
+  };
+
+  const handleToggleTaskItem = (id: string) => {
+    setTasks((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t))
+    );
+  };
+
+  const handleEditTaskItem = (id: string, updatedFields: Partial<ApplicationTask>) => {
+    setTasks((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, ...updatedFields } : t))
+    );
   };
 
   const handleRemoveTaskItem = (id: string) => {
@@ -230,14 +245,10 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
             </div>
           </div>
 
-          <button
-            type="button"
+          <CloseIconButton
             onClick={handleRequestClose}
-            className="p-2 rounded-xl text-slate-400 hover:text-slate-900 hover:bg-slate-200/60 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500/40"
             title="Close modal (Esc)"
-          >
-            <X className="w-4 h-4 stroke-[2.5]" />
-          </button>
+          />
         </div>
 
         {/* Form Body */}
@@ -407,27 +418,15 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
 
               {/* Added Tasks List */}
               {tasks.length > 0 && (
-                <div className="space-y-1.5 bg-slate-50/70 p-2.5 rounded-xl border border-slate-200/80">
+                <div className="rounded-xl border border-slate-200/80 bg-white overflow-hidden shadow-2xs divide-y divide-slate-100">
                   {tasks.map((t) => (
-                    <div key={t.id} className="flex items-center justify-between bg-white px-2.5 py-1.5 rounded-lg border border-slate-200/80 shadow-2xs">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <CheckSquare className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                        <span className="font-sans text-xs font-semibold text-slate-800 truncate">{t.title}</span>
-                        {t.dueDate && (
-                          <span className="font-mono text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.2 rounded border border-slate-200 shrink-0">
-                            Due: {t.dueDate}
-                          </span>
-                        )}
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveTaskItem(t.id)}
-                        className="text-slate-400 hover:text-rose-600 p-1 transition-colors cursor-pointer"
-                        title="Remove task"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
+                    <TaskItem
+                      key={t.id}
+                      task={t}
+                      onToggle={handleToggleTaskItem}
+                      onEdit={handleEditTaskItem}
+                      onDelete={handleRemoveTaskItem}
+                    />
                   ))}
                 </div>
               )}
@@ -446,7 +445,7 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
                         handleAddTaskItem();
                       }
                     }}
-                    placeholder="Add task title (e.g. Prepare portfolio pitch)"
+                    placeholder="Add a task title (e.g. Prepare system design)"
                     className="w-full bg-slate-50/80 text-slate-900 placeholder-slate-400 pl-8 pr-3 py-1.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white font-sans text-xs transition-all shadow-2xs"
                   />
                 </div>
@@ -454,8 +453,7 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
                   type="date"
                   value={taskDueDate}
                   onChange={(e) => setTaskDueDate(e.target.value)}
-                  className="w-32 bg-slate-50/80 text-slate-700 px-2 py-1 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white font-mono cursor-pointer shadow-2xs h-[30px]"
-                  title="Due date (Optional)"
+                  className="bg-slate-50/80 text-slate-800 px-2.5 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-mono cursor-pointer shadow-2xs"
                 />
                 <button
                   type="button"
@@ -472,21 +470,23 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
             {/* Section 4: Dynamic Multiple Contacts */}
             <div className="space-y-3.5 pt-1">
               <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                <span className="text-xs font-display font-bold uppercase tracking-wider text-blue-600 flex items-center gap-2">
-                  <UserPlus className="w-4 h-4 text-blue-600" />
-                  04. Key Contacts ({contacts.length})
+                <span className="text-xs font-display font-bold uppercase tracking-wider text-blue-600">
+                  04. Key Contacts (Optional)
                 </span>
-                <span className="text-[10px] font-mono text-slate-400 font-medium">Recruiters, hiring managers</span>
+                <span className="text-[10px] font-mono text-slate-400 font-medium">Recruiters, Hiring Managers</span>
               </div>
 
               {/* Added Contacts List */}
               {contacts.length > 0 && (
-                <div className="space-y-1.5 bg-slate-50/70 p-2.5 rounded-xl border border-slate-200/80">
+                <div className="space-y-1.5">
                   {contacts.map((c) => (
-                    <div key={c.id} className="flex items-center justify-between bg-white px-2.5 py-1.5 rounded-lg border border-slate-200/80 shadow-2xs">
+                    <div
+                      key={c.id}
+                      className="flex items-center justify-between gap-2 p-2 rounded-xl bg-slate-50/90 border border-slate-200/80 text-xs"
+                    >
                       <div className="flex items-center gap-2 min-w-0">
-                        <UserCheck className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                        <span className="font-sans text-xs font-semibold text-slate-800 truncate">{c.name}</span>
+                        <UserCheck className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                        <span className="font-semibold text-slate-900 truncate">{c.name}</span>
                         {c.role && <span className="text-[11px] text-slate-500 font-medium">({c.role})</span>}
                         {c.email && (
                           <span className="font-mono text-[10px] text-blue-700 bg-blue-50 px-1.5 py-0.2 rounded border border-blue-200/80 shrink-0 truncate">
@@ -494,14 +494,10 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
                           </span>
                         )}
                       </div>
-                      <button
-                        type="button"
+                      <DeleteIconButton
                         onClick={() => handleRemoveContactItem(c.id)}
-                        className="text-slate-400 hover:text-rose-600 p-1 transition-colors cursor-pointer"
                         title="Remove contact"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      />
                     </div>
                   ))}
                 </div>
