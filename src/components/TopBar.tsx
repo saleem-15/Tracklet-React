@@ -119,17 +119,13 @@ export const TopBar: React.FC<TopBarProps> = ({
             placeholder="Search company, role, notes..."
             className={`w-full ${UI_TOKENS.inputBase} pl-9 pr-8 font-sans`}
           />
-          {filter.search ? (
+          {filter.search && (
             <button
               onClick={() => setFilter((prev) => ({ ...prev, search: '' }))}
               className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 cursor-pointer"
             >
               <X className="w-3.5 h-3.5" />
             </button>
-          ) : (
-            <kbd className="absolute right-2.5 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-mono font-medium text-slate-400 bg-slate-100 border border-slate-200 rounded-md pointer-events-none">
-              ⌘K
-            </kbd>
           )}
         </div>
 

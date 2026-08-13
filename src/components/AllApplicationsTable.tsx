@@ -311,7 +311,7 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
                 </td>
               </tr>
             ) : (
-              applications.map((app) => {
+              applications.map((app, index) => {
                 const isSelected = selectedIds.has(app.id);
                 const isCurrentRowActive = selectedAppId === app.id;
                 const daysInStage = calculateDaysInStage(app.stageUpdatedAt);
@@ -320,12 +320,15 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
                   <tr
                     key={app.id}
                     onClick={() => onSelectApp(app)}
-                    className={`h-[38px] transition-all cursor-pointer group ${
+                    style={{
+                      animationDelay: `${Math.min(index * 30, 250)}ms`,
+                    }}
+                    className={`group cursor-pointer transition-all duration-150 animate-card-entrance ${
                       isCurrentRowActive
-                        ? 'bg-blue-50/70 text-blue-950 font-semibold'
+                        ? 'bg-blue-50/80 font-medium'
                         : isSelected
-                        ? 'bg-slate-50'
-                        : 'hover:bg-slate-50/80 text-slate-700'
+                        ? 'bg-slate-100/70'
+                        : 'hover:bg-slate-50/80'
                     }`}
                   >
                     {/* Checkbox */}

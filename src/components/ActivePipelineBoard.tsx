@@ -259,7 +259,7 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
                       )}
                     </div>
                   ) : (
-                    columnApps.map((app) => {
+                    columnApps.map((app, index) => {
                       const daysInStage = calculateDaysInStage(app.stageUpdatedAt);
                       const isSelected = selectedAppId === app.id;
                       const isBeingDragged = draggedAppId === app.id;
@@ -287,16 +287,19 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
                               onSelectApp(app);
                             }
                           }}
-                          className={`p-3.5 rounded-xl border transition-all cursor-grab active:cursor-grabbing group relative focus:outline-none focus:ring-2 focus:ring-blue-500/50 ${
+                          style={{
+                            animationDelay: `${Math.min(index * 45, 300)}ms`,
+                          }}
+                          className={`p-3.5 rounded-xl border transition-all duration-200 ease-out cursor-grab active:cursor-grabbing group relative focus:outline-none focus:ring-2 focus:ring-blue-500/50 animate-card-entrance ${
                             isBeingDragged
-                              ? 'opacity-40 scale-98 border-dashed border-blue-400 bg-blue-50/30'
+                              ? 'opacity-30 scale-95 border-dashed border-blue-400 bg-blue-50/40 shadow-inner'
                               : isSelected
-                              ? 'bg-blue-50/70 border-blue-500/80 ring-1 ring-blue-500/20 shadow-xs'
+                              ? 'bg-blue-50/80 border-blue-500 ring-2 ring-blue-500/20 shadow-md -translate-y-0.5'
                               : daysInStage > 14
-                              ? 'bg-white hover:bg-slate-50/90 border-slate-200/80 border-l-4 border-l-rose-500 hover:border-blue-300 shadow-2xs hover:shadow-xs hover:-translate-y-0.5'
+                              ? 'bg-white hover:bg-slate-50/90 border-slate-200/90 border-l-4 border-l-rose-500 hover:border-blue-400 shadow-2xs hover:shadow-md hover:-translate-y-1'
                               : daysInStage > 7
-                              ? 'bg-white hover:bg-slate-50/90 border-slate-200/80 border-l-4 border-l-amber-500 hover:border-blue-300 shadow-2xs hover:shadow-xs hover:-translate-y-0.5'
-                              : 'bg-white hover:bg-slate-50/90 border-slate-200/80 hover:border-blue-300 shadow-2xs hover:shadow-xs hover:-translate-y-0.5'
+                              ? 'bg-white hover:bg-slate-50/90 border-slate-200/90 border-l-4 border-l-amber-500 hover:border-blue-400 shadow-2xs hover:shadow-md hover:-translate-y-1'
+                              : 'bg-white hover:bg-slate-50/90 border-slate-200/90 hover:border-blue-400 shadow-2xs hover:shadow-md hover:-translate-y-1'
                           }`}
                         >
                           {/* Top Row: Company Avatar & Name */}
@@ -391,42 +394,46 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
             })}
           </div>
 
-          {/* Quick-Drop Zones Bar (Archive & Mark Rejected) */}
-          <div className="border-t border-slate-200/90 bg-slate-50/90 p-3 grid grid-cols-2 gap-3 sticky bottom-0 z-20 backdrop-blur-xs">
-            <div
-              onDragOver={(e) => handleDragOver(e, 'Archived')}
-              onDragLeave={(e) => handleDragLeave(e, 'Archived')}
-              onDrop={(e) => handleDrop(e, 'Archived')}
-              className={`p-3 rounded-xl border-2 border-dashed flex items-center justify-center gap-2.5 transition-all duration-150 text-xs font-semibold ${
-                dragOverColumn === 'Archived'
-                  ? 'bg-amber-100/90 border-amber-500 text-amber-900 ring-2 ring-amber-400/30 shadow-md scale-[1.01]'
-                  : draggedAppId !== null
-                  ? 'bg-amber-50/60 border-amber-300/80 text-amber-800 animate-pulse'
-                  : 'bg-white border-slate-200 text-slate-600 hover:border-amber-400 hover:text-amber-900 hover:bg-amber-100/60'
-              }`}
-            >
-              <Archive className={`w-4 h-4 shrink-0 ${dragOverColumn === 'Archived' ? 'text-amber-700' : 'text-slate-400'}`} />
-              <span>
-                {dragOverColumn === 'Archived' ? 'Release to Archive Application' : 'Quick Drop Zone: Drag here to Archive'}
-              </span>
-            </div>
+          {/* Quick-Drop Zones Bar (Archive & Mark Rejected) - expands and fades in smoothly while dragging */}
+          <div
+            className={`border-t border-slate-200/90 bg-slate-50/90 sticky bottom-0 z-20 backdrop-blur-xs overflow-hidden transition-all duration-300 ease-in-out ${
+              draggedAppId !== null
+                ? 'max-h-24 opacity-100 p-3 translate-y-0 shadow-lg'
+                : 'max-h-0 opacity-0 p-0 translate-y-4 pointer-events-none'
+            }`}
+          >
+            <div className="grid grid-cols-2 gap-3">
+              <div
+                onDragOver={(e) => handleDragOver(e, 'Archived')}
+                onDragLeave={(e) => handleDragLeave(e, 'Archived')}
+                onDrop={(e) => handleDrop(e, 'Archived')}
+                className={`p-3 rounded-xl border-2 border-dashed flex items-center justify-center gap-2.5 transition-all duration-200 text-xs font-semibold ${
+                  dragOverColumn === 'Archived'
+                    ? 'bg-amber-100/90 border-amber-500 text-amber-900 ring-2 ring-amber-400/30 shadow-md scale-[1.01]'
+                    : 'bg-amber-50/80 border-amber-300 text-amber-800 animate-pulse'
+                }`}
+              >
+                <Archive className={`w-4 h-4 shrink-0 ${dragOverColumn === 'Archived' ? 'text-amber-700' : 'text-amber-600'}`} />
+                <span>
+                  {dragOverColumn === 'Archived' ? 'Release to Archive Application' : 'Quick Drop Zone: Drag here to Archive'}
+                </span>
+              </div>
 
-            <div
-              onDragOver={(e) => handleDragOver(e, 'Rejected')}
-              onDragLeave={(e) => handleDragLeave(e, 'Rejected')}
-              onDrop={(e) => handleDrop(e, 'Rejected')}
-              className={`p-3 rounded-xl border-2 border-dashed flex items-center justify-center gap-2.5 transition-all duration-150 text-xs font-semibold ${
-                dragOverColumn === 'Rejected'
-                  ? 'bg-rose-100/90 border-rose-500 text-rose-900 ring-2 ring-rose-400/30 shadow-md scale-[1.01]'
-                  : draggedAppId !== null
-                  ? 'bg-rose-50/60 border-rose-300/80 text-rose-800 animate-pulse'
-                  : 'bg-white border-slate-200 text-slate-600 hover:border-rose-400 hover:text-rose-900 hover:bg-rose-100/60'
-              }`}
-            >
-              <XCircle className={`w-4 h-4 shrink-0 ${dragOverColumn === 'Rejected' ? 'text-rose-700' : 'text-slate-400'}`} />
-              <span>
-                {dragOverColumn === 'Rejected' ? 'Release to Mark as Rejected' : 'Quick Drop Zone: Drag here to Mark Rejected'}
-              </span>
+              <div
+                onDragOver={(e) => handleDragOver(e, 'Rejected')}
+                onDragLeave={(e) => handleDragLeave(e, 'Rejected')}
+                onDrop={(e) => handleDrop(e, 'Rejected')}
+                className={`p-3 rounded-xl border-2 border-dashed flex items-center justify-center gap-2.5 transition-all duration-200 text-xs font-semibold ${
+                  dragOverColumn === 'Rejected'
+                    ? 'bg-rose-100/90 border-rose-500 text-rose-900 ring-2 ring-rose-400/30 shadow-md scale-[1.01]'
+                    : 'bg-rose-50/80 border-rose-300 text-rose-800 animate-pulse'
+                }`}
+              >
+                <XCircle className={`w-4 h-4 shrink-0 ${dragOverColumn === 'Rejected' ? 'text-rose-700' : 'text-rose-600'}`} />
+                <span>
+                  {dragOverColumn === 'Rejected' ? 'Release to Mark as Rejected' : 'Quick Drop Zone: Drag here to Mark Rejected'}
+                </span>
+              </div>
             </div>
           </div>
         </div>
