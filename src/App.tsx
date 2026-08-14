@@ -754,7 +754,10 @@ export default function App() {
             )}
 
             {activeTab === 'stats' && (
-              <StatsView applications={applications} />
+              <StatsView
+                applications={applications}
+                onSelectApplication={(id) => setSelectedAppId(id)}
+              />
             )}
 
             {activeTab === 'settings' && (

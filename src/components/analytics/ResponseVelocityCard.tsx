@@ -1,0 +1,216 @@
+import React, { useState } from 'react';
+import { calculateGhostingAndVelocity, StaleAppItem } from '../../lib/analyticsUtils';
+import { Application } from '../../types';
+import { 
+  Clock, 
+  AlertTriangle, 
+  CheckCircle, 
+  ChevronRight, 
+  Mail, 
+  Send, 
+  AlertCircle,
+  ExternalLink
+} from 'lucide-react';
+import { CompanyLogo } from '../CompanyLogo';
+
+interface ResponseVelocityCardProps {
+  applications: Application[];
+  onSelectApplication?: (id: string) => void;
+  className?: string;
+}
+
+export const ResponseVelocityCard: React.FC<ResponseVelocityCardProps> = ({
+  applications,
+  onSelectApplication,
+  className = '',
+}) => {
+  const [copiedAppId, setCopiedAppId] = useState<string | null>(null);
+  const ghosting = calculateGhostingAndVelocity(applications);
+  const {
+    totalAnalyzed,
+    freshCount,
+    awaitingCount,
+    staleCount,
+    ghostedCount,
+    ghostingRatePct,
+    avgDaysInStage,
+    staleApplications,
+  } = ghosting;
+
+  const total = Math.max(1, totalAnalyzed);
+  const freshPct = Math.round((freshCount / total) * 100);
+  const awaitingPct = Math.round((awaitingCount / total) * 100);
+  const stalePct = Math.round((staleCount / total) * 100);
+  const ghostedPct = Math.round((ghostedCount / total) * 100);
+
+  const handleCopyEmail = (e: React.MouseEvent, app: StaleAppItem) => {
+    e.stopPropagation();
+    if (app.contactEmail) {
+      navigator.clipboard.writeText(app.contactEmail);
+      setCopiedAppId(app.id);
+      setTimeout(() => setCopiedAppId(null), 2000);
+    }
+  };
+
+  return (
+    <div className={`bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs space-y-4 ${className}`}>
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200/70 pb-3.5">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shadow-2xs">
+            <Clock className="w-4 h-4" />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-slate-900 tracking-tight flex items-center gap-2">
+              Response Velocity & Ghosting Radar
+            </h3>
+            <p className="text-[11px] text-slate-500 font-sans">
+              Monitor candidate response lag and flag applications requiring follow-ups
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <div className="bg-slate-100/90 border border-slate-200/80 px-2.5 py-1 rounded-lg text-xs font-mono text-slate-700">
+            Avg Velocity: <strong className="text-slate-900 font-bold">{avgDaysInStage}d</strong>
+          </div>
+        </div>
+      </div>
+
+      {/* Segmented Staleness Distribution Bar */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between text-xs font-mono">
+          <span className="text-slate-600 font-medium">Application Recency Distribution</span>
+          <span className="text-slate-400 text-[11px]">{totalAnalyzed} active apps analyzed</span>
+        </div>
+
+        {/* Multi-segment stacked bar */}
+        <div className="h-3.5 w-full bg-slate-100 rounded-full overflow-hidden flex border border-slate-200/60 p-0.5">
+          {freshCount > 0 && (
+            <div
+              className="bg-emerald-500 h-full rounded-l-full transition-all duration-500"
+              style={{ width: `${freshPct}%` }}
+              title={`Fresh (<7d): ${freshCount} apps`}
+            />
+          )}
+          {awaitingCount > 0 && (
+            <div
+              className="bg-blue-500 h-full transition-all duration-500"
+              style={{ width: `${awaitingPct}%` }}
+              title={`Awaiting (7-14d): ${awaitingCount} apps`}
+            />
+          )}
+          {staleCount > 0 && (
+            <div
+              className="bg-amber-500 h-full transition-all duration-500"
+              style={{ width: `${stalePct}%` }}
+              title={`Stale (14-21d): ${staleCount} apps`}
+            />
+          )}
+          {ghostedCount > 0 && (
+            <div
+              className="bg-rose-500 h-full rounded-r-full transition-all duration-500"
+              style={{ width: `${ghostedPct}%` }}
+              title={`Likely Ghosted (>21d): ${ghostedCount} apps`}
+            />
+          )}
+        </div>
+
+        {/* Legend */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 font-mono text-[11px]">
+          <div className="flex items-center gap-1.5 text-slate-600">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" />
+            <span>Fresh (&lt;7d): <strong className="text-slate-800">{freshCount}</strong></span>
+          </div>
+          <div className="flex items-center gap-1.5 text-slate-600">
+            <span className="w-2.5 h-2.5 rounded-full bg-blue-500 shrink-0" />
+            <span>Normal (7–14d): <strong className="text-slate-800">{awaitingCount}</strong></span>
+          </div>
+          <div className="flex items-center gap-1.5 text-slate-600">
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0" />
+            <span>Stale (14–21d): <strong className="text-amber-700 font-bold">{staleCount}</strong></span>
+          </div>
+          <div className="flex items-center gap-1.5 text-slate-600">
+            <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0" />
+            <span>Ghosted (&gt;21d): <strong className="text-rose-700 font-bold">{ghostedCount}</strong></span>
+          </div>
+        </div>
+      </div>
+
+      {/* Stale & High Lag Application Action List */}
+      <div className="space-y-2 pt-1 border-t border-slate-100">
+        <div className="flex items-center justify-between">
+          <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider font-mono">
+            Requires Follow-up or Archive ({staleApplications.length})
+          </h4>
+          {staleApplications.length > 0 && (
+            <span className="text-[10px] font-mono text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200/60 font-semibold">
+              Action Recommended
+            </span>
+          )}
+        </div>
+
+        {staleApplications.length === 0 ? (
+          <div className="p-4 rounded-xl bg-emerald-50/60 border border-emerald-200/70 flex items-center gap-2.5 text-xs text-emerald-800 font-mono">
+            <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span>All active applications have recent momentum (no stale entries &gt;14 days).</span>
+          </div>
+        ) : (
+          <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
+            {staleApplications.slice(0, 5).map((app) => (
+              <div
+                key={app.id}
+                onClick={() => onSelectApplication?.(app.id)}
+                className="p-2.5 rounded-xl border border-slate-200 hover:border-blue-300 bg-slate-50/60 hover:bg-blue-50/30 transition-all flex items-center justify-between gap-2 cursor-pointer group"
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <CompanyLogo company={app.company} size="sm" />
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-bold text-xs text-slate-900 truncate">
+                        {app.company}
+                      </span>
+                      <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-200/60 text-slate-600">
+                        {app.status}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-500 truncate">
+                      {app.role}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className={`font-mono text-xs font-bold px-2 py-0.5 rounded-md border ${
+                    app.daysInStage > 30
+                      ? 'bg-rose-50 text-rose-700 border-rose-200'
+                      : 'bg-amber-50 text-amber-700 border-amber-200'
+                  }`}>
+                    {app.daysInStage}d lag
+                  </span>
+
+                  {app.contactEmail ? (
+                    <button
+                      type="button"
+                      onClick={(e) => handleCopyEmail(e, app)}
+                      title={`Copy recruiter email: ${app.contactEmail}`}
+                      className="p-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 hover:text-blue-600 transition-colors"
+                    >
+                      {copiedAppId === app.id ? (
+                        <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />
+                      ) : (
+                        <Mail className="w-3.5 h-3.5" />
+                      )}
+                    </button>
+                  ) : null}
+
+                  <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-all" />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
