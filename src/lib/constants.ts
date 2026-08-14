@@ -1,7 +1,7 @@
 import { ApplicationStatus, JobPlatform } from '../types';
 
 export const APPLICATION_STATUSES: ApplicationStatus[] = [
-  'Wishlist',
+  'Saved',
   'Applied',
   'Screening',
   'Interview',
@@ -11,7 +11,7 @@ export const APPLICATION_STATUSES: ApplicationStatus[] = [
 ];
 
 export const ACTIVE_STATUSES: ApplicationStatus[] = [
-  'Wishlist',
+  'Saved',
   'Applied',
   'Screening',
   'Interview',
@@ -42,8 +42,8 @@ export const PIPELINE_COLUMNS: {
   tagBg: string;
 }[] = [
   { 
-    status: 'Wishlist', 
-    title: 'Wishlist / Saved', 
+    status: 'Saved', 
+    title: 'Saved', 
     dot: 'bg-purple-500',
     tagBg: 'text-purple-700 bg-purple-50'
   },
@@ -74,7 +74,7 @@ export const PIPELINE_COLUMNS: {
 ];
 
 export const STATUS_ACTIVE_STYLES: Record<ApplicationStatus, string> = {
-  Wishlist: 'bg-indigo-600 text-white border-indigo-600 shadow-indigo-500/20 shadow-xs',
+  Saved: 'bg-purple-600 text-white border-purple-600 shadow-purple-500/20 shadow-xs',
   Applied: 'bg-slate-700 text-white border-slate-700 shadow-xs',
   Screening: 'bg-amber-600 text-white border-amber-600 shadow-amber-500/20 shadow-xs',
   Interview: 'bg-blue-600 text-white border-blue-600 shadow-blue-500/20 shadow-xs',
@@ -89,3 +89,4 @@ export const LOCAL_STORAGE_KEYS = {
   SIDEBAR_COLLAPSED: 'tracklet_sidebar_collapsed',
   HISTORY_PREFIX: 'tracklet_history_',
 };
+
