@@ -55,9 +55,14 @@ export default function App() {
   // Toast notifications
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
-  const addToast = (type: 'success' | 'error' | 'info', title: string, description?: string) => {
+  const addToast = (
+    type: 'success' | 'error' | 'info',
+    title: string,
+    description?: string,
+    action?: { label: string; onClick: () => void }
+  ) => {
     const id = `toast-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
-    setToasts((prev) => [...prev, { id, type, title, description }]);
+    setToasts((prev) => [...prev, { id, type, title, description, action }]);
   };
 
   const dismissToast = (id: string) => {
@@ -438,7 +443,10 @@ export default function App() {
   // Bulk Actions
   const handleBulkUpdateStatus = async (ids: string[], newStatus: ApplicationStatus) => {
     const now = new Date().toISOString();
-    const appMap = new Map<string, ApplicationStatus>(applications.map((a) => [a.id, a.status]));
+    const previousSnapshot = applications.filter((a) => ids.includes(a.id));
+    const previousStatusMap = new Map<string, { status: ApplicationStatus; stageUpdatedAt: string }>(
+      previousSnapshot.map((a) => [a.id, { status: a.status, stageUpdatedAt: a.stageUpdatedAt }])
+    );
 
     setApplications((prev) =>
       prev.map((a) =>
@@ -466,17 +474,62 @@ export default function App() {
 
     // Log history entry for each application in bulk update
     for (const id of ids) {
-      const prevStatus = appMap.get(id);
-      if (prevStatus && prevStatus !== newStatus) {
-        await addStatusHistoryEntry(id, newStatus, prevStatus, now);
+      const prevData = previousStatusMap.get(id);
+      if (prevData && prevData.status !== newStatus) {
+        await addStatusHistoryEntry(id, newStatus, prevData.status, now);
       }
     }
 
-    addToast('success', 'Bulk Status Updated', `Moved ${ids.length} applications to ${newStatus}`);
+    // Provide immediate Undo action
+    addToast(
+      'success',
+      'Bulk Status Updated',
+      `Moved ${ids.length} application${ids.length === 1 ? '' : 's'} to ${newStatus}`,
+      {
+        label: 'Undo',
+        onClick: async () => {
+          const revertNow = new Date().toISOString();
+          setApplications((prev) =>
+            prev.map((a) => {
+              const old = previousStatusMap.get(a.id);
+              return old ? { ...a, status: old.status, stageUpdatedAt: old.stageUpdatedAt, updatedAt: revertNow } : a;
+            })
+          );
+
+          if (user) {
+            try {
+              const batch = writeBatch(db);
+              ids.forEach((id) => {
+                const old = previousStatusMap.get(id);
+                if (old) {
+                  const dRef = doc(db, 'applications', id);
+                  batch.update(dRef, { status: old.status, stageUpdatedAt: old.stageUpdatedAt, updatedAt: revertNow });
+                }
+              });
+              await batch.commit();
+            } catch (err) {
+              console.error('Failed to undo bulk status update in Firestore:', err);
+            }
+          } else {
+            setApplications((current) => {
+              const reverted = current.map((a) => {
+                const old = previousStatusMap.get(a.id);
+                return old ? { ...a, status: old.status, stageUpdatedAt: old.stageUpdatedAt, updatedAt: revertNow } : a;
+              });
+              saveGuestAppsToStorage(reverted);
+              return reverted;
+            });
+          }
+          addToast('info', 'Status Reverted', `Restored ${ids.length} application status${ids.length === 1 ? '' : 'es'}.`);
+        },
+      }
+    );
   };
 
   const handleBulkDelete = async (ids: string[]) => {
+    const deletedApps = applications.filter((a) => ids.includes(a.id));
     const count = ids.length;
+
     setApplications((prev) => prev.filter((a) => !ids.includes(a.id)));
     if (selectedAppId && ids.includes(selectedAppId)) setSelectedAppId(null);
 
@@ -495,7 +548,37 @@ export default function App() {
       saveGuestAppsToStorage(updatedList);
     }
 
-    addToast('info', 'Bulk Deleted', `Removed ${count} applications.`);
+    addToast(
+      'info',
+      'Applications Removed',
+      `Deleted ${count} application${count === 1 ? '' : 's'}.`,
+      {
+        label: 'Undo',
+        onClick: async () => {
+          setApplications((prev) => [...deletedApps, ...prev]);
+
+          if (user) {
+            try {
+              const batch = writeBatch(db);
+              deletedApps.forEach((app) => {
+                const dRef = doc(db, 'applications', app.id);
+                batch.set(dRef, app);
+              });
+              await batch.commit();
+            } catch (err) {
+              console.error('Failed to restore deleted applications in Firestore:', err);
+            }
+          } else {
+            setApplications((current) => {
+              const restored = [...deletedApps, ...current.filter((c) => !ids.includes(c.id))];
+              saveGuestAppsToStorage(restored);
+              return restored;
+            });
+          }
+          addToast('success', 'Restored', `Recovered ${count} application${count === 1 ? '' : 's'}.`);
+        },
+      }
+    );
   };
 
   // Sorting
