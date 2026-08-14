@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { Application } from '../types';
 import { CustomSelectDropdown, SelectOption } from './CustomSelectDropdown';
+import { UI_TOKENS } from '../theme/tokens';
 
 interface WeeklyActivityWidgetProps {
   applications: Application[];
@@ -263,10 +264,10 @@ export const WeeklyActivityWidget: React.FC<WeeklyActivityWidgetProps> = ({
         {/* Controls: Mode Switcher (Week / Month) & Period Navigator */}
         <div className="flex items-center gap-2 flex-wrap">
           {/* Week / Month Toggle Pills */}
-          <div className="bg-slate-200/70 p-0.5 rounded-xl flex items-center text-xs font-semibold">
+          <div className="bg-slate-200/70 p-0.5 rounded-[10px] flex items-center text-xs font-semibold">
             <button
               onClick={() => setPeriodType('week')}
-              className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
+              className={`px-3 py-1 rounded-[8px] transition-all cursor-pointer ${
                 periodType === 'week'
                   ? 'bg-white text-blue-700 shadow-2xs font-bold'
                   : 'text-slate-600 hover:text-slate-900'
@@ -276,7 +277,7 @@ export const WeeklyActivityWidget: React.FC<WeeklyActivityWidgetProps> = ({
             </button>
             <button
               onClick={() => setPeriodType('month')}
-              className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
+              className={`px-3 py-1 rounded-[8px] transition-all cursor-pointer ${
                 periodType === 'month'
                   ? 'bg-white text-blue-700 shadow-2xs font-bold'
                   : 'text-slate-600 hover:text-slate-900'

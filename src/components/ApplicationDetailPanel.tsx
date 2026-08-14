@@ -28,19 +28,33 @@ import {
 } from 'lucide-react';
 import { Application, ApplicationStatus, StatusHistoryEntry, Contact, ApplicationTask, JobPlatform } from '../types';
 import { StatusBadge } from './StatusBadge';
+import { UI_TOKENS } from '../theme/tokens';
 import { StageSelectorDropdown } from './StageSelectorDropdown';
 import { CompanyLogo } from './CompanyLogo';
 import { CustomSelectDropdown } from './CustomSelectDropdown';
-import { calculateDaysInStage, formatTimestamp } from '../lib/dateUtils';
-import { JOB_PLATFORMS } from '../lib/constants';
+import { calculateDaysInStage } from '../lib/sampleData';
 import { fetchStatusHistory } from '../lib/historyService';
 import { TaskItem } from './TaskItem';
+import { IconButton, DeleteIconButton, CopyIconButton, EmailIconButton, CloseIconButton } from './IconButton';
 
 interface ApplicationDetailPanelProps {
   app: Application | null;
   onClose: () => void;
   onUpdateApp: (id: string, updates: Partial<Application>) => Promise<void>;
   onDeleteApp: (id: string) => Promise<void>;
+}
+
+const ALL_PLATFORMS: JobPlatform[] = [
+  'LinkedIn', 'Indeed', 'Lever', 'Greenhouse', 'Otta',
+  'Company Site', 'Referral', 'Wellfound', 'Other',
+];
+
+function formatTimestamp(isoString: string): string {
+  try {
+    const d = new Date(isoString);
+    if (isNaN(d.getTime())) return isoString;
+    return d.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true });
+  } catch { return isoString; }
 }
 
 function getInitials(name: string): string {
@@ -51,7 +65,9 @@ function getInitials(name: string): string {
 }
 
 export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({ app, onClose, onUpdateApp, onDeleteApp }) => {
-  const [notes, setNotes] = useState(app?.notes || '');
+  if (!app) return null;
+
+  const [notes, setNotes] = useState(app.notes || '');
   const [isSavingNotes, setIsSavingNotes] = useState(false);
   const [hasUnsavedNotes, setHasUnsavedNotes] = useState(false);
   const [showSavedToast, setShowSavedToast] = useState(false);
@@ -89,17 +105,16 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({ 
 
   // Edit Info form — covers company, role, platform, date, job link, domain, contact email
   const [isEditingInfo, setIsEditingInfo] = useState(false);
-  const [editCompany, setEditCompany] = useState(app?.company || '');
-  const [editRole, setEditRole] = useState(app?.role || '');
-  const [editPlatform, setEditPlatform] = useState<JobPlatform>(app?.platform || 'LinkedIn');
-  const [editDateApplied, setEditDateApplied] = useState(app?.dateApplied || '');
-  const [editJobLink, setEditJobLink] = useState(app?.jobLink || '');
-  const [editCompanyDomain, setEditCompanyDomain] = useState(app?.companyDomain || '');
-  const [editContactEmail, setEditContactEmail] = useState(app?.contactEmail || '');
+  const [editCompany, setEditCompany] = useState(app.company || '');
+  const [editRole, setEditRole] = useState(app.role || '');
+  const [editPlatform, setEditPlatform] = useState<JobPlatform>(app.platform || 'LinkedIn');
+  const [editDateApplied, setEditDateApplied] = useState(app.dateApplied || '');
+  const [editJobLink, setEditJobLink] = useState(app.jobLink || '');
+  const [editCompanyDomain, setEditCompanyDomain] = useState(app.companyDomain || '');
+  const [editContactEmail, setEditContactEmail] = useState(app.contactEmail || '');
   const [isSavingInfo, setIsSavingInfo] = useState(false);
 
   useEffect(() => {
-    if (!app) return;
     setNotes(app.notes || '');
     setHasUnsavedNotes(false);
     setEmailSender(app.contactEmail || '');
@@ -111,7 +126,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({ 
     setEditJobLink(app.jobLink || '');
     setEditCompanyDomain(app.companyDomain || '');
     setEditContactEmail(app.contactEmail || '');
-  }, [app?.id, app?.notes, app?.contactEmail, app?.company, app?.role, app?.platform, app?.dateApplied, app?.companyDomain, app?.jobLink]);
+  }, [app.id, app.notes, app.contactEmail, app.company, app.role, app.platform, app.dateApplied, app.companyDomain, app.jobLink]);
 
   const handleSaveInfo = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -141,6 +156,11 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({ 
   // Tasks
   const handleToggleTask = async (taskId: string) => {
     const updatedTasks = (app.tasks || []).map((t) => t.id === taskId ? { ...t, completed: !t.completed } : t);
+    await onUpdateApp(app.id, { tasks: updatedTasks, updatedAt: new Date().toISOString() });
+  };
+
+  const handleEditTask = async (taskId: string, updatedFields: Partial<ApplicationTask>) => {
+    const updatedTasks = (app.tasks || []).map((t) => t.id === taskId ? { ...t, ...updatedFields } : t);
     await onUpdateApp(app.id, { tasks: updatedTasks, updatedAt: new Date().toISOString() });
   };
 
@@ -228,7 +248,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({ 
         .finally(() => { if (isMounted) setIsLoadingHistory(false); });
     }
     return () => { isMounted = false; };
-  }, [app?.id, app?.status]);
+  }, [app.id, app.status]);
 
   // Unsaved changes guard
   const [showUnsavedPrompt, setShowUnsavedPrompt] = useState(false);
@@ -246,8 +266,6 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({ 
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
   }, [showUnsavedPrompt, isDirty]);
-
-  if (!app) return null;
 
   const handleStatusChange = async (newStatus: ApplicationStatus) => {
     if (newStatus === app.status) return;
@@ -324,16 +342,14 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({ 
             <button
               type="button"
               onClick={() => { setIsEditingInfo(!isEditingInfo); }}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer shadow-2xs ${isEditingInfo ? 'bg-blue-600 text-white border-blue-600' : 'bg-white hover:bg-slate-50 text-slate-600 border-slate-200 hover:border-slate-300'}`}
+              className={`flex items-center gap-1.5 px-3 ${UI_TOKENS.controlMd} text-xs font-semibold border transition-all cursor-pointer shadow-2xs ${isEditingInfo ? 'bg-blue-600 text-white border-blue-600' : 'bg-white hover:bg-slate-50 text-slate-600 border-slate-200 hover:border-slate-300'}`}
             >
               <Pencil className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">{isEditingInfo ? 'Cancel' : 'Edit Info'}</span>
             </button>
-            <StageSelectorDropdown currentStatus={app.status} onStatusChange={handleStatusChange} size="md" />
+            <StageSelectorDropdown currentStatus={app.status} onSelectStatus={handleStatusChange} size="md" />
             <div className="h-5 w-px bg-slate-200 hidden sm:block" />
-            <button onClick={handleRequestClose} className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200/80 text-slate-500 hover:text-slate-900 transition-colors cursor-pointer border border-slate-200/80" title="Close (Esc)">
-              <X className="w-4 h-4 stroke-[2.5]" />
-            </button>
+            <CloseIconButton onClick={handleRequestClose} title="Close (Esc)" />
           </div>
         </div>
 
@@ -373,7 +389,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({ 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="block text-[11px] font-mono font-medium text-slate-500 mb-1">Platform</label>
-                  <CustomSelectDropdown<JobPlatform> value={editPlatform} onChange={(val) => setEditPlatform(val)} options={JOB_PLATFORMS.map((p) => ({ label: p, value: p }))} className="w-full" />
+                  <CustomSelectDropdown<JobPlatform> value={editPlatform} onChange={(val) => setEditPlatform(val)} options={ALL_PLATFORMS.map((p) => ({ label: p, value: p }))} className="w-full" />
                 </div>
                 <div>
                   <label className="block text-[11px] font-mono font-medium text-slate-500 mb-1">Date Applied</label>
@@ -458,7 +474,13 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({ 
                   <div className="divide-y divide-slate-100">
                     {app.tasks && app.tasks.length > 0 ? (
                       app.tasks.map((task) => (
-                        <TaskItem key={task.id} task={task} onToggle={handleToggleTask} onDelete={handleDeleteTask} />
+                        <TaskItem
+                          key={task.id}
+                          task={task}
+                          onToggle={handleToggleTask}
+                          onEdit={handleEditTask}
+                          onDelete={handleDeleteTask}
+                        />
                       ))
                     ) : (
                       <div className="text-slate-400 font-mono text-[11px] text-center py-4">No tasks yet.</div>
@@ -524,14 +546,11 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({ 
                   <div className="flex items-center justify-between gap-2 bg-slate-50/80 border border-slate-200/80 rounded-xl px-3.5 py-2.5 group hover:border-slate-300 transition-colors shadow-2xs">
                     <p className="text-xs font-mono text-slate-700 truncate min-w-0 flex-1">{app.jobLink}</p>
                     <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button
-                        type="button"
+                      <CopyIconButton
                         onClick={handleCopyLink}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer"
+                        isCopied={copiedLink}
                         title="Copy link"
-                      >
-                        {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
-                      </button>
+                      />
                       <a
                         href={app.jobLink}
                         target="_blank"
@@ -564,23 +583,14 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({ 
                   <div className="flex items-center justify-between gap-2 bg-slate-50/80 border border-slate-200/80 rounded-xl px-3.5 py-2.5 group hover:border-slate-300 transition-colors shadow-2xs">
                     <p className="text-xs font-mono text-slate-700 truncate min-w-0 flex-1">{app.contactEmail}</p>
                     <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button
-                        type="button"
+                      <CopyIconButton
                         onClick={handleCopyEmail}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer"
+                        isCopied={copiedEmail}
                         title="Copy email"
-                      >
-                        {copiedEmail ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
-                      </button>
-                      <a
-                        href={`mailto:${app.contactEmail}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
-                        title="Open email client"
-                      >
-                        <Mail className="w-3.5 h-3.5" />
-                      </a>
+                      />
+                      <EmailIconButton
+                        email={app.contactEmail}
+                      />
                     </div>
                   </div>
                 ) : (
@@ -728,21 +738,24 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({ 
                             </div>
                             <div className="flex items-center gap-0.5 shrink-0">
                               {contact.email && (
-                                <a href={`mailto:${contact.email}`} target="_blank" rel="noopener noreferrer" className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title={contact.email}>
-                                  <Mail className="w-3.5 h-3.5" />
-                                </a>
+                                <EmailIconButton email={contact.email} title={`Email ${contact.name}`} />
                               )}
                               {contact.linkedIn && (
                                 <a href={contact.linkedIn} target="_blank" rel="noopener noreferrer" className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="LinkedIn">
                                   <Linkedin className="w-3.5 h-3.5" />
                                 </a>
                               )}
-                              <button type="button" onClick={() => handleStartEditContact(contact)} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100 cursor-pointer" title="Edit">
-                                <Pencil className="w-3.5 h-3.5" />
-                              </button>
-                              <button type="button" onClick={() => handleDeleteContact(contact.id)} className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100 cursor-pointer" title="Remove">
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
+                              <IconButton
+                                icon={Pencil}
+                                onClick={() => handleStartEditContact(contact)}
+                                title="Edit contact"
+                                className="opacity-0 group-hover:opacity-100"
+                              />
+                              <DeleteIconButton
+                                onClick={() => handleDeleteContact(contact.id)}
+                                title="Remove contact"
+                                className="opacity-0 group-hover:opacity-100"
+                              />
                             </div>
                           </div>
 

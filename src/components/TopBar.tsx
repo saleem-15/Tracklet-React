@@ -2,7 +2,7 @@ import React, { useRef, useEffect } from 'react';
 import { Search, Plus, Filter, X, ChevronDown } from 'lucide-react';
 import { FilterState, JobPlatform, ApplicationStatus, ActiveTab } from '../types';
 import { FilterSelectDropdown } from './FilterSelectDropdown';
-import { JOB_PLATFORMS, APPLICATION_STATUSES } from '../lib/constants';
+import { UI_TOKENS } from '../theme/tokens';
 
 interface TopBarProps {
   filter: FilterState;
@@ -13,15 +13,37 @@ interface TopBarProps {
   activeTab?: ActiveTab;
 }
 
+const PLATFORMS: JobPlatform[] = [
+  'LinkedIn',
+  'Indeed',
+  'Lever',
+  'Greenhouse',
+  'Otta',
+  'Company Site',
+  'Referral',
+  'Wellfound',
+  'Other',
+];
+
+const STATUSES: ApplicationStatus[] = [
+  'Saved',
+  'Applied',
+  'Screening',
+  'Interview',
+  'Offer',
+  'Rejected',
+  'Archived',
+];
+
 const PLATFORM_OPTIONS = [
   { label: 'All', value: 'All' },
-  ...JOB_PLATFORMS.map((p) => ({ label: p, value: p })),
+  ...PLATFORMS.map((p) => ({ label: p, value: p })),
 ];
 
 const STATUS_OPTIONS = [
   { label: 'All', value: 'All' },
   { label: 'Active Only', value: 'Active' },
-  ...APPLICATION_STATUSES.map((s) => ({ label: s, value: s })),
+  ...STATUSES.map((s) => ({ label: s, value: s })),
 ];
 
 const DATE_OPTIONS = [
@@ -96,19 +118,15 @@ export const TopBar: React.FC<TopBarProps> = ({
             value={filter.search}
             onChange={(e) => setFilter((prev) => ({ ...prev, search: e.target.value }))}
             placeholder="Search company, role, notes..."
-            className="w-full bg-slate-50 text-slate-900 placeholder-slate-400 pl-9 pr-8 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white font-sans text-xs transition-all shadow-2xs"
+            className={`w-full ${UI_TOKENS.inputBase} pl-9 pr-8 font-sans`}
           />
-          {filter.search ? (
+          {filter.search && (
             <button
               onClick={() => setFilter((prev) => ({ ...prev, search: '' }))}
               className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 cursor-pointer"
             >
               <X className="w-3.5 h-3.5" />
             </button>
-          ) : (
-            <kbd className="absolute right-2.5 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-mono font-medium text-slate-400 bg-slate-100 border border-slate-200 rounded pointer-events-none">
-              ⌘K
-            </kbd>
           )}
         </div>
 
@@ -144,7 +162,7 @@ export const TopBar: React.FC<TopBarProps> = ({
         {hasActiveFilters && (
           <button
             onClick={resetFilters}
-            className="text-blue-700 hover:text-blue-900 flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 font-sans text-xs transition-all font-semibold cursor-pointer shadow-2xs"
+            className={UI_TOKENS.btnSecondary}
           >
             <Filter className="w-3.5 h-3.5 text-blue-600" />
             <span>Reset Filters</span>
@@ -160,12 +178,11 @@ export const TopBar: React.FC<TopBarProps> = ({
       <div className="flex items-center gap-2 shrink-0">
         <button
           onClick={onOpenAddModal}
-          title="Add new application (Press 'N')"
-          className="bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all shadow-xs text-xs shadow-blue-500/20 cursor-pointer"
+          title="Add application (Press 'N')"
+          className={UI_TOKENS.btnPrimary}
         >
           <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-          <span>Add application</span>
-          <kbd className="hidden sm:inline-block font-mono text-[10px] bg-blue-700/80 px-1.5 py-0.2 rounded border border-blue-400/40 text-blue-100 font-normal">N</kbd>
+          <span>Add Application</span>
         </button>
       </div>
     </header>

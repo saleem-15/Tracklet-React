@@ -1,22 +1,18 @@
-import React, { useState } from 'react';
-import { 
-  ArrowUpDown, 
-  ArrowUp, 
-  ArrowDown, 
-  ExternalLink, 
-  Archive, 
-  XCircle, 
-  Trash2, 
-  CheckSquare, 
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  ExternalLink,
+  Archive,
+  XCircle,
+  Trash2,
+  CheckSquare,
   Square,
-  FileText,
-  Download,
-  Mail,
-  Users
+  Download
 } from 'lucide-react';
 import { Application, SortField, SortState, ApplicationStatus } from '../types';
 import { StatusBadge } from './StatusBadge';
-import { StageSelectorDropdown } from './StageSelectorDropdown';
 import { CompanyLogo } from './CompanyLogo';
 import { EmptyState } from './EmptyState';
 import { calculateDaysInStage, formatAppDate } from '../lib/dateUtils';
@@ -40,20 +36,20 @@ function getStageUrgencyClass(status: ApplicationStatus, daysInStage: number): s
     return 'text-slate-400';
   }
   if (status === 'Applied') {
-    if (daysInStage > 21) return 'text-amber-700 bg-amber-50 font-semibold border border-amber-200/60';
+    if (daysInStage > 21) return 'text-amber-800 bg-amber-50 font-medium border border-amber-200/80';
     if (daysInStage > 10) return 'text-slate-700 font-medium';
     return 'text-slate-400';
   }
   if (status === 'Screening' || status === 'Interview') {
-    if (daysInStage > 14) return 'text-rose-700 bg-rose-50 font-semibold border border-rose-200/60';
-    if (daysInStage > 7) return 'text-amber-700 bg-amber-50 font-semibold border border-amber-200/60';
+    if (daysInStage > 14) return 'text-rose-800 bg-rose-50 font-medium border border-rose-200/80';
+    if (daysInStage > 7) return 'text-amber-800 bg-amber-50 font-medium border border-amber-200/80';
     return 'text-slate-700 font-medium';
   }
   if (status === 'Offer') {
-    if (daysInStage > 3) return 'text-rose-700 bg-rose-50 font-semibold border border-rose-200/60';
-    return 'text-emerald-700 bg-emerald-50 font-semibold border border-emerald-200/60';
+    if (daysInStage > 3) return 'text-rose-800 bg-rose-50 font-medium border border-rose-200/80';
+    return 'text-emerald-800 bg-emerald-50 font-medium border border-emerald-200/80';
   }
-  if (daysInStage > 14) return 'text-amber-700 bg-amber-50 font-semibold border border-amber-200/60';
+  if (daysInStage > 14) return 'text-amber-800 bg-amber-50 font-medium border border-amber-200/80';
   return 'text-slate-400';
 }
 
@@ -70,6 +66,9 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
   onBulkDelete,
 }) => {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [focusedIndex, setFocusedIndex] = useState<number>(-1);
+  const tableContainerRef = useRef<HTMLDivElement>(null);
+  const rowRefs = useRef<(HTMLTableRowElement | null)[]>([]);
 
   const allSelected =
     applications.length > 0 && selectedIds.size === applications.length;
@@ -82,23 +81,22 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
     }
   };
 
-  const toggleSelectOne = (e: React.MouseEvent, id: string) => {
-    e.stopPropagation();
+  const toggleSelectOne = (e?: React.MouseEvent, id?: string) => {
+    if (e) e.stopPropagation();
+    const targetId = id || (focusedIndex >= 0 && focusedIndex < applications.length ? applications[focusedIndex].id : undefined);
+    if (!targetId) return;
+
     const next = new Set(selectedIds);
-    if (next.has(id)) {
-      next.delete(id);
+    if (next.has(targetId)) {
+      next.delete(targetId);
     } else {
-      next.add(id);
+      next.add(targetId);
     }
     setSelectedIds(next);
   };
 
   const clearSelection = () => {
     setSelectedIds(new Set());
-  };
-
-  const handleExportAllCSV = () => {
-    exportApplicationsToCSV(applications, 'tracklet_filtered_applications');
   };
 
   const handleExportSelectedCSV = () => {
@@ -117,11 +115,109 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
   };
 
   const handleBulkDeleteAction = () => {
-    if (confirm(`Are you sure you want to delete ${selectedIds.size} applications?`)) {
-      onBulkDelete(Array.from(selectedIds));
-      clearSelection();
-    }
+    onBulkDelete(Array.from(selectedIds));
+    clearSelection();
   };
+
+  // Auto-scroll the table with a 1-item buffer (keeps next/prev item visible before scrolling)
+  useEffect(() => {
+    if (focusedIndex >= 0 && rowRefs.current[focusedIndex]) {
+      const container = tableContainerRef.current;
+      const targetRow = rowRefs.current[focusedIndex];
+      if (!container || !targetRow) return;
+
+      const containerRect = container.getBoundingClientRect();
+      const rowRect = targetRow.getBoundingClientRect();
+      // Use the row's height as the buffer padding (or fallback to ~38px)
+      const buffer = rowRect.height || 38;
+
+      // Table sticky header height offset (~33px)
+      const thead = container.querySelector('thead');
+      const theadHeight = thead ? thead.getBoundingClientRect().height : 33;
+
+      const visibleTop = containerRect.top + theadHeight;
+      const visibleBottom = containerRect.bottom;
+
+      // Check if moving down: ensure row + buffer is above bottom edge
+      if (rowRect.bottom + buffer > visibleBottom) {
+        const overflowBottom = (rowRect.bottom + buffer) - visibleBottom;
+        container.scrollBy({ top: overflowBottom, behavior: 'smooth' });
+      }
+      // Check if moving up: ensure row - buffer is below top sticky header
+      else if (rowRect.top - buffer < visibleTop) {
+        const overflowTop = visibleTop - (rowRect.top - buffer);
+        container.scrollBy({ top: -overflowTop, behavior: 'smooth' });
+      }
+    }
+  }, [focusedIndex]);
+
+  // Keyboard navigation across table rows (Arrows, Enter, Space/x, PageUp/PageDown, Home/End)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if typing in input or modal
+      const activeEl = document.activeElement;
+      if (
+        activeEl?.tagName === 'INPUT' ||
+        activeEl?.tagName === 'TEXTAREA' ||
+        activeEl?.tagName === 'SELECT' ||
+        (activeEl as HTMLElement)?.isContentEditable
+      ) {
+        return;
+      }
+
+      if (applications.length === 0) return;
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setFocusedIndex((prev) => (prev < applications.length - 1 ? prev + 1 : prev));
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setFocusedIndex((prev) => (prev > 0 ? prev - 1 : 0));
+      } else if (e.key === 'PageDown') {
+        e.preventDefault();
+        // Jump ~8 rows forward
+        setFocusedIndex((prev) => Math.min(applications.length - 1, (prev < 0 ? 0 : prev) + 8));
+      } else if (e.key === 'PageUp') {
+        e.preventDefault();
+        // Jump ~8 rows backward
+        setFocusedIndex((prev) => Math.max(0, (prev < 0 ? 0 : prev) - 8));
+      } else if (e.key === 'Home') {
+        e.preventDefault();
+        setFocusedIndex(0);
+      } else if (e.key === 'End') {
+        e.preventDefault();
+        setFocusedIndex(applications.length - 1);
+      } else if (e.key === 'Enter') {
+        if (focusedIndex >= 0 && focusedIndex < applications.length) {
+          e.preventDefault();
+          onSelectApp(applications[focusedIndex]);
+        }
+      } else if (e.key === ' ' || e.key === 'x') {
+        if (focusedIndex >= 0 && focusedIndex < applications.length) {
+          e.preventDefault();
+          toggleSelectOne(undefined, applications[focusedIndex].id);
+        }
+      } else if (e.key === 'Delete' || e.key === 'Backspace') {
+        e.preventDefault();
+        if (selectedIds.size > 0) {
+          handleBulkDeleteAction();
+        } else if (focusedIndex >= 0 && focusedIndex < applications.length) {
+          const appToDelete = applications[focusedIndex];
+          onBulkDelete([appToDelete.id]);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [applications, focusedIndex, selectedIds, onSelectApp]);
+
+  // Keep focusedIndex within bounds if applications change
+  useEffect(() => {
+    if (focusedIndex >= applications.length) {
+      setFocusedIndex(applications.length - 1);
+    }
+  }, [applications.length, focusedIndex]);
 
   const renderSortIcon = (field: SortField) => {
     if (sort.field !== field) {
@@ -136,9 +232,9 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
 
   return (
     <div className="flex-1 flex flex-col min-h-0 bg-white text-slate-900 select-none">
-      {/* Floating Bulk Actions & Table Toolbar Bar */}
-      {selectedIds.size > 0 ? (
-        <div className="bg-blue-50/90 border-b border-blue-200/80 px-4 py-2 flex items-center justify-between gap-3 text-xs text-blue-950 animate-in fade-in slide-in-from-top-1 duration-150 backdrop-blur-xs shrink-0">
+      {/* Floating Bulk Actions Bar */}
+      {selectedIds.size > 0 && (
+        <div className="bg-blue-50/90 border-b border-blue-200/80 px-4 py-2 flex items-center justify-between gap-3 text-xs text-blue-950 animate-in fade-in slide-in-from-top-1 duration-150 backdrop-blur-xs shrink-0 h-10">
           <div className="flex items-center gap-2.5">
             <span className="font-mono text-blue-600 bg-white px-2 py-0.5 rounded-md border border-blue-200 font-semibold shadow-2xs">
               {selectedIds.size} selected
@@ -153,7 +249,7 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
               title="Export selected applications to CSV"
             >
               <Download className="w-3.5 h-3.5 text-slate-500" />
-              <span>Export Selected CSV</span>
+              <span>Export CSV</span>
             </button>
 
             <button
@@ -174,9 +270,10 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
 
             <button
               onClick={handleBulkDeleteAction}
-              className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white hover:bg-rose-100/60 text-slate-600 hover:text-rose-700 border border-slate-200 hover:border-rose-200 transition-all shadow-2xs font-medium cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white hover:bg-rose-50 text-rose-700 border border-slate-200 hover:border-rose-200 transition-all shadow-2xs font-medium cursor-pointer"
+              title="Delete selected applications (Del)"
             >
-              <Trash2 className="w-3.5 h-3.5" />
+              <Trash2 className="w-3.5 h-3.5 text-rose-600" />
               <span>Delete</span>
             </button>
 
@@ -188,23 +285,19 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
             </button>
           </div>
         </div>
-      ) : (
-        <div className="bg-slate-50/60 border-b border-slate-200/80 px-4 py-1.5 flex items-center justify-between text-xs shrink-0">
-          <div className="flex items-center gap-2 text-slate-500 font-mono text-[11px]">
-            <span>Showing <strong className="text-slate-800 font-semibold">{applications.length}</strong> {applications.length === 1 ? 'application' : 'applications'}</span>
-          </div>
-        </div>
       )}
 
       {/* Main Table */}
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-auto" ref={tableContainerRef}>
         <table className="w-full text-left border-collapse text-xs">
           <thead className="bg-slate-50/80 border-b border-slate-200/80 sticky top-0 z-10 text-[11px] font-mono text-slate-500 uppercase tracking-wider backdrop-blur-xs">
             <tr>
               <th className="w-10 px-3 py-2.5 text-center">
                 <button
+                  type="button"
                   onClick={toggleSelectAll}
-                  className="text-slate-400 hover:text-slate-700 align-middle transition-colors"
+                  aria-label={allSelected ? "Deselect all applications" : "Select all applications"}
+                  className="text-slate-400 hover:text-slate-700 align-middle transition-colors cursor-pointer"
                 >
                   {allSelected ? (
                     <CheckSquare className="w-3.5 h-3.5 text-blue-600" />
@@ -288,26 +381,41 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
                 </td>
               </tr>
             ) : (
-              applications.map((app) => {
+              applications.map((app, index) => {
                 const isSelected = selectedIds.has(app.id);
                 const isCurrentRowActive = selectedAppId === app.id;
+                const isKeyboardFocused = focusedIndex === index;
                 const daysInStage = calculateDaysInStage(app.stageUpdatedAt);
 
                 return (
                   <tr
                     key={app.id}
-                    onClick={() => onSelectApp(app)}
-                    className={`h-[38px] transition-all cursor-pointer group ${
+                    ref={(el) => {
+                      rowRefs.current[index] = el;
+                    }}
+                    onClick={() => {
+                      setFocusedIndex(index);
+                      onSelectApp(app);
+                    }}
+                    tabIndex={0}
+                    onFocus={() => setFocusedIndex(index)}
+                    className={`h-[38px] group cursor-pointer transition-colors outline-hidden ${
                       isCurrentRowActive
-                        ? 'bg-blue-50/70 text-blue-950 font-semibold'
+                        ? 'bg-blue-50/90 font-medium ring-1 ring-inset ring-blue-300/80'
+                        : isKeyboardFocused
+                        ? 'bg-blue-50/50 ring-1 ring-inset ring-blue-200'
                         : isSelected
-                        ? 'bg-slate-50'
-                        : 'hover:bg-slate-50/80 text-slate-700'
+                        ? 'bg-slate-100/70'
+                        : 'hover:bg-slate-50/80'
                     }`}
                   >
                     {/* Checkbox */}
-                    <td className="px-3 py-1 text-center" onClick={(e) => toggleSelectOne(e, app.id)}>
-                      <button className="text-slate-400 hover:text-slate-700 align-middle transition-colors">
+                    <td className="px-3 py-1 text-center align-middle" onClick={(e) => toggleSelectOne(e, app.id)}>
+                      <button
+                        type="button"
+                        aria-label={`Select application for ${app.company}`}
+                        className="text-slate-400 hover:text-slate-700 align-middle transition-colors cursor-pointer"
+                      >
                         {isSelected ? (
                           <CheckSquare className="w-3.5 h-3.5 text-blue-600" />
                         ) : (
@@ -317,7 +425,7 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
                     </td>
 
                     {/* Company */}
-                    <td className="px-3 py-1 font-bold text-slate-900 truncate max-w-[210px]">
+                    <td className="px-3 py-1 font-bold text-slate-900 truncate max-w-[210px] align-middle">
                       <div className="flex items-center gap-2">
                         <CompanyLogo
                           company={app.company}
@@ -343,33 +451,29 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
                     </td>
 
                     {/* Role */}
-                    <td className="px-3 py-1 text-slate-700 font-medium truncate max-w-[220px]">
+                    <td className="px-3 py-1 text-slate-700 font-medium truncate max-w-[220px] align-middle">
                       {app.role}
                     </td>
 
                     {/* Platform */}
-                    <td className="px-3 py-1">
+                    <td className="px-3 py-1 align-middle">
                       <span className="font-mono text-[11px] text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200/80">
                         {app.platform}
                       </span>
                     </td>
 
                     {/* Date Applied */}
-                    <td className="px-3 py-1 font-mono text-[11px] text-slate-500" title={`Applied on ${app.dateApplied}`}>
+                    <td className="px-3 py-1 font-mono text-[11px] text-slate-500 align-middle" title={`Applied on ${app.dateApplied}`}>
                       {formatAppDate(app.dateApplied)}
                     </td>
 
                     {/* Status */}
-                    <td className="px-3 py-1" onClick={(e) => e.stopPropagation()}>
-                      <StageSelectorDropdown
-                        currentStatus={app.status}
-                        onSelectStatus={(newStatus) => onBulkUpdateStatus([app.id], newStatus)}
-                        size="sm"
-                      />
+                    <td className="px-3 py-1 whitespace-nowrap align-middle">
+                      <StatusBadge status={app.status} size="sm" />
                     </td>
 
                     {/* Days in stage */}
-                    <td className="px-3 py-1 font-mono text-[11px] text-right pr-6">
+                    <td className="px-3 py-1 font-mono text-[11px] text-right pr-6 align-middle">
                       <span
                         className={`px-2 py-0.5 rounded-md ${getStageUrgencyClass(app.status, daysInStage)}`}
                         title={`${daysInStage} days in ${app.status} stage`}

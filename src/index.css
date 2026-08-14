@@ -15,6 +15,59 @@
   }
 }
 
+@layer components {
+  /* Tracklet Design System Single-Source Tokens */
+  .control-sm {
+    height: 32px;
+    border-radius: 10px;
+  }
+  .control-md {
+    height: 34px;
+    border-radius: 10px;
+  }
+  .control-lg {
+    height: 36px;
+    border-radius: 10px;
+  }
+}
+
+/* Animated Task Strikethrough Effect */
+@keyframes strikeThrough {
+  0% {
+    width: 0%;
+  }
+  100% {
+    width: 100%;
+  }
+}
+
+@keyframes strikeErase {
+  0% {
+    width: 100%;
+  }
+  100% {
+    width: 0%;
+  }
+}
+
+.task-strike-line {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  height: 1px;
+  background-color: #94a3b8;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.task-strike-line-completed {
+  animation: strikeThrough 0.28s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+}
+
+.task-strike-line-incomplete {
+  animation: strikeErase 0.22s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+}
+
 /* Premium micro scrollbars */
 ::-webkit-scrollbar {
   width: 6px;

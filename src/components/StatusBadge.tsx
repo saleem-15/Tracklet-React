@@ -9,7 +9,7 @@ interface StatusBadgeProps {
 export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, size = 'sm' }) => {
   const getStyles = (s: ApplicationStatus) => {
     switch (s) {
-      case 'Wishlist':
+      case 'Saved':
         return {
           bg: 'bg-purple-50 text-purple-700 border-purple-200/80',
           dot: 'bg-purple-500'

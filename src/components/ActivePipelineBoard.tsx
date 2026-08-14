@@ -15,8 +15,7 @@ import {
   XCircle,
   X
 } from 'lucide-react';
-import { calculateDaysInStage } from '../lib/dateUtils';
-import { PIPELINE_COLUMNS } from '../lib/constants';
+import { calculateDaysInStage } from '../lib/sampleData';
 
 interface ActivePipelineBoardProps {
   applications: Application[];
@@ -27,6 +26,39 @@ interface ActivePipelineBoardProps {
   selectedAppId: string | null;
   onUpdateStatus: (id: string, newStatus: ApplicationStatus) => void;
 }
+
+const PIPELINE_COLUMNS: { status: ApplicationStatus; title: string; dot: string; tagBg: string }[] = [
+  { 
+    status: 'Saved', 
+    title: 'Saved', 
+    dot: 'bg-purple-500',
+    tagBg: 'text-purple-700 bg-purple-50'
+  },
+  { 
+    status: 'Applied', 
+    title: 'Applied', 
+    dot: 'bg-slate-400',
+    tagBg: 'text-slate-600 bg-slate-100'
+  },
+  { 
+    status: 'Screening', 
+    title: 'Screening', 
+    dot: 'bg-amber-500',
+    tagBg: 'text-amber-700 bg-amber-50'
+  },
+  { 
+    status: 'Interview', 
+    title: 'Interview', 
+    dot: 'bg-blue-500',
+    tagBg: 'text-blue-700 bg-blue-50'
+  },
+  { 
+    status: 'Offer', 
+    title: 'Offer', 
+    dot: 'bg-emerald-500',
+    tagBg: 'text-emerald-700 bg-emerald-50'
+  },
+];
 
 export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
   applications,
@@ -359,42 +391,46 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
             })}
           </div>
 
-          {/* Quick-Drop Zones Bar (Archive & Mark Rejected) */}
-          <div className="border-t border-slate-200/90 bg-slate-50/90 p-3 grid grid-cols-2 gap-3 sticky bottom-0 z-20 backdrop-blur-xs">
-            <div
-              onDragOver={(e) => handleDragOver(e, 'Archived')}
-              onDragLeave={(e) => handleDragLeave(e, 'Archived')}
-              onDrop={(e) => handleDrop(e, 'Archived')}
-              className={`p-3 rounded-xl border-2 border-dashed flex items-center justify-center gap-2.5 transition-all duration-150 text-xs font-semibold ${
-                dragOverColumn === 'Archived'
-                  ? 'bg-amber-100/90 border-amber-500 text-amber-900 ring-2 ring-amber-400/30 shadow-md scale-[1.01]'
-                  : draggedAppId !== null
-                  ? 'bg-amber-50/60 border-amber-300/80 text-amber-800 animate-pulse'
-                  : 'bg-white border-slate-200 text-slate-600 hover:border-amber-400 hover:text-amber-900 hover:bg-amber-100/60'
-              }`}
-            >
-              <Archive className={`w-4 h-4 shrink-0 ${dragOverColumn === 'Archived' ? 'text-amber-700' : 'text-slate-400'}`} />
-              <span>
-                {dragOverColumn === 'Archived' ? 'Release to Archive Application' : 'Quick Drop Zone: Drag here to Archive'}
-              </span>
-            </div>
+          {/* Quick-Drop Zones Bar (Archive & Mark Rejected) - expands and fades in smoothly while dragging */}
+          <div
+            className={`border-t border-slate-200/90 bg-slate-50/90 sticky bottom-0 z-20 backdrop-blur-xs overflow-hidden transition-all duration-300 ease-in-out ${
+              draggedAppId !== null
+                ? 'max-h-24 opacity-100 p-3 translate-y-0 shadow-lg'
+                : 'max-h-0 opacity-0 p-0 translate-y-4 pointer-events-none'
+            }`}
+          >
+            <div className="grid grid-cols-2 gap-3">
+              <div
+                onDragOver={(e) => handleDragOver(e, 'Archived')}
+                onDragLeave={(e) => handleDragLeave(e, 'Archived')}
+                onDrop={(e) => handleDrop(e, 'Archived')}
+                className={`p-3 rounded-xl border-2 border-dashed flex items-center justify-center gap-2.5 transition-all duration-200 text-xs font-semibold ${
+                  dragOverColumn === 'Archived'
+                    ? 'bg-amber-100/90 border-amber-500 text-amber-900 ring-2 ring-amber-400/30 shadow-md scale-[1.01]'
+                    : 'bg-amber-50/80 border-amber-300 text-amber-800 animate-pulse'
+                }`}
+              >
+                <Archive className={`w-4 h-4 shrink-0 ${dragOverColumn === 'Archived' ? 'text-amber-700' : 'text-amber-600'}`} />
+                <span>
+                  {dragOverColumn === 'Archived' ? 'Release to Archive Application' : 'Quick Drop Zone: Drag here to Archive'}
+                </span>
+              </div>
 
-            <div
-              onDragOver={(e) => handleDragOver(e, 'Rejected')}
-              onDragLeave={(e) => handleDragLeave(e, 'Rejected')}
-              onDrop={(e) => handleDrop(e, 'Rejected')}
-              className={`p-3 rounded-xl border-2 border-dashed flex items-center justify-center gap-2.5 transition-all duration-150 text-xs font-semibold ${
-                dragOverColumn === 'Rejected'
-                  ? 'bg-rose-100/90 border-rose-500 text-rose-900 ring-2 ring-rose-400/30 shadow-md scale-[1.01]'
-                  : draggedAppId !== null
-                  ? 'bg-rose-50/60 border-rose-300/80 text-rose-800 animate-pulse'
-                  : 'bg-white border-slate-200 text-slate-600 hover:border-rose-400 hover:text-rose-900 hover:bg-rose-100/60'
-              }`}
-            >
-              <XCircle className={`w-4 h-4 shrink-0 ${dragOverColumn === 'Rejected' ? 'text-rose-700' : 'text-slate-400'}`} />
-              <span>
-                {dragOverColumn === 'Rejected' ? 'Release to Mark as Rejected' : 'Quick Drop Zone: Drag here to Mark Rejected'}
-              </span>
+              <div
+                onDragOver={(e) => handleDragOver(e, 'Rejected')}
+                onDragLeave={(e) => handleDragLeave(e, 'Rejected')}
+                onDrop={(e) => handleDrop(e, 'Rejected')}
+                className={`p-3 rounded-xl border-2 border-dashed flex items-center justify-center gap-2.5 transition-all duration-200 text-xs font-semibold ${
+                  dragOverColumn === 'Rejected'
+                    ? 'bg-rose-100/90 border-rose-500 text-rose-900 ring-2 ring-rose-400/30 shadow-md scale-[1.01]'
+                    : 'bg-rose-50/80 border-rose-300 text-rose-800 animate-pulse'
+                }`}
+              >
+                <XCircle className={`w-4 h-4 shrink-0 ${dragOverColumn === 'Rejected' ? 'text-rose-700' : 'text-rose-600'}`} />
+                <span>
+                  {dragOverColumn === 'Rejected' ? 'Release to Mark as Rejected' : 'Quick Drop Zone: Drag here to Mark Rejected'}
+                </span>
+              </div>
             </div>
           </div>
         </div>
