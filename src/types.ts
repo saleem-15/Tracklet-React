@@ -1,5 +1,5 @@
 export type ApplicationStatus = 
-  | 'Wishlist'
+  | 'Saved'
   | 'Applied'
   | 'Screening'
   | 'Interview'

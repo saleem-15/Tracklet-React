@@ -26,7 +26,7 @@ const PLATFORMS: JobPlatform[] = [
 ];
 
 const STATUSES: ApplicationStatus[] = [
-  'Wishlist',
+  'Saved',
   'Applied',
   'Screening',
   'Interview',
@@ -43,7 +43,7 @@ const PLATFORM_OPTIONS = [
 const STATUS_OPTIONS = [
   { label: 'All', value: 'All' },
   { label: 'Active Only', value: 'Active' },
-  ...STATUSES.map((s) => ({ label: s === 'Wishlist' ? 'Saved' : s, value: s })),
+  ...STATUSES.map((s) => ({ label: s, value: s })),
 ];
 
 const DATE_OPTIONS = [

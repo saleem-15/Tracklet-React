@@ -9,7 +9,7 @@ interface StatusBadgeProps {
 export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, size = 'sm' }) => {
   const getStyles = (s: ApplicationStatus) => {
     switch (s) {
-      case 'Wishlist':
+      case 'Saved':
         return {
           bg: 'bg-purple-50 text-purple-700 border-purple-200/80',
           dot: 'bg-purple-500'
@@ -62,7 +62,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, size = 'sm' })
       className={`inline-flex items-center gap-1.5 border tracking-tight transition-all ${sizeClasses} ${style.bg}`}
     >
       <span className={`w-1.5 h-1.5 rounded-full ${style.dot} shrink-0`} />
-      <span className="whitespace-nowrap">{status === 'Wishlist' ? 'Saved' : status}</span>
+      <span className="whitespace-nowrap">{status}</span>
     </span>
   );
 };

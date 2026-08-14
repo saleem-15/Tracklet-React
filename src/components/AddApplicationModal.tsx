@@ -1,8 +1,28 @@
 import React, { useState, useEffect } from 'react';
-import { X, Plus, Building2, Briefcase, Calendar, Link, Mail, UserCheck, CheckSquare, ChevronDown, Globe, Trash2, UserPlus, ListTodo } from 'lucide-react';
+import {
+  Plus,
+  Building2,
+  Briefcase,
+  Calendar,
+  Link,
+  Mail,
+  UserCheck,
+  CheckSquare,
+  Globe,
+  Trash2,
+  UserPlus,
+  ListTodo,
+  Users,
+  Clock,
+  FileText,
+  AtSign,
+  Phone,
+  Linkedin,
+} from 'lucide-react';
 import { JobPlatform, ApplicationStatus, Application, Contact, ApplicationTask } from '../types';
 import { CompanyLogo } from './CompanyLogo';
 import { CustomSelectDropdown } from './CustomSelectDropdown';
+import { StageSelectorDropdown } from './StageSelectorDropdown';
 import { DeleteIconButton, CloseIconButton } from './IconButton';
 import { TaskItem } from './TaskItem';
 import { UI_TOKENS } from '../theme/tokens';
@@ -26,13 +46,28 @@ const PLATFORMS: JobPlatform[] = [
 ];
 
 const STATUSES: ApplicationStatus[] = [
-  'Wishlist',
+  'Saved',
   'Applied',
   'Screening',
   'Interview',
   'Offer',
   'Rejected',
   'Archived',
+];
+
+function getInitials(name: string): string {
+  if (!name.trim()) return '??';
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+const avatarColors = [
+  'bg-blue-100 text-blue-700 border-blue-200',
+  'bg-amber-100 text-amber-700 border-amber-200',
+  'bg-emerald-100 text-emerald-700 border-emerald-200',
+  'bg-indigo-100 text-indigo-700 border-indigo-200',
+  'bg-rose-100 text-rose-700 border-rose-200',
 ];
 
 export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
@@ -49,16 +84,20 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
   const [role, setRole] = useState('');
   const [platform, setPlatform] = useState<JobPlatform>('LinkedIn');
   const [dateApplied, setDateApplied] = useState(todayStr);
-  const [status, setStatus] = useState<ApplicationStatus>('Applied');
+  const [status, setStatus] = useState<ApplicationStatus>('Saved');
   const [jobLink, setJobLink] = useState('');
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Dynamic Multiple Contacts State
-  const [contacts, setContacts] = useState<{ id: string; name: string; email: string; role: string }[]>([]);
+  // Dynamic Multiple Contacts State matching global Contact data class
+  const [contacts, setContacts] = useState<Contact[]>([]);
   const [cName, setCName] = useState('');
-  const [cEmail, setCEmail] = useState('');
   const [cRole, setCRole] = useState('');
+  const [cEmail, setCEmail] = useState('');
+  const [cPhone, setCPhone] = useState('');
+  const [cLinkedIn, setCLinkedIn] = useState('');
+  const [cNotes, setCNotes] = useState('');
+  const [showExtraContactFields, setShowExtraContactFields] = useState(false);
 
   // Dynamic Multiple Tasks State
   const [tasks, setTasks] = useState<ApplicationTask[]>([]);
@@ -73,6 +112,8 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
     contacts.length > 0 ||
     tasks.length > 0 ||
     cName.trim() !== '' ||
+    cEmail.trim() !== '' ||
+    cPhone.trim() !== '' ||
     taskTitle.trim() !== '';
 
   const handleRequestClose = () => {
@@ -96,19 +137,26 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
   }, [onClose, isDirty]);
 
   const handleAddContactItem = () => {
-    if (!cName.trim() && !cEmail.trim()) return;
+    if (!cName.trim() && !cEmail.trim() && !cPhone.trim()) return;
     setContacts((prev) => [
       ...prev,
       {
         id: `c-${Date.now()}-${Math.random().toString(36).substring(2, 5)}`,
         name: cName.trim() || 'Point of Contact',
-        email: cEmail.trim(),
-        role: cRole.trim() || 'Recruiter / Contact',
+        role: cRole.trim() || undefined,
+        email: cEmail.trim() || undefined,
+        phone: cPhone.trim() || undefined,
+        linkedIn: cLinkedIn.trim() || undefined,
+        notes: cNotes.trim() || undefined,
       },
     ]);
     setCName('');
-    setCEmail('');
     setCRole('');
+    setCEmail('');
+    setCPhone('');
+    setCLinkedIn('');
+    setCNotes('');
+    setShowExtraContactFields(false);
   };
 
   const handleRemoveContactItem = (id: string) => {
@@ -146,447 +194,538 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
     setTasks((prev) => prev.filter((t) => t.id !== id));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!company.trim() || !role.trim()) return;
 
-    setIsSubmitting(true);
-    try {
-      // Include any un-added draft contact if user typed without pressing +
-      const finalContacts: Contact[] = [...contacts.map((c) => ({ id: c.id, name: c.name, email: c.email || undefined, role: c.role || undefined }))];
-      if ((cName.trim() || cEmail.trim()) && !contacts.some((c) => c.name === cName.trim() && c.email === cEmail.trim())) {
-        finalContacts.push({
-          id: `c-${Date.now()}`,
-          name: cName.trim() || 'Point of Contact',
-          email: cEmail.trim() || undefined,
-          role: cRole.trim() || 'Recruiter / Contact',
-        });
-      }
-
-      // Include any un-added draft task if user typed without pressing +
-      const finalTasks: ApplicationTask[] = [
-        ...tasks.map((t) => ({ id: t.id, title: t.title, completed: Boolean(t.completed), dueDate: t.dueDate || undefined })),
-      ];
-      if (taskTitle.trim() && !tasks.some((t) => t.title === taskTitle.trim())) {
-        finalTasks.push({
-          id: `t-${Date.now()}`,
-          title: taskTitle.trim(),
-          completed: false,
-          dueDate: taskDueDate || undefined,
-        });
-      }
-
-      let formattedJobLink = jobLink.trim();
-      if (formattedJobLink && !formattedJobLink.startsWith('http://') && !formattedJobLink.startsWith('https://')) {
-        formattedJobLink = `https://${formattedJobLink}`;
-      }
-
-      // Primary contact email shorthand for first contact or explicit input
-      const primaryContactEmail = finalContacts.find((c) => c.email)?.email || undefined;
-
-      await onAdd({
-        company: company.trim(),
-        companyDomain: companyDomain.trim() || undefined,
-        role: role.trim(),
-        platform,
-        dateApplied: dateApplied || todayStr,
-        status,
-        jobLink: formattedJobLink || undefined,
-        contactEmail: primaryContactEmail,
-        contacts: finalContacts.length > 0 ? finalContacts : undefined,
-        tasks: finalTasks.length > 0 ? finalTasks : undefined,
-        notes: notes.trim() || undefined,
+    // Include any un-added draft contact if user typed without pressing +
+    const finalContacts: Contact[] = [
+      ...contacts.map((c) => ({
+        id: c.id,
+        name: c.name,
+        role: c.role || undefined,
+        email: c.email || undefined,
+        phone: c.phone || undefined,
+        linkedIn: c.linkedIn || undefined,
+        notes: c.notes || undefined,
+      })),
+    ];
+    if (
+      (cName.trim() || cEmail.trim() || cPhone.trim()) &&
+      !contacts.some((c) => c.name === cName.trim() && c.email === cEmail.trim())
+    ) {
+      finalContacts.push({
+        id: `c-${Date.now()}`,
+        name: cName.trim() || 'Point of Contact',
+        role: cRole.trim() || undefined,
+        email: cEmail.trim() || undefined,
+        phone: cPhone.trim() || undefined,
+        linkedIn: cLinkedIn.trim() || undefined,
+        notes: cNotes.trim() || undefined,
       });
-
-      // Reset form
-      setCompany('');
-      setCompanyDomain('');
-      setRole('');
-      setPlatform('LinkedIn');
-      setDateApplied(todayStr);
-      setStatus('Applied');
-      setJobLink('');
-      setNotes('');
-      setContacts([]);
-      setCName('');
-      setCEmail('');
-      setCRole('');
-      setTasks([]);
-      setTaskTitle('');
-      setTaskDueDate('');
-      onClose();
-    } catch (err) {
-      console.error('Failed to create application:', err);
-    } finally {
-      setIsSubmitting(false);
     }
+
+    // Include any un-added draft task if user typed without pressing +
+    const finalTasks: ApplicationTask[] = [
+      ...tasks.map((t) => ({ id: t.id, title: t.title, completed: Boolean(t.completed), dueDate: t.dueDate || undefined })),
+    ];
+    if (taskTitle.trim() && !tasks.some((t) => t.title === taskTitle.trim())) {
+      finalTasks.push({
+        id: `t-${Date.now()}`,
+        title: taskTitle.trim(),
+        completed: false,
+        dueDate: taskDueDate || undefined,
+      });
+    }
+
+    let formattedJobLink = jobLink.trim();
+    if (formattedJobLink && !formattedJobLink.startsWith('http://') && !formattedJobLink.startsWith('https://')) {
+      formattedJobLink = `https://${formattedJobLink}`;
+    }
+
+    // Primary contact email shorthand for first contact or explicit input
+    const primaryContactEmail = finalContacts.find((c) => c.email)?.email || undefined;
+
+    const payload = {
+      company: company.trim(),
+      companyDomain: companyDomain.trim() || undefined,
+      role: role.trim(),
+      platform,
+      dateApplied: dateApplied || todayStr,
+      status,
+      jobLink: formattedJobLink || undefined,
+      contactEmail: primaryContactEmail,
+      contacts: finalContacts.length > 0 ? finalContacts : undefined,
+      tasks: finalTasks.length > 0 ? finalTasks : undefined,
+      notes: notes.trim() || undefined,
+    };
+
+    // Optimistic UI: Close modal & reset form immediately
+    onClose();
+    setCompany('');
+    setCompanyDomain('');
+    setRole('');
+    setPlatform('LinkedIn');
+    setDateApplied(todayStr);
+    setStatus('Saved');
+    setJobLink('');
+    setNotes('');
+    setContacts([]);
+    setCName('');
+    setCRole('');
+    setCEmail('');
+    setCPhone('');
+    setCLinkedIn('');
+    setCNotes('');
+    setShowExtraContactFields(false);
+    setTasks([]);
+    setTaskTitle('');
+    setTaskDueDate('');
+
+    // Trigger onAdd in background
+    onAdd(payload).catch((err) => {
+      console.error('Failed to create application:', err);
+    });
   };
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-150 overflow-y-auto"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 md:p-6 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200 overflow-y-auto"
       onClick={handleRequestClose}
     >
       <div 
-        className="w-full max-w-2xl max-h-[90vh] bg-white border border-slate-200/90 rounded-2xl shadow-2xl text-slate-900 text-xs flex flex-col my-auto overflow-hidden animate-in zoom-in-95 duration-150"
+        className="w-full max-w-4xl max-h-[92vh] bg-white border border-slate-200/90 rounded-2xl flex flex-col shadow-2xl text-slate-900 animate-in zoom-in-95 duration-200 overflow-hidden my-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-200/80 bg-gradient-to-r from-slate-50/90 via-white to-slate-50/90 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-xs">
-              <Plus className="w-4 h-4 stroke-[2.5]" />
-            </div>
-            <div>
-              <h3 className="font-bold text-slate-900 text-sm sm:text-base tracking-tight font-display">
-                Add Job Application
-              </h3>
-              <p className="text-[11px] text-slate-500 font-mono">Create pipeline entry with tasks & contacts</p>
+        {/* Modal Header — matches ApplicationDetailPanel */}
+        <div className="px-5 py-4 border-b border-slate-200/80 flex items-center justify-between bg-gradient-to-r from-slate-50/80 via-white to-slate-50/80 shrink-0 gap-3">
+          <div className="flex items-center gap-3.5 min-w-0">
+            <CompanyLogo
+              company={company || 'Company'}
+              jobLink={jobLink}
+              companyDomain={companyDomain}
+              size="lg"
+            />
+            <div className="min-w-0">
+              <h2 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight truncate leading-tight font-display">
+                {company.trim() ? company : 'Add Application'}
+              </h2>
+              <p className="text-xs font-medium text-slate-500 truncate mt-0.5 font-mono">
+                {role.trim() ? role : 'New application'}
+              </p>
             </div>
           </div>
 
-          <CloseIconButton
-            onClick={handleRequestClose}
-            title="Close modal (Esc)"
-          />
+          <div className="flex items-center gap-2.5 shrink-0">
+            <StageSelectorDropdown
+              currentStatus={status}
+              onSelectStatus={(newStatus) => setStatus(newStatus)}
+              size="md"
+            />
+            <div className="h-5 w-px bg-slate-200 hidden sm:block" />
+            <CloseIconButton
+              onClick={handleRequestClose}
+              title="Close modal (Esc)"
+            />
+          </div>
         </div>
 
-        {/* Form Body */}
+        {/* Form Body — 2-Column Responsive Layout */}
         <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0 overflow-hidden">
-          <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-5">
-            
-            {/* Section 1: Core Info */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                <span className="text-xs font-display font-bold uppercase tracking-wider text-blue-600">
-                  01. Role & Company Info
-                </span>
-                <span className="text-[10px] font-mono text-slate-400 font-medium">* Required</span>
-              </div>
+          <div className="flex-1 overflow-y-auto p-5 sm:p-6">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
 
-              {/* Company & Domain Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                <div>
-                  <label className="block text-[11px] font-mono text-slate-600 mb-1 font-semibold">
-                    Company Name <span className="text-rose-500">*</span>
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <CompanyLogo
-                      company={company || 'Company'}
-                      jobLink={jobLink}
-                      companyDomain={companyDomain}
-                      size="sm"
-                    />
-                    <div className="relative flex-1">
-                      <Building2 className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              {/* Left Column: Core Details + Tasks + Notes */}
+              <div className="lg:col-span-7 space-y-5">
+                
+                {/* Core Info Card */}
+                <div className="space-y-3.5 bg-slate-50/80 rounded-xl border border-slate-200/80 p-4 shadow-2xs">
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-200/60">
+                    <h3 className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                      <Building2 className="w-3.5 h-3.5 text-blue-500" />
+                      Role & Company
+                    </h3>
+                  </div>
+
+                  {/* Company & Domain Grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-mono font-medium text-slate-500 mb-1">
+                        Company <span className="text-rose-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <Building2 className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input
+                          type="text"
+                          required
+                          value={company}
+                          onChange={(e) => setCompany(e.target.value)}
+                          placeholder="Linear, Stripe"
+                          className="w-full bg-white text-slate-900 placeholder-slate-400 pl-8 pr-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 text-xs font-semibold transition-all shadow-2xs"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-mono font-medium text-slate-500 mb-1">
+                        Domain
+                      </label>
+                      <div className="relative">
+                        <Globe className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input
+                          type="text"
+                          value={companyDomain}
+                          onChange={(e) => setCompanyDomain(e.target.value.toLowerCase().trim())}
+                          placeholder="linear.app"
+                          className="w-full bg-white text-slate-900 placeholder-slate-400 pl-8 pr-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 font-mono text-xs transition-all shadow-2xs"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Role Title & Job Link */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-mono font-medium text-slate-500 mb-1">
+                        Role <span className="text-rose-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <Briefcase className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input
+                          type="text"
+                          required
+                          value={role}
+                          onChange={(e) => setRole(e.target.value)}
+                          placeholder="Software Engineer"
+                          className="w-full bg-white text-slate-900 placeholder-slate-400 pl-8 pr-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 text-xs font-semibold transition-all shadow-2xs"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-mono font-medium text-slate-500 mb-1">
+                        Job Link
+                      </label>
+                      <div className="relative">
+                        <Link className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input
+                          type="text"
+                          value={jobLink}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setJobLink(val);
+                            if (!companyDomain && val.includes('.')) {
+                              try {
+                                const urlToParse = val.startsWith('http') ? val : `https://${val}`;
+                                const host = new URL(urlToParse).hostname.replace(/^www\./, '');
+                                if (host && host.includes('.')) {
+                                  setCompanyDomain(host);
+                                }
+                              } catch {}
+                            }
+                          }}
+                          placeholder="https://"
+                          className="w-full bg-white text-slate-900 placeholder-slate-400 pl-8 pr-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 font-mono text-xs transition-all shadow-2xs"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Pipeline Tasks Section */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                      <ListTodo className="w-3.5 h-3.5 text-blue-500" />
+                      Tasks
+                      {tasks.length > 0 && <span className="ml-1 text-slate-400 font-normal">({tasks.length})</span>}
+                    </h3>
+                  </div>
+
+                  <div className="rounded-xl border border-slate-200/80 bg-white overflow-hidden shadow-2xs">
+                    <div className="divide-y divide-slate-100">
+                      {tasks.length > 0 ? (
+                        tasks.map((t) => (
+                          <TaskItem
+                            key={t.id}
+                            task={t}
+                            onToggle={handleToggleTaskItem}
+                            onEdit={handleEditTaskItem}
+                            onDelete={handleRemoveTaskItem}
+                          />
+                        ))
+                      ) : (
+                        <div className="text-slate-400 font-mono text-[11px] text-center py-3.5">
+                          No tasks added.
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="border-t border-slate-100 bg-slate-50/60 p-2.5 flex items-center gap-2">
                       <input
                         type="text"
-                        required
-                        value={company}
-                        onChange={(e) => setCompany(e.target.value)}
-                        placeholder="e.g. Linear, Stripe"
-                        className="w-full bg-slate-50/80 text-slate-900 placeholder-slate-400 pl-8 pr-3 rounded-[10px] border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white font-sans text-xs transition-all shadow-2xs font-semibold h-9"
+                        value={taskTitle}
+                        onChange={(e) => setTaskTitle(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleAddTaskItem();
+                          }
+                        }}
+                        placeholder="Add a task..."
+                        className="flex-1 bg-white text-slate-900 placeholder-slate-400 px-3 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 text-xs transition-all"
+                      />
+                      <input
+                        type="date"
+                        value={taskDueDate}
+                        onChange={(e) => setTaskDueDate(e.target.value)}
+                        title="Due date (optional)"
+                        className="w-28 bg-white text-slate-700 px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 font-mono text-[11px] cursor-pointer"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleAddTaskItem}
+                        disabled={!taskTitle.trim()}
+                        className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white rounded-lg font-bold text-xs transition-colors cursor-pointer flex items-center gap-1 shrink-0"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        Add
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Additional Notes / Scratchpad Section */}
+                <div className="space-y-2">
+                  <h3 className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                    <FileText className="w-3.5 h-3.5 text-blue-500" />
+                    Notes
+                  </h3>
+                  <textarea
+                    rows={4}
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder="Referral info, salary target, interview notes..."
+                    className="w-full bg-white text-slate-900 placeholder-slate-400 p-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 focus:bg-white font-mono text-xs leading-relaxed resize-y shadow-2xs transition-all"
+                  />
+                </div>
+              </div>
+
+              {/* Right Column: Metadata & Contacts */}
+              <div className="lg:col-span-5 space-y-5">
+                
+                {/* Pipeline Metadata Card */}
+                <div className="space-y-3 bg-slate-50/80 rounded-xl border border-slate-200/80 p-4 shadow-2xs">
+                  <h3 className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5 pb-2 border-b border-slate-200/60">
+                    <Clock className="w-3.5 h-3.5 text-blue-500" />
+                    Pipeline Metadata
+                  </h3>
+
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-[11px] font-mono font-medium text-slate-500 mb-1">
+                        Platform
+                      </label>
+                      <CustomSelectDropdown<JobPlatform>
+                        value={platform}
+                        onChange={(val) => setPlatform(val)}
+                        options={PLATFORMS.map((p) => ({ label: p, value: p }))}
+                        className="w-full"
+                        size="md"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-mono font-medium text-slate-500 mb-1">
+                        Date Applied
+                      </label>
+                      <input
+                        type="date"
+                        value={dateApplied}
+                        onChange={(e) => setDateApplied(e.target.value)}
+                        className="w-full bg-white text-slate-900 px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 font-mono text-xs cursor-pointer transition-all shadow-2xs"
                       />
                     </div>
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-[11px] font-mono text-slate-600 mb-1 font-semibold">
-                    Company Domain (Optional)
-                  </label>
-                  <div className="relative">
-                    <Globe className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input
-                      type="text"
-                      value={companyDomain}
-                      onChange={(e) => setCompanyDomain(e.target.value.toLowerCase().trim())}
-                      placeholder="e.g. linear.app"
-                      className="w-full bg-slate-50/80 text-slate-900 placeholder-slate-400 pl-8 pr-3 py-1.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white font-mono text-xs transition-all shadow-2xs h-9"
-                    />
+                {/* Key Contacts Section — matches ApplicationDetailPanel cards & global Contact model */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                      <Users className="w-3.5 h-3.5 text-blue-500" />
+                      Key Contacts
+                      {contacts.length > 0 && <span className="ml-1 text-slate-400 font-normal">({contacts.length})</span>}
+                    </h3>
                   </div>
-                </div>
-              </div>
 
-              {/* Role Title & Job Link */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                <div>
-                  <label className="block text-[11px] font-mono text-slate-600 mb-1 font-semibold">
-                    Role Title <span className="text-rose-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <Briefcase className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input
-                      type="text"
-                      required
-                      value={role}
-                      onChange={(e) => setRole(e.target.value)}
-                      placeholder="e.g. Senior Frontend Developer"
-                      className="w-full bg-slate-50/80 text-slate-900 placeholder-slate-400 pl-8 pr-3 py-1.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white font-sans text-xs transition-all shadow-2xs h-9"
-                    />
-                  </div>
-                </div>
+                  <div className="rounded-xl border border-slate-200/80 divide-y divide-slate-100 overflow-hidden bg-white shadow-2xs">
+                    {contacts.length > 0 ? (
+                      contacts.map((c, idx) => {
+                        const avatarColor = avatarColors[idx % avatarColors.length];
+                        return (
+                          <div key={c.id} className="p-3 hover:bg-slate-50/60 transition-colors group">
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2.5 min-w-0">
+                                <div className={`w-8 h-8 rounded-full border-2 font-bold font-mono text-xs flex items-center justify-center shrink-0 ${avatarColor}`}>
+                                  {getInitials(c.name)}
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="text-xs font-bold text-slate-900 truncate leading-tight">{c.name}</p>
+                                  <p className="text-[11px] text-slate-500 truncate">{c.role || 'Contact'}</p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-1 shrink-0">
+                                {c.email && (
+                                  <span className="font-mono text-[10px] text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200/80 truncate max-w-[110px]">
+                                    {c.email}
+                                  </span>
+                                )}
+                                {c.linkedIn && (
+                                  <a
+                                    href={c.linkedIn}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                                    title="LinkedIn Profile"
+                                  >
+                                    <Linkedin className="w-3.5 h-3.5" />
+                                  </a>
+                                )}
+                                <DeleteIconButton
+                                  onClick={() => handleRemoveContactItem(c.id)}
+                                  title="Remove contact"
+                                />
+                              </div>
+                            </div>
 
-                <div>
-                  <label className="block text-[11px] font-mono text-slate-600 mb-1 font-semibold">
-                    Job Listing Link
-                  </label>
-                  <div className="relative">
-                    <Link className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input
-                      type="text"
-                      value={jobLink}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setJobLink(val);
-                        if (!companyDomain && val.includes('.')) {
-                          try {
-                            const urlToParse = val.startsWith('http') ? val : `https://${val}`;
-                            const host = new URL(urlToParse).hostname.replace(/^www\./, '');
-                            if (host && host.includes('.')) {
-                              setCompanyDomain(host);
-                            }
-                          } catch {}
-                        }
-                      }}
-                      placeholder="https://company.com/jobs/..."
-                      className="w-full bg-slate-50/80 text-slate-900 placeholder-slate-400 pl-8 pr-3 py-1.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white font-mono text-xs transition-all shadow-2xs h-9"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Section 2: Pipeline Metadata */}
-            <div className="space-y-3.5 pt-1">
-              <div className="border-b border-slate-100 pb-2">
-                <span className="text-xs font-display font-bold uppercase tracking-wider text-blue-600">
-                  02. Pipeline Metadata
-                </span>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-                <div>
-                  <label className="block text-[11px] font-mono text-slate-600 mb-1 font-semibold">
-                    Platform
-                  </label>
-                  <CustomSelectDropdown<JobPlatform>
-                    value={platform}
-                    onChange={(val) => setPlatform(val)}
-                    options={PLATFORMS.map((p) => ({ label: p, value: p }))}
-                    className="w-full"
-                    size="sm"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-mono text-slate-600 mb-1 font-semibold">
-                    Initial Status
-                  </label>
-                  <CustomSelectDropdown<ApplicationStatus>
-                    value={status}
-                    onChange={(val) => setStatus(val)}
-                    options={STATUSES.map((s) => ({ label: s === 'Wishlist' ? 'Saved' : s, value: s }))}
-                    className="w-full"
-                    size="sm"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-mono text-slate-600 mb-1 font-semibold">
-                    Date Applied
-                  </label>
-                  <input
-                    type="date"
-                    value={dateApplied}
-                    onChange={(e) => setDateApplied(e.target.value)}
-                    className="w-full bg-slate-50/80 text-slate-800 px-3 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-mono cursor-pointer shadow-2xs h-9"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Section 3: Dynamic Multiple Tasks */}
-            <div className="space-y-3.5 pt-1">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                <span className="text-xs font-display font-bold uppercase tracking-wider text-blue-600 flex items-center gap-2">
-                  <ListTodo className="w-4 h-4 text-blue-600" />
-                  03. Pipeline Tasks ({tasks.length})
-                </span>
-                <span className="text-[10px] font-mono text-slate-400 font-medium">Add action items</span>
-              </div>
-
-              {/* Added Tasks List */}
-              {tasks.length > 0 && (
-                <div className="rounded-xl border border-slate-200/80 bg-white overflow-hidden shadow-2xs divide-y divide-slate-100">
-                  {tasks.map((t) => (
-                    <TaskItem
-                      key={t.id}
-                      task={t}
-                      onToggle={handleToggleTaskItem}
-                      onEdit={handleEditTaskItem}
-                      onDelete={handleRemoveTaskItem}
-                    />
-                  ))}
-                </div>
-              )}
-
-              {/* Add Task Input Row */}
-              <div className="flex items-center gap-2">
-                <div className="relative flex-1">
-                  <CheckSquare className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <input
-                    type="text"
-                    value={taskTitle}
-                    onChange={(e) => setTaskTitle(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        handleAddTaskItem();
-                      }
-                    }}
-                    placeholder="Add a task title (e.g. Prepare system design)"
-                    className="w-full bg-slate-50/80 text-slate-900 placeholder-slate-400 pl-8 pr-3 py-1.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white font-sans text-xs transition-all shadow-2xs"
-                  />
-                </div>
-                <input
-                  type="date"
-                  value={taskDueDate}
-                  onChange={(e) => setTaskDueDate(e.target.value)}
-                  className="bg-slate-50/80 text-slate-800 px-2.5 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-mono cursor-pointer shadow-2xs"
-                />
-                <button
-                  type="button"
-                  onClick={handleAddTaskItem}
-                  disabled={!taskTitle.trim()}
-                  className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 disabled:opacity-40 text-blue-700 font-semibold border border-blue-200/80 rounded-xl transition-all shadow-2xs cursor-pointer flex items-center gap-1 shrink-0 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/40"
-                >
-                  <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-                  <span>Add Task</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Section 4: Dynamic Multiple Contacts */}
-            <div className="space-y-3.5 pt-1">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                <span className="text-xs font-display font-bold uppercase tracking-wider text-blue-600">
-                  04. Key Contacts (Optional)
-                </span>
-                <span className="text-[10px] font-mono text-slate-400 font-medium">Recruiters, Hiring Managers</span>
-              </div>
-
-              {/* Added Contacts List */}
-              {contacts.length > 0 && (
-                <div className="space-y-1.5">
-                  {contacts.map((c) => (
-                    <div
-                      key={c.id}
-                      className="flex items-center justify-between gap-2 p-2 rounded-xl bg-slate-50/90 border border-slate-200/80 text-xs"
-                    >
-                      <div className="flex items-center gap-2 min-w-0">
-                        <UserCheck className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                        <span className="font-semibold text-slate-900 truncate">{c.name}</span>
-                        {c.role && <span className="text-[11px] text-slate-500 font-medium">({c.role})</span>}
-                        {c.email && (
-                          <span className="font-mono text-[10px] text-blue-700 bg-blue-50 px-1.5 py-0.2 rounded border border-blue-200/80 shrink-0 truncate">
-                            {c.email}
-                          </span>
-                        )}
+                            {(c.phone || c.notes) && (
+                              <div className="mt-2 pl-[42px] space-y-1">
+                                {c.phone && (
+                                  <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-mono bg-slate-50 px-2 py-1 rounded border border-slate-200/60">
+                                    <Phone className="w-3 h-3 text-slate-400 shrink-0" />
+                                    <span className="truncate">{c.phone}</span>
+                                  </div>
+                                )}
+                                {c.notes && (
+                                  <p className="text-[11px] text-slate-600 bg-slate-50 border border-slate-200/60 rounded px-2 py-1 leading-relaxed italic">
+                                    {c.notes}
+                                  </p>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <div className="text-slate-400 font-mono text-[11px] text-center py-3.5">
+                        No contacts added.
                       </div>
-                      <DeleteIconButton
-                        onClick={() => handleRemoveContactItem(c.id)}
-                        title="Remove contact"
-                      />
+                    )}
+
+                    {/* Inline Contact Add Form supporting full Contact model */}
+                    <div className="p-3 bg-slate-50/60 space-y-2 border-t border-slate-100">
+                      <div className="grid grid-cols-2 gap-2">
+                        <input
+                          type="text"
+                          value={cName}
+                          onChange={(e) => setCName(e.target.value)}
+                          placeholder="Name *"
+                          className="bg-white text-slate-900 placeholder-slate-400 px-2.5 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:border-blue-400 text-xs font-medium"
+                        />
+                        <input
+                          type="text"
+                          value={cRole}
+                          onChange={(e) => setCRole(e.target.value)}
+                          placeholder="Role"
+                          className="bg-white text-slate-900 placeholder-slate-400 px-2.5 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:border-blue-400 text-xs"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <input
+                          type="email"
+                          value={cEmail}
+                          onChange={(e) => setCEmail(e.target.value)}
+                          placeholder="Email"
+                          className="bg-white text-slate-900 placeholder-slate-400 px-2.5 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:border-blue-400 font-mono text-[11px]"
+                        />
+                        <input
+                          type="tel"
+                          value={cPhone}
+                          onChange={(e) => setCPhone(e.target.value)}
+                          placeholder="Phone"
+                          className="bg-white text-slate-900 placeholder-slate-400 px-2.5 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:border-blue-400 font-mono text-[11px]"
+                        />
+                      </div>
+
+                      {showExtraContactFields ? (
+                        <div className="space-y-2 animate-in fade-in duration-150">
+                          <input
+                            type="url"
+                            value={cLinkedIn}
+                            onChange={(e) => setCLinkedIn(e.target.value)}
+                            placeholder="LinkedIn URL (https://linkedin.com/in/...)"
+                            className="w-full bg-white text-slate-900 placeholder-slate-400 px-2.5 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:border-blue-400 font-mono text-[11px]"
+                          />
+                          <textarea
+                            value={cNotes}
+                            onChange={(e) => setCNotes(e.target.value)}
+                            placeholder="Contact notes..."
+                            rows={2}
+                            className="w-full bg-white text-slate-900 placeholder-slate-400 p-2 rounded-lg border border-slate-200 text-xs resize-none"
+                          />
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setShowExtraContactFields(true)}
+                          className="text-[10px] font-mono text-blue-600 hover:text-blue-700 font-semibold cursor-pointer py-0.5 inline-flex items-center gap-1"
+                        >
+                          <span>+ LinkedIn &amp; Notes</span>
+                        </button>
+                      )}
+
+                      <div className="flex justify-end pt-1">
+                        <button
+                          type="button"
+                          onClick={handleAddContactItem}
+                          disabled={!cName.trim() && !cEmail.trim() && !cPhone.trim()}
+                          className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white font-semibold rounded-lg transition-all shadow-2xs cursor-pointer flex items-center gap-1 text-xs"
+                        >
+                          <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+                          <span>Add Contact</span>
+                        </button>
+                      </div>
                     </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Add Contact Input Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                <div className="relative">
-                  <UserCheck className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <input
-                    type="text"
-                    value={cName}
-                    onChange={(e) => setCName(e.target.value)}
-                    placeholder="Contact name (e.g. Sarah Miller)"
-                    className="w-full bg-slate-50/80 text-slate-900 placeholder-slate-400 pl-8 pr-3 py-1.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white font-sans text-xs transition-all shadow-2xs"
-                  />
+                  </div>
                 </div>
 
-                <div className="relative">
-                  <Mail className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <input
-                    type="email"
-                    value={cEmail}
-                    onChange={(e) => setCEmail(e.target.value)}
-                    placeholder="Email (e.g. sarah@co.com)"
-                    className="w-full bg-slate-50/80 text-slate-900 placeholder-slate-400 pl-8 pr-3 py-1.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white font-mono text-xs transition-all shadow-2xs"
-                  />
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    value={cRole}
-                    onChange={(e) => setCRole(e.target.value)}
-                    placeholder="Role (e.g. Tech Recruiter)"
-                    className="w-full bg-slate-50/80 text-slate-900 placeholder-slate-400 px-3 py-1.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white font-sans text-xs transition-all shadow-2xs"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleAddContactItem}
-                    disabled={!cName.trim() && !cEmail.trim()}
-                    className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 disabled:opacity-40 text-blue-700 font-semibold border border-blue-200/80 rounded-xl transition-all shadow-2xs cursor-pointer flex items-center gap-1 shrink-0 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/40"
-                  >
-                    <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-                    <span>Add</span>
-                  </button>
-                </div>
               </div>
-            </div>
 
-            {/* Section 5: Initial Notes */}
-            <div className="space-y-3 pt-1">
-              <div className="border-b border-slate-100 pb-2">
-                <span className="text-xs font-display font-bold uppercase tracking-wider text-slate-600">
-                  05. Additional Notes
-                </span>
-              </div>
-              <textarea
-                rows={3}
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Referral name, salary range, custom tech stack notes..."
-                className="w-full bg-slate-50/80 text-slate-900 placeholder-slate-400 p-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white font-sans text-xs resize-none shadow-2xs transition-all leading-relaxed"
-              />
             </div>
           </div>
 
           {/* Footer Actions */}
-          <div className="px-6 py-3.5 border-t border-slate-200/80 bg-slate-50/80 flex items-center justify-between shrink-0">
-            <span className="text-[11px] font-mono text-slate-400">Press Esc to exit</span>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={handleRequestClose}
-                className="h-[34px] px-3.5 rounded-[10px] text-slate-600 hover:text-slate-900 bg-white hover:bg-slate-100 border border-slate-200 font-medium transition-all shadow-2xs cursor-pointer text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/40"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={isSubmitting || !company.trim() || !role.trim()}
-                className={`${UI_TOKENS.btnPrimary} disabled:opacity-50 disabled:cursor-not-allowed`}
-              >
-                {isSubmitting ? 'Adding...' : 'Add Application'}
-              </button>
-            </div>
+          <div className="px-5 py-3.5 border-t border-slate-200/80 bg-slate-50/80 flex items-center justify-end gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={handleRequestClose}
+              className="h-[34px] px-3.5 rounded-[10px] text-slate-600 hover:text-slate-900 bg-white hover:bg-slate-100 border border-slate-200 font-medium transition-all shadow-2xs cursor-pointer text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={!company.trim() || !role.trim()}
+              className={`${UI_TOKENS.btnPrimary} disabled:opacity-50 disabled:cursor-not-allowed`}
+            >
+              Add Application
+            </button>
           </div>
         </form>
       </div>
     </div>
   );
 };
+

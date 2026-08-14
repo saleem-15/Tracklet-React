@@ -29,7 +29,7 @@ interface ActivePipelineBoardProps {
 
 const PIPELINE_COLUMNS: { status: ApplicationStatus; title: string; dot: string; tagBg: string }[] = [
   { 
-    status: 'Wishlist', 
+    status: 'Saved', 
     title: 'Saved', 
     dot: 'bg-purple-500',
     tagBg: 'text-purple-700 bg-purple-50'

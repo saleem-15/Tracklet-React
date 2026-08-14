@@ -64,7 +64,7 @@ export const StatsView: React.FC<StatsViewProps> = ({ applications }) => {
 
   // Stage breakdown
   const stageCounts = {
-    Wishlist: applications.filter((a) => a.status === 'Wishlist').length,
+    Saved: applications.filter((a) => a.status === 'Saved').length,
     Applied: applications.filter((a) => a.status === 'Applied').length,
     Screening: applications.filter((a) => a.status === 'Screening').length,
     Interview: applications.filter((a) => a.status === 'Interview').length,
@@ -74,8 +74,8 @@ export const StatsView: React.FC<StatsViewProps> = ({ applications }) => {
   };
 
   // Funnel conversion percentages
-  const wishlistToAppliedRate = stageCounts.Wishlist + stageCounts.Applied > 0
-    ? Math.round((stageCounts.Applied / (stageCounts.Wishlist + stageCounts.Applied)) * 100)
+  const savedToAppliedRate = stageCounts.Saved + stageCounts.Applied > 0
+    ? Math.round((stageCounts.Applied / (stageCounts.Saved + stageCounts.Applied)) * 100)
     : 0;
 
   const appliedToScreeningRate = stageCounts.Applied > 0
@@ -280,10 +280,10 @@ export const StatsView: React.FC<StatsViewProps> = ({ applications }) => {
           </div>
 
           <div className="space-y-2.5 pt-1 text-xs font-mono">
-            {/* Wishlist / Saved */}
+            {/* Saved */}
             <div className="flex items-center justify-between p-2.5 rounded-lg bg-purple-50/70 border border-purple-200/70">
               <span className="text-purple-800 font-medium">Saved</span>
-              <span className="text-purple-800 font-bold">{stageCounts.Wishlist}</span>
+              <span className="text-purple-800 font-bold">{stageCounts.Saved}</span>
             </div>
 
             {/* Applied */}
