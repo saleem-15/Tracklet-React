@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { calculateMomentumAnalysis, AnalyticsTimeframe, VelocityTrendPoint } from '../../lib/analyticsUtils';
+import { calculateMomentumAnalysis, AnalyticsTimeframe } from '../../lib/analyticsUtils';
 import { Application } from '../../types';
-import { TrendingUp, Flame, PlusCircle, ArrowRightLeft, CheckCircle2 } from 'lucide-react';
+import { TrendingUp, Flame, Send, ArrowRightLeft, CheckCircle2 } from 'lucide-react';
 
 interface ActivityMomentumCardProps {
   applications: Application[];
@@ -29,9 +29,6 @@ export const ActivityMomentumCard: React.FC<ActivityMomentumCardProps> = ({
 
   const maxActivity = Math.max(1, ...weeklyTrend.map((w) => w.totalActivity));
 
-  const hoveredItem: VelocityTrendPoint | null = 
-    hoveredIndex !== null && weeklyTrend[hoveredIndex] ? weeklyTrend[hoveredIndex] : null;
-
   return (
     <div className={`bg-white border border-slate-200/80 rounded-2xl p-5 shadow-2xs space-y-4 ${className}`}>
       {/* Header */}
@@ -42,7 +39,7 @@ export const ActivityMomentumCard: React.FC<ActivityMomentumCardProps> = ({
           </div>
           <div>
             <h3 className="text-sm font-bold text-slate-900 tracking-tight">
-              Activity & Cadence
+              Activity & Consistency Cadence
             </h3>
           </div>
         </div>
@@ -57,68 +54,78 @@ export const ActivityMomentumCard: React.FC<ActivityMomentumCardProps> = ({
           )}
 
           <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700">
-            {totalActions} actions
+            {totalActions} total actions
           </span>
         </div>
       </div>
 
-      {/* Clean 3-Category Breakdown Summary Strip */}
-      <div className="grid grid-cols-3 gap-2">
-        <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-2.5 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-blue-600 shrink-0" />
-            <span className="text-xs text-slate-600 font-medium">Apps</span>
+      {/* 3 Clear, High-Clarity Activity Metric Cards */}
+      <div className="grid grid-cols-3 gap-3">
+        {/* Applications Submitted */}
+        <div className="bg-slate-50/70 border border-slate-200/70 p-3 rounded-xl hover:border-blue-200 transition-all flex flex-col justify-between">
+          <div className="flex items-center justify-between text-xs text-slate-500 mb-1">
+            <span className="font-semibold text-slate-700 truncate">Applications</span>
+            <Send className="w-3.5 h-3.5 text-blue-600 shrink-0" />
           </div>
-          <span className="text-sm font-bold text-slate-900 font-mono">
-            +{totalApps}
-          </span>
-        </div>
-
-        <div className="bg-indigo-50/50 border border-indigo-100 rounded-xl p-2.5 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-indigo-500 shrink-0" />
-            <span className="text-xs text-slate-600 font-medium">Stage moves</span>
-          </div>
-          <span className="text-sm font-bold text-slate-900 font-mono">
-            {totalStageMoves}
-          </span>
-        </div>
-
-        <div className="bg-emerald-50/50 border border-emerald-100 rounded-xl p-2.5 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-            <span className="text-xs text-slate-600 font-medium">Tasks</span>
-          </div>
-          <span className="text-sm font-bold text-slate-900 font-mono">
-            {totalTasks}
-          </span>
-        </div>
-      </div>
-
-      {/* Stacked Histogram Chart Area */}
-      <div className="space-y-2 pt-1 relative">
-        {/* Dynamic Detail Tooltip on Hover */}
-        {hoveredItem && (
-          <div className="bg-slate-900 text-white rounded-xl px-3 py-1.5 text-xs shadow-lg flex items-center justify-between gap-4 animate-in fade-in duration-150">
-            <span className="font-medium text-slate-300">
-              {hoveredItem.periodLabel} ({hoveredItem.fullDate}):
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-xl font-bold text-slate-900 tracking-tight">
+              +{totalApps}
             </span>
-            <div className="flex items-center gap-3 font-mono text-[11px]">
-              <span className="text-blue-300">+{hoveredItem.appsCount} apps</span>
-              <span className="text-indigo-300">{hoveredItem.statusChangesCount} moves</span>
-              <span className="text-emerald-300">{hoveredItem.tasksDoneCount} tasks</span>
-              <strong className="text-white font-bold">Total: {hoveredItem.totalActivity}</strong>
-            </div>
+            <span className="text-[10px] text-slate-400 font-medium">submitted</span>
           </div>
-        )}
+        </div>
+
+        {/* Stage Progressions */}
+        <div className="bg-slate-50/70 border border-slate-200/70 p-3 rounded-xl hover:border-indigo-200 transition-all flex flex-col justify-between">
+          <div className="flex items-center justify-between text-xs text-slate-500 mb-1">
+            <span className="font-semibold text-slate-700 truncate">Stage Moves</span>
+            <ArrowRightLeft className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+          </div>
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-xl font-bold text-slate-900 tracking-tight">
+              {totalStageMoves}
+            </span>
+            <span className="text-[10px] text-slate-400 font-medium">progressed</span>
+          </div>
+        </div>
+
+        {/* Tasks Completed */}
+        <div className="bg-slate-50/70 border border-slate-200/70 p-3 rounded-xl hover:border-emerald-200 transition-all flex flex-col justify-between">
+          <div className="flex items-center justify-between text-xs text-slate-500 mb-1">
+            <span className="font-semibold text-slate-700 truncate">Tasks Done</span>
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+          </div>
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-xl font-bold text-slate-900 tracking-tight">
+              {totalTasks}
+            </span>
+            <span className="text-[10px] text-slate-400 font-medium">completed</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Stacked Histogram Chart Area with Floating Tooltip */}
+      <div className="space-y-2 pt-1 relative">
+        {/* Legend */}
+        <div className="flex items-center justify-end gap-3 text-xs text-slate-500">
+          <span className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-blue-600 inline-block" /> Applications
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-indigo-500 inline-block" /> Stage moves
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" /> Tasks
+          </span>
+        </div>
 
         {/* Stacked Vertical Bars Grid */}
-        <div className="grid grid-cols-4 sm:grid-cols-8 gap-2 items-end h-28 pt-2 px-1">
+        <div className="grid grid-cols-4 sm:grid-cols-8 gap-2 items-end h-32 pt-2 px-1 relative">
           {weeklyTrend.map((item, idx) => {
             const isHovered = hoveredIndex === idx;
             const totalH = Math.round((item.totalActivity / maxActivity) * 100);
 
-            // Sub-segment heights proportional to item.totalActivity
+            // Stacked segment percentages
             const appsPct = item.totalActivity > 0 ? (item.appsCount / item.totalActivity) * 100 : 0;
             const stagePct = item.totalActivity > 0 ? (item.statusChangesCount / item.totalActivity) * 100 : 0;
             const tasksPct = item.totalActivity > 0 ? (item.tasksDoneCount / item.totalActivity) * 100 : 0;
@@ -126,10 +133,35 @@ export const ActivityMomentumCard: React.FC<ActivityMomentumCardProps> = ({
             return (
               <div 
                 key={idx} 
-                className="flex flex-col items-center h-full justify-end group cursor-pointer"
+                className="flex flex-col items-center h-full justify-end group cursor-pointer relative"
                 onMouseEnter={() => setHoveredIndex(idx)}
                 onMouseLeave={() => setHoveredIndex(null)}
               >
+                {/* Clean Floating Mini Popover Tooltip Anchored to Bar */}
+                {isHovered && item.totalActivity > 0 && (
+                  <div className="absolute -top-14 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-2.5 py-1.5 rounded-lg shadow-xl border border-slate-800 text-[11px] pointer-events-none z-30 whitespace-nowrap animate-in fade-in zoom-in-95 duration-150">
+                    <div className="font-semibold text-slate-200 text-center">
+                      {item.periodLabel} ({item.fullDate})
+                    </div>
+                    <div className="flex items-center gap-2 mt-1 text-[10px]">
+                      {item.appsCount > 0 && (
+                        <span className="text-blue-400">+{item.appsCount} apps</span>
+                      )}
+                      {item.statusChangesCount > 0 && (
+                        <span className="text-indigo-300">{item.statusChangesCount} moves</span>
+                      )}
+                      {item.tasksDoneCount > 0 && (
+                        <span className="text-emerald-400">{item.tasksDoneCount} tasks</span>
+                      )}
+                      <span className="font-bold text-white border-l border-slate-700 pl-1.5">
+                        {item.totalActivity} total
+                      </span>
+                    </div>
+                    {/* Tooltip Arrow */}
+                    <div className="w-2 h-2 bg-slate-900 rotate-45 absolute -bottom-1 left-1/2 -translate-x-1/2 border-r border-b border-slate-800" />
+                  </div>
+                )}
+
                 {/* Total count badge above bar */}
                 <div className={`text-[10px] font-bold font-mono transition-opacity mb-1 ${
                   item.totalActivity > 0 ? 'text-slate-700 opacity-80 group-hover:opacity-100' : 'opacity-0'
@@ -138,7 +170,7 @@ export const ActivityMomentumCard: React.FC<ActivityMomentumCardProps> = ({
                 </div>
 
                 {/* Stacked Vertical Bar */}
-                <div className={`w-full max-w-[28px] bg-slate-100 rounded-t-md h-20 flex flex-col justify-end overflow-hidden border transition-all ${
+                <div className={`w-full max-w-[28px] bg-slate-100 rounded-t-md h-20 flex flex-col justify-end overflow-hidden border transition-all duration-200 ${
                   isHovered ? 'border-blue-400 ring-2 ring-blue-100 scale-105' : 'border-slate-200/50'
                 }`}>
                   {item.totalActivity > 0 ? (
@@ -151,7 +183,6 @@ export const ActivityMomentumCard: React.FC<ActivityMomentumCardProps> = ({
                         <div 
                           className="w-full bg-blue-600"
                           style={{ height: `${appsPct}%` }}
-                          title={`${item.appsCount} Applications`}
                         />
                       )}
                       {/* Stage changes segment (middle, indigo) */}
@@ -159,7 +190,6 @@ export const ActivityMomentumCard: React.FC<ActivityMomentumCardProps> = ({
                         <div 
                           className="w-full bg-indigo-500"
                           style={{ height: `${stagePct}%` }}
-                          title={`${item.statusChangesCount} Stage Changes`}
                         />
                       )}
                       {/* Tasks segment (top, emerald) */}
@@ -167,7 +197,6 @@ export const ActivityMomentumCard: React.FC<ActivityMomentumCardProps> = ({
                         <div 
                           className="w-full bg-emerald-500"
                           style={{ height: `${tasksPct}%` }}
-                          title={`${item.tasksDoneCount} Tasks Done`}
                         />
                       )}
                     </div>
@@ -179,7 +208,7 @@ export const ActivityMomentumCard: React.FC<ActivityMomentumCardProps> = ({
                 {/* Period label */}
                 <div className="text-center mt-1.5 min-w-0 w-full">
                   <span className={`block text-[10px] font-semibold transition-colors ${
-                    isHovered ? 'text-blue-600' : 'text-slate-500'
+                    isHovered ? 'text-blue-600 font-bold' : 'text-slate-500'
                   }`}>
                     {item.periodLabel}
                   </span>

@@ -53,7 +53,9 @@ export interface GhostingAnalysis {
   awaitingCount: number; // 7 - 14 days
   staleCount: number; // 14 - 21 days
   ghostedCount: number; // > 21 days in Applied
-  ghostingRatePct: number;
+  staleRatePct: number; // percentage of active apps in stale window (14-21d)
+  ghostRatePct: number; // percentage of active apps ghosted (>21d)
+  ghostingRatePct: number; // combined staleness rate
   avgDaysInStage: number;
   staleApplications: StaleAppItem[];
 }
@@ -558,6 +560,10 @@ export function calculateGhostingAndVelocity(applications: Application[]): Ghost
   staleApplications.sort((a, b) => b.daysInStage - a.daysInStage);
 
   const totalAnalyzed = activeAndApplied.length;
+  const staleRatePct =
+    totalAnalyzed > 0 ? Math.round((staleCount / totalAnalyzed) * 100) : 0;
+  const ghostRatePct =
+    totalAnalyzed > 0 ? Math.round((ghostedCount / totalAnalyzed) * 100) : 0;
   const ghostingRatePct =
     totalAnalyzed > 0 ? Math.round(((staleCount + ghostedCount) / totalAnalyzed) * 100) : 0;
   const avgDaysInStage =
@@ -569,6 +575,8 @@ export function calculateGhostingAndVelocity(applications: Application[]): Ghost
     awaitingCount,
     staleCount,
     ghostedCount,
+    staleRatePct,
+    ghostRatePct,
     ghostingRatePct,
     avgDaysInStage,
     staleApplications,
