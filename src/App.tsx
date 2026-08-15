@@ -42,15 +42,86 @@ import { setupExtensionSync } from './lib/extensionSync';
 
 import { ToastContainer, ToastMessage } from './components/Toast';
 
+import {
+  getTabFromPath,
+  getPathForTab,
+  readUrlState,
+  syncFiltersToUrl,
+  syncAppSelectionToUrl,
+  syncAddModalToUrl,
+  DEFAULT_FILTER,
+} from './lib/routeUtils';
+
 const LOCAL_STORAGE_KEY = 'tracklet_guest_apps_v1';
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [applications, setApplications] = useState<Application[]>([]);
-  const [activeTab, setActiveTab] = useState<ActiveTab>('all');
-  const [selectedAppId, setSelectedAppId] = useState<string | null>(null);
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [activeTab, setActiveTabState] = useState<ActiveTab>(() => getTabFromPath(window.location.pathname));
+
+  // ── Initialise all query-param–driven state from the URL on first render ──
+  // Parse once and reuse to avoid three separate URLSearchParams calls.
+  const _initialUrlState = readUrlState();
+  const [selectedAppId, setSelectedAppIdState] = useState<string | null>(
+    () => _initialUrlState.selectedAppId
+  );
+  const [isAddModalOpen, setIsAddModalOpenState] = useState<boolean>(
+    () => _initialUrlState.isAddModalOpen
+  );
   const [loading, setLoading] = useState(true);
+
+  // ── URL-aware tab setter (pushState so Back works between pages) ──────────
+  const setActiveTab = (tab: ActiveTab) => {
+    setActiveTabState(tab);
+    const targetPath = getPathForTab(tab);
+    if (window.location.pathname !== targetPath) {
+      window.history.pushState(null, '', targetPath);
+    }
+  };
+
+  // ── URL-aware filter setter (replaceState — no back-history spam) ─────────
+  // Refs shadow state so callbacks always see fresh values without stale closures.
+  const filterRef = React.useRef<FilterState>(_initialUrlState.filter);
+  const selectedAppIdRef = React.useRef<string | null>(_initialUrlState.selectedAppId);
+  const isAddModalOpenRef = React.useRef<boolean>(_initialUrlState.isAddModalOpen);
+
+  const setFilter: React.Dispatch<React.SetStateAction<FilterState>> = (action) => {
+    setFilterState((prev) => {
+      const next = typeof action === 'function' ? action(prev) : action;
+      filterRef.current = next;
+      syncFiltersToUrl(next, selectedAppIdRef.current, isAddModalOpenRef.current);
+      return next;
+    });
+  };
+
+  const setSelectedAppId = (appId: string | null) => {
+    selectedAppIdRef.current = appId;
+    setSelectedAppIdState(appId);
+    syncAppSelectionToUrl(appId, filterRef.current, isAddModalOpenRef.current);
+  };
+
+  const setIsAddModalOpen = (open: boolean) => {
+    isAddModalOpenRef.current = open;
+    setIsAddModalOpenState(open);
+    syncAddModalToUrl(open, filterRef.current, selectedAppIdRef.current);
+  };
+
+  // ── Restore all URL state when user presses Back / Forward ───────────────
+  useEffect(() => {
+    const handlePopState = () => {
+      const { filter, selectedAppId, isAddModalOpen } = readUrlState();
+      setActiveTabState(getTabFromPath(window.location.pathname));
+      filterRef.current = filter;
+      selectedAppIdRef.current = selectedAppId;
+      isAddModalOpenRef.current = isAddModalOpen;
+      setFilterState(filter);
+      setSelectedAppIdState(selectedAppId);
+      setIsAddModalOpenState(isAddModalOpen);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   // Toast notifications
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
@@ -77,13 +148,8 @@ export default function App() {
     saveExpirySettings(newSettings);
   };
 
-  // Filter and Sort State
-  const [filter, setFilter] = useState<FilterState>({
-    search: '',
-    platform: 'All',
-    status: 'All',
-    dateRange: 'all',
-  });
+  // Filter and Sort State — initialised from URL query params
+  const [filter, setFilterState] = useState<FilterState>(() => _initialUrlState.filter);
 
   const [sort, setSort] = useState<SortState>({
     field: 'dateApplied',
@@ -726,7 +792,7 @@ export default function App() {
                 applications={filteredAndSortedApplications}
                 totalAppCount={applications.length}
                 onOpenAddModal={() => setIsAddModalOpen(true)}
-                onResetFilters={() => setFilter({ search: '', platform: 'All', status: 'All', dateRange: 'all' })}
+                onResetFilters={() => setFilter(DEFAULT_FILTER)}
                 selectedAppId={selectedAppId}
                 onSelectApp={(app) => setSelectedAppId(app.id)}
                 sort={sort}
@@ -741,7 +807,7 @@ export default function App() {
                 applications={filteredAndSortedApplications}
                 totalAppCount={applications.length}
                 onOpenAddModal={() => setIsAddModalOpen(true)}
-                onResetFilters={() => setFilter({ search: '', platform: 'All', status: 'All', dateRange: 'all' })}
+                onResetFilters={() => setFilter(DEFAULT_FILTER)}
                 selectedAppId={selectedAppId}
                 onSelectApp={(app) => setSelectedAppId(app.id)}
                 onUpdateStatus={(id, newStatus) =>
