@@ -166,9 +166,11 @@ export const AnalyticsHeroKPIs: React.FC<AnalyticsHeroKPIsProps> = ({
             <span className="text-[11px] font-mono uppercase tracking-wider font-bold text-slate-500">
               Ghosting & Stale Risk
             </span>
-            <div className={`w-8 h-8 rounded-xl flex items-center justify-center group-hover:scale-105 transition-transform ${
-              ghostedCount > 0 ? 'bg-amber-50 text-amber-600' : 'bg-slate-100 text-slate-500'
-            }`}>
+            <div className={
+              ghostedCount > 0
+                ? 'w-8 h-8 rounded-xl flex items-center justify-center group-hover:scale-105 transition-transform bg-amber-50 text-amber-700'
+                : 'w-8 h-8 rounded-xl flex items-center justify-center group-hover:scale-105 transition-transform bg-slate-100 text-slate-700'
+            }>
               <AlertTriangle className="w-4 h-4" />
             </div>
           </div>
@@ -194,7 +196,7 @@ export const AnalyticsHeroKPIs: React.FC<AnalyticsHeroKPIsProps> = ({
 
           <div className="flex items-center justify-between text-[11px] font-mono text-slate-500 pt-1 border-t border-slate-100">
             <span>Staleness rate</span>
-            <span className={`font-bold ${ghostingRatePct > 30 ? 'text-amber-700' : 'text-slate-700'}`}>
+            <span className={`font-bold ${ghostingRatePct > 30 ? 'text-amber-800' : 'text-slate-700'}`}>
               {ghostingRatePct}% of active
             </span>
           </div>

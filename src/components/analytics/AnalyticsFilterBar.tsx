@@ -131,7 +131,7 @@ export const AnalyticsFilterBar: React.FC<AnalyticsFilterBarProps> = ({
         </div>
 
         {isFiltered && (
-          <span className="text-[10px] text-blue-600 font-semibold bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200/60">
+          <span className="text-[11px] text-blue-700 font-semibold bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200/60">
             Filters Active
           </span>
         )}

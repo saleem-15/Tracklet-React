@@ -144,7 +144,7 @@ export const ResponseVelocityCard: React.FC<ResponseVelocityCardProps> = ({
             Requires Follow-up or Archive ({staleApplications.length})
           </h4>
           {staleApplications.length > 0 && (
-            <span className="text-[10px] font-mono text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200/60 font-semibold">
+            <span className="text-[11px] font-mono text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200/60 font-semibold">
               Action Recommended
             </span>
           )}
@@ -170,7 +170,7 @@ export const ResponseVelocityCard: React.FC<ResponseVelocityCardProps> = ({
                       <span className="font-bold text-xs text-slate-900 truncate">
                         {app.company}
                       </span>
-                      <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-200/60 text-slate-600">
+                      <span className="text-[11px] font-mono px-1.5 py-0.2 rounded bg-slate-200/60 text-slate-700">
                         {app.status}
                       </span>
                     </div>

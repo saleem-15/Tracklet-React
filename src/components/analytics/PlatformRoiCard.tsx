@@ -91,7 +91,10 @@ export const PlatformRoiCard: React.FC<PlatformRoiCardProps> = ({
                         {item.offerCount} {item.offerCount === 1 ? 'Offer' : 'Offers'}
                       </span>
                     )}
-                    <span className="font-semibold text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded text-[10px]">
+                    <span 
+                      title={`Yield Score: ${item.interviewRatePct}% response yield + offer conversion weight`}
+                      className="font-semibold text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded text-[11px] cursor-help"
+                    >
                       ROI {item.roiScore}
                     </span>
                   </div>

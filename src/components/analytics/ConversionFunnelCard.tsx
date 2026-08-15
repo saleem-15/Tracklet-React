@@ -76,7 +76,7 @@ export const ConversionFunnelCard: React.FC<ConversionFunnelCardProps> = ({
               {/* Top Row: Label, Volume & Conversion vs Prev */}
               <div className="flex items-center justify-between text-xs font-mono">
                 <div className="flex items-center gap-2">
-                  <span className="w-5 h-5 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center font-bold text-[10px]">
+                  <span className="w-5 h-5 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-[11px]">
                     {idx + 1}
                   </span>
                   <span className="font-semibold text-slate-800">{stage.label}</span>
@@ -92,7 +92,7 @@ export const ConversionFunnelCard: React.FC<ConversionFunnelCardProps> = ({
                     </span>
                   )}
                   <span className="font-bold text-slate-900 text-xs">
-                    {stage.count} <span className="font-normal text-slate-400 text-[10px]">({stage.percentageOfTotal}%)</span>
+                    {stage.count} <span className="font-normal text-slate-500 text-[11px]">({stage.percentageOfTotal}%)</span>
                   </span>
                 </div>
               </div>
@@ -107,12 +107,12 @@ export const ConversionFunnelCard: React.FC<ConversionFunnelCardProps> = ({
 
               {/* Transition Indicator to next stage */}
               {!isLast && stage.dropoffCount > 0 && (
-                <div className="flex items-center justify-between text-[10px] font-mono text-slate-400 px-2 py-0.5">
+                <div className="flex items-center justify-between text-[11px] font-mono text-slate-500 px-2 py-0.5">
                   <div className="flex items-center gap-1 text-slate-400">
-                    <ArrowRight className="w-3 h-3 text-slate-300" />
-                    <span>Drop-off to next step</span>
+                    <ArrowRight className="w-3 h-3 text-slate-400" />
+                    <span>Drop-off to next stage</span>
                   </div>
-                  <span className="text-slate-500 font-medium flex items-center gap-1">
+                  <span className="text-slate-600 font-medium flex items-center gap-1">
                     <TrendingDown className="w-3 h-3 text-rose-500" />
                     {stage.dropoffCount} ({stage.dropoffRate}%)
                   </span>

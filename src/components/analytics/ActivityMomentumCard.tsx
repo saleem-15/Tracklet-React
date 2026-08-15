@@ -78,7 +78,7 @@ export const ActivityMomentumCard: React.FC<ActivityMomentumCardProps> = ({
       <div className="grid grid-cols-3 gap-3">
         <div className="bg-slate-50/80 border border-slate-200/70 p-3 rounded-xl flex items-center justify-between">
           <div>
-            <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 font-bold block">
+            <span className="text-[11px] font-mono uppercase tracking-wider text-slate-500 font-bold block">
               Apps Submitted
             </span>
             <span className="text-lg font-extrabold text-slate-900 font-mono">
@@ -90,7 +90,7 @@ export const ActivityMomentumCard: React.FC<ActivityMomentumCardProps> = ({
 
         <div className="bg-slate-50/80 border border-slate-200/70 p-3 rounded-xl flex items-center justify-between">
           <div>
-            <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 font-bold block">
+            <span className="text-[11px] font-mono uppercase tracking-wider text-slate-500 font-bold block">
               Stage Moves
             </span>
             <span className="text-lg font-extrabold text-slate-900 font-mono">
@@ -102,7 +102,7 @@ export const ActivityMomentumCard: React.FC<ActivityMomentumCardProps> = ({
 
         <div className="bg-slate-50/80 border border-slate-200/70 p-3 rounded-xl flex items-center justify-between">
           <div>
-            <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 font-bold block">
+            <span className="text-[11px] font-mono uppercase tracking-wider text-slate-500 font-bold block">
               Tasks Done
             </span>
             <span className="text-lg font-extrabold text-slate-900 font-mono">
@@ -115,9 +115,9 @@ export const ActivityMomentumCard: React.FC<ActivityMomentumCardProps> = ({
 
       {/* Visual Activity Histogram */}
       <div className="space-y-2 pt-1">
-        <div className="flex items-center justify-between text-xs text-slate-600 font-mono">
+        <div className="flex items-center justify-between text-xs font-mono">
           <span className="text-slate-700 font-medium">Activity Distribution ({timeframeLabel})</span>
-          <div className="flex items-center gap-3 text-[10px] font-mono text-slate-500">
+          <div className="flex items-center gap-3 text-[11px] font-mono text-slate-500">
             <span className="flex items-center gap-1">
               <span className="w-2 h-2 rounded-full bg-blue-600 inline-block" /> Apps
             </span>
@@ -138,7 +138,7 @@ export const ActivityMomentumCard: React.FC<ActivityMomentumCardProps> = ({
             return (
               <div key={idx} className="flex flex-col items-center h-full justify-end group">
                 {/* Count tooltip on hover */}
-                <div className="text-[10px] font-mono font-bold text-slate-700 opacity-80 group-hover:opacity-100 transition-opacity mb-1">
+                <div className="text-[11px] font-mono font-bold text-slate-700 opacity-80 group-hover:opacity-100 transition-opacity mb-1">
                   {item.totalActivity > 0 ? item.totalActivity : ''}
                 </div>
 
@@ -156,7 +156,7 @@ export const ActivityMomentumCard: React.FC<ActivityMomentumCardProps> = ({
 
                 {/* Label */}
                 <div className="text-center mt-1.5 min-w-0 w-full">
-                  <span className="block text-[10px] font-mono font-semibold text-slate-600">
+                  <span className="block text-[11px] font-mono font-semibold text-slate-600">
                     {item.periodLabel}
                   </span>
                 </div>
