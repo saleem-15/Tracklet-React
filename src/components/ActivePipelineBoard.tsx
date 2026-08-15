@@ -209,7 +209,7 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
                   <div className="flex items-center gap-2 font-heading font-bold text-slate-800 text-xs tracking-tight">
                     <span className={`w-2 h-2 rounded-full ${col.dot} shadow-xs shrink-0`} />
                     <span>{col.title}</span>
-                    <span className="font-mono text-[11px] font-semibold text-slate-400 ml-0.5">
+                    <span className="font-mono text-[11px] font-semibold text-slate-500 ml-0.5">
                       ({count})
                     </span>
                   </div>
@@ -248,7 +248,7 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
 
                   {/* Column container with stable DOM structure during drag */}
                   {columnApps.length === 0 ? (
-                    <div className="flex-1 min-h-[120px] flex items-center justify-center p-6 text-center text-slate-400 font-mono text-[11px] border border-dashed border-slate-200/60 rounded-xl my-1 bg-slate-50/20">
+                    <div className="flex-1 min-h-[120px] flex items-center justify-center p-6 text-center text-slate-500 font-mono text-[11px] border border-dashed border-slate-200/60 rounded-xl my-1 bg-slate-50/20">
                       {isTargeting ? (
                         <span className="text-blue-600 font-semibold flex items-center gap-1.5">
                           <ArrowRight className="w-3.5 h-3.5" />

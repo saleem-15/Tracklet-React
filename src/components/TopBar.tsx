@@ -169,7 +169,7 @@ export const TopBar: React.FC<TopBarProps> = ({
           </button>
         )}
 
-        <span className="font-mono text-[11px] text-slate-400 ml-1">
+        <span className="font-mono text-[11px] text-slate-500 ml-1">
           {totalFilteredCount} {totalFilteredCount === 1 ? 'item' : 'items'}
         </span>
       </div>

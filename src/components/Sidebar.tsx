@@ -84,7 +84,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <span className="font-bold text-slate-900 tracking-tight text-xs sm:text-[14px] leading-none font-heading">
                   Tracklet
                 </span>
-                <span className="text-[10px] text-slate-400 font-medium tracking-wide mt-0.5 font-mono">
+                <span className="text-[10px] text-slate-500 font-medium tracking-wide mt-0.5 font-mono">
                   Job OS
                 </span>
               </div>
@@ -110,7 +110,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* Navigation Items */}
         <nav className="p-2 space-y-1">
           {!isCollapsed && (
-            <div className="px-2.5 pt-1.5 pb-1 text-[11px] font-mono uppercase tracking-wider text-slate-400 font-bold">
+            <div className="px-2.5 pt-1.5 pb-1 text-[11px] font-mono uppercase tracking-wider text-slate-500 font-bold">
               Views
             </div>
           )}

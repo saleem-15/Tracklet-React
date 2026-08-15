@@ -65,3 +65,4 @@ src/
 Run these commands to verify code integrity before finalizing any task:
 1. `npx tsc --noEmit` — Type checks must pass with zero errors.
 2. `npm run build` — Production build must succeed cleanly.
+3. **Lighthouse Compliance**: Never use `text-slate-400` on white/light backgrounds for readable text (use `text-slate-500` minimum for WCAG AA compliance). Maintain zero console errors and clean meta tags (see `.agents/skills/lighthouse-audit/SKILL.md`).

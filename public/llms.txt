@@ -1,0 +1,20 @@
+# Tracklet
+
+> Modern job application tracking system — track, organize, and optimize your job search pipeline.
+
+## About
+
+Tracklet is a high-clarity job application tracker built for modern job seekers. Organize your applications across stages (Saved, Applied, Screening, Interview, Offer), track tasks and deadlines, and view analytics on your search performance.
+
+## Features
+
+- [Pipeline Board](https://tracklet-eight.vercel.app/pipeline) — Kanban-style view of active applications
+- [All Applications](https://tracklet-eight.vercel.app/) — Full searchable table of every application
+- [Analytics](https://tracklet-eight.vercel.app/stats) — Visual stats and charts on your job search
+- CSV import/export for data portability
+- Google Sign-In for cloud sync via Firebase
+
+## Links
+
+- [Tracklet App](https://tracklet-eight.vercel.app/)
+- [GitHub Repository](https://github.com/saleem-15/Tracklet-React)

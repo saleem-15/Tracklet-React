@@ -364,7 +364,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({ 
                   <Pencil className="w-3.5 h-3.5 text-blue-600" />
                   <span className="font-bold text-slate-900 text-xs tracking-tight">Edit Application Details</span>
                 </div>
-                <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">Metadata &amp; links</span>
+                <span className="text-[10px] font-mono text-slate-500 uppercase tracking-wider">Metadata &amp; links</span>
               </div>
 
               {/* Row 1: Company + Role */}
@@ -442,7 +442,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({ 
                   {m.icon}
                 </div>
                 <div className="min-w-0">
-                  <span className="text-[10px] font-mono uppercase text-slate-400 font-semibold tracking-wider block">{m.label}</span>
+                  <span className="text-[10px] font-mono uppercase text-slate-500 font-semibold tracking-wider block">{m.label}</span>
                   <span className="font-bold text-slate-900 text-xs block font-mono truncate">{m.value}</span>
                 </div>
               </div>
@@ -461,7 +461,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({ 
                   <h3 className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
                     <CheckSquare className="w-3.5 h-3.5 text-blue-500" />
                     Tasks
-                    {totalTasksCount > 0 && <span className="ml-1 text-slate-400 font-normal">({totalTasksCount})</span>}
+                    {totalTasksCount > 0 && <span className="ml-1 text-slate-500 font-normal">({totalTasksCount})</span>}
                   </h3>
                   {totalTasksCount > 0 && (
                     <span className="text-[10px] font-mono text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full font-bold border border-blue-200/60">
@@ -483,7 +483,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({ 
                         />
                       ))
                     ) : (
-                      <div className="text-slate-400 font-mono text-[11px] text-center py-4">No tasks yet.</div>
+                      <div className="text-slate-500 font-mono text-[11px] text-center py-4">No tasks yet.</div>
                     )}
                   </div>
 
@@ -517,7 +517,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({ 
                     <FileText className="w-3.5 h-3.5 text-blue-500" />
                     Notes &amp; Scratchpad
                   </h3>
-                  <span className={`text-[10px] font-mono transition-colors ${hasUnsavedNotes ? 'text-amber-600 font-semibold' : 'text-slate-400'}`}>
+                  <span className={`text-[10px] font-mono transition-colors ${hasUnsavedNotes ? 'text-amber-600 font-semibold' : 'text-slate-500'}`}>
                     {hasUnsavedNotes ? '● Unsaved · Ctrl+Enter to save' : 'Ctrl+Enter to save'}
                   </span>
                 </div>
@@ -566,7 +566,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({ 
                   <button
                     type="button"
                     onClick={() => setIsEditingInfo(true)}
-                    className="w-full text-left text-[11px] font-mono text-slate-400 bg-slate-50/60 border border-dashed border-slate-200 rounded-xl px-3.5 py-2.5 hover:border-blue-300 hover:text-blue-500 transition-colors cursor-pointer"
+                    className="w-full text-left text-[11px] font-mono text-slate-500 bg-slate-50/60 border border-dashed border-slate-200 rounded-xl px-3.5 py-2.5 hover:border-blue-300 hover:text-blue-500 transition-colors cursor-pointer"
                   >
                     + Add job posting URL via Edit Info
                   </button>
@@ -597,7 +597,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({ 
                   <button
                     type="button"
                     onClick={() => setIsEditingInfo(true)}
-                    className="w-full text-left text-[11px] font-mono text-slate-400 bg-slate-50/60 border border-dashed border-slate-200 rounded-xl px-3.5 py-2.5 hover:border-blue-300 hover:text-blue-500 transition-colors cursor-pointer"
+                    className="w-full text-left text-[11px] font-mono text-slate-500 bg-slate-50/60 border border-dashed border-slate-200 rounded-xl px-3.5 py-2.5 hover:border-blue-300 hover:text-blue-500 transition-colors cursor-pointer"
                   >
                     + Add contact email via Edit Info
                   </button>
@@ -610,7 +610,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({ 
                   <h3 className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
                     <Mail className="w-3.5 h-3.5 text-blue-500" />
                     Email Log
-                    {app.emails && app.emails.length > 0 && <span className="ml-1 text-slate-400 font-normal">({app.emails.length})</span>}
+                    {app.emails && app.emails.length > 0 && <span className="ml-1 text-slate-500 font-normal">({app.emails.length})</span>}
                   </h3>
                   <div className="flex items-center gap-1.5">
                     <button type="button" onClick={() => setShowAddEmail(!showAddEmail)} className="flex items-center gap-1 text-[10px] font-mono bg-white hover:bg-slate-50 text-slate-600 font-semibold px-2 py-1 rounded-lg border border-slate-200 shadow-2xs cursor-pointer transition-colors">
@@ -651,10 +651,10 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({ 
                             <p className="text-xs font-semibold text-slate-900 truncate">{email.subject}</p>
                             <p className="text-[11px] text-slate-500 font-mono mt-0.5 flex flex-wrap items-center gap-x-1 gap-y-0.5">
                               <span>From: {email.sender}</span>
-                              {email.recipient && <span className="text-slate-400">→ {email.recipient}</span>}
+                              {email.recipient && <span className="text-slate-500">→ {email.recipient}</span>}
                             </p>
                           </div>
-                          <span className="text-[10px] font-mono text-slate-400 shrink-0 mt-0.5">{email.date}</span>
+                          <span className="text-[10px] font-mono text-slate-500 shrink-0 mt-0.5">{email.date}</span>
                         </div>
                         {email.snippet && (
                           <p className="text-[11px] text-slate-500 bg-slate-50 border border-slate-200/60 rounded-lg p-2 mt-2 italic leading-relaxed">
@@ -664,7 +664,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({ 
                       </div>
                     ))
                   ) : (
-                    <div className="text-slate-400 font-mono text-[11px] text-center py-4">No emails logged yet.</div>
+                    <div className="text-slate-500 font-mono text-[11px] text-center py-4">No emails logged yet.</div>
                   )}
                 </div>
               </div>
@@ -675,7 +675,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({ 
                   <h3 className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
                     <Users className="w-3.5 h-3.5 text-blue-500" />
                     Contacts
-                    {app.contacts && app.contacts.length > 0 && <span className="ml-1 text-slate-400 font-normal">({app.contacts.length})</span>}
+                    {app.contacts && app.contacts.length > 0 && <span className="ml-1 text-slate-500 font-normal">({app.contacts.length})</span>}
                   </h3>
                   <button
                     type="button"
@@ -783,7 +783,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({ 
                       );
                     })
                   ) : !showAddContact ? (
-                    <div className="text-slate-400 font-mono text-[11px] text-center py-4">No contacts yet.</div>
+                    <div className="text-slate-500 font-mono text-[11px] text-center py-4">No contacts yet.</div>
                   ) : null}
 
                   {/* New Contact form — inline inside the card container */}
@@ -818,14 +818,14 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({ 
                     <History className="w-3.5 h-3.5 text-blue-500" />
                     Status History
                   </h3>
-                  <span className="text-[10px] font-mono text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">
+                  <span className="text-[10px] font-mono text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">
                     {historyEntries.length} {historyEntries.length === 1 ? 'event' : 'events'}
                   </span>
                 </div>
 
                 <div className="bg-white border border-slate-200/80 rounded-xl p-3.5 max-h-[200px] overflow-y-auto shadow-2xs">
                   {isLoadingHistory ? (
-                    <div className="text-slate-400 font-mono text-[11px] text-center py-2">Loading…</div>
+                    <div className="text-slate-500 font-mono text-[11px] text-center py-2">Loading…</div>
                   ) : historyEntries.length === 0 ? (
                     <div className="flex items-start gap-3">
                       <div className="w-2 h-2 rounded-full bg-blue-400 mt-1.5 shrink-0" />
@@ -833,7 +833,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({ 
                         <div className="text-xs font-semibold text-slate-800 flex items-center gap-2">
                           Created as <StatusBadge status={app.status} size="sm" />
                         </div>
-                        <p className="text-[10px] font-mono text-slate-400 mt-1">{formatTimestamp(app.createdAt || app.stageUpdatedAt)}</p>
+                        <p className="text-[10px] font-mono text-slate-500 mt-1">{formatTimestamp(app.createdAt || app.stageUpdatedAt)}</p>
                       </div>
                     </div>
                   ) : (
@@ -856,7 +856,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({ 
                                 </>
                               )}
                             </div>
-                            <p className="text-[10px] font-mono text-slate-400 mt-0.5">{formatTimestamp(entry.timestamp)}</p>
+                            <p className="text-[10px] font-mono text-slate-500 mt-0.5">{formatTimestamp(entry.timestamp)}</p>
                           </div>
                         </div>
                       ))}
@@ -888,7 +888,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({ 
             <button
               onClick={handleSaveNotes}
               disabled={!hasUnsavedNotes || isSavingNotes}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-xl font-semibold transition-all text-xs cursor-pointer ${hasUnsavedNotes ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm shadow-blue-500/20' : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'}`}
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-xl font-semibold transition-all text-xs cursor-pointer ${hasUnsavedNotes ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm shadow-blue-500/20' : 'bg-slate-100 text-slate-500 border border-slate-200 cursor-not-allowed'}`}
             >
               <Save className="w-3.5 h-3.5" />
               {isSavingNotes ? 'Saving…' : 'Save Notes'}

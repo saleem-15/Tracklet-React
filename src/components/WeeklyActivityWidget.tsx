@@ -362,7 +362,7 @@ export const WeeklyActivityWidget: React.FC<WeeklyActivityWidgetProps> = ({
             <span className="text-2xl font-mono font-bold text-slate-900">
               +{addedCount}
             </span>
-            <span className="text-[10px] font-mono text-slate-400">
+            <span className="text-[10px] font-mono text-slate-500">
               {addedCount === 1 ? '1 new app' : `${addedCount} new apps`}
             </span>
           </div>
@@ -380,7 +380,7 @@ export const WeeklyActivityWidget: React.FC<WeeklyActivityWidgetProps> = ({
             <span className="text-2xl font-mono font-bold text-slate-900">
               {tasksCompletedCount}
             </span>
-            <span className="text-[10px] font-mono text-slate-400">
+            <span className="text-[10px] font-mono text-slate-500">
               {tasksCompletedCount === 1 ? '1 task done' : `${tasksCompletedCount} tasks done`}
             </span>
           </div>
@@ -398,7 +398,7 @@ export const WeeklyActivityWidget: React.FC<WeeklyActivityWidgetProps> = ({
             <span className="text-2xl font-mono font-bold text-slate-900">
               {statusChangedCount}
             </span>
-            <span className="text-[10px] font-mono text-slate-400">
+            <span className="text-[10px] font-mono text-slate-500">
               {statusChangedCount === 1 ? '1 stage move' : `${statusChangedCount} stage moves`}
             </span>
           </div>
@@ -450,7 +450,7 @@ export const WeeklyActivityWidget: React.FC<WeeklyActivityWidgetProps> = ({
                   <span className={`block text-[11px] font-mono font-semibold ${item.isToday ? 'text-blue-600 font-bold' : 'text-slate-600'}`}>
                     {item.name}
                   </span>
-                  <span className="block text-[9px] font-mono text-slate-400 truncate">
+                  <span className="block text-[9px] font-mono text-slate-500 truncate">
                     {item.label}
                   </span>
                 </div>

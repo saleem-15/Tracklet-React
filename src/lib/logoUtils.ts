@@ -88,7 +88,6 @@ export function getCompanyLogoUrls(companyName: string, jobLink?: string, custom
   const domain = getCompanyDomain(companyName, jobLink, customDomain);
   
   return [
-    `https://logo.clearbit.com/${domain}`,
     `https://www.google.com/s2/favicons?domain=${domain}&sz=128`,
     `https://unavatar.io/${domain}?fallback=false`,
   ];

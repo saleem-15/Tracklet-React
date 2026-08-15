@@ -33,12 +33,12 @@ interface AllApplicationsTableProps {
 
 function getStageUrgencyClass(status: ApplicationStatus, daysInStage: number): string {
   if (status === 'Rejected' || status === 'Archived') {
-    return 'text-slate-400';
+    return 'text-slate-500';
   }
   if (status === 'Applied') {
     if (daysInStage > 21) return 'text-amber-800 bg-amber-50 font-medium border border-amber-200/80';
     if (daysInStage > 10) return 'text-slate-700 font-medium';
-    return 'text-slate-400';
+    return 'text-slate-500';
   }
   if (status === 'Screening' || status === 'Interview') {
     if (daysInStage > 14) return 'text-rose-800 bg-rose-50 font-medium border border-rose-200/80';
@@ -50,7 +50,7 @@ function getStageUrgencyClass(status: ApplicationStatus, daysInStage: number): s
     return 'text-emerald-800 bg-emerald-50 font-medium border border-emerald-200/80';
   }
   if (daysInStage > 14) return 'text-amber-800 bg-amber-50 font-medium border border-amber-200/80';
-  return 'text-slate-400';
+  return 'text-slate-500';
 }
 
 export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({

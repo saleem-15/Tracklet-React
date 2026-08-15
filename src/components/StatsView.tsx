@@ -85,7 +85,7 @@ export const StatsView: React.FC<StatsViewProps> = ({
       {/* Handle Empty State if no apps match filter */}
       {filteredApps.length === 0 ? (
         <div className="bg-white border border-slate-200/80 rounded-2xl p-12 text-center space-y-4 shadow-2xs">
-          <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 mx-auto flex items-center justify-center">
+          <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-500 mx-auto flex items-center justify-center">
             <FilterX className="w-6 h-6" />
           </div>
           <div className="space-y-1 max-w-md mx-auto">
