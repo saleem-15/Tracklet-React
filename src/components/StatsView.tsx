@@ -11,7 +11,7 @@ import { ConversionFunnelCard } from './analytics/ConversionFunnelCard';
 import { PlatformRoiCard } from './analytics/PlatformRoiCard';
 import { ResponseVelocityCard } from './analytics/ResponseVelocityCard';
 import { ActivityMomentumCard } from './analytics/ActivityMomentumCard';
-import { BarChart3, FilterX } from 'lucide-react';
+import { BarChart3, FilterX, Trophy, AlertTriangle, TrendingUp } from 'lucide-react';
 
 interface StatsViewProps {
   applications: Application[];
@@ -106,6 +106,76 @@ export const StatsView: React.FC<StatsViewProps> = ({
         </div>
       ) : (
         <>
+          {/* Opinionated Search Health Insight Banner */}
+          {(() => {
+            const staleRatio = kpis.ghostedCount / Math.max(1, kpis.activePipelineCount);
+            if (kpis.offerCount > 0) {
+              return (
+                <div className="bg-emerald-50/90 border border-emerald-200/80 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-emerald-950 shadow-2xs">
+                  <div className="flex items-start sm:items-center gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-2xs">
+                      <Trophy className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold tracking-tight text-emerald-950">
+                        Offer Stage Unlocked ({kpis.offerCount} {kpis.offerCount === 1 ? 'Offer' : 'Offers'})
+                      </h3>
+                      <p className="text-xs text-emerald-800 leading-relaxed">
+                        You have active offers secured across {kpis.interviewProgressionCount} interview loops. Prioritize negotiation and team alignment.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+            if (kpis.ghostedCount > 0 && staleRatio >= 0.4) {
+              return (
+                <div className="bg-amber-50/90 border border-amber-200/80 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-amber-950 shadow-2xs">
+                  <div className="flex items-start sm:items-center gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-amber-600 text-white flex items-center justify-center shrink-0 shadow-2xs">
+                      <AlertTriangle className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold tracking-tight text-amber-950">
+                        Pipeline Momentum Stalled ({Math.round(staleRatio * 100)}% stale / ghosted)
+                      </h3>
+                      <p className="text-xs text-amber-800 leading-relaxed">
+                        {kpis.ghostedCount} active applications have had no response for &gt;14 days. Review follow-up emails or submit fresh applications.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleScrollToStale}
+                    className="px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold shadow-2xs cursor-pointer transition-all shrink-0 self-start sm:self-auto"
+                  >
+                    Review Stale Apps
+                  </button>
+                </div>
+              );
+            }
+            if (kpis.interviewProgressionPct >= 20) {
+              return (
+                <div className="bg-blue-50/90 border border-blue-200/80 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-blue-950 shadow-2xs">
+                  <div className="flex items-start sm:items-center gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-2xs">
+                      <TrendingUp className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold tracking-tight text-blue-950">
+                        High Screening Yield ({kpis.interviewProgressionPct}% progression)
+                      </h3>
+                      <p className="text-xs text-blue-800 leading-relaxed">
+                        Your response yield is outperforming the 10–20% industry average across {kpis.activePipelineCount} active applications.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+            return null;
+          })()}
+
           {/* 4 Clean Executive KPI Cards */}
           <AnalyticsHeroKPIs 
             kpis={kpis} 

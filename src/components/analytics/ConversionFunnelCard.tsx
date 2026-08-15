@@ -1,7 +1,7 @@
 import React from 'react';
 import { calculateConversionFunnel } from '../../lib/analyticsUtils';
 import { Application } from '../../types';
-import { Filter, CheckCircle2 } from 'lucide-react';
+import { Filter, Sparkles } from 'lucide-react';
 
 interface ConversionFunnelCardProps {
   applications: Application[];
@@ -13,7 +13,7 @@ export const ConversionFunnelCard: React.FC<ConversionFunnelCardProps> = ({
   className = '',
 }) => {
   const funnel = calculateConversionFunnel(applications);
-  const { stages, overallYieldPct } = funnel;
+  const { stages, overallYieldPct, bottleneckAdvice } = funnel;
 
   const maxStageCount = Math.max(1, ...stages.map((s) => s.count));
 
@@ -48,7 +48,7 @@ export const ConversionFunnelCard: React.FC<ConversionFunnelCardProps> = ({
             <div key={stage.status} className="space-y-1.5 group">
               <div className="flex items-center justify-between text-xs">
                 <div className="flex items-center gap-2">
-                  <span className="w-4.5 h-4.5 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center font-bold text-[10px]">
+                  <span className="w-4.5 h-4.5 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center font-bold text-[11px]">
                     {idx + 1}
                   </span>
                   <span className="font-semibold text-slate-800">{stage.label}</span>
@@ -67,7 +67,7 @@ export const ConversionFunnelCard: React.FC<ConversionFunnelCardProps> = ({
               </div>
 
               {/* Progress Bar */}
-              <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden">
+              <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
                 <div
                   className={`h-full ${stage.bgLight} rounded-full transition-all duration-500 group-hover:brightness-105`}
                   style={{ width: `${widthPct}%` }}
@@ -77,6 +77,14 @@ export const ConversionFunnelCard: React.FC<ConversionFunnelCardProps> = ({
           );
         })}
       </div>
+
+      {/* Dynamic Bottleneck Insight */}
+      {bottleneckAdvice && applications.length >= 3 && (
+        <div className="pt-2 border-t border-slate-100 flex items-start gap-2 text-xs text-slate-600 bg-slate-50/70 p-2.5 rounded-xl border border-slate-200/60">
+          <Sparkles className="w-3.5 h-3.5 text-purple-600 shrink-0 mt-0.5" />
+          <span className="leading-snug">{bottleneckAdvice}</span>
+        </div>
+      )}
     </div>
   );
 };

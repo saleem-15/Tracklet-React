@@ -6,7 +6,8 @@ import {
   CheckCircle, 
   ChevronRight, 
   Mail,
-  AlertCircle
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { CompanyLogo } from '../CompanyLogo';
 
@@ -68,12 +69,12 @@ export const ResponseVelocityCard: React.FC<ResponseVelocityCardProps> = ({
         {/* Distinct Stale and Ghost Rate Badges */}
         <div className="flex items-center gap-1.5 flex-wrap">
           {staleCount > 0 && (
-            <span className="text-xs font-semibold px-2 py-0.5 rounded-lg bg-amber-50 text-amber-800 border border-amber-200/70">
+            <span className="text-xs font-semibold px-2 py-0.5 rounded-lg bg-amber-50 text-amber-800 border border-amber-200/70" title="Applications with 14–21 days in current stage">
               Stale (14–21d): <strong className="font-bold">{staleCount}</strong> ({staleRatePct}%)
             </span>
           )}
           {ghostedCount > 0 && (
-            <span className="text-xs font-semibold px-2 py-0.5 rounded-lg bg-rose-50 text-rose-800 border border-rose-200/70">
+            <span className="text-xs font-semibold px-2 py-0.5 rounded-lg bg-rose-50 text-rose-800 border border-rose-200/70" title="Applications with >21 days with no status progression">
               Ghosted (&gt;21d): <strong className="font-bold">{ghostedCount}</strong> ({ghostRatePct}%)
             </span>
           )}
@@ -85,7 +86,11 @@ export const ResponseVelocityCard: React.FC<ResponseVelocityCardProps> = ({
 
       {/* 4-Segment Recency Distribution Bar */}
       <div className="space-y-2">
-        <div className="h-2.5 w-full bg-slate-100 rounded-full overflow-hidden flex">
+        <div 
+          className="h-2.5 w-full bg-slate-100 rounded-full overflow-hidden flex"
+          role="img"
+          aria-label={`Recency breakdown: ${freshCount} fresh, ${awaitingCount} normal, ${staleCount} stale, ${ghostedCount} ghosted applications`}
+        >
           {freshCount > 0 && (
             <div
               className="bg-emerald-500 h-full transition-all duration-500"
@@ -156,8 +161,8 @@ export const ResponseVelocityCard: React.FC<ResponseVelocityCardProps> = ({
             <span>All active applications have recent momentum (no stale entries &gt;14 days).</span>
           </div>
         ) : (
-          <div className="space-y-1.5 max-h-[220px] overflow-y-auto pr-1">
-            {staleApplications.slice(0, 4).map((app) => {
+          <div className="space-y-1.5 max-h-[290px] overflow-y-auto pr-1">
+            {staleApplications.map((app) => {
               const isGhosted = app.daysInStage > 21;
               return (
                 <div
@@ -172,7 +177,7 @@ export const ResponseVelocityCard: React.FC<ResponseVelocityCardProps> = ({
                         <span className="font-semibold text-xs text-slate-900 truncate">
                           {app.company}
                         </span>
-                        <span className="text-[10px] px-1.5 py-0.2 rounded bg-slate-200/60 text-slate-600 font-medium">
+                        <span className="text-[11px] px-1.5 py-0.2 rounded bg-slate-200/60 text-slate-600 font-medium">
                           {app.status}
                         </span>
                       </div>

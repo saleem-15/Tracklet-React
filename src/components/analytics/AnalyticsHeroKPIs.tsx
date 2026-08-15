@@ -5,7 +5,9 @@ import {
   TrendingUp, 
   Award, 
   AlertCircle,
-  ArrowUpRight
+  ArrowUpRight,
+  CheckCircle2,
+  ChevronRight
 } from 'lucide-react';
 
 interface AnalyticsHeroKPIsProps {
@@ -29,10 +31,27 @@ export const AnalyticsHeroKPIs: React.FC<AnalyticsHeroKPIsProps> = ({
     ghostedCount,
   } = kpis;
 
+  // Screening yield dynamic context
+  const getScreeningBenchmarkText = () => {
+    if (interviewProgressionCount === 0) return 'Awaiting initial screen';
+    if (interviewProgressionPct >= 20) return 'Above avg (10–20%)';
+    if (interviewProgressionPct >= 10) return 'On pace (10–20%)';
+    return 'Below avg (<10%)';
+  };
+
+  const getScreeningBenchmarkColor = () => {
+    if (interviewProgressionPct >= 20) return 'text-emerald-600 font-semibold';
+    if (interviewProgressionPct >= 10) return 'text-slate-600 font-medium';
+    return 'text-amber-600 font-semibold';
+  };
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {/* 1. Active Pipeline */}
-      <div className="bg-white border border-slate-200/80 p-5 rounded-2xl shadow-2xs hover:border-slate-300 transition-all flex flex-col justify-between">
+      <div 
+        className="bg-white border border-slate-200/80 p-5 rounded-2xl shadow-2xs hover:border-slate-300 transition-all flex flex-col justify-between"
+        title="Active Pipeline: Total open applications currently in Saved, Applied, Screening, Interview, or Offer stages"
+      >
         <div className="flex items-center justify-between">
           <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
             Active Pipeline
@@ -66,7 +85,10 @@ export const AnalyticsHeroKPIs: React.FC<AnalyticsHeroKPIsProps> = ({
       </div>
 
       {/* 2. Progression Yield (Screening Rate) */}
-      <div className="bg-white border border-slate-200/80 p-5 rounded-2xl shadow-2xs hover:border-slate-300 transition-all flex flex-col justify-between">
+      <div 
+        className="bg-white border border-slate-200/80 p-5 rounded-2xl shadow-2xs hover:border-slate-300 transition-all flex flex-col justify-between"
+        title="Screening Yield: Percentage of submitted applications that successfully progressed to recruiter screening calls"
+      >
         <div className="flex items-center justify-between">
           <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
             Screening Yield
@@ -96,12 +118,15 @@ export const AnalyticsHeroKPIs: React.FC<AnalyticsHeroKPIsProps> = ({
 
         <div className="flex items-center justify-between text-xs text-slate-500 pt-2 border-t border-slate-100/80">
           <span>Benchmark</span>
-          <span className="font-medium text-slate-600">10–20% avg</span>
+          <span className={getScreeningBenchmarkColor()}>{getScreeningBenchmarkText()}</span>
         </div>
       </div>
 
       {/* 3. Offers & Loops */}
-      <div className="bg-white border border-slate-200/80 p-5 rounded-2xl shadow-2xs hover:border-slate-300 transition-all flex flex-col justify-between">
+      <div 
+        className="bg-white border border-slate-200/80 p-5 rounded-2xl shadow-2xs hover:border-slate-300 transition-all flex flex-col justify-between"
+        title="Offers & Loops: Offers received relative to completed or ongoing interview loops"
+      >
         <div className="flex items-center justify-between">
           <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
             Offers & Loops
@@ -135,27 +160,41 @@ export const AnalyticsHeroKPIs: React.FC<AnalyticsHeroKPIsProps> = ({
 
         <div className="flex items-center justify-between text-xs text-slate-500 pt-2 border-t border-slate-100/80">
           <span>Loop win rate</span>
-          <span className="font-semibold text-indigo-600">{offerRatePct}%</span>
+          <span className={`font-semibold ${offerCount > 0 ? 'text-indigo-600' : 'text-slate-600'}`}>
+            {offerRatePct}%
+          </span>
         </div>
       </div>
 
       {/* 4. Needs Attention / Stale Applications */}
       <div 
-        onClick={onViewStaleApps}
-        className={`bg-white border p-5 rounded-2xl shadow-2xs transition-all flex flex-col justify-between ${
+        onClick={ghostedCount > 0 ? onViewStaleApps : undefined}
+        title="Needs Attention: Active applications without updates for >14 days (click to view)"
+        className={`bg-white border p-5 rounded-2xl shadow-2xs transition-all flex flex-col justify-between group ${
           ghostedCount > 0 
-            ? 'border-amber-200/80 hover:border-amber-300 cursor-pointer' 
+            ? 'border-amber-200/80 hover:border-amber-300 hover:shadow-xs cursor-pointer focus-visible:ring-2 focus-visible:ring-amber-500' 
             : 'border-slate-200/80'
         }`}
+        tabIndex={ghostedCount > 0 ? 0 : undefined}
+        onKeyDown={(e) => {
+          if ((e.key === 'Enter' || e.key === ' ') && ghostedCount > 0) {
+            e.preventDefault();
+            onViewStaleApps?.();
+          }
+        }}
       >
         <div className="flex items-center justify-between">
           <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
             Needs Attention
           </span>
           <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${
-            ghostedCount > 0 ? 'bg-amber-50 text-amber-600' : 'bg-slate-100 text-slate-500'
+            ghostedCount > 0 ? 'bg-amber-50 text-amber-700' : 'bg-emerald-50 text-emerald-600'
           }`}>
-            <AlertCircle className="w-4 h-4" />
+            {ghostedCount > 0 ? (
+              <AlertCircle className="w-4 h-4" />
+            ) : (
+              <CheckCircle2 className="w-4 h-4" />
+            )}
           </div>
         </div>
 
@@ -164,24 +203,33 @@ export const AnalyticsHeroKPIs: React.FC<AnalyticsHeroKPIsProps> = ({
             <span className="text-3xl font-bold text-slate-900 tracking-tight">
               {ghostedCount}
             </span>
-            <span className="text-xs font-medium text-amber-700">
+            <span className={`text-xs font-medium ${ghostedCount > 0 ? 'text-amber-800' : 'text-emerald-700'}`}>
               {ghostedCount === 1 ? 'stale app' : 'stale apps'} (&gt;14d)
             </span>
           </div>
           <div className="w-full bg-slate-100 rounded-full h-1.5 mt-2.5 overflow-hidden">
             <div
               className={`h-full rounded-full transition-all duration-500 ${
-                ghostedCount > 5 ? 'bg-rose-500' : 'bg-amber-500'
+                ghostedCount > 5 ? 'bg-rose-500' : ghostedCount > 0 ? 'bg-amber-500' : 'bg-emerald-500'
               }`}
-              style={{ width: `${Math.min(100, (ghostedCount / Math.max(1, activePipelineCount)) * 100)}%` }}
+              style={{ width: `${ghostedCount > 0 ? Math.min(100, (ghostedCount / Math.max(1, activePipelineCount)) * 100) : 100}%` }}
             />
           </div>
         </div>
 
         <div className="flex items-center justify-between text-xs text-slate-500 pt-2 border-t border-slate-100/80">
           <span>Action</span>
-          <span className={`font-semibold ${ghostedCount > 0 ? 'text-amber-700' : 'text-slate-600'}`}>
-            {ghostedCount > 0 ? 'Review follow-ups' : 'All up to date'}
+          <span className={`font-semibold flex items-center gap-0.5 ${
+            ghostedCount > 0 ? 'text-amber-800 group-hover:text-amber-900' : 'text-emerald-700'
+          }`}>
+            {ghostedCount > 0 ? (
+              <>
+                <span>Review follow-ups</span>
+                <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+              </>
+            ) : (
+              'All up to date'
+            )}
           </span>
         </div>
       </div>

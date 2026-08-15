@@ -71,7 +71,7 @@ export const ActivityMomentumCard: React.FC<ActivityMomentumCardProps> = ({
             <span className="text-xl font-bold text-slate-900 tracking-tight">
               +{totalApps}
             </span>
-            <span className="text-[10px] text-slate-400 font-medium">submitted</span>
+            <span className="text-[11px] text-slate-400 font-medium">submitted</span>
           </div>
         </div>
 
@@ -85,7 +85,7 @@ export const ActivityMomentumCard: React.FC<ActivityMomentumCardProps> = ({
             <span className="text-xl font-bold text-slate-900 tracking-tight">
               {totalStageMoves}
             </span>
-            <span className="text-[10px] text-slate-400 font-medium">progressed</span>
+            <span className="text-[11px] text-slate-400 font-medium">progressed</span>
           </div>
         </div>
 
@@ -99,7 +99,7 @@ export const ActivityMomentumCard: React.FC<ActivityMomentumCardProps> = ({
             <span className="text-xl font-bold text-slate-900 tracking-tight">
               {totalTasks}
             </span>
-            <span className="text-[10px] text-slate-400 font-medium">completed</span>
+            <span className="text-[11px] text-slate-400 font-medium">completed</span>
           </div>
         </div>
       </div>
@@ -119,8 +119,8 @@ export const ActivityMomentumCard: React.FC<ActivityMomentumCardProps> = ({
           </span>
         </div>
 
-        {/* Stacked Vertical Bars Grid */}
-        <div className="grid grid-cols-4 sm:grid-cols-8 gap-2 items-end h-32 pt-2 px-1 relative">
+        {/* Stacked Vertical Bars Grid (always clean single row 8-column layout) */}
+        <div className="grid grid-cols-8 gap-1 sm:gap-2 items-end h-32 pt-2 px-1 relative overflow-visible">
           {weeklyTrend.map((item, idx) => {
             const isHovered = hoveredIndex === idx;
             const totalH = Math.round((item.totalActivity / maxActivity) * 100);
@@ -133,7 +133,7 @@ export const ActivityMomentumCard: React.FC<ActivityMomentumCardProps> = ({
             return (
               <div 
                 key={idx} 
-                className="flex flex-col items-center h-full justify-end group cursor-pointer relative"
+                className="flex flex-col items-center h-full justify-end group cursor-pointer relative min-w-0"
                 onMouseEnter={() => setHoveredIndex(idx)}
                 onMouseLeave={() => setHoveredIndex(null)}
               >
@@ -143,7 +143,7 @@ export const ActivityMomentumCard: React.FC<ActivityMomentumCardProps> = ({
                     <div className="font-semibold text-slate-200 text-center">
                       {item.periodLabel} ({item.fullDate})
                     </div>
-                    <div className="flex items-center gap-2 mt-1 text-[10px]">
+                    <div className="flex items-center gap-2 mt-1 text-[11px]">
                       {item.appsCount > 0 && (
                         <span className="text-blue-400">+{item.appsCount} apps</span>
                       )}
@@ -163,7 +163,7 @@ export const ActivityMomentumCard: React.FC<ActivityMomentumCardProps> = ({
                 )}
 
                 {/* Total count badge above bar */}
-                <div className={`text-[10px] font-bold font-mono transition-opacity mb-1 ${
+                <div className={`text-[11px] font-bold font-mono transition-opacity mb-1 ${
                   item.totalActivity > 0 ? 'text-slate-700 opacity-80 group-hover:opacity-100' : 'opacity-0'
                 }`}>
                   {item.totalActivity > 0 ? item.totalActivity : ''}
@@ -206,8 +206,8 @@ export const ActivityMomentumCard: React.FC<ActivityMomentumCardProps> = ({
                 </div>
 
                 {/* Period label */}
-                <div className="text-center mt-1.5 min-w-0 w-full">
-                  <span className={`block text-[10px] font-semibold transition-colors ${
+                <div className="text-center mt-1.5 min-w-0 w-full truncate">
+                  <span className={`block text-[11px] font-semibold transition-colors truncate ${
                     isHovered ? 'text-blue-600 font-bold' : 'text-slate-500'
                   }`}>
                     {item.periodLabel}

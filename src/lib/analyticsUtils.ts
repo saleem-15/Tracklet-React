@@ -277,14 +277,14 @@ export function calculateConversionFunnel(applications: Application[]): {
   const milestoneApplied = appliedCount + milestoneScreening;
   const milestoneSaved = savedCount + milestoneApplied;
 
-  const totalBase = milestoneApplied > 0 ? milestoneApplied : 1;
+  const totalBase = milestoneSaved > 0 ? milestoneSaved : (milestoneApplied > 0 ? milestoneApplied : 1);
 
   const stages: FunnelStageMetric[] = [
     {
       status: 'Saved',
       label: 'Opportunities Saved',
       count: milestoneSaved,
-      percentageOfTotal: milestoneSaved > 0 ? 100 : 0,
+      percentageOfTotal: 100,
       conversionFromPrev: 100,
       dropoffCount: Math.max(0, milestoneSaved - milestoneApplied),
       dropoffRate:
