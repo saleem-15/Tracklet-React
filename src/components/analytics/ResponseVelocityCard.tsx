@@ -5,7 +5,8 @@ import {
   Clock, 
   CheckCircle, 
   ChevronRight, 
-  Mail
+  Mail,
+  AlertTriangle
 } from 'lucide-react';
 import { CompanyLogo } from '../CompanyLogo';
 
@@ -28,6 +29,7 @@ export const ResponseVelocityCard: React.FC<ResponseVelocityCardProps> = ({
     awaitingCount,
     staleCount,
     ghostedCount,
+    ghostingRatePct,
     avgDaysInStage,
     staleApplications,
   } = ghosting;
@@ -62,7 +64,15 @@ export const ResponseVelocityCard: React.FC<ResponseVelocityCardProps> = ({
           </div>
         </div>
 
+        {/* Ghost Rate & Velocity Badges */}
         <div className="flex items-center gap-2">
+          <span className={`text-xs font-semibold px-2.5 py-1 rounded-lg border ${
+            ghostingRatePct > 20
+              ? 'bg-amber-50 text-amber-800 border-amber-200/80'
+              : 'bg-slate-100 text-slate-700 border-slate-200/60'
+          }`}>
+            Ghost Rate: <strong className="font-bold">{ghostingRatePct}%</strong>
+          </span>
           <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700">
             Avg Velocity: <strong className="text-slate-900 font-bold">{avgDaysInStage}d</strong>
           </span>
@@ -90,7 +100,7 @@ export const ResponseVelocityCard: React.FC<ResponseVelocityCardProps> = ({
             <div
               className="bg-amber-500 h-full transition-all duration-500"
               style={{ width: `${stalePct}%` }}
-              title={`Stale (>14d): ${staleTotal} apps`}
+              title={`Stale/Ghosted (>14d): ${staleTotal} apps (${ghostingRatePct}%)`}
             />
           )}
         </div>
@@ -107,7 +117,7 @@ export const ResponseVelocityCard: React.FC<ResponseVelocityCardProps> = ({
           </div>
           <div className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-amber-500" />
-            <span>Stale (&gt;14d): <strong className="text-amber-700 font-semibold">{staleTotal}</strong></span>
+            <span>Stale / Ghosted (&gt;14d): <strong className="text-amber-700 font-semibold">{staleTotal}</strong> ({ghostingRatePct}%)</span>
           </div>
         </div>
       </div>
@@ -115,7 +125,7 @@ export const ResponseVelocityCard: React.FC<ResponseVelocityCardProps> = ({
       {/* Stale & High Lag Application Action List */}
       <div className="space-y-2 pt-2 border-t border-slate-100">
         <div className="flex items-center justify-between text-xs">
-          <span className="font-semibold text-slate-700">
+          <span className="font-semibold text-slate-700 flex items-center gap-1.5">
             Requires Action ({staleApplications.length})
           </span>
           {staleApplications.length > 0 && (
