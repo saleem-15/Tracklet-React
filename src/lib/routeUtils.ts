@@ -18,6 +18,28 @@ export const PATH_TO_TAB: Record<string, ActiveTab> = {
   '/settings': 'settings',
 };
 
+export type AuthRouteMode = 'signin' | 'signup' | 'forgot-password';
+
+export const AUTH_PATH_TO_MODE: Record<string, AuthRouteMode> = {
+  '/login': 'signin',
+  '/signin': 'signin',
+  '/signup': 'signup',
+  '/register': 'signup',
+  '/forgot-password': 'forgot-password',
+};
+
+export function getAuthModeFromPath(pathname: string): AuthRouteMode {
+  const normalized =
+    pathname.length > 1 && pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
+  return AUTH_PATH_TO_MODE[normalized] || 'signin';
+}
+
+export function getPathForAuthMode(mode: AuthRouteMode): string {
+  if (mode === 'signup') return '/signup';
+  if (mode === 'forgot-password') return '/forgot-password';
+  return '/login';
+}
+
 export function getTabFromPath(pathname: string): ActiveTab {
   const normalized =
     pathname.length > 1 && pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;

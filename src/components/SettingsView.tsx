@@ -19,6 +19,7 @@ import {
 import { Application, ExpiryNotificationSettings } from '../types';
 import { getExpiringSoonTasks } from '../lib/expiryUtils';
 import { ImportCSVModal } from './ImportCSVModal';
+import { AccountSettingsCard } from './AccountSettingsCard';
 import { UI_TOKENS } from '../theme/tokens';
 
 interface SettingsViewProps {
@@ -31,6 +32,8 @@ interface SettingsViewProps {
     apps: Omit<Application, 'id' | 'userId' | 'createdAt' | 'updatedAt' | 'stageUpdatedAt'>[]
   ) => Promise<void>;
   onSeedDemoData?: () => void;
+  onShowToast?: (type: 'success' | 'error' | 'info' | 'warning', title: string, message?: string) => void;
+  onAccountDeleted?: () => void;
 }
 
 const PRESET_HOURS = [12, 24, 48, 72, 96];
@@ -43,6 +46,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onExportCSV,
   onImportCSV,
   onSeedDemoData,
+  onShowToast,
+  onAccountDeleted,
 }) => {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const expiringTasks = getExpiringSoonTasks(applications, settings.expiryThresholdHours);
@@ -83,6 +88,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           </span>
         </div>
       </div>
+
+      {/* Account Profile & Security Section */}
+      <AccountSettingsCard onShowToast={onShowToast} onAccountDeleted={onAccountDeleted} />
 
       {/* Main Setting Box: Soon to Expire Alerts */}
       <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-2xs space-y-6">

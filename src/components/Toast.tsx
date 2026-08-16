@@ -1,9 +1,9 @@
 import React, { useEffect } from 'react';
-import { CheckCircle2, AlertCircle, Info, X } from 'lucide-react';
+import { CheckCircle2, AlertCircle, AlertTriangle, Info, X } from 'lucide-react';
 
 export interface ToastMessage {
   id: string;
-  type: 'success' | 'error' | 'info';
+  type: 'success' | 'error' | 'info' | 'warning';
   title: string;
   description?: string;
   action?: {
@@ -49,6 +49,8 @@ const ToastItem: React.FC<{ toast: ToastMessage; onDismiss: (id: string) => void
           ? 'bg-emerald-950/90 border-emerald-800/80 text-emerald-100 shadow-emerald-950/20'
           : toast.type === 'error'
           ? 'bg-rose-950/90 border-rose-800/80 text-rose-100 shadow-rose-950/20'
+          : toast.type === 'warning'
+          ? 'bg-amber-950/90 border-amber-800/80 text-amber-100 shadow-amber-950/20'
           : 'bg-slate-900/90 border-slate-700/80 text-slate-100 shadow-slate-950/20'
       }`}
     >
@@ -58,6 +60,8 @@ const ToastItem: React.FC<{ toast: ToastMessage; onDismiss: (id: string) => void
             <CheckCircle2 className="w-4 h-4 text-emerald-400" />
           ) : toast.type === 'error' ? (
             <AlertCircle className="w-4 h-4 text-rose-400" />
+          ) : toast.type === 'warning' ? (
+            <AlertTriangle className="w-4 h-4 text-amber-400" />
           ) : (
             <Info className="w-4 h-4 text-blue-400" />
           )}

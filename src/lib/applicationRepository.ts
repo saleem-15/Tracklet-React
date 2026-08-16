@@ -33,12 +33,12 @@ export class ApplicationRepository {
         });
 
         if (docsData.length === 0) {
-          return await this.seedDemoData(userId);
+          return [];
         }
         return docsData;
       } catch (err) {
-        console.error('Error fetching Firestore applications, falling back to guest mode:', err);
-        return this.loadGuestApplications();
+        console.error('Error fetching Firestore applications:', err);
+        return [];
       }
     } else {
       return this.loadGuestApplications();
@@ -291,5 +291,35 @@ export class ApplicationRepository {
     }));
     this.saveGuestApplications(initial);
     return initial;
+  }
+
+  /**
+   * Permanently purge all user applications and history records from Firestore (GDPR).
+   */
+  static async purgeUserData(userId: string): Promise<void> {
+    if (!userId) return;
+
+    try {
+      const q = query(collection(db, 'applications'), where('userId', '==', userId));
+      const snap = await getDocs(q);
+
+      if (!snap.empty) {
+        const batch = writeBatch(db);
+        for (const docSnap of snap.docs) {
+          // Purge sub-collection history entries
+          try {
+            const histSnap = await getDocs(collection(db, 'applications', docSnap.id, 'history'));
+            histSnap.forEach((hDoc) => batch.delete(hDoc.ref));
+          } catch (hErr) {
+            console.warn('Could not fetch sub-collection history for purge:', hErr);
+          }
+          batch.delete(docSnap.ref);
+        }
+        await batch.commit();
+      }
+    } catch (err) {
+      console.error('Failed to purge user data from Firestore:', err);
+      throw err;
+    }
   }
 }

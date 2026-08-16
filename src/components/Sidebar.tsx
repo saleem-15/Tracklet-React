@@ -284,11 +284,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
         ) : (
           <button
             onClick={onSignIn}
-            title="Sign In with Google"
+            title="Sign In / Register"
             className={`w-full flex items-center justify-center gap-2 ${isCollapsed ? 'p-2' : 'px-2.5 py-2'} rounded-[10px] bg-white hover:bg-slate-100/80 text-slate-900 border border-slate-200 transition-all font-semibold text-xs shadow-2xs hover:shadow-xs active:scale-[0.99] cursor-pointer`}
           >
             <LogIn className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-            {!isCollapsed && <span>Sign In with Google</span>}
+            {!isCollapsed && <span>Sign In</span>}
           </button>
         )}
       </div>

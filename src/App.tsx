@@ -1,33 +1,16 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { 
-  auth, 
-  db, 
-  googleProvider, 
-  signInWithPopup, 
-  firebaseSignOut, 
-  onAuthStateChanged,
-  collection, 
-  getDocs, 
-  addDoc, 
-  updateDoc, 
-  deleteDoc, 
-  doc, 
-  query, 
-  where, 
-  writeBatch,
-  User 
-} from './lib/firebase';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
   Application, 
   ActiveTab, 
   FilterState, 
   SortState, 
   ApplicationStatus, 
-  SortField 
+  SortField,
+  ExpiryNotificationSettings
 } from './types';
-import { INITIAL_SAMPLE_APPLICATIONS, calculateDaysInStage } from './lib/sampleData';
+import { ApplicationRepository } from './lib/applicationRepository';
 import { exportApplicationsToCSV } from './lib/exportCsv';
-import { addStatusHistoryEntry } from './lib/historyService';
+import { calculateDaysInStage } from './lib/sampleData';
 import { Sidebar } from './components/Sidebar';
 import { TopBar } from './components/TopBar';
 import { AllApplicationsTable } from './components/AllApplicationsTable';
@@ -36,10 +19,14 @@ import { ApplicationDetailPanel } from './components/ApplicationDetailPanel';
 import { AddApplicationModal } from './components/AddApplicationModal';
 import { StatsView } from './components/StatsView';
 import { SettingsView } from './components/SettingsView';
+import { AuthScreen } from './components/AuthScreen';
+import { AuthModal } from './components/AuthModal';
+import { EmailVerificationGate } from './components/EmailVerificationGate';
+import { GuestMigrationModal } from './components/GuestMigrationModal';
 import { loadExpirySettings, saveExpirySettings } from './lib/expiryUtils';
-import { ExpiryNotificationSettings } from './types';
 import { setupExtensionSync } from './lib/extensionSync';
-
+import { LOCAL_STORAGE_KEYS } from './lib/constants';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { ToastContainer, ToastMessage } from './components/Toast';
 
 import {
@@ -52,15 +39,18 @@ import {
   DEFAULT_FILTER,
 } from './lib/routeUtils';
 
-const LOCAL_STORAGE_KEY = 'tracklet_guest_apps_v1';
+function TrackletAppContent() {
+  const { user, loading: authLoading, openAuthModal, signOut } = useAuth();
 
-export default function App() {
-  const [user, setUser] = useState<User | null>(null);
   const [applications, setApplications] = useState<Application[]>([]);
   const [activeTab, setActiveTabState] = useState<ActiveTab>(() => getTabFromPath(window.location.pathname));
+  const [dataLoading, setDataLoading] = useState(true);
+
+  // Guest Migration Modal State
+  const [migrationApps, setMigrationApps] = useState<Application[]>([]);
+  const [isMigrationModalOpen, setIsMigrationModalOpen] = useState(false);
 
   // ── Initialise all query-param–driven state from the URL on first render ──
-  // Parse once and reuse to avoid three separate URLSearchParams calls.
   const _initialUrlState = readUrlState();
   const [selectedAppId, setSelectedAppIdState] = useState<string | null>(
     () => _initialUrlState.selectedAppId
@@ -68,9 +58,8 @@ export default function App() {
   const [isAddModalOpen, setIsAddModalOpenState] = useState<boolean>(
     () => _initialUrlState.isAddModalOpen
   );
-  const [loading, setLoading] = useState(true);
 
-  // ── URL-aware tab setter (pushState so Back works between pages) ──────────
+  // ── URL-aware tab setter ──
   const setActiveTab = (tab: ActiveTab) => {
     setActiveTabState(tab);
     const targetPath = getPathForTab(tab);
@@ -79,8 +68,7 @@ export default function App() {
     }
   };
 
-  // ── URL-aware filter setter (replaceState — no back-history spam) ─────────
-  // Refs shadow state so callbacks always see fresh values without stale closures.
+  // ── URL-aware filter setter ──
   const filterRef = React.useRef<FilterState>(_initialUrlState.filter);
   const selectedAppIdRef = React.useRef<string | null>(_initialUrlState.selectedAppId);
   const isAddModalOpenRef = React.useRef<boolean>(_initialUrlState.isAddModalOpen);
@@ -106,17 +94,17 @@ export default function App() {
     syncAddModalToUrl(open, filterRef.current, selectedAppIdRef.current);
   };
 
-  // ── Restore all URL state when user presses Back / Forward ───────────────
+  // ── Restore URL state on Back / Forward ──
   useEffect(() => {
     const handlePopState = () => {
-      const { filter, selectedAppId, isAddModalOpen } = readUrlState();
+      const { filter: uFilter, selectedAppId: uSelectedAppId, isAddModalOpen: uIsAddModalOpen } = readUrlState();
       setActiveTabState(getTabFromPath(window.location.pathname));
-      filterRef.current = filter;
-      selectedAppIdRef.current = selectedAppId;
-      isAddModalOpenRef.current = isAddModalOpen;
-      setFilterState(filter);
-      setSelectedAppIdState(selectedAppId);
-      setIsAddModalOpenState(isAddModalOpen);
+      filterRef.current = uFilter;
+      selectedAppIdRef.current = uSelectedAppId;
+      isAddModalOpenRef.current = uIsAddModalOpen;
+      setFilterState(uFilter);
+      setSelectedAppIdState(uSelectedAppId);
+      setIsAddModalOpenState(uIsAddModalOpen);
     };
 
     window.addEventListener('popstate', handlePopState);
@@ -126,15 +114,15 @@ export default function App() {
   // Toast notifications
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
-  const addToast = (
-    type: 'success' | 'error' | 'info',
+  const addToast = useCallback((
+    type: 'success' | 'error' | 'info' | 'warning',
     title: string,
     description?: string,
     action?: { label: string; onClick: () => void }
   ) => {
     const id = `toast-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
     setToasts((prev) => [...prev, { id, type, title, description, action }]);
-  };
+  }, []);
 
   const dismissToast = (id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
@@ -148,58 +136,62 @@ export default function App() {
     saveExpirySettings(newSettings);
   };
 
-  // Filter and Sort State — initialised from URL query params
+  // Filter and Sort State
   const [filter, setFilterState] = useState<FilterState>(() => _initialUrlState.filter);
-
   const [sort, setSort] = useState<SortState>({
     field: 'dateApplied',
     order: 'desc',
   });
 
-  // Auth Listener
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      setUser(currentUser);
-      if (currentUser) {
-        await loadFirestoreApplications(currentUser.uid);
-      } else {
-        loadGuestApplications();
+  // Load applications whenever user changes or email is verified
+  const loadData = useCallback(async () => {
+    setDataLoading(true);
+    try {
+      if (user && user.emailVerified) {
+        const cloudApps = await ApplicationRepository.loadApplications(user.uid);
+        setApplications(cloudApps);
+
+        // Check for guest data migration
+        try {
+          const rawGuest = localStorage.getItem(LOCAL_STORAGE_KEYS.GUEST_APPS);
+          if (rawGuest) {
+            const parsedGuest: Application[] = JSON.parse(rawGuest);
+            if (Array.isArray(parsedGuest) && parsedGuest.length > 0) {
+              setMigrationApps(parsedGuest);
+              setIsMigrationModalOpen(true);
+            }
+          }
+        } catch {
+          // Ignore parse errors
+        }
+      } else if (!user) {
+        const guestApps = ApplicationRepository.loadGuestApplications();
+        setApplications(guestApps);
       }
-      setLoading(false);
-    });
-    return () => unsubscribe();
-  }, []);
+    } catch (err) {
+      console.error('Error loading applications:', err);
+      addToast('error', 'Load Error', 'Could not load applications from repository.');
+    } finally {
+      setDataLoading(false);
+    }
+  }, [user, addToast]);
+
+  useEffect(() => {
+    if (!authLoading) {
+      loadData();
+    }
+  }, [authLoading, user?.uid, user?.emailVerified, loadData]);
 
   // Browser Extension Sync Listener
   useEffect(() => {
     const cleanup = setupExtensionSync({
       onApplicationReceived: async (clippedApp) => {
-        setApplications((prev) => {
-          const existsIndex = prev.findIndex(
-            (a) => a.id === clippedApp.id || (a.jobLink && clippedApp.jobLink && a.jobLink === clippedApp.jobLink)
-          );
-
-          let updated: Application[];
-          if (existsIndex >= 0) {
-            updated = [...prev];
-            updated[existsIndex] = { ...updated[existsIndex], ...clippedApp };
-          } else {
-            updated = [clippedApp, ...prev];
-          }
-
-          saveGuestAppsToStorage(updated);
-          return updated;
-        });
-
-        if (user) {
-          try {
-            await addDoc(collection(db, 'applications'), {
-              ...clippedApp,
-              userId: user.uid,
-            });
-          } catch (e) {
-            console.warn('Failed to sync extension application to Firestore:', e);
-          }
+        if (user && user.emailVerified) {
+          const created = await ApplicationRepository.addApplication(clippedApp, user.uid);
+          setApplications((prev) => [created, ...prev]);
+        } else if (!user) {
+          const created = await ApplicationRepository.addApplication(clippedApp);
+          setApplications((prev) => [created, ...prev]);
         }
 
         addToast(
@@ -211,276 +203,143 @@ export default function App() {
     });
 
     return () => cleanup();
-  }, [user]);
+  }, [user, addToast]);
 
-  // Load from Guest localStorage or initial sample data
-  const loadGuestApplications = () => {
-    try {
-      const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
-      if (stored) {
-        setApplications(JSON.parse(stored));
-      } else {
-        const initial = INITIAL_SAMPLE_APPLICATIONS.map((item, idx) => ({
-          ...item,
-          id: `guest-${idx + 1}`,
-          userId: 'guest',
-        }));
-        setApplications(initial);
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(initial));
-      }
-    } catch {
-      const initial = INITIAL_SAMPLE_APPLICATIONS.map((item, idx) => ({
-        ...item,
-        id: `guest-${idx + 1}`,
-        userId: 'guest',
-      }));
-      setApplications(initial);
-    }
-  };
+  // Synchronize URL on auth transitions
+  useEffect(() => {
+    if (authLoading) return;
+    const path = window.location.pathname;
 
-  // Load from Firestore for logged in user
-  const loadFirestoreApplications = async (userId: string) => {
-    try {
-      const q = query(collection(db, 'applications'), where('userId', '==', userId));
-      const querySnapshot = await getDocs(q);
-      const docsData: Application[] = [];
-      querySnapshot.forEach((docSnap) => {
-        docsData.push({
-          id: docSnap.id,
-          ...(docSnap.data() as Omit<Application, 'id'>),
-        });
-      });
-
-      if (docsData.length === 0) {
-        // Seed default applications to Firestore for a rich initial experience
-        const batch = writeBatch(db);
-        const seeded: Application[] = [];
-
-        for (const item of INITIAL_SAMPLE_APPLICATIONS) {
-          const docRef = doc(collection(db, 'applications'));
-          const appObj: Omit<Application, 'id'> = {
-            ...item,
-            userId,
-          };
-          batch.set(docRef, appObj);
-          seeded.push({ id: docRef.id, ...appObj });
-        }
-        await batch.commit();
-        setApplications(seeded);
-      } else {
-        setApplications(docsData);
-      }
-    } catch (err) {
-      console.error('Error fetching Firestore applications:', err);
-      addToast('error', 'Cloud Sync Warning', 'Could not connect to database. Showing offline local storage copy.');
-      loadGuestApplications();
-    }
-  };
-
-  // Sync Guest localStorage
-  const saveGuestAppsToStorage = (updated: Application[]) => {
     if (!user) {
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updated));
+      if (path === '/' || path === '/applications' || path === '/pipeline' || path === '/analytics' || path === '/settings') {
+        window.history.replaceState(null, '', '/login');
+      }
+    } else if (!user.emailVerified) {
+      if (path !== '/verify-email') {
+        window.history.replaceState(null, '', '/verify-email');
+      }
+    } else {
+      if (
+        path === '/login' ||
+        path === '/signin' ||
+        path === '/signup' ||
+        path === '/register' ||
+        path === '/forgot-password' ||
+        path === '/verify-email'
+      ) {
+        window.history.replaceState(null, '', getPathForTab(activeTab));
+      }
     }
+  }, [user, user?.emailVerified, authLoading, activeTab]);
+
+  // Guest Migration Handlers
+  const handleImportGuestApps = async () => {
+    if (!user || migrationApps.length === 0) return;
+    try {
+      const imported = await ApplicationRepository.batchImport(migrationApps, user.uid);
+      setApplications((prev) => [...imported, ...prev]);
+      localStorage.removeItem(LOCAL_STORAGE_KEYS.GUEST_APPS);
+      setIsMigrationModalOpen(false);
+      setMigrationApps([]);
+      addToast('success', 'Migration Complete', `Imported ${imported.length} applications to your cloud account.`);
+    } catch (err) {
+      console.error('Migration failed:', err);
+      addToast('error', 'Migration Failed', 'Could not import guest applications.');
+    }
+  };
+
+  const handleDiscardGuestApps = () => {
+    localStorage.removeItem(LOCAL_STORAGE_KEYS.GUEST_APPS);
+    setIsMigrationModalOpen(false);
+    setMigrationApps([]);
+    addToast('info', 'Guest Data Discarded', 'Starting with clean cloud account workspace.');
   };
 
   // Sign In / Sign Out
-  const handleSignIn = async () => {
-    try {
-      await signInWithPopup(auth, googleProvider);
-    } catch (err) {
-      console.error('Sign-in failed:', err);
-    }
+  const handleSignIn = () => {
+    window.history.pushState(null, '', '/login');
+    openAuthModal('signin');
   };
 
   const handleSignOut = async () => {
     try {
-      await firebaseSignOut(auth);
+      await signOut();
       setSelectedAppId(null);
+      window.history.pushState(null, '', '/login');
+      addToast('info', 'Signed Out', 'You have been signed out.');
     } catch (err) {
       console.error('Sign-out failed:', err);
     }
   };
 
-  // Reset Demo Data
+  // Reset / Load Demo Data
   const handleSeedDemoData = async () => {
-    const initial = INITIAL_SAMPLE_APPLICATIONS.map((item, idx) => ({
-      ...item,
-      id: user ? `seed-${idx + 1}` : `guest-${idx + 1}`,
-      userId: user ? user.uid : 'guest',
-    }));
-
-    if (user) {
-      try {
-        // Clear existing Firestore applications for this user
-        const q = query(collection(db, 'applications'), where('userId', '==', user.uid));
-        const snap = await getDocs(q);
-        const deleteBatch = writeBatch(db);
-        snap.forEach((d) => deleteBatch.delete(d.ref));
-        await deleteBatch.commit();
-
-        // Seed new batch
-        const insertBatch = writeBatch(db);
-        const freshDocs: Application[] = [];
-        for (const item of INITIAL_SAMPLE_APPLICATIONS) {
-          const docRef = doc(collection(db, 'applications'));
-          const appObj: Omit<Application, 'id'> = {
-            ...item,
-            userId: user.uid,
-          };
-          insertBatch.set(docRef, appObj);
-          freshDocs.push({ id: docRef.id, ...appObj });
-        }
-        await insertBatch.commit();
-        setApplications(freshDocs);
-      } catch (err) {
-        console.error('Failed to reset Firestore demo data:', err);
-      }
-    } else {
-      setApplications(initial);
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(initial));
+    try {
+      const freshDocs = await ApplicationRepository.seedDemoData(user?.emailVerified ? user.uid : undefined);
+      setApplications(freshDocs);
+      setSelectedAppId(null);
+      addToast('info', 'Workspace Reset', 'Sample job application dataset loaded.');
+    } catch (err) {
+      console.error('Failed to seed demo data:', err);
+      addToast('error', 'Error', 'Could not load demo dataset.');
     }
-    setSelectedAppId(null);
-    addToast('info', 'Workspace Reset', 'Sample job application dataset loaded.');
   };
 
   // Add Application
   const handleAddApplication = async (
     newApp: Omit<Application, 'id' | 'userId' | 'createdAt' | 'updatedAt' | 'stageUpdatedAt'>
   ) => {
-    const now = new Date().toISOString();
-    const appData = {
-      ...newApp,
-      stageUpdatedAt: now,
-      createdAt: now,
-      updatedAt: now,
-    };
-
-    let createdId = '';
-    if (user) {
-      try {
-        const docRef = await addDoc(collection(db, 'applications'), {
-          ...appData,
-          userId: user.uid,
-        });
-        createdId = docRef.id;
-      } catch (err) {
-        console.error('Failed to add document to Firestore (offline fallback):', err);
-        createdId = `offline-${Date.now()}`;
-      }
-      const created: Application = {
-        id: createdId,
-        userId: user.uid,
-        ...appData,
-      };
+    try {
+      const created = await ApplicationRepository.addApplication(
+        newApp,
+        user?.emailVerified ? user.uid : undefined
+      );
       setApplications((prev) => [created, ...prev]);
-    } else {
-      createdId = `guest-${Date.now()}`;
-      const guestCreated: Application = {
-        id: createdId,
-        userId: 'guest',
-        ...appData,
-      };
-      const updated = [guestCreated, ...applications];
-      setApplications(updated);
-      saveGuestAppsToStorage(updated);
+      addToast('success', 'Application Added', `Logged ${newApp.company} (${newApp.role})`);
+    } catch (err) {
+      console.error('Failed to add application:', err);
+      addToast('error', 'Error', 'Failed to save application.');
     }
-
-    // Record initial status history entry
-    if (createdId) {
-      await addStatusHistoryEntry(createdId, newApp.status, undefined, now);
-    }
-
-    addToast('success', 'Application Added', `Logged ${newApp.company} (${newApp.role})`);
   };
 
-  // Batch Import Applications from CSV
+  // Batch Import Applications (CSV)
   const handleBatchImportApplications = async (
     newApps: Omit<Application, 'id' | 'userId' | 'createdAt' | 'updatedAt' | 'stageUpdatedAt'>[]
   ) => {
-    const now = new Date().toISOString();
-
-    if (user) {
-      try {
-        const batch = writeBatch(db);
-        const createdList: Application[] = [];
-
-        for (const appItem of newApps) {
-          const docRef = doc(collection(db, 'applications'));
-          const appObj: Omit<Application, 'id'> = {
-            ...appItem,
-            userId: user.uid,
-            stageUpdatedAt: now,
-            createdAt: now,
-            updatedAt: now,
-          };
-          batch.set(docRef, appObj);
-          createdList.push({ id: docRef.id, ...appObj });
-        }
-
-        await batch.commit();
-        setApplications((prev) => [...createdList, ...prev]);
-
-        for (const app of createdList) {
-          await addStatusHistoryEntry(app.id, app.status, undefined, now);
-        }
-      } catch (err) {
-        console.error('Failed batch import in Firestore:', err);
-      }
-    } else {
-      const createdList: Application[] = newApps.map((appItem, index) => ({
-        id: `imported-${Date.now()}-${index}`,
-        userId: 'guest',
-        ...appItem,
-        stageUpdatedAt: now,
-        createdAt: now,
-        updatedAt: now,
-      }));
-
-      setApplications((prev) => {
-        const updated = [...createdList, ...prev];
-        saveGuestAppsToStorage(updated);
-        return updated;
-      });
-
-      for (const app of createdList) {
-        await addStatusHistoryEntry(app.id, app.status, undefined, now);
-      }
+    try {
+      const imported = await ApplicationRepository.batchImport(
+        newApps,
+        user?.emailVerified ? user.uid : undefined
+      );
+      setApplications((prev) => [...imported, ...prev]);
+      addToast('success', 'Batch Import Complete', `Successfully imported ${newApps.length} applications.`);
+    } catch (err) {
+      console.error('Batch import failed:', err);
+      addToast('error', 'Import Failed', 'Could not import applications.');
     }
-
-    addToast('success', 'Batch Import Complete', `Successfully imported ${newApps.length} job applications.`);
   };
 
   // Update Application
   const handleUpdateApplication = async (id: string, updates: Partial<Application>) => {
-    const now = new Date().toISOString();
     const currentApp = applications.find((a) => a.id === id);
     const isStatusChanged = updates.status && currentApp && updates.status !== currentApp.status;
 
-    const updatedFields = { ...updates, updatedAt: now };
-
     setApplications((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, ...updatedFields } : a))
+      prev.map((a) => (a.id === id ? { ...a, ...updates, updatedAt: new Date().toISOString() } : a))
     );
 
-    if (user) {
-      try {
-        const docRef = doc(db, 'applications', id);
-        await updateDoc(docRef, updatedFields);
-      } catch (err) {
-        console.error('Failed to update Firestore application:', err);
-      }
-    } else {
-      const updatedList = applications.map((a) =>
-        a.id === id ? { ...a, ...updatedFields } : a
+    try {
+      await ApplicationRepository.updateApplication(
+        id,
+        updates,
+        user?.emailVerified ? user.uid : undefined
       );
-      saveGuestAppsToStorage(updatedList);
-    }
 
-    // Record status history if status changed
-    if (isStatusChanged && updates.status && currentApp) {
-      await addStatusHistoryEntry(id, updates.status, currentApp.status, now);
-      addToast('info', 'Status Updated', `${currentApp.company} moved to ${updates.status}`);
+      if (isStatusChanged && updates.status && currentApp) {
+        addToast('info', 'Status Updated', `${currentApp.company} moved to ${updates.status}`);
+      }
+    } catch (err) {
+      console.error('Failed to update application:', err);
     }
   };
 
@@ -490,23 +349,17 @@ export default function App() {
     setApplications((prev) => prev.filter((a) => a.id !== id));
     if (selectedAppId === id) setSelectedAppId(null);
 
-    if (user) {
-      try {
-        await deleteDoc(doc(db, 'applications', id));
-      } catch (err) {
-        console.error('Failed to delete application from Firestore:', err);
+    try {
+      await ApplicationRepository.deleteApplication(id, user?.emailVerified ? user.uid : undefined);
+      if (targetApp) {
+        addToast('info', 'Application Removed', `Deleted ${targetApp.company} record.`);
       }
-    } else {
-      const updatedList = applications.filter((a) => a.id !== id);
-      saveGuestAppsToStorage(updatedList);
-    }
-
-    if (targetApp) {
-      addToast('info', 'Application Removed', `Deleted ${targetApp.company} record.`);
+    } catch (err) {
+      console.error('Failed to delete application:', err);
     }
   };
 
-  // Bulk Actions
+  // Bulk Status Update
   const handleBulkUpdateStatus = async (ids: string[], newStatus: ApplicationStatus) => {
     const now = new Date().toISOString();
     const previousSnapshot = applications.filter((a) => ids.includes(a.id));
@@ -520,78 +373,41 @@ export default function App() {
       )
     );
 
-    if (user) {
-      try {
-        const batch = writeBatch(db);
-        ids.forEach((id) => {
-          const dRef = doc(db, 'applications', id);
-          batch.update(dRef, { status: newStatus, stageUpdatedAt: now, updatedAt: now });
-        });
-        await batch.commit();
-      } catch (err) {
-        console.error('Failed bulk status update in Firestore:', err);
-      }
-    } else {
-      const updatedList = applications.map((a) =>
-        ids.includes(a.id) ? { ...a, status: newStatus, stageUpdatedAt: now, updatedAt: now } : a
+    try {
+      await ApplicationRepository.batchUpdateStatus(
+        ids,
+        newStatus,
+        user?.emailVerified ? user.uid : undefined
       );
-      saveGuestAppsToStorage(updatedList);
-    }
 
-    // Log history entry for each application in bulk update
-    for (const id of ids) {
-      const prevData = previousStatusMap.get(id);
-      if (prevData && prevData.status !== newStatus) {
-        await addStatusHistoryEntry(id, newStatus, prevData.status, now);
-      }
-    }
-
-    // Provide immediate Undo action
-    addToast(
-      'success',
-      'Bulk Status Updated',
-      `Moved ${ids.length} application${ids.length === 1 ? '' : 's'} to ${newStatus}`,
-      {
-        label: 'Undo',
-        onClick: async () => {
-          const revertNow = new Date().toISOString();
-          setApplications((prev) =>
-            prev.map((a) => {
-              const old = previousStatusMap.get(a.id);
-              return old ? { ...a, status: old.status, stageUpdatedAt: old.stageUpdatedAt, updatedAt: revertNow } : a;
-            })
-          );
-
-          if (user) {
-            try {
-              const batch = writeBatch(db);
-              ids.forEach((id) => {
-                const old = previousStatusMap.get(id);
-                if (old) {
-                  const dRef = doc(db, 'applications', id);
-                  batch.update(dRef, { status: old.status, stageUpdatedAt: old.stageUpdatedAt, updatedAt: revertNow });
-                }
-              });
-              await batch.commit();
-            } catch (err) {
-              console.error('Failed to undo bulk status update in Firestore:', err);
-            }
-          } else {
-            setApplications((current) => {
-              const reverted = current.map((a) => {
+      addToast(
+        'success',
+        'Bulk Status Updated',
+        `Moved ${ids.length} application${ids.length === 1 ? '' : 's'} to ${newStatus}`,
+        {
+          label: 'Undo',
+          onClick: async () => {
+            setApplications((prev) =>
+              prev.map((a) => {
                 const old = previousStatusMap.get(a.id);
-                return old ? { ...a, status: old.status, stageUpdatedAt: old.stageUpdatedAt, updatedAt: revertNow } : a;
-              });
-              saveGuestAppsToStorage(reverted);
-              return reverted;
-            });
-          }
-          addToast('info', 'Status Reverted', `Restored ${ids.length} application status${ids.length === 1 ? '' : 'es'}.`);
-        },
-      }
-    );
+                return old ? { ...a, status: old.status, stageUpdatedAt: old.stageUpdatedAt } : a;
+              })
+            );
+            if (user?.emailVerified) {
+              for (const [appId, oldData] of previousStatusMap.entries()) {
+                await ApplicationRepository.updateApplication(appId, { status: oldData.status }, user.uid);
+              }
+            }
+            addToast('info', 'Status Reverted', `Restored ${ids.length} application status${ids.length === 1 ? '' : 'es'}.`);
+          },
+        }
+      );
+    } catch (err) {
+      console.error('Bulk update failed:', err);
+    }
   };
 
+  // Bulk Delete
   const handleBulkDelete = async (ids: string[]) => {
     const deletedApps = applications.filter((a) => ids.includes(a.id));
     const count = ids.length;
@@ -599,52 +415,27 @@ export default function App() {
     setApplications((prev) => prev.filter((a) => !ids.includes(a.id)));
     if (selectedAppId && ids.includes(selectedAppId)) setSelectedAppId(null);
 
-    if (user) {
-      try {
-        const batch = writeBatch(db);
-        ids.forEach((id) => {
-          batch.delete(doc(db, 'applications', id));
-        });
-        await batch.commit();
-      } catch (err) {
-        console.error('Failed bulk delete in Firestore:', err);
-      }
-    } else {
-      const updatedList = applications.filter((a) => !ids.includes(a.id));
-      saveGuestAppsToStorage(updatedList);
-    }
+    try {
+      await ApplicationRepository.batchDelete(ids, user?.emailVerified ? user.uid : undefined);
 
-    addToast(
-      'info',
-      'Applications Removed',
-      `Deleted ${count} application${count === 1 ? '' : 's'}.`,
-      {
-        label: 'Undo',
-        onClick: async () => {
-          setApplications((prev) => [...deletedApps, ...prev]);
-
-          if (user) {
-            try {
-              const batch = writeBatch(db);
-              deletedApps.forEach((app) => {
-                const dRef = doc(db, 'applications', app.id);
-                batch.set(dRef, app);
-              });
-              await batch.commit();
-            } catch (err) {
-              console.error('Failed to restore deleted applications in Firestore:', err);
+      addToast(
+        'info',
+        'Applications Removed',
+        `Deleted ${count} application${count === 1 ? '' : 's'}.`,
+        {
+          label: 'Undo',
+          onClick: async () => {
+            setApplications((prev) => [...deletedApps, ...prev]);
+            if (user?.emailVerified) {
+              await ApplicationRepository.batchImport(deletedApps, user.uid);
             }
-          } else {
-            setApplications((current) => {
-              const restored = [...deletedApps, ...current.filter((c) => !ids.includes(c.id))];
-              saveGuestAppsToStorage(restored);
-              return restored;
-            });
-          }
-          addToast('success', 'Restored', `Recovered ${count} application${count === 1 ? '' : 's'}.`);
-        },
-      }
-    );
+            addToast('success', 'Restored', `Recovered ${count} application${count === 1 ? '' : 's'}.`);
+          },
+        }
+      );
+    } catch (err) {
+      console.error('Bulk delete failed:', err);
+    }
   };
 
   // Sorting
@@ -659,7 +450,6 @@ export default function App() {
   const filteredAndSortedApplications = useMemo(() => {
     return applications
       .filter((app) => {
-        // Search filter
         if (filter.search.trim()) {
           const q = filter.search.toLowerCase();
           const matchCompany = app.company.toLowerCase().includes(q);
@@ -668,19 +458,16 @@ export default function App() {
           if (!matchCompany && !matchRole && !matchNotes) return false;
         }
 
-        // Platform filter
         if (filter.platform !== 'All' && app.platform !== filter.platform) {
           return false;
         }
 
-        // Status filter
         if (filter.status === 'Active') {
           if (app.status === 'Rejected' || app.status === 'Archived') return false;
         } else if (filter.status !== 'All' && app.status !== filter.status) {
           return false;
         }
 
-        // Date range filter
         if (filter.dateRange !== 'all') {
           const appDate = new Date(app.dateApplied);
           const now = new Date();
@@ -690,11 +477,10 @@ export default function App() {
           if (filter.dateRange === '30days' && daysAgo > 30) return false;
           if (filter.dateRange === '60days' && daysAgo > 60) return false;
 
-          // Weekly filters
           if (filter.dateRange === 'this_week') {
             const startOfWeek = new Date(now);
             const day = now.getDay();
-            const diffToMon = (day === 0 ? -6 : 1 - day); // Monday as start of week
+            const diffToMon = day === 0 ? -6 : 1 - day;
             startOfWeek.setDate(now.getDate() + diffToMon);
             startOfWeek.setHours(0, 0, 0, 0);
             if (appDate < startOfWeek) return false;
@@ -703,7 +489,7 @@ export default function App() {
           if (filter.dateRange === 'last_week') {
             const startOfThisWeek = new Date(now);
             const day = now.getDay();
-            const diffToMon = (day === 0 ? -6 : 1 - day);
+            const diffToMon = day === 0 ? -6 : 1 - day;
             startOfThisWeek.setDate(now.getDate() + diffToMon);
             startOfThisWeek.setHours(0, 0, 0, 0);
 
@@ -713,7 +499,6 @@ export default function App() {
             if (appDate < startOfLastWeek || appDate >= startOfThisWeek) return false;
           }
 
-          // Monthly filters
           if (filter.dateRange === 'this_month') {
             const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
             if (appDate < startOfMonth) return false;
@@ -752,6 +537,41 @@ export default function App() {
     return applications.find((a) => a.id === selectedAppId) || null;
   }, [applications, selectedAppId]);
 
+  // If authentication state is still loading
+  if (authLoading) {
+    return (
+      <div className="flex h-screen w-screen items-center justify-center bg-slate-950 font-mono text-xs text-slate-400">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 animate-pulse" />
+          <span>Loading Tracklet...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // If user is not authenticated, render dedicated full-screen Auth Screen
+  if (!user) {
+    return (
+      <div className="min-h-screen w-screen bg-slate-950 font-sans">
+        <AuthScreen onShowToast={addToast} />
+        <ToastContainer toasts={toasts} onDismiss={dismissToast} />
+      </div>
+    );
+  }
+
+  // If user is authenticated with email but unverified, render Strict Email Verification Screen
+  if (!user.emailVerified) {
+    return (
+      <div className="min-h-screen w-screen bg-slate-950 font-sans">
+        <EmailVerificationGate
+          onVerified={loadData}
+          onShowToast={addToast}
+        />
+        <ToastContainer toasts={toasts} onDismiss={dismissToast} />
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-screen w-screen bg-slate-50 text-slate-900 font-sans overflow-hidden antialiased select-none">
       {/* Sidebar */}
@@ -768,7 +588,7 @@ export default function App() {
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
-        {/* Top Header Bar - Only render on All Applications and Active Pipeline views */}
+        {/* Top Header Bar */}
         {(activeTab === 'all' || activeTab === 'pipeline') && (
           <TopBar
             filter={filter}
@@ -781,7 +601,7 @@ export default function App() {
         )}
 
         {/* Dynamic Screen View */}
-        {loading ? (
+        {authLoading || dataLoading ? (
           <div className="flex-1 flex items-center justify-center font-mono text-xs text-slate-400">
             Loading Tracklet workspace...
           </div>
@@ -793,6 +613,7 @@ export default function App() {
                 totalAppCount={applications.length}
                 onOpenAddModal={() => setIsAddModalOpen(true)}
                 onResetFilters={() => setFilter(DEFAULT_FILTER)}
+                onSeedDemoData={handleSeedDemoData}
                 selectedAppId={selectedAppId}
                 onSelectApp={(app) => setSelectedAppId(app.id)}
                 sort={sort}
@@ -808,6 +629,7 @@ export default function App() {
                 totalAppCount={applications.length}
                 onOpenAddModal={() => setIsAddModalOpen(true)}
                 onResetFilters={() => setFilter(DEFAULT_FILTER)}
+                onSeedDemoData={handleSeedDemoData}
                 selectedAppId={selectedAppId}
                 onSelectApp={(app) => setSelectedAppId(app.id)}
                 onUpdateStatus={(id, newStatus) =>
@@ -836,6 +658,11 @@ export default function App() {
                   onExportCSV={() => exportApplicationsToCSV(filteredAndSortedApplications)}
                   onImportCSV={handleBatchImportApplications}
                   onSeedDemoData={handleSeedDemoData}
+                  onShowToast={addToast}
+                  onAccountDeleted={() => {
+                    setApplications([]);
+                    setSelectedAppId(null);
+                  }}
                 />
               </div>
             )}
@@ -858,8 +685,28 @@ export default function App() {
         onAdd={handleAddApplication}
       />
 
+      {/* Multi-Provider Auth Modal */}
+      <AuthModal onShowToast={addToast} />
+
+      {/* Guest-to-Account Data Migration Modal */}
+      <GuestMigrationModal
+        isOpen={isMigrationModalOpen}
+        guestApplications={migrationApps}
+        onImport={handleImportGuestApps}
+        onDiscard={handleDiscardGuestApps}
+        onClose={() => setIsMigrationModalOpen(false)}
+      />
+
       {/* Global Toast Feedback Container */}
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <TrackletAppContent />
+    </AuthProvider>
   );
 }

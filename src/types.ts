@@ -93,3 +93,23 @@ export interface ExpiryNotificationSettings {
   enabled: boolean;
   expiryThresholdHours: number; // default 48
 }
+
+export type AuthProviderType = 'google.com' | 'password' | string;
+
+export interface AuthUser {
+  uid: string;
+  email: string | null;
+  displayName: string | null;
+  photoURL: string | null;
+  providerId: AuthProviderType;
+  emailVerified: boolean;
+  creationTime?: string;
+  lastSignInTime?: string;
+}
+
+export type AuthViewMode = 'signin' | 'signup' | 'forgot-password';
+
+export interface GuestMigrationPayload {
+  guestApplications: Application[];
+  count: number;
+}

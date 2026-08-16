@@ -15,6 +15,7 @@ import { Application, SortField, SortState, ApplicationStatus } from '../types';
 import { StatusBadge } from './StatusBadge';
 import { CompanyLogo } from './CompanyLogo';
 import { EmptyState } from './EmptyState';
+import { OnboardingEmptyState } from './OnboardingEmptyState';
 import { calculateDaysInStage, formatAppDate } from '../lib/dateUtils';
 import { exportApplicationsToCSV } from '../lib/exportCsv';
 
@@ -23,6 +24,7 @@ interface AllApplicationsTableProps {
   totalAppCount?: number;
   onOpenAddModal?: () => void;
   onResetFilters?: () => void;
+  onSeedDemoData?: () => void;
   selectedAppId: string | null;
   onSelectApp: (app: Application) => void;
   sort: SortState;
@@ -58,6 +60,7 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
   totalAppCount = 0,
   onOpenAddModal,
   onResetFilters,
+  onSeedDemoData,
   selectedAppId,
   onSelectApp,
   sort,
@@ -372,12 +375,19 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
           <tbody className="divide-y divide-slate-100">
             {applications.length === 0 ? (
               <tr>
-                <td colSpan={7} className="py-12 px-4">
-                  <EmptyState
-                    isFiltered={totalAppCount > 0}
-                    onAddApplication={onOpenAddModal}
-                    onResetFilters={onResetFilters}
-                  />
+                <td colSpan={7} className="py-8 px-4">
+                  {totalAppCount === 0 && onOpenAddModal && onSeedDemoData ? (
+                    <OnboardingEmptyState
+                      onOpenAddModal={onOpenAddModal}
+                      onSeedDemoData={onSeedDemoData}
+                    />
+                  ) : (
+                    <EmptyState
+                      isFiltered={totalAppCount > 0}
+                      onAddApplication={onOpenAddModal}
+                      onResetFilters={onResetFilters}
+                    />
+                  )}
                 </td>
               </tr>
             ) : (

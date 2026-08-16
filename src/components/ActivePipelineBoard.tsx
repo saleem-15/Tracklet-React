@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Application, ApplicationStatus } from '../types';
 import { CompanyLogo } from './CompanyLogo';
 import { EmptyState } from './EmptyState';
+import { OnboardingEmptyState } from './OnboardingEmptyState';
 import { 
   Clock, 
   Building2, 
@@ -22,6 +23,7 @@ interface ActivePipelineBoardProps {
   totalAppCount?: number;
   onOpenAddModal?: () => void;
   onResetFilters?: () => void;
+  onSeedDemoData?: () => void;
   onSelectApp: (app: Application) => void;
   selectedAppId: string | null;
   onUpdateStatus: (id: string, newStatus: ApplicationStatus) => void;
@@ -65,6 +67,7 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
   totalAppCount = 0,
   onOpenAddModal,
   onResetFilters,
+  onSeedDemoData,
   onSelectApp,
   selectedAppId,
   onUpdateStatus,
@@ -161,11 +164,18 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
 
       {applications.length === 0 ? (
         <div className="flex-1 flex items-center justify-center p-6 overflow-y-auto">
-          <EmptyState
-            isFiltered={totalAppCount > 0}
-            onAddApplication={onOpenAddModal}
-            onResetFilters={onResetFilters}
-          />
+          {totalAppCount === 0 && onOpenAddModal && onSeedDemoData ? (
+            <OnboardingEmptyState
+              onOpenAddModal={onOpenAddModal}
+              onSeedDemoData={onSeedDemoData}
+            />
+          ) : (
+            <EmptyState
+              isFiltered={totalAppCount > 0}
+              onAddApplication={onOpenAddModal}
+              onResetFilters={onResetFilters}
+            />
+          )}
         </div>
       ) : (
         /* Main Single Table Frame (No visible outer column borders) */

@@ -88,5 +88,14 @@ export const LOCAL_STORAGE_KEYS = {
   EXPIRY_SETTINGS: 'tracklet_expiry_settings_v1',
   SIDEBAR_COLLAPSED: 'tracklet_sidebar_collapsed',
   HISTORY_PREFIX: 'tracklet_history_',
+  AUTH_PENDING_EMAIL: 'tracklet_auth_pending_email',
+  EMAIL_RESEND_COOLDOWN: 'tracklet_email_resend_cooldown',
 };
+
+export const AUTH_PROVIDERS = {
+  GOOGLE: 'google.com',
+  PASSWORD: 'password',
+} as const;
+
+export const EMAIL_VERIFICATION_COOLDOWN_SECONDS = 60;
 

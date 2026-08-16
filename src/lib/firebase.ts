@@ -3,8 +3,14 @@ import {
   getAuth, 
   GoogleAuthProvider, 
   signInWithPopup, 
-  signInAnonymously, 
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  sendEmailVerification,
+  sendPasswordResetEmail,
   signOut as firebaseSignOut,
+  deleteUser,
+  reload,
+  updateProfile,
   onAuthStateChanged,
   User 
 } from 'firebase/auth';
@@ -15,6 +21,7 @@ import {
   getDocs, 
   getDoc, 
   addDoc, 
+  setDoc,
   updateDoc, 
   deleteDoc, 
   query, 
@@ -45,13 +52,13 @@ googleProvider.setCustomParameters({ prompt: 'select_account' });
 const firestoreDatabaseId = (firebaseAppletConfig as Record<string, string | undefined>).firestoreDatabaseId;
 export const db = getFirestore(app, firestoreDatabaseId || undefined);
 
-
 export { 
   collection, 
   doc, 
   getDocs, 
   getDoc, 
   addDoc, 
+  setDoc,
   updateDoc, 
   deleteDoc, 
   query, 
@@ -60,7 +67,13 @@ export {
   serverTimestamp,
   orderBy,
   signInWithPopup,
-  signInAnonymously,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  sendEmailVerification,
+  sendPasswordResetEmail,
+  deleteUser,
+  reload,
+  updateProfile,
   firebaseSignOut,
   onAuthStateChanged
 };
