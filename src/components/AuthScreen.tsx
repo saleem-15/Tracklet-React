@@ -18,6 +18,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { getFriendlyAuthErrorMessage } from '../lib/authErrors';
 import { getAuthModeFromPath, getPathForAuthMode, AuthRouteMode } from '../lib/routeUtils';
+import { SegmentedTabs } from './SegmentedTabs';
 
 interface AuthScreenProps {
   onShowToast?: (type: 'success' | 'error' | 'info' | 'warning', title: string, message?: string) => void;
@@ -276,31 +277,17 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                 {mode === 'forgot-password' && 'Enter your email to receive password reset instructions.'}
               </p>
 
-              {/* Mode Switcher Tabs */}
+              {/* Mode Switcher Tabs with smooth slide animation */}
               {mode !== 'forgot-password' && (
-                <div className="flex bg-slate-100 p-1 gap-1 rounded-xl mt-3">
-                  <button
-                    type="button"
-                    onClick={() => handleModeChange('signin')}
-                    className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-                      mode === 'signin'
-                        ? 'bg-white text-slate-900 shadow-2xs border border-slate-200/80'
-                        : 'text-slate-500 hover:text-slate-800'
-                    }`}
-                  >
-                    Sign In
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleModeChange('signup')}
-                    className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-                      mode === 'signup'
-                        ? 'bg-white text-slate-900 shadow-2xs border border-slate-200/80'
-                        : 'text-slate-500 hover:text-slate-800'
-                    }`}
-                  >
-                    Sign Up
-                  </button>
+                <div className="mt-3">
+                  <SegmentedTabs<'signin' | 'signup'>
+                    tabs={[
+                      { id: 'signin', label: 'Sign In' },
+                      { id: 'signup', label: 'Sign Up' },
+                    ]}
+                    activeTab={mode as 'signin' | 'signup'}
+                    onChange={(newMode) => handleModeChange(newMode)}
+                  />
                 </div>
               )}
             </div>

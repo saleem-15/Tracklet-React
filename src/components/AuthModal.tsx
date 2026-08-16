@@ -3,6 +3,7 @@ import { X, Mail, Lock, Sparkles, ArrowRight, CheckCircle2, AlertCircle, Eye, Ey
 import { useAuth } from '../context/AuthContext';
 import { AuthViewMode } from '../types';
 import { getFriendlyAuthErrorMessage } from '../lib/authErrors';
+import { SegmentedTabs } from './SegmentedTabs';
 
 interface AuthModalProps {
   onShowToast?: (type: 'success' | 'error' | 'info' | 'warning', title: string, message?: string) => void;
@@ -185,31 +186,17 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onShowToast }) => {
           </button>
         </div>
 
-        {/* Tab Switcher (Sign In vs Sign Up) */}
+        {/* Tab Switcher with smooth slide animation (Sign In vs Sign Up) */}
         {authModalMode !== 'forgot-password' && (
-          <div className="flex border-b border-slate-100 bg-slate-50/70 p-1.5 gap-1.5 mx-6 mt-4 rounded-xl">
-            <button
-              type="button"
-              onClick={() => openAuthModal('signin')}
-              className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-                authModalMode === 'signin'
-                  ? 'bg-white text-slate-900 shadow-2xs border border-slate-200/80'
-                  : 'text-slate-500 hover:text-slate-800'
-              }`}
-            >
-              Sign In
-            </button>
-            <button
-              type="button"
-              onClick={() => openAuthModal('signup')}
-              className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-                authModalMode === 'signup'
-                  ? 'bg-white text-slate-900 shadow-2xs border border-slate-200/80'
-                  : 'text-slate-500 hover:text-slate-800'
-              }`}
-            >
-              Sign Up
-            </button>
+          <div className="px-6 pt-4">
+            <SegmentedTabs<'signin' | 'signup'>
+              tabs={[
+                { id: 'signin', label: 'Sign In' },
+                { id: 'signup', label: 'Sign Up' },
+              ]}
+              activeTab={authModalMode as 'signin' | 'signup'}
+              onChange={(newMode) => openAuthModal(newMode)}
+            />
           </div>
         )}
 
