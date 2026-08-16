@@ -153,19 +153,19 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onShowToast }) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 animate-in fade-in duration-200">
       <div
-        className="relative w-full max-w-md bg-white rounded-3xl border border-slate-200 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
+        className="relative w-full max-w-md bg-white rounded-2xl border border-slate-200/90 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
         <div className="p-6 pb-4 border-b border-slate-100 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-200/80 shadow-2xs font-bold text-sm">
-              T
+              <img src="/logo.svg" alt="Tracklet Logo" className="w-5 h-5" />
             </div>
             <div>
               <h2 className="text-base font-bold text-slate-900">
-                {authModalMode === 'signin' && 'Sign in to Tracklet'}
-                {authModalMode === 'signup' && 'Create your account'}
+                {authModalMode === 'signin' && 'Welcome back to Tracklet'}
+                {authModalMode === 'signup' && 'Sign Up'}
                 {authModalMode === 'forgot-password' && 'Reset your password'}
               </h2>
               <p className="text-[11px] text-slate-500 font-sans">
@@ -208,7 +208,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onShowToast }) => {
                   : 'text-slate-500 hover:text-slate-800'
               }`}
             >
-              Create Account
+              Sign Up
             </button>
           </div>
         )}
@@ -277,51 +277,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onShowToast }) => {
             </div>
           )}
 
-          {/* Google OAuth Button */}
-          {authModalMode !== 'forgot-password' && (
-            <div className="space-y-3">
-              <button
-                type="button"
-                onClick={handleGoogleSignIn}
-                disabled={isSubmitting}
-                className="w-full flex items-center justify-center gap-2.5 py-2.5 px-4 rounded-xl bg-white hover:bg-slate-50 active:scale-[0.99] text-slate-800 font-semibold text-xs border border-slate-200/90 shadow-2xs hover:shadow-xs transition-all cursor-pointer disabled:opacity-60"
-              >
-                <svg className="w-4 h-4" viewBox="0 0 24 24">
-                  <path
-                    fill="#4285F4"
-                    d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"
-                  />
-                  <path
-                    fill="#34A853"
-                    d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.35 24 12 24z"
-                  />
-                  <path
-                    fill="#FBBC05"
-                    d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z"
-                  />
-                  <path
-                    fill="#EA4335"
-                    d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.35 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
-                  />
-                </svg>
-                <span>Continue with Google</span>
-              </button>
-
-              <div className="relative flex py-1 items-center">
-                <div className="flex-grow border-t border-slate-200/80"></div>
-                <span className="flex-shrink mx-3 text-[11px] font-mono text-slate-400 uppercase tracking-wider font-bold">
-                  Or with email
-                </span>
-                <div className="flex-grow border-t border-slate-200/80"></div>
-              </div>
-            </div>
-          )}
-
-          {/* Credentials Form */}
+          {/* Credentials Form (Primary) */}
           <form onSubmit={handleSubmit} className="space-y-3.5">
             {/* Email Field */}
             <div className="space-y-1">
-              <label htmlFor="auth-modal-email" className="block text-xs font-mono font-semibold text-slate-700 cursor-pointer">
+              <label htmlFor="auth-modal-email" className="block text-xs font-semibold text-slate-700 cursor-pointer">
                 Email Address
               </label>
               <div className="relative">
@@ -344,21 +304,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onShowToast }) => {
             {/* Password Field */}
             {authModalMode !== 'forgot-password' && (
               <div className="space-y-1">
-                <div className="flex items-center justify-between">
-                  <label htmlFor="auth-modal-password" className="block text-xs font-mono font-semibold text-slate-700 cursor-pointer">
-                    Password
-                  </label>
-                  {authModalMode === 'signin' && (
-                    <button
-                      type="button"
-                      onClick={() => openAuthModal('forgot-password')}
-                      disabled={isSubmitting}
-                      className="text-[11px] font-sans text-blue-600 hover:text-blue-800 transition-colors cursor-pointer disabled:opacity-50"
-                    >
-                      Forgot password?
-                    </button>
-                  )}
-                </div>
+                <label htmlFor="auth-modal-password" className="block text-xs font-semibold text-slate-700 cursor-pointer">
+                  Password
+                </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                     <Lock className="w-4 h-4" />
@@ -383,13 +331,26 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onShowToast }) => {
                     {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                   </button>
                 </div>
+                {/* Forgot password link directly under password field */}
+                {authModalMode === 'signin' && (
+                  <div className="flex justify-end pt-0.5">
+                    <button
+                      type="button"
+                      onClick={() => openAuthModal('forgot-password')}
+                      disabled={isSubmitting}
+                      className="text-[11px] font-sans text-blue-600 hover:text-blue-800 font-semibold transition-colors cursor-pointer disabled:opacity-50"
+                    >
+                      Forgot password?
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 
             {/* Confirm Password (Sign Up Only) */}
             {authModalMode === 'signup' && (
               <div className="space-y-1">
-                <label htmlFor="auth-modal-confirm-password" className="block text-xs font-mono font-semibold text-slate-700 cursor-pointer">
+                <label htmlFor="auth-modal-confirm-password" className="block text-xs font-semibold text-slate-700 cursor-pointer">
                   Confirm Password
                 </label>
                 <div className="relative">
@@ -418,38 +379,69 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onShowToast }) => {
               type="submit"
               disabled={isSubmitting || (authModalMode === 'forgot-password' && resetCooldown > 0)}
               aria-busy={isSubmitting}
-              className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white font-bold text-xs shadow-md shadow-blue-500/20 transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed mt-2"
+              className="w-full flex items-center justify-center py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white font-bold text-xs shadow-md shadow-blue-500/20 transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed mt-1"
             >
               {isSubmitting ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin shrink-0" />
-                  <span>
-                    {authModalMode === 'signin'
-                      ? 'Signing in...'
-                      : authModalMode === 'signup'
-                      ? 'Creating account...'
-                      : 'Sending reset link...'}
-                  </span>
-                </>
+                <span>
+                  {authModalMode === 'signin'
+                    ? 'Signing in...'
+                    : authModalMode === 'signup'
+                    ? 'Signing up...'
+                    : 'Sending reset link...'}
+                </span>
               ) : authModalMode === 'forgot-password' && resetCooldown > 0 ? (
-                <>
-                  <Clock className="w-3.5 h-3.5 text-blue-200 animate-pulse" />
-                  <span>Resend reset link in {resetCooldown}s</span>
-                </>
+                <span>Resend reset link in {resetCooldown}s</span>
               ) : (
-                <>
-                  <span>
-                    {authModalMode === 'signin'
-                      ? 'Sign In'
-                      : authModalMode === 'signup'
-                      ? 'Create Account'
-                      : 'Send Reset Link'}
-                  </span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </>
+                <span>
+                  {authModalMode === 'signin'
+                    ? 'Sign In'
+                    : authModalMode === 'signup'
+                    ? 'Sign Up'
+                    : 'Send Reset Link'}
+                </span>
               )}
             </button>
           </form>
+
+          {/* Google OAuth Button (Secondary) */}
+          {authModalMode !== 'forgot-password' && (
+            <div className="space-y-3 pt-1">
+              <div className="relative flex items-center justify-center">
+                <div className="border-t border-slate-200 w-full"></div>
+                <span className="bg-white px-3 text-[11px] font-mono text-slate-400 uppercase tracking-wider shrink-0 font-medium">
+                  OR
+                </span>
+                <div className="border-t border-slate-200 w-full"></div>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleGoogleSignIn}
+                disabled={isSubmitting}
+                className="w-full flex items-center justify-center gap-2.5 py-2.5 px-4 rounded-xl bg-white hover:bg-slate-50 active:scale-[0.99] text-slate-800 font-semibold text-xs border border-slate-200/90 shadow-2xs hover:shadow-xs transition-all cursor-pointer disabled:opacity-60"
+              >
+                <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+                  <path
+                    fill="#4285F4"
+                    d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"
+                  />
+                  <path
+                    fill="#34A853"
+                    d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.35 24 12 24z"
+                  />
+                  <path
+                    fill="#FBBC05"
+                    d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z"
+                  />
+                  <path
+                    fill="#EA4335"
+                    d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.35 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
+                  />
+                </svg>
+                <span>Continue with Google</span>
+              </button>
+            </div>
+          )}
 
           {/* Footer Back link for Forgot Password */}
           {authModalMode === 'forgot-password' && (

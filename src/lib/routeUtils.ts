@@ -28,6 +28,12 @@ export const AUTH_PATH_TO_MODE: Record<string, AuthRouteMode> = {
   '/forgot-password': 'forgot-password',
 };
 
+export function isAuthPath(pathname: string): boolean {
+  const normalized =
+    pathname.length > 1 && pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
+  return Boolean(AUTH_PATH_TO_MODE[normalized]);
+}
+
 export function getAuthModeFromPath(pathname: string): AuthRouteMode {
   const normalized =
     pathname.length > 1 && pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;

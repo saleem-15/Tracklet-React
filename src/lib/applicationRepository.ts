@@ -51,20 +51,14 @@ export class ApplicationRepository {
   static loadGuestApplications(): Application[] {
     try {
       const stored = localStorage.getItem(LOCAL_STORAGE_KEYS.GUEST_APPS);
-      if (stored) {
+      if (stored !== null) {
         return JSON.parse(stored);
       }
     } catch {
       // ignore
     }
 
-    const initial = INITIAL_SAMPLE_APPLICATIONS.map((item, idx) => ({
-      ...item,
-      id: `guest-${idx + 1}`,
-      userId: 'guest',
-    }));
-    this.saveGuestApplications(initial);
-    return initial;
+    return [];
   }
 
   /**

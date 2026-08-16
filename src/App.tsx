@@ -36,6 +36,7 @@ import {
   syncFiltersToUrl,
   syncAppSelectionToUrl,
   syncAddModalToUrl,
+  isAuthPath,
   DEFAULT_FILTER,
 } from './lib/routeUtils';
 
@@ -45,6 +46,15 @@ function TrackletAppContent() {
   const [applications, setApplications] = useState<Application[]>([]);
   const [activeTab, setActiveTabState] = useState<ActiveTab>(() => getTabFromPath(window.location.pathname));
   const [dataLoading, setDataLoading] = useState(true);
+
+  // Guest Mode State (when unauthenticated visitor explicitly chooses to explore as guest from sign-up)
+  const [isGuestMode, setIsGuestMode] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('tracklet_guest_mode') === 'true';
+    } catch {
+      return false;
+    }
+  });
 
   // Guest Migration Modal State
   const [migrationApps, setMigrationApps] = useState<Application[]>([]);
@@ -210,27 +220,22 @@ function TrackletAppContent() {
     if (authLoading) return;
     const path = window.location.pathname;
 
-    if (!user) {
-      if (path === '/' || path === '/applications' || path === '/pipeline' || path === '/analytics' || path === '/settings') {
+    if (!user && !isGuestMode) {
+      if (!isAuthPath(path)) {
         window.history.replaceState(null, '', '/login');
       }
-    } else if (!user.emailVerified) {
-      if (path !== '/verify-email') {
-        window.history.replaceState(null, '', '/verify-email');
-      }
-    } else {
-      if (
-        path === '/login' ||
-        path === '/signin' ||
-        path === '/signup' ||
-        path === '/register' ||
-        path === '/forgot-password' ||
-        path === '/verify-email'
-      ) {
-        window.history.replaceState(null, '', getPathForTab(activeTab));
+    } else if (user) {
+      if (!user.emailVerified) {
+        if (path !== '/verify-email') {
+          window.history.replaceState(null, '', '/verify-email');
+        }
+      } else {
+        if (isAuthPath(path) || path === '/verify-email') {
+          window.history.replaceState(null, '', getPathForTab(activeTab));
+        }
       }
     }
-  }, [user, user?.emailVerified, authLoading, activeTab]);
+  }, [user, user?.emailVerified, authLoading, isGuestMode, activeTab]);
 
   // Guest Migration Handlers
   const handleImportGuestApps = async () => {
@@ -257,16 +262,21 @@ function TrackletAppContent() {
 
   // Sign In / Sign Out
   const handleSignIn = () => {
-    window.history.pushState(null, '', '/login');
     openAuthModal('signin');
   };
 
   const handleSignOut = async () => {
     try {
       await signOut();
+      try {
+        localStorage.removeItem('tracklet_guest_mode');
+      } catch {
+        // Ignore
+      }
+      setIsGuestMode(false);
       setSelectedAppId(null);
       window.history.pushState(null, '', '/login');
-      addToast('info', 'Signed Out', 'You have been signed out.');
+      addToast('info', 'Signed Out', 'Returned to authentication screen.');
     } catch (err) {
       console.error('Sign-out failed:', err);
     }
@@ -540,32 +550,48 @@ function TrackletAppContent() {
   // If authentication state is still loading
   if (authLoading) {
     return (
-      <div className="flex h-screen w-screen items-center justify-center bg-slate-950 font-mono text-xs text-slate-400">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 animate-pulse" />
-          <span>Loading Tracklet...</span>
+      <div className="flex h-screen w-screen items-center justify-center bg-slate-50 font-sans text-xs text-slate-500 select-none">
+        <div className="flex flex-col items-center gap-3 p-8 bg-white border border-slate-200/90 rounded-2xl shadow-xs animate-in fade-in duration-200">
+          <img src="/logo.svg" alt="Tracklet Logo" className="w-10 h-10 animate-pulse" />
+          <div className="flex flex-col items-center gap-0.5">
+            <span className="font-heading font-bold text-slate-900 text-sm tracking-tight">Tracklet</span>
+            <span className="font-mono text-[11px] text-slate-500">Loading workspace...</span>
+          </div>
         </div>
       </div>
     );
   }
 
-  // If user is not authenticated, render dedicated full-screen Auth Screen
-  if (!user) {
+  // If user is authenticated with email but unverified, render Strict Email Verification Screen
+  if (user && !user.emailVerified) {
     return (
-      <div className="min-h-screen w-screen bg-slate-950 font-sans">
-        <AuthScreen onShowToast={addToast} />
+      <div className="min-h-screen w-screen bg-slate-50 font-sans">
+        <EmailVerificationGate
+          onVerified={loadData}
+          onShowToast={addToast}
+        />
         <ToastContainer toasts={toasts} onDismiss={dismissToast} />
       </div>
     );
   }
 
-  // If user is authenticated with email but unverified, render Strict Email Verification Screen
-  if (!user.emailVerified) {
+  // If user is not authenticated and has not chosen guest mode (Authentication Wall)
+  if (!user && !isGuestMode) {
     return (
-      <div className="min-h-screen w-screen bg-slate-950 font-sans">
-        <EmailVerificationGate
-          onVerified={loadData}
+      <div className="min-h-screen w-screen bg-slate-50 font-sans">
+        <AuthScreen
           onShowToast={addToast}
+          onContinueAsGuest={() => {
+            try {
+              localStorage.setItem('tracklet_guest_mode', 'true');
+            } catch {
+              // Ignore
+            }
+            setIsGuestMode(true);
+            const targetPath = getPathForTab(activeTab);
+            window.history.pushState(null, '', targetPath);
+            addToast('info', 'Guest Session Started', 'Applications will be saved to this browser.');
+          }}
         />
         <ToastContainer toasts={toasts} onDismiss={dismissToast} />
       </div>
