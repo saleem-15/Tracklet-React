@@ -142,7 +142,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
             id="login-password"
             label="Password"
             isPassword
-            placeholder="At least 6 characters"
+            placeholder="••••••••"
             value={password}
             onChange={(e) => {
               setPassword(e.target.value);

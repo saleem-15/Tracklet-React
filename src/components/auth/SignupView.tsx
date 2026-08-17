@@ -150,7 +150,7 @@ export const SignupView: React.FC<SignupViewProps> = ({
             id="signup-password"
             label="Password"
             isPassword
-            placeholder="At least 6 characters"
+            placeholder="••••••••"
             value={password}
             onChange={(e) => {
               setPassword(e.target.value);

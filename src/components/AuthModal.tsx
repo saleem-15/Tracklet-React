@@ -298,7 +298,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onShowToast }) => {
                 id="auth-modal-password"
                 label="Password"
                 isPassword
-                placeholder="At least 6 characters"
+                placeholder="••••••••"
                 value={password}
                 onChange={(e) => {
                   setPassword(e.target.value);
