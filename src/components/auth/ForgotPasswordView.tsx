@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Mail, CheckCircle2, AlertCircle, Loader2, ArrowLeft } from 'lucide-react';
 import { AuthRouteMode } from '../../lib/routeUtils';
+import { AuthTextField } from './AuthTextField';
 
 interface ForgotPasswordViewProps {
   onNavigate: (mode: AuthRouteMode) => void;
@@ -108,39 +109,20 @@ export const ForgotPasswordView: React.FC<ForgotPasswordViewProps> = ({
 
       {/* Password Reset Form */}
       <form onSubmit={handleSubmit} noValidate className="space-y-3.5">
-        {/* Email Field */}
-        <div className="space-y-1">
-          <label htmlFor="reset-email" className="block text-xs font-semibold text-slate-700 cursor-pointer">
-            Email Address
-          </label>
-          <div className="relative">
-            <Mail className={`w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none transition-colors ${
-              emailError ? 'text-rose-500' : 'text-slate-400'
-            }`} />
-            <input
-              id="reset-email"
-              type="email"
-              value={email}
-              onChange={(e) => {
-                setEmail(e.target.value);
-                if (emailError) setEmailError(null);
-              }}
-              placeholder="you@example.com"
-              disabled={isSubmitting}
-              className={`w-full pl-9 pr-3 h-[38px] border rounded-xl text-xs text-slate-900 placeholder:text-slate-400 transition-all font-sans disabled:opacity-60 ${
-                emailError
-                  ? 'border-rose-300 bg-rose-50/40 text-rose-900 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500'
-                  : 'border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500'
-              }`}
-            />
-          </div>
-          {emailError && (
-            <p className="text-[11px] font-medium text-rose-600 flex items-center gap-1 pt-0.5 animate-in fade-in">
-              <AlertCircle className="w-3 h-3 shrink-0" />
-              <span>{emailError}</span>
-            </p>
-          )}
-        </div>
+        <AuthTextField
+          id="reset-email"
+          label="Email Address"
+          type="email"
+          placeholder="you@example.com"
+          value={email}
+          onChange={(e) => {
+            setEmail(e.target.value);
+            if (emailError) setEmailError(null);
+          }}
+          error={emailError || undefined}
+          icon={Mail}
+          disabled={isSubmitting}
+        />
 
         {/* Submit Button */}
         <button

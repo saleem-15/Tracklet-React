@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Mail, Lock, Eye, EyeOff, AlertCircle, Loader2 } from 'lucide-react';
+import { Mail, Lock, AlertCircle, Loader2 } from 'lucide-react';
 import { AuthRouteMode } from '../../lib/routeUtils';
+import { AuthTextField } from './AuthTextField';
 
 interface SignupViewProps {
   onNavigate: (mode: AuthRouteMode) => void;
@@ -22,7 +23,6 @@ export const SignupView: React.FC<SignupViewProps> = ({
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string; confirmPassword?: string }>({});
 
   const validate = () => {
@@ -131,116 +131,50 @@ export const SignupView: React.FC<SignupViewProps> = ({
 
         {/* Email & Password Registration Form */}
         <form onSubmit={handleSubmit} noValidate className="space-y-3.5">
-          {/* Email Field */}
-          <div className="space-y-1">
-            <label htmlFor="signup-email" className="block text-xs font-semibold text-slate-700 cursor-pointer">
-              Email Address
-            </label>
-            <div className="relative">
-              <Mail className={`w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none transition-colors ${
-                errors.email ? 'text-rose-500' : 'text-slate-400'
-              }`} />
-              <input
-                id="signup-email"
-                type="email"
-                value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value);
-                  if (errors.email) setErrors((prev) => ({ ...prev, email: undefined }));
-                }}
-                placeholder="you@example.com"
-                disabled={isSubmitting}
-                className={`w-full pl-9 pr-3 h-[38px] border rounded-xl text-xs text-slate-900 placeholder:text-slate-400 transition-all font-sans disabled:opacity-60 ${
-                  errors.email
-                    ? 'border-rose-300 bg-rose-50/40 text-rose-900 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500'
-                    : 'border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500'
-                }`}
-              />
-            </div>
-            {errors.email && (
-              <p className="text-[11px] font-medium text-rose-600 flex items-center gap-1 pt-0.5 animate-in fade-in">
-                <AlertCircle className="w-3 h-3 shrink-0" />
-                <span>{errors.email}</span>
-              </p>
-            )}
-          </div>
+          <AuthTextField
+            id="signup-email"
+            label="Email Address"
+            type="email"
+            placeholder="you@example.com"
+            value={email}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              if (errors.email) setErrors((prev) => ({ ...prev, email: undefined }));
+            }}
+            error={errors.email}
+            icon={Mail}
+            disabled={isSubmitting}
+          />
 
-          {/* Password Field */}
-          <div className="space-y-1">
-            <label htmlFor="signup-password" className="block text-xs font-semibold text-slate-700 cursor-pointer">
-              Password
-            </label>
-            <div className="relative">
-              <Lock className={`w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none transition-colors ${
-                errors.password ? 'text-rose-500' : 'text-slate-400'
-              }`} />
-              <input
-                id="signup-password"
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  if (errors.password) setErrors((prev) => ({ ...prev, password: undefined }));
-                }}
-                placeholder="At least 6 characters"
-                disabled={isSubmitting}
-                className={`w-full pl-9 pr-10 h-[38px] border rounded-xl text-xs text-slate-900 placeholder:text-slate-400 transition-all font-sans disabled:opacity-60 ${
-                  errors.password
-                    ? 'border-rose-300 bg-rose-50/40 text-rose-900 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500'
-                    : 'border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500'
-                }`}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                disabled={isSubmitting}
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer disabled:opacity-50"
-              >
-                {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-              </button>
-            </div>
-            {errors.password && (
-              <p className="text-[11px] font-medium text-rose-600 flex items-center gap-1 pt-0.5 animate-in fade-in">
-                <AlertCircle className="w-3 h-3 shrink-0" />
-                <span>{errors.password}</span>
-              </p>
-            )}
-          </div>
+          <AuthTextField
+            id="signup-password"
+            label="Password"
+            isPassword
+            placeholder="At least 6 characters"
+            value={password}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              if (errors.password) setErrors((prev) => ({ ...prev, password: undefined }));
+            }}
+            error={errors.password}
+            icon={Lock}
+            disabled={isSubmitting}
+          />
 
-          {/* Confirm Password Field */}
-          <div className="space-y-1">
-            <label htmlFor="signup-confirm-password" className="block text-xs font-semibold text-slate-700 cursor-pointer">
-              Confirm Password
-            </label>
-            <div className="relative">
-              <Lock className={`w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none transition-colors ${
-                errors.confirmPassword ? 'text-rose-500' : 'text-slate-400'
-              }`} />
-              <input
-                id="signup-confirm-password"
-                type={showPassword ? 'text' : 'password'}
-                value={confirmPassword}
-                onChange={(e) => {
-                  setConfirmPassword(e.target.value);
-                  if (errors.confirmPassword) setErrors((prev) => ({ ...prev, confirmPassword: undefined }));
-                }}
-                placeholder="Re-type your password"
-                disabled={isSubmitting}
-                className={`w-full pl-9 pr-3 h-[38px] border rounded-xl text-xs text-slate-900 placeholder:text-slate-400 transition-all font-sans disabled:opacity-60 ${
-                  errors.confirmPassword
-                    ? 'border-rose-300 bg-rose-50/40 text-rose-900 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500'
-                    : 'border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500'
-                }`}
-              />
-            </div>
-            {errors.confirmPassword && (
-              <p className="text-[11px] font-medium text-rose-600 flex items-center gap-1 pt-0.5 animate-in fade-in">
-                <AlertCircle className="w-3 h-3 shrink-0" />
-                <span>{errors.confirmPassword}</span>
-              </p>
-            )}
-          </div>
+          <AuthTextField
+            id="signup-confirm-password"
+            label="Confirm Password"
+            isPassword
+            placeholder="Re-type your password"
+            value={confirmPassword}
+            onChange={(e) => {
+              setConfirmPassword(e.target.value);
+              if (errors.confirmPassword) setErrors((prev) => ({ ...prev, confirmPassword: undefined }));
+            }}
+            error={errors.confirmPassword}
+            icon={Lock}
+            disabled={isSubmitting}
+          />
 
           {/* Submit Button */}
           <button
