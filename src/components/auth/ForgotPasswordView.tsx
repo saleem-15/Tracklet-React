@@ -42,9 +42,7 @@ export const ForgotPasswordView: React.FC<ForgotPasswordViewProps> = ({
     <div className="w-full space-y-6">
       {/* Brand Header */}
       <div className="text-center space-y-1.5">
-        <div className="inline-flex items-center justify-center w-11 h-11 rounded-2xl bg-white border border-slate-200/90 shadow-2xs mb-1">
-          <img src="/logo.svg" alt="Tracklet Logo" className="w-6 h-6" />
-        </div>
+        <img src="/logo.svg" alt="Tracklet Logo" className="w-10 h-10 mx-auto mb-2" />
         <h1 className="text-2xl font-extrabold font-heading text-slate-900 tracking-tight">
           Reset password
         </h1>

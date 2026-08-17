@@ -58,9 +58,7 @@ export const SignupView: React.FC<SignupViewProps> = ({
     <div className="w-full space-y-6">
       {/* Brand Header */}
       <div className="text-center space-y-1.5">
-        <div className="inline-flex items-center justify-center w-11 h-11 rounded-2xl bg-white border border-slate-200/90 shadow-2xs mb-1">
-          <img src="/logo.svg" alt="Tracklet Logo" className="w-6 h-6" />
-        </div>
+        <img src="/logo.svg" alt="Tracklet Logo" className="w-10 h-10 mx-auto mb-2" />
         <h1 className="text-2xl font-extrabold font-heading text-slate-900 tracking-tight">
           Create an account
         </h1>
@@ -218,8 +216,8 @@ export const SignupView: React.FC<SignupViewProps> = ({
         </form>
       </div>
 
-      {/* Footer Navigation Switcher */}
-      <div className="pt-2 text-center space-y-3">
+      {/* Footer Navigation Switcher & Guest Option */}
+      <div className="pt-2 text-center space-y-2">
         <p className="text-xs text-slate-600 font-sans">
           Already have an account?{' '}
           <button
@@ -232,15 +230,16 @@ export const SignupView: React.FC<SignupViewProps> = ({
         </p>
 
         {onContinueAsGuest && (
-          <div className="pt-1 border-t border-slate-200/80">
+          <p className="text-[11px] text-slate-500 font-sans">
+            Want to explore first?{' '}
             <button
               type="button"
               onClick={onContinueAsGuest}
-              className="text-[11px] font-sans text-slate-500 hover:text-slate-800 cursor-pointer transition-colors"
+              className="font-semibold text-slate-700 hover:text-slate-900 underline underline-offset-2 cursor-pointer transition-colors"
             >
-              Continue as Guest (offline storage)
+              Continue as guest →
             </button>
-          </div>
+          </p>
         )}
       </div>
     </div>
