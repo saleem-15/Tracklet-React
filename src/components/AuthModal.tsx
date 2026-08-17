@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Mail, Lock, CheckCircle2, AlertCircle, Eye, EyeOff, Loader2, Clock } from 'lucide-react';
+import { X, Mail, Lock, MailCheck, AlertCircle, Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { AuthViewMode } from '../types';
 import { getFriendlyAuthErrorMessage } from '../lib/authErrors';
@@ -184,7 +184,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onShowToast }) => {
               <p className="text-[11px] text-slate-500 font-sans">
                 {authModalMode === 'signin' && 'Access your persistent job search workspace'}
                 {authModalMode === 'signup' && 'Organize job applications across all devices'}
-                {authModalMode === 'forgot-password' && "Enter your email to receive password reset instructions"}
+                {authModalMode === 'forgot-password' && 'Enter your email to receive password reset instructions'}
               </p>
             </div>
           </div>
@@ -221,152 +221,131 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onShowToast }) => {
                 <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
                 <span className="leading-relaxed font-medium">{localError || error}</span>
               </div>
-              {authModalMode === 'signin' && (
-                <button
-                  type="button"
-                  onClick={() => openAuthModal('signup')}
-                  className="self-start text-[11px] font-bold text-blue-700 hover:text-blue-900 underline underline-offset-2 cursor-pointer ml-6"
-                >
-                  Click here to Create a New Account
-                </button>
-              )}
-              {authModalMode === 'signup' && (
+            </div>
+          )}
+
+          {/* Reset Sent Confirmation View */}
+          {resetSent && authModalMode === 'forgot-password' ? (
+            <div className="space-y-5 text-center py-2 animate-in fade-in zoom-in-95">
+              <div className="w-11 h-11 rounded-2xl bg-blue-50 border border-blue-200/80 text-blue-600 flex items-center justify-center mx-auto shadow-2xs">
+                <MailCheck className="w-5 h-5" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-sm font-bold text-slate-900">Check your inbox</h3>
+                <p className="text-xs text-slate-600 leading-relaxed max-w-xs mx-auto">
+                  Instructions to reset your password have been sent to <strong>{email}</strong>.
+                </p>
+              </div>
+              <div className="space-y-2 pt-2">
                 <button
                   type="button"
                   onClick={() => openAuthModal('signin')}
-                  className="self-start text-[11px] font-bold text-blue-700 hover:text-blue-900 underline underline-offset-2 cursor-pointer ml-6"
+                  className="w-full py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-xs transition-all cursor-pointer"
                 >
-                  Click here to Sign In instead
+                  Back to Sign In
                 </button>
-              )}
-              {authModalMode === 'forgot-password' && (
                 <button
                   type="button"
                   onClick={() => openAuthModal('signup')}
-                  className="self-start text-[11px] font-bold text-blue-700 hover:text-blue-900 underline underline-offset-2 cursor-pointer ml-6"
+                  className="text-[11px] font-sans text-slate-500 hover:text-slate-800 underline cursor-pointer transition-colors block mx-auto"
                 >
-                  Don't have an account? Click here to Create One
+                  Create a new account instead
                 </button>
-              )}
+              </div>
             </div>
-          )}
+          ) : (
+            /* Credentials Form */
+            <form onSubmit={handleSubmit} noValidate className="space-y-3.5">
+              <AuthTextField
+                id="auth-modal-email"
+                label="Email Address"
+                type="email"
+                placeholder="alex@example.com"
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (fieldErrors.email) setFieldErrors((prev) => ({ ...prev, email: undefined }));
+                }}
+                error={fieldErrors.email}
+                icon={Mail}
+                disabled={isSubmitting}
+              />
 
-          {/* Reset Sent Banner */}
-          {resetSent && (
-            <div role="status" aria-live="polite" className="p-4 rounded-2xl bg-blue-50/90 border border-blue-200/90 text-blue-950 text-xs flex flex-col gap-2.5 animate-in fade-in">
-              <div className="flex items-start gap-2.5">
-                <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
-                <div className="space-y-0.5">
-                  <span className="font-bold block text-blue-900">Check Your Inbox</span>
-                  <span className="text-slate-700 leading-relaxed block text-[11px]">
-                    If an account is registered with <strong>{email}</strong>, a password reset link has been sent to that inbox.
+              {authModalMode !== 'forgot-password' && (
+                <AuthTextField
+                  id="auth-modal-password"
+                  label="Password"
+                  isPassword
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (fieldErrors.password) setFieldErrors((prev) => ({ ...prev, password: undefined }));
+                  }}
+                  error={fieldErrors.password}
+                  icon={Lock}
+                  disabled={isSubmitting}
+                  rightAction={
+                    authModalMode === 'signin' ? (
+                      <button
+                        type="button"
+                        onClick={() => openAuthModal('forgot-password')}
+                        disabled={isSubmitting}
+                        className="text-[11px] font-sans text-blue-600 hover:text-blue-800 font-semibold transition-colors cursor-pointer disabled:opacity-50"
+                      >
+                        Forgot password?
+                      </button>
+                    ) : undefined
+                  }
+                />
+              )}
+
+              {authModalMode === 'signup' && (
+                <AuthTextField
+                  id="auth-modal-confirm-password"
+                  label="Confirm Password"
+                  isPassword
+                  placeholder="••••••••"
+                  value={confirmPassword}
+                  onChange={(e) => {
+                    setConfirmPassword(e.target.value);
+                    if (fieldErrors.confirmPassword) setFieldErrors((prev) => ({ ...prev, confirmPassword: undefined }));
+                  }}
+                  error={fieldErrors.confirmPassword}
+                  icon={Lock}
+                  disabled={isSubmitting}
+                />
+              )}
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                disabled={isSubmitting || (authModalMode === 'forgot-password' && resetCooldown > 0)}
+                aria-busy={isSubmitting}
+                className="w-full flex items-center justify-center py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white font-bold text-xs shadow-md shadow-blue-500/20 transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed mt-1"
+              >
+                {isSubmitting ? (
+                  <span>
+                    {authModalMode === 'signin'
+                      ? 'Signing in...'
+                      : authModalMode === 'signup'
+                      ? 'Signing up...'
+                      : 'Sending reset link...'}
                   </span>
-                </div>
-              </div>
-              <div className="pt-2 border-t border-blue-200/80 flex items-center justify-between text-[11px]">
-                <span className="text-slate-500">Not receiving anything?</span>
-                <button
-                  type="button"
-                  onClick={() => openAuthModal('signup')}
-                  className="font-bold text-blue-700 hover:text-blue-900 underline underline-offset-2 cursor-pointer"
-                >
-                  Create Account
-                </button>
-              </div>
-            </div>
+                ) : authModalMode === 'forgot-password' && resetCooldown > 0 ? (
+                  <span>Resend reset link in {resetCooldown}s</span>
+                ) : (
+                  <span>
+                    {authModalMode === 'signin'
+                      ? 'Sign In'
+                      : authModalMode === 'signup'
+                      ? 'Sign Up'
+                      : 'Send Reset Link'}
+                  </span>
+                )}
+              </button>
+            </form>
           )}
-
-          {/* Credentials Form (Primary) */}
-          <form onSubmit={handleSubmit} noValidate className="space-y-3.5">
-            <AuthTextField
-              id="auth-modal-email"
-              label="Email Address"
-              type="email"
-              placeholder="alex@example.com"
-              value={email}
-              onChange={(e) => {
-                setEmail(e.target.value);
-                if (fieldErrors.email) setFieldErrors((prev) => ({ ...prev, email: undefined }));
-              }}
-              error={fieldErrors.email}
-              icon={Mail}
-              disabled={isSubmitting}
-            />
-
-            {authModalMode !== 'forgot-password' && (
-              <AuthTextField
-                id="auth-modal-password"
-                label="Password"
-                isPassword
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  if (fieldErrors.password) setFieldErrors((prev) => ({ ...prev, password: undefined }));
-                }}
-                error={fieldErrors.password}
-                icon={Lock}
-                disabled={isSubmitting}
-                rightAction={
-                  authModalMode === 'signin' ? (
-                    <button
-                      type="button"
-                      onClick={() => openAuthModal('forgot-password')}
-                      disabled={isSubmitting}
-                      className="text-[11px] font-sans text-blue-600 hover:text-blue-800 font-semibold transition-colors cursor-pointer disabled:opacity-50"
-                    >
-                      Forgot password?
-                    </button>
-                  ) : undefined
-                }
-              />
-            )}
-
-            {authModalMode === 'signup' && (
-              <AuthTextField
-                id="auth-modal-confirm-password"
-                label="Confirm Password"
-                isPassword
-                placeholder="Re-type your password"
-                value={confirmPassword}
-                onChange={(e) => {
-                  setConfirmPassword(e.target.value);
-                  if (fieldErrors.confirmPassword) setFieldErrors((prev) => ({ ...prev, confirmPassword: undefined }));
-                }}
-                error={fieldErrors.confirmPassword}
-                icon={Lock}
-                disabled={isSubmitting}
-              />
-            )}
-
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={isSubmitting || (authModalMode === 'forgot-password' && resetCooldown > 0)}
-              aria-busy={isSubmitting}
-              className="w-full flex items-center justify-center py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white font-bold text-xs shadow-md shadow-blue-500/20 transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed mt-1"
-            >
-              {isSubmitting ? (
-                <span>
-                  {authModalMode === 'signin'
-                    ? 'Signing in...'
-                    : authModalMode === 'signup'
-                    ? 'Signing up...'
-                    : 'Sending reset link...'}
-                </span>
-              ) : authModalMode === 'forgot-password' && resetCooldown > 0 ? (
-                <span>Resend reset link in {resetCooldown}s</span>
-              ) : (
-                <span>
-                  {authModalMode === 'signin'
-                    ? 'Sign In'
-                    : authModalMode === 'signup'
-                    ? 'Sign Up'
-                    : 'Send Reset Link'}
-                </span>
-              )}
-            </button>
-          </form>
 
           {/* Google OAuth Button (Secondary) */}
           {authModalMode !== 'forgot-password' && (
@@ -409,7 +388,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onShowToast }) => {
           )}
 
           {/* Footer Back link for Forgot Password */}
-          {authModalMode === 'forgot-password' && (
+          {authModalMode === 'forgot-password' && !resetSent && (
             <div className="pt-2 text-center">
               <button
                 type="button"
