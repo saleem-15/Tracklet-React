@@ -23,36 +23,39 @@ export const SignupView: React.FC<SignupViewProps> = ({
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [formValidation, setFormValidation] = useState<string | null>(null);
+  const [errors, setErrors] = useState<{ email?: string; password?: string; confirmPassword?: string }>({});
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setFormValidation(null);
+  const validate = () => {
+    const nextErrors: { email?: string; password?: string; confirmPassword?: string } = {};
+    const trimmedEmail = email.trim();
 
-    if (!email.trim()) {
-      setFormValidation('Please enter your email address.');
-      return;
+    if (!trimmedEmail) {
+      nextErrors.email = 'Email address is required.';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      nextErrors.email = 'Please enter a valid email address.';
     }
 
     if (!password) {
-      setFormValidation('Please choose a password.');
-      return;
+      nextErrors.password = 'Password is required.';
+    } else if (password.length < 6) {
+      nextErrors.password = 'Password must be at least 6 characters.';
     }
 
-    if (password.length < 6) {
-      setFormValidation('Password must be at least 6 characters long.');
-      return;
+    if (!confirmPassword) {
+      nextErrors.confirmPassword = 'Please confirm your password.';
+    } else if (password !== confirmPassword) {
+      nextErrors.confirmPassword = 'Passwords do not match.';
     }
 
-    if (password !== confirmPassword) {
-      setFormValidation('Passwords do not match. Please re-type your password.');
-      return;
-    }
-
-    await onSubmit(email.trim(), password);
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
   };
 
-  const activeError = formValidation || errorMessage;
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validate()) return;
+    await onSubmit(email.trim(), password);
+  };
 
   return (
     <div className="w-full space-y-6">
@@ -67,8 +70,8 @@ export const SignupView: React.FC<SignupViewProps> = ({
         </p>
       </div>
 
-      {/* Error Alert */}
-      {activeError && (
+      {/* Global Auth Error Alert */}
+      {errorMessage && (
         <div
           role="alert"
           aria-live="polite"
@@ -76,7 +79,7 @@ export const SignupView: React.FC<SignupViewProps> = ({
         >
           <div className="flex items-start gap-2">
             <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
-            <span className="leading-relaxed font-medium">{activeError}</span>
+            <span className="leading-relaxed font-medium">{errorMessage}</span>
           </div>
           <button
             type="button"
@@ -127,25 +130,39 @@ export const SignupView: React.FC<SignupViewProps> = ({
         </div>
 
         {/* Email & Password Registration Form */}
-        <form onSubmit={handleSubmit} className="space-y-3.5">
+        <form onSubmit={handleSubmit} noValidate className="space-y-3.5">
           {/* Email Field */}
           <div className="space-y-1">
             <label htmlFor="signup-email" className="block text-xs font-semibold text-slate-700 cursor-pointer">
               Email Address
             </label>
             <div className="relative">
-              <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <Mail className={`w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none transition-colors ${
+                errors.email ? 'text-rose-500' : 'text-slate-400'
+              }`} />
               <input
                 id="signup-email"
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (errors.email) setErrors((prev) => ({ ...prev, email: undefined }));
+                }}
                 placeholder="you@example.com"
-                required
                 disabled={isSubmitting}
-                className="w-full pl-9 pr-3 h-[38px] border border-slate-200 bg-white rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-sans disabled:opacity-60"
+                className={`w-full pl-9 pr-3 h-[38px] border rounded-xl text-xs text-slate-900 placeholder:text-slate-400 transition-all font-sans disabled:opacity-60 ${
+                  errors.email
+                    ? 'border-rose-300 bg-rose-50/40 text-rose-900 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500'
+                    : 'border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500'
+                }`}
               />
             </div>
+            {errors.email && (
+              <p className="text-[11px] font-medium text-rose-600 flex items-center gap-1 pt-0.5 animate-in fade-in">
+                <AlertCircle className="w-3 h-3 shrink-0" />
+                <span>{errors.email}</span>
+              </p>
+            )}
           </div>
 
           {/* Password Field */}
@@ -154,16 +171,24 @@ export const SignupView: React.FC<SignupViewProps> = ({
               Password
             </label>
             <div className="relative">
-              <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <Lock className={`w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none transition-colors ${
+                errors.password ? 'text-rose-500' : 'text-slate-400'
+              }`} />
               <input
                 id="signup-password"
                 type={showPassword ? 'text' : 'password'}
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (errors.password) setErrors((prev) => ({ ...prev, password: undefined }));
+                }}
                 placeholder="At least 6 characters"
-                required
                 disabled={isSubmitting}
-                className="w-full pl-9 pr-10 h-[38px] border border-slate-200 bg-white rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-sans disabled:opacity-60"
+                className={`w-full pl-9 pr-10 h-[38px] border rounded-xl text-xs text-slate-900 placeholder:text-slate-400 transition-all font-sans disabled:opacity-60 ${
+                  errors.password
+                    ? 'border-rose-300 bg-rose-50/40 text-rose-900 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500'
+                    : 'border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500'
+                }`}
               />
               <button
                 type="button"
@@ -175,6 +200,12 @@ export const SignupView: React.FC<SignupViewProps> = ({
                 {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
               </button>
             </div>
+            {errors.password && (
+              <p className="text-[11px] font-medium text-rose-600 flex items-center gap-1 pt-0.5 animate-in fade-in">
+                <AlertCircle className="w-3 h-3 shrink-0" />
+                <span>{errors.password}</span>
+              </p>
+            )}
           </div>
 
           {/* Confirm Password Field */}
@@ -183,18 +214,32 @@ export const SignupView: React.FC<SignupViewProps> = ({
               Confirm Password
             </label>
             <div className="relative">
-              <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <Lock className={`w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none transition-colors ${
+                errors.confirmPassword ? 'text-rose-500' : 'text-slate-400'
+              }`} />
               <input
                 id="signup-confirm-password"
                 type={showPassword ? 'text' : 'password'}
                 value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
+                onChange={(e) => {
+                  setConfirmPassword(e.target.value);
+                  if (errors.confirmPassword) setErrors((prev) => ({ ...prev, confirmPassword: undefined }));
+                }}
                 placeholder="Re-type your password"
-                required
                 disabled={isSubmitting}
-                className="w-full pl-9 pr-3 h-[38px] border border-slate-200 bg-white rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-sans disabled:opacity-60"
+                className={`w-full pl-9 pr-3 h-[38px] border rounded-xl text-xs text-slate-900 placeholder:text-slate-400 transition-all font-sans disabled:opacity-60 ${
+                  errors.confirmPassword
+                    ? 'border-rose-300 bg-rose-50/40 text-rose-900 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500'
+                    : 'border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500'
+                }`}
               />
             </div>
+            {errors.confirmPassword && (
+              <p className="text-[11px] font-medium text-rose-600 flex items-center gap-1 pt-0.5 animate-in fade-in">
+                <AlertCircle className="w-3 h-3 shrink-0" />
+                <span>{errors.confirmPassword}</span>
+              </p>
+            )}
           </div>
 
           {/* Submit Button */}

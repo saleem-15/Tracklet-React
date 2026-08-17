@@ -20,23 +20,28 @@ export const ForgotPasswordView: React.FC<ForgotPasswordViewProps> = ({
   resetCooldown,
 }) => {
   const [email, setEmail] = useState('');
-  const [formValidation, setFormValidation] = useState<string | null>(null);
+  const [emailError, setEmailError] = useState<string | null>(null);
+
+  const validate = () => {
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
+      setEmailError('Email address is required.');
+      return false;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      setEmailError('Please enter a valid email address.');
+      return false;
+    }
+    setEmailError(null);
+    return true;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setFormValidation(null);
-
-    if (!email.trim()) {
-      setFormValidation('Please enter your email address.');
-      return;
-    }
-
+    if (!validate()) return;
     if (resetCooldown > 0) return;
-
     await onSubmit(email.trim());
   };
-
-  const activeError = formValidation || errorMessage;
 
   return (
     <div className="w-full space-y-6">
@@ -51,8 +56,8 @@ export const ForgotPasswordView: React.FC<ForgotPasswordViewProps> = ({
         </p>
       </div>
 
-      {/* Error Alert */}
-      {activeError && (
+      {/* Global Auth Error Alert */}
+      {errorMessage && (
         <div
           role="alert"
           aria-live="polite"
@@ -60,7 +65,7 @@ export const ForgotPasswordView: React.FC<ForgotPasswordViewProps> = ({
         >
           <div className="flex items-start gap-2">
             <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
-            <span className="leading-relaxed font-medium">{activeError}</span>
+            <span className="leading-relaxed font-medium">{errorMessage}</span>
           </div>
           <button
             type="button"
@@ -102,25 +107,39 @@ export const ForgotPasswordView: React.FC<ForgotPasswordViewProps> = ({
       )}
 
       {/* Password Reset Form */}
-      <form onSubmit={handleSubmit} className="space-y-3.5">
+      <form onSubmit={handleSubmit} noValidate className="space-y-3.5">
         {/* Email Field */}
         <div className="space-y-1">
           <label htmlFor="reset-email" className="block text-xs font-semibold text-slate-700 cursor-pointer">
             Email Address
           </label>
           <div className="relative">
-            <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <Mail className={`w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none transition-colors ${
+              emailError ? 'text-rose-500' : 'text-slate-400'
+            }`} />
             <input
               id="reset-email"
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                if (emailError) setEmailError(null);
+              }}
               placeholder="you@example.com"
-              required
               disabled={isSubmitting}
-              className="w-full pl-9 pr-3 h-[38px] border border-slate-200 bg-white rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-sans disabled:opacity-60"
+              className={`w-full pl-9 pr-3 h-[38px] border rounded-xl text-xs text-slate-900 placeholder:text-slate-400 transition-all font-sans disabled:opacity-60 ${
+                emailError
+                  ? 'border-rose-300 bg-rose-50/40 text-rose-900 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500'
+                  : 'border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500'
+              }`}
             />
           </div>
+          {emailError && (
+            <p className="text-[11px] font-medium text-rose-600 flex items-center gap-1 pt-0.5 animate-in fade-in">
+              <AlertCircle className="w-3 h-3 shrink-0" />
+              <span>{emailError}</span>
+            </p>
+          )}
         </div>
 
         {/* Submit Button */}
