@@ -113,11 +113,16 @@ export class AuthRepository {
   }
 
   /**
-   * Send password reset email.
+   * Send password reset email with dynamic ActionCodeSettings so it works
+   * across localhost, Vercel, and production custom domains without Console modifications.
    */
   static async sendPasswordReset(email: string): Promise<void> {
     const trimmedEmail = email.trim();
-    await firebaseSendPasswordResetEmail(auth, trimmedEmail);
+    const actionCodeSettings = {
+      url: `${window.location.origin}/reset-password`,
+      handleCodeInApp: true,
+    };
+    await firebaseSendPasswordResetEmail(auth, trimmedEmail, actionCodeSettings);
   }
 
   /**

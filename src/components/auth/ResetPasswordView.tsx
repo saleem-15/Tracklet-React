@@ -30,10 +30,10 @@ export const ResetPasswordView: React.FC<ResetPasswordViewProps> = ({
   // Extract oobCode from URL query parameters (e.g. ?oobCode=... or ?mode=resetPassword&oobCode=...)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const code = params.get('oobCode') || params.get('apiKey'); // Firebase standard query param
+    const code = params.get('oobCode');
 
     if (!code) {
-      setCodeError('Missing or invalid password reset link. Please request a new one.');
+      setCodeError('Missing or invalid password reset code. Please request a new link.');
       setIsValidatingCode(false);
       return;
     }
