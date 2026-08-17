@@ -113,11 +113,15 @@ export class AuthRepository {
   }
 
   /**
-   * Send password reset email using Firebase Auth.
+   * Send password reset email with continueUrl pointing to /login?reset=success.
    */
   static async sendPasswordReset(email: string): Promise<void> {
     const trimmedEmail = email.trim();
-    await firebaseSendPasswordResetEmail(auth, trimmedEmail);
+    const actionCodeSettings = {
+      url: `${window.location.origin}/login?reset=success`,
+      handleCodeInApp: false,
+    };
+    await firebaseSendPasswordResetEmail(auth, trimmedEmail, actionCodeSettings);
   }
 
   /**

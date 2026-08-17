@@ -49,6 +49,11 @@ export const LoginView: React.FC<LoginViewProps> = ({
     await onSubmit(email.trim(), password);
   };
 
+  const [resetSuccess] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('reset') === 'success';
+  });
+
   return (
     <div className="w-full space-y-6">
       {/* Brand Header */}
@@ -61,6 +66,23 @@ export const LoginView: React.FC<LoginViewProps> = ({
           Sign in to access your synchronized job search workspace.
         </p>
       </div>
+
+      {/* Password Reset Success Alert */}
+      {resetSuccess && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs flex items-start gap-2.5 animate-in fade-in"
+        >
+          <div className="w-4 h-4 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5 font-bold">✓</div>
+          <div className="space-y-0.5">
+            <span className="font-bold block">Password reset successfully!</span>
+            <span className="text-emerald-800 text-[11px] leading-relaxed block">
+              You can now sign in to your Tracklet workspace with your new password.
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Global Auth Error Alert */}
       {errorMessage && (

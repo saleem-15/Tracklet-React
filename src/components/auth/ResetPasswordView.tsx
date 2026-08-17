@@ -130,35 +130,35 @@ export const ResetPasswordView: React.FC<ResetPasswordViewProps> = ({
     );
   }
 
-  // 3. Invalid or Expired Code Error State
+  // 3. Missing, Invalid, or Expired Code State
   if (codeError) {
     return (
       <div className="w-full space-y-6 text-center animate-in fade-in zoom-in-95 duration-200">
-        <div className="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-200/80 text-rose-600 flex items-center justify-center mx-auto shadow-2xs">
-          <AlertCircle className="w-6 h-6" />
+        <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-200/80 text-blue-600 flex items-center justify-center mx-auto shadow-2xs">
+          <KeyRound className="w-6 h-6" />
         </div>
         <div className="space-y-1.5">
           <h1 className="text-2xl font-extrabold font-heading text-slate-900 tracking-tight">
-            Reset link expired
+            Password reset
           </h1>
-          <p className="text-xs text-rose-700/90 font-sans max-w-xs mx-auto leading-relaxed">
-            {codeError}
+          <p className="text-xs text-slate-600 font-sans max-w-xs mx-auto leading-relaxed">
+            If you have already reset your password on the Firebase confirmation page, you can sign in directly with your new password.
           </p>
         </div>
-        <div className="space-y-2 pt-2">
-          <button
-            type="button"
-            onClick={() => onNavigate('forgot-password')}
-            className="w-full h-[38px] flex items-center justify-center px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-xs transition-all cursor-pointer"
-          >
-            Request New Reset Link
-          </button>
+        <div className="space-y-2.5 pt-2">
           <button
             type="button"
             onClick={() => onNavigate('signin')}
-            className="text-xs font-semibold text-slate-600 hover:text-slate-900 cursor-pointer block mx-auto pt-1"
+            className="w-full h-[38px] flex items-center justify-center px-4 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white font-bold text-xs shadow-xs shadow-blue-500/20 transition-all cursor-pointer"
           >
-            Back to Sign In
+            Sign In with New Password
+          </button>
+          <button
+            type="button"
+            onClick={() => onNavigate('forgot-password')}
+            className="text-xs font-semibold text-slate-500 hover:text-slate-800 cursor-pointer block mx-auto pt-1 underline underline-offset-2"
+          >
+            Need a new reset link?
           </button>
         </div>
       </div>
