@@ -6,6 +6,8 @@ import {
   createUserWithEmailAndPassword,
   sendEmailVerification as firebaseSendEmailVerification,
   sendPasswordResetEmail as firebaseSendPasswordResetEmail,
+  verifyPasswordResetCode as firebaseVerifyPasswordResetCode,
+  confirmPasswordReset as firebaseConfirmPasswordReset,
   deleteUser as firebaseDeleteUser,
   reload as firebaseReload,
   firebaseSignOut,
@@ -116,6 +118,20 @@ export class AuthRepository {
   static async sendPasswordReset(email: string): Promise<void> {
     const trimmedEmail = email.trim();
     await firebaseSendPasswordResetEmail(auth, trimmedEmail);
+  }
+
+  /**
+   * Verify password reset code (oobCode) from email link and return the associated email.
+   */
+  static async verifyPasswordResetCode(code: string): Promise<string> {
+    return await firebaseVerifyPasswordResetCode(auth, code);
+  }
+
+  /**
+   * Confirm password reset with the code (oobCode) and apply the new password.
+   */
+  static async confirmPasswordReset(code: string, newPass: string): Promise<void> {
+    await firebaseConfirmPasswordReset(auth, code, newPass);
   }
 
   /**

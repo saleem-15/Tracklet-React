@@ -23,6 +23,8 @@ export interface AuthContextType {
   signUpWithEmail: (email: string, password: string) => Promise<void>;
   sendEmailVerification: () => Promise<void>;
   sendPasswordReset: (email: string) => Promise<void>;
+  verifyPasswordResetCode: (code: string) => Promise<string>;
+  confirmPasswordReset: (code: string, newPass: string) => Promise<void>;
   reloadUserVerification: () => Promise<boolean>;
   signOut: () => Promise<void>;
   deleteAccount: () => Promise<void>;
@@ -81,47 +83,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signInWithGoogle = useCallback(async () => {
     setError(null);
     try {
-      const loggedInUser = await AuthRepository.signInWithGoogle();
-      setUser(loggedInUser);
-      setAuthUser(AuthRepository.mapToAuthUser(loggedInUser));
-      closeAuthModal();
+      const loggedUser = await AuthRepository.signInWithGoogle();
+      setUser(loggedUser);
+      setAuthUser(AuthRepository.mapToAuthUser(loggedUser));
     } catch (err: unknown) {
-      console.error('Firebase signInWithGoogle error:', err);
       const friendlyMsg = getFriendlyAuthErrorMessage(err);
       setError(friendlyMsg);
       throw new Error(friendlyMsg);
     }
-  }, [closeAuthModal]);
+  }, []);
 
   const signInWithEmail = useCallback(async (email: string, pass: string) => {
     setError(null);
     try {
-      const loggedInUser = await AuthRepository.signInWithEmail(email, pass);
-      setUser(loggedInUser);
-      setAuthUser(AuthRepository.mapToAuthUser(loggedInUser));
-      closeAuthModal();
+      const loggedUser = await AuthRepository.signInWithEmail(email, pass);
+      setUser(loggedUser);
+      setAuthUser(AuthRepository.mapToAuthUser(loggedUser));
     } catch (err: unknown) {
-      console.error('Firebase signInWithEmail error:', err);
       const friendlyMsg = getFriendlyAuthErrorMessage(err);
       setError(friendlyMsg);
       throw new Error(friendlyMsg);
     }
-  }, [closeAuthModal]);
+  }, []);
 
   const signUpWithEmail = useCallback(async (email: string, pass: string) => {
     setError(null);
     try {
-      const newUser = await AuthRepository.signUpWithEmail(email, pass);
-      setUser(newUser);
-      setAuthUser(AuthRepository.mapToAuthUser(newUser));
-      closeAuthModal();
+      const registeredUser = await AuthRepository.signUpWithEmail(email, pass);
+      setUser(registeredUser);
+      setAuthUser(AuthRepository.mapToAuthUser(registeredUser));
     } catch (err: unknown) {
-      console.error('Firebase signUpWithEmail error:', err);
       const friendlyMsg = getFriendlyAuthErrorMessage(err);
       setError(friendlyMsg);
       throw new Error(friendlyMsg);
     }
-  }, [closeAuthModal]);
+  }, []);
 
   const sendEmailVerification = useCallback(async () => {
     setError(null);
@@ -138,6 +134,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setError(null);
     try {
       await AuthRepository.sendPasswordReset(email);
+    } catch (err: unknown) {
+      const friendlyMsg = getFriendlyAuthErrorMessage(err);
+      setError(friendlyMsg);
+      throw new Error(friendlyMsg);
+    }
+  }, []);
+
+  const verifyPasswordResetCode = useCallback(async (code: string) => {
+    setError(null);
+    try {
+      return await AuthRepository.verifyPasswordResetCode(code);
+    } catch (err: unknown) {
+      const friendlyMsg = getFriendlyAuthErrorMessage(err);
+      setError(friendlyMsg);
+      throw new Error(friendlyMsg);
+    }
+  }, []);
+
+  const confirmPasswordReset = useCallback(async (code: string, newPass: string) => {
+    setError(null);
+    try {
+      await AuthRepository.confirmPasswordReset(code, newPass);
     } catch (err: unknown) {
       const friendlyMsg = getFriendlyAuthErrorMessage(err);
       setError(friendlyMsg);
@@ -201,6 +219,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     signUpWithEmail,
     sendEmailVerification,
     sendPasswordReset,
+    verifyPasswordResetCode,
+    confirmPasswordReset,
     reloadUserVerification,
     signOut,
     deleteAccount,

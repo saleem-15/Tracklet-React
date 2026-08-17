@@ -6,6 +6,7 @@ import { getAuthModeFromPath, getPathForAuthMode, AuthRouteMode } from '../lib/r
 import { LoginView } from './auth/LoginView';
 import { SignupView } from './auth/SignupView';
 import { ForgotPasswordView } from './auth/ForgotPasswordView';
+import { ResetPasswordView } from './auth/ResetPasswordView';
 
 interface AuthScreenProps {
   onShowToast?: (type: 'success' | 'error' | 'info' | 'warning', title: string, message?: string) => void;
@@ -21,6 +22,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
     signInWithEmail,
     signUpWithEmail,
     sendPasswordReset,
+    verifyPasswordResetCode,
+    confirmPasswordReset,
   } = useAuth();
 
   const [mode, setMode] = useState<AuthRouteMode>(() => getAuthModeFromPath(window.location.pathname));
@@ -48,9 +51,10 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
         pathname === '/signin' ||
         pathname === '/signup' ||
         pathname === '/register' ||
-        pathname === '/forgot-password')
+        pathname === '/forgot-password' ||
+        pathname === '/reset-password')
     ) {
-      window.history.replaceState(null, '', targetPath);
+      window.history.replaceState(null, '', targetPath + window.location.search);
     }
   }, [mode]);
 
@@ -207,6 +211,24 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                 errorMessage={localError}
                 resetSent={resetSent}
                 resetCooldown={resetCooldown}
+              />
+            </motion.div>
+          )}
+
+          {mode === 'reset-password' && (
+            <motion.div
+              key="reset-password"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+              className="w-full"
+            >
+              <ResetPasswordView
+                onNavigate={handleNavigate}
+                onVerifyCode={verifyPasswordResetCode}
+                onConfirmReset={confirmPasswordReset}
+                onShowToast={onShowToast}
               />
             </motion.div>
           )}

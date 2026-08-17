@@ -18,7 +18,7 @@ export const PATH_TO_TAB: Record<string, ActiveTab> = {
   '/settings': 'settings',
 };
 
-export type AuthRouteMode = 'signin' | 'signup' | 'forgot-password';
+export type AuthRouteMode = 'signin' | 'signup' | 'forgot-password' | 'reset-password';
 
 export const AUTH_PATH_TO_MODE: Record<string, AuthRouteMode> = {
   '/login': 'signin',
@@ -26,6 +26,7 @@ export const AUTH_PATH_TO_MODE: Record<string, AuthRouteMode> = {
   '/signup': 'signup',
   '/register': 'signup',
   '/forgot-password': 'forgot-password',
+  '/reset-password': 'reset-password',
 };
 
 export function isAuthPath(pathname: string): boolean {
@@ -43,6 +44,7 @@ export function getAuthModeFromPath(pathname: string): AuthRouteMode {
 export function getPathForAuthMode(mode: AuthRouteMode): string {
   if (mode === 'signup') return '/signup';
   if (mode === 'forgot-password') return '/forgot-password';
+  if (mode === 'reset-password') return '/reset-password';
   return '/login';
 }
 
