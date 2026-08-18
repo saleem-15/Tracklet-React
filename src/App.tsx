@@ -68,6 +68,7 @@ function TrackletAppContent() {
   const [isAddModalOpen, setIsAddModalOpenState] = useState<boolean>(
     () => _initialUrlState.isAddModalOpen
   );
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState<boolean>(false);
 
   // ── URL-aware tab setter ──
   const setActiveTab = (tab: ActiveTab) => {
@@ -610,6 +611,8 @@ function TrackletAppContent() {
         onSignIn={handleSignIn}
         onSignOut={handleSignOut}
         onSeedDemoData={handleSeedDemoData}
+        isMobileOpen={isMobileSidebarOpen}
+        onCloseMobile={() => setIsMobileSidebarOpen(false)}
       />
 
       {/* Main Content Area */}
@@ -623,6 +626,7 @@ function TrackletAppContent() {
             totalFilteredCount={filteredAndSortedApplications.length}
             onExportCSV={() => exportApplicationsToCSV(filteredAndSortedApplications)}
             activeTab={activeTab}
+            onOpenMobileSidebar={() => setIsMobileSidebarOpen(true)}
           />
         )}
 
