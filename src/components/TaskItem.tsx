@@ -150,7 +150,7 @@ export const TaskItem: React.FC<TaskItemProps> = ({
           type="button"
           disabled={readOnly || !onToggle}
           onClick={() => onToggle && onToggle(task.id)}
-          className={`w-4 h-4 rounded-md border transition-all flex items-center justify-center shrink-0 cursor-pointer ${
+          className={`relative w-4 h-4 rounded-md border transition-all flex items-center justify-center shrink-0 cursor-pointer after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:min-w-[44px] after:min-h-[44px] ${
             task.completed
               ? 'bg-blue-600 border-blue-600 text-white shadow-2xs'
               : 'border-slate-300 hover:border-blue-500 hover:bg-blue-50/50 bg-white'
@@ -228,7 +228,7 @@ export const TaskItem: React.FC<TaskItemProps> = ({
         <div className="flex items-center gap-1.5 shrink-0">
           {smartDate && (
             <div
-              className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] tracking-tight uppercase border ${styleClass} ${
+              className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-mono tracking-tight uppercase border ${styleClass} ${
                 isBold ? 'font-extrabold' : 'font-semibold'
               }`}
             >
