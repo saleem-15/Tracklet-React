@@ -132,8 +132,8 @@ export const StageSelectorDropdown: React.FC<StageSelectorDropdownProps> = ({
 
       {/* Floating Menu */}
       {isOpen && (
-        <div className="absolute right-0 sm:left-0 mt-1.5 w-44 rounded-[12px] bg-white/95 backdrop-blur-md border border-slate-200/90 shadow-xl z-50 p-1.5 space-y-0.5 animate-in fade-in zoom-in-95 duration-150">
-          <div className="px-2 py-1 text-[10px] font-mono font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-100 mb-1">
+        <div className="absolute right-0 sm:left-0 mt-1.5 w-44 rounded-[12px] bg-white/95 backdrop-blur-md border border-slate-200/90 shadow-xl z-50 p-1.5 space-y-0.5 animate-in fade-in zoom-in-95 duration-150 motion-reduce:animate-none">
+          <div className="px-2 py-1 text-[11px] font-mono font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-100 mb-1">
             Advance Stage
           </div>
           {ALL_STATUSES.map((status) => {

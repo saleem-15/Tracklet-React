@@ -577,7 +577,7 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
                               </div>
                               <div className="flex items-center gap-1 shrink-0">
                                 {c.email && (
-                                  <span className="font-mono text-[10px] text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200/80 truncate max-w-[110px]">
+                                  <span className="font-mono text-[11px] text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200/80 truncate max-w-[110px]">
                                     {c.email}
                                   </span>
                                 )}
@@ -680,7 +680,7 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
                         <button
                           type="button"
                           onClick={() => setShowExtraContactFields(true)}
-                          className="text-[10px] font-mono text-blue-600 hover:text-blue-700 font-semibold cursor-pointer py-0.5 inline-flex items-center gap-1"
+                          className="text-[11px] font-mono text-blue-600 hover:text-blue-700 font-semibold cursor-pointer py-0.5 inline-flex items-center gap-1"
                         >
                           <span>+ LinkedIn &amp; Notes</span>
                         </button>
