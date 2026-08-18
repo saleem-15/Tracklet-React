@@ -32,7 +32,7 @@ export const GuestMigrationModal: React.FC<GuestMigrationModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 animate-in fade-in duration-200">
-      <div className="relative w-full max-w-lg bg-white rounded-2xl border border-slate-200/90 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+      <div className="relative w-full max-w-lg bg-white rounded-2xl border border-slate-200/90 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 motion-reduce:animate-none">
         {/* Header */}
         <div className="bg-gradient-to-br from-blue-600 via-indigo-600 to-blue-700 p-6 text-white text-center relative overflow-hidden">
           <div className="absolute -top-10 -right-10 w-36 h-36 bg-white/10 rounded-full blur-xl pointer-events-none" />
@@ -43,7 +43,7 @@ export const GuestMigrationModal: React.FC<GuestMigrationModalProps> = ({
 
           <h2 className="text-xl font-bold tracking-tight text-white flex items-center justify-center gap-2">
             <span>Import Guest Applications</span>
-            <Sparkles className="w-4 h-4 text-amber-300 animate-pulse" />
+            <Sparkles className="w-4 h-4 text-amber-300 animate-pulse motion-reduce:animate-none" />
           </h2>
           <p className="text-blue-100 text-xs mt-1.5 max-w-sm mx-auto leading-relaxed">
             We found <strong>{guestApplications.length}</strong> job application{guestApplications.length === 1 ? '' : 's'} tracked during your guest session.
@@ -53,7 +53,7 @@ export const GuestMigrationModal: React.FC<GuestMigrationModalProps> = ({
             type="button"
             onClick={onClose}
             aria-label="Close dialog"
-            className="absolute top-4 right-4 p-1.5 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+            className="relative absolute top-4 right-4 p-1.5 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-colors cursor-pointer after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:min-w-[44px] after:min-h-[44px]"
           >
             <X className="w-4 h-4" />
           </button>

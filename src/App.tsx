@@ -551,8 +551,8 @@ function TrackletAppContent() {
   if (authLoading) {
     return (
       <div className="flex h-screen w-screen items-center justify-center bg-slate-50 font-sans text-xs text-slate-500 select-none">
-        <div className="flex flex-col items-center gap-3 p-8 bg-white border border-slate-200/90 rounded-2xl shadow-xs animate-in fade-in duration-200">
-          <img src="/logo.svg" alt="Tracklet Logo" className="w-10 h-10 animate-pulse" />
+        <div className="flex flex-col items-center gap-3 p-8 bg-white border border-slate-200/90 rounded-2xl shadow-xs animate-in fade-in duration-200 motion-reduce:animate-none">
+          <img src="/logo.svg" alt="Tracklet Logo" className="w-10 h-10 animate-pulse motion-reduce:animate-none" />
           <div className="flex flex-col items-center gap-0.5">
             <span className="font-heading font-bold text-slate-900 text-sm tracking-tight">Tracklet</span>
             <span className="font-mono text-[11px] text-slate-500">Loading workspace...</span>
