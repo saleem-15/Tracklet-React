@@ -31,5 +31,5 @@ export const UI_TOKENS = {
   btnSecondary: 'h-[34px] px-3 rounded-[10px] bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold border border-blue-200 shadow-2xs text-xs cursor-pointer flex items-center justify-between gap-1.5 transition-all',
   btnOutline: 'h-[34px] px-3 rounded-[10px] bg-white hover:bg-slate-100 text-slate-700 font-medium border border-slate-200 shadow-2xs text-xs cursor-pointer flex items-center justify-center gap-1.5 transition-all',
   btnGhost: 'h-8 px-2 rounded-[10px] bg-transparent hover:bg-slate-100 text-slate-600 hover:text-slate-900 text-xs transition-colors cursor-pointer',
-  inputBase: 'h-[34px] bg-slate-50 text-slate-900 placeholder-slate-400 rounded-[10px] border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white text-xs transition-all shadow-2xs',
+  inputBase: 'h-[34px] bg-slate-50 text-slate-900 placeholder-slate-500 rounded-[10px] border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white text-xs transition-all shadow-2xs',
 };

@@ -97,7 +97,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
             type="button"
             onClick={toggleSidebar}
             title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-colors cursor-pointer shrink-0"
+            aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            className="p-1.5 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-200/60 transition-colors cursor-pointer shrink-0"
           >
             {isCollapsed ? (
               <PanelLeftOpen className="w-4 h-4" />
@@ -125,7 +126,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             }`}
           >
             <div className="flex items-center gap-2.5">
-              <Table className={`w-4 h-4 shrink-0 transition-colors ${activeTab === 'all' ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-600'}`} />
+              <Table className={`w-4 h-4 shrink-0 transition-colors ${activeTab === 'all' ? 'text-blue-600' : 'text-slate-500 group-hover:text-slate-700'}`} />
               {!isCollapsed && <span className="text-xs">All Applications</span>}
             </div>
             {!isCollapsed ? (
@@ -151,7 +152,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             }`}
           >
             <div className="flex items-center gap-2.5">
-              <Kanban className={`w-4 h-4 shrink-0 transition-colors ${activeTab === 'pipeline' ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-600'}`} />
+              <Kanban className={`w-4 h-4 shrink-0 transition-colors ${activeTab === 'pipeline' ? 'text-blue-600' : 'text-slate-500 group-hover:text-slate-700'}`} />
               {!isCollapsed && <span className="text-xs">Active Pipeline</span>}
             </div>
             {!isCollapsed ? (
@@ -175,7 +176,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             }`}
           >
             <div className="flex items-center gap-2.5">
-              <BarChart3 className={`w-4 h-4 shrink-0 transition-colors ${activeTab === 'stats' ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-600'}`} />
+              <BarChart3 className={`w-4 h-4 shrink-0 transition-colors ${activeTab === 'stats' ? 'text-blue-600' : 'text-slate-500 group-hover:text-slate-700'}`} />
               {!isCollapsed && <span className="text-xs">Analytics & Stats</span>}
             </div>
           </button>
@@ -190,7 +191,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             }`}
           >
             <div className="flex items-center gap-2.5">
-              <Settings className={`w-4 h-4 shrink-0 transition-colors ${activeTab === 'settings' ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-600'}`} />
+              <Settings className={`w-4 h-4 shrink-0 transition-colors ${activeTab === 'settings' ? 'text-blue-600' : 'text-slate-500 group-hover:text-slate-700'}`} />
               {!isCollapsed && <span className="text-xs">Settings</span>}
             </div>
             {expirySettings.enabled && expiringTasksCount > 0 && (
@@ -230,7 +231,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               ) : (
                 <div className="p-2 rounded-xl bg-slate-100/70 border border-slate-200/60 text-xs font-mono text-slate-500 flex items-center justify-between">
                   <div className="flex items-center gap-1.5">
-                    <Clock className="w-3.5 h-3.5 text-slate-400" />
+                    <Clock className="w-3.5 h-3.5 text-slate-500" />
                     <span>Tasks: Up to date</span>
                   </div>
                 </div>
@@ -275,7 +276,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <button
                 onClick={onSignOut}
                 title="Sign out"
-                className="text-slate-400 hover:text-slate-700 p-1 rounded-md hover:bg-slate-100 transition-colors cursor-pointer"
+                aria-label="Sign out"
+                className="text-slate-500 hover:text-slate-700 p-1 rounded-md hover:bg-slate-100 transition-colors cursor-pointer"
               >
                 <LogOut className="w-3.5 h-3.5" />
               </button>

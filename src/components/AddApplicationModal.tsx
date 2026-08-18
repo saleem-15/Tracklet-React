@@ -75,8 +75,6 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
   onClose,
   onAdd,
 }) => {
-  if (!isOpen) return null;
-
   const todayStr = new Date().toISOString().split('T')[0];
 
   const [company, setCompany] = useState('');
@@ -127,6 +125,7 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
   };
 
   useEffect(() => {
+    if (!isOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         handleRequestClose();
@@ -134,7 +133,9 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onClose, isDirty]);
+  }, [isOpen, onClose, isDirty]);
+
+  if (!isOpen) return null;
 
   const handleAddContactItem = () => {
     if (!cName.trim() && !cEmail.trim() && !cPhone.trim()) return;
@@ -354,14 +355,14 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
                         Company <span className="text-rose-500">*</span>
                       </label>
                       <div className="relative">
-                        <Building2 className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <Building2 className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
                         <input
                           type="text"
                           required
                           value={company}
                           onChange={(e) => setCompany(e.target.value)}
                           placeholder="Linear, Stripe"
-                          className="w-full bg-white text-slate-900 placeholder-slate-400 pl-8 pr-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 text-xs font-semibold transition-all shadow-2xs"
+                          className="w-full bg-white text-slate-900 placeholder-slate-500 pl-8 pr-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 text-xs font-semibold transition-all shadow-2xs"
                         />
                       </div>
                     </div>
@@ -371,13 +372,13 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
                         Domain
                       </label>
                       <div className="relative">
-                        <Globe className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <Globe className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
                         <input
                           type="text"
                           value={companyDomain}
                           onChange={(e) => setCompanyDomain(e.target.value.toLowerCase().trim())}
                           placeholder="linear.app"
-                          className="w-full bg-white text-slate-900 placeholder-slate-400 pl-8 pr-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 font-mono text-xs transition-all shadow-2xs"
+                          className="w-full bg-white text-slate-900 placeholder-slate-500 pl-8 pr-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 font-mono text-xs transition-all shadow-2xs"
                         />
                       </div>
                     </div>
@@ -390,14 +391,14 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
                         Role <span className="text-rose-500">*</span>
                       </label>
                       <div className="relative">
-                        <Briefcase className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <Briefcase className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
                         <input
                           type="text"
                           required
                           value={role}
                           onChange={(e) => setRole(e.target.value)}
                           placeholder="Software Engineer"
-                          className="w-full bg-white text-slate-900 placeholder-slate-400 pl-8 pr-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 text-xs font-semibold transition-all shadow-2xs"
+                          className="w-full bg-white text-slate-900 placeholder-slate-500 pl-8 pr-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 text-xs font-semibold transition-all shadow-2xs"
                         />
                       </div>
                     </div>
@@ -407,7 +408,7 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
                         Job Link
                       </label>
                       <div className="relative">
-                        <Link className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <Link className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
                         <input
                           type="text"
                           value={jobLink}
@@ -425,7 +426,7 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
                             }
                           }}
                           placeholder="https://"
-                          className="w-full bg-white text-slate-900 placeholder-slate-400 pl-8 pr-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 font-mono text-xs transition-all shadow-2xs"
+                          className="w-full bg-white text-slate-900 placeholder-slate-500 pl-8 pr-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 font-mono text-xs transition-all shadow-2xs"
                         />
                       </div>
                     </div>
@@ -438,7 +439,7 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
                     <h3 className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
                       <ListTodo className="w-3.5 h-3.5 text-blue-500" />
                       Tasks
-                      {tasks.length > 0 && <span className="ml-1 text-slate-400 font-normal">({tasks.length})</span>}
+                      {tasks.length > 0 && <span className="ml-1 text-slate-500 font-normal">({tasks.length})</span>}
                     </h3>
                   </div>
 
@@ -455,7 +456,7 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
                           />
                         ))
                       ) : (
-                        <div className="text-slate-400 font-mono text-[11px] text-center py-3.5">
+                        <div className="text-slate-500 font-mono text-[11px] text-center py-3.5">
                           No tasks added.
                         </div>
                       )}
@@ -473,7 +474,7 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
                           }
                         }}
                         placeholder="Add a task..."
-                        className="flex-1 bg-white text-slate-900 placeholder-slate-400 px-3 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 text-xs transition-all"
+                        className="flex-1 bg-white text-slate-900 placeholder-slate-500 px-3 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 text-xs transition-all"
                       />
                       <input
                         type="date"
@@ -506,7 +507,7 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     placeholder="Referral info, salary target, interview notes..."
-                    className="w-full bg-white text-slate-900 placeholder-slate-400 p-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 focus:bg-white font-mono text-xs leading-relaxed resize-y shadow-2xs transition-all"
+                    className="w-full bg-white text-slate-900 placeholder-slate-500 p-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 focus:bg-white font-mono text-xs leading-relaxed resize-y shadow-2xs transition-all"
                   />
                 </div>
               </div>
@@ -555,7 +556,7 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
                     <h3 className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
                       <Users className="w-3.5 h-3.5 text-blue-500" />
                       Key Contacts
-                      {contacts.length > 0 && <span className="ml-1 text-slate-400 font-normal">({contacts.length})</span>}
+                      {contacts.length > 0 && <span className="ml-1 text-slate-500 font-normal">({contacts.length})</span>}
                     </h3>
                   </div>
 
@@ -586,7 +587,7 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
                                     href={c.linkedIn}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                                    className="p-1 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
                                     title="LinkedIn Profile"
                                   >
                                     <Linkedin className="w-3.5 h-3.5" />
@@ -603,7 +604,7 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
                               <div className="mt-2 pl-[42px] space-y-1">
                                 {c.phone && (
                                   <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-mono bg-slate-50 px-2 py-1 rounded border border-slate-200/60">
-                                    <Phone className="w-3 h-3 text-slate-400 shrink-0" />
+                                    <Phone className="w-3 h-3 text-slate-500 shrink-0" />
                                     <span className="truncate">{c.phone}</span>
                                   </div>
                                 )}
@@ -618,7 +619,7 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
                         );
                       })
                     ) : (
-                      <div className="text-slate-400 font-mono text-[11px] text-center py-3.5">
+                      <div className="text-slate-500 font-mono text-[11px] text-center py-3.5">
                         No contacts added.
                       </div>
                     )}
@@ -631,14 +632,14 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
                           value={cName}
                           onChange={(e) => setCName(e.target.value)}
                           placeholder="Name *"
-                          className="bg-white text-slate-900 placeholder-slate-400 px-2.5 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:border-blue-400 text-xs font-medium"
+                          className="bg-white text-slate-900 placeholder-slate-500 px-2.5 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:border-blue-400 text-xs font-medium"
                         />
                         <input
                           type="text"
                           value={cRole}
                           onChange={(e) => setCRole(e.target.value)}
                           placeholder="Role"
-                          className="bg-white text-slate-900 placeholder-slate-400 px-2.5 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:border-blue-400 text-xs"
+                          className="bg-white text-slate-900 placeholder-slate-500 px-2.5 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:border-blue-400 text-xs"
                         />
                       </div>
 
@@ -648,14 +649,14 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
                           value={cEmail}
                           onChange={(e) => setCEmail(e.target.value)}
                           placeholder="Email"
-                          className="bg-white text-slate-900 placeholder-slate-400 px-2.5 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:border-blue-400 font-mono text-[11px]"
+                          className="bg-white text-slate-900 placeholder-slate-500 px-2.5 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:border-blue-400 font-mono text-[11px]"
                         />
                         <input
                           type="tel"
                           value={cPhone}
                           onChange={(e) => setCPhone(e.target.value)}
                           placeholder="Phone"
-                          className="bg-white text-slate-900 placeholder-slate-400 px-2.5 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:border-blue-400 font-mono text-[11px]"
+                          className="bg-white text-slate-900 placeholder-slate-500 px-2.5 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:border-blue-400 font-mono text-[11px]"
                         />
                       </div>
 
@@ -666,14 +667,14 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
                             value={cLinkedIn}
                             onChange={(e) => setCLinkedIn(e.target.value)}
                             placeholder="LinkedIn URL (https://linkedin.com/in/...)"
-                            className="w-full bg-white text-slate-900 placeholder-slate-400 px-2.5 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:border-blue-400 font-mono text-[11px]"
+                            className="w-full bg-white text-slate-900 placeholder-slate-500 px-2.5 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:border-blue-400 font-mono text-[11px]"
                           />
                           <textarea
                             value={cNotes}
                             onChange={(e) => setCNotes(e.target.value)}
                             placeholder="Contact notes..."
                             rows={2}
-                            className="w-full bg-white text-slate-900 placeholder-slate-400 p-2 rounded-lg border border-slate-200 text-xs resize-none"
+                            className="w-full bg-white text-slate-900 placeholder-slate-500 p-2 rounded-lg border border-slate-200 text-xs resize-none"
                           />
                         </div>
                       ) : (

@@ -192,7 +192,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onShowToast }) => {
             type="button"
             onClick={closeAuthModal}
             aria-label="Close dialog"
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+            className="p-1.5 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -352,7 +352,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onShowToast }) => {
             <div className="space-y-3 pt-1">
               <div className="relative flex items-center justify-center">
                 <div className="border-t border-slate-200 w-full"></div>
-                <span className="bg-white px-3 text-[11px] font-mono text-slate-400 uppercase tracking-wider shrink-0 font-medium">
+                <span className="bg-white px-3 text-[11px] font-mono text-slate-500 uppercase tracking-wider shrink-0 font-medium">
                   OR
                 </span>
                 <div className="border-t border-slate-200 w-full"></div>

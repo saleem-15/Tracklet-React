@@ -77,7 +77,7 @@ export const GuestMigrationModal: React.FC<GuestMigrationModalProps> = ({
                 </div>
               ))}
               {guestApplications.length > 5 && (
-                <div className="pt-1.5 text-center text-[11px] font-mono text-slate-400">
+                <div className="pt-1.5 text-center text-[11px] font-mono text-slate-500">
                   + {guestApplications.length - 5} more applications
                 </div>
               )}

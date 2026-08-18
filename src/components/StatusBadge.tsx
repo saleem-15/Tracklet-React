@@ -42,7 +42,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, size = 'sm' })
       case 'Archived':
         return {
           bg: 'bg-slate-50 text-slate-500 border-slate-200/60',
-          dot: 'bg-slate-400'
+          dot: 'bg-slate-500'
         };
       default:
         return {

@@ -111,7 +111,7 @@ export const TopBar: React.FC<TopBarProps> = ({
       <div className="flex items-center gap-2 flex-1 max-w-3xl">
         {/* Search Input */}
         <div className="relative flex-1 max-w-xs">
-          <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+          <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
           <input
             ref={searchInputRef}
             type="text"
@@ -122,8 +122,10 @@ export const TopBar: React.FC<TopBarProps> = ({
           />
           {filter.search && (
             <button
+              type="button"
+              aria-label="Clear search"
               onClick={() => setFilter((prev) => ({ ...prev, search: '' }))}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 cursor-pointer"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700 cursor-pointer p-0.5"
             >
               <X className="w-3.5 h-3.5" />
             </button>
