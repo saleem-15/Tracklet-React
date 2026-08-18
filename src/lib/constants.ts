@@ -99,3 +99,18 @@ export const AUTH_PROVIDERS = {
 
 export const EMAIL_VERIFICATION_COOLDOWN_SECONDS = 60;
 
+export const CONTACT_AVATAR_COLORS = [
+  'bg-blue-100 text-blue-700 border-blue-200',
+  'bg-amber-100 text-amber-700 border-amber-200',
+  'bg-emerald-100 text-emerald-700 border-emerald-200',
+  'bg-indigo-100 text-indigo-700 border-indigo-200',
+  'bg-rose-100 text-rose-700 border-rose-200',
+];
+
+export function getInitials(name: string): string {
+  if (!name || !name.trim()) return '??';
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
