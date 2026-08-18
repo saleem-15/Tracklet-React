@@ -65,9 +65,7 @@ function getInitials(name: string): string {
 }
 
 export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({ app, onClose, onUpdateApp, onDeleteApp }) => {
-  if (!app) return null;
-
-  const [notes, setNotes] = useState(app.notes || '');
+  const [notes, setNotes] = useState(app?.notes || '');
   const [isSavingNotes, setIsSavingNotes] = useState(false);
   const [hasUnsavedNotes, setHasUnsavedNotes] = useState(false);
   const [showSavedToast, setShowSavedToast] = useState(false);
@@ -105,16 +103,20 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({ 
 
   // Edit Info form — covers company, role, platform, date, job link, domain, contact email
   const [isEditingInfo, setIsEditingInfo] = useState(false);
-  const [editCompany, setEditCompany] = useState(app.company || '');
-  const [editRole, setEditRole] = useState(app.role || '');
-  const [editPlatform, setEditPlatform] = useState<JobPlatform>(app.platform || 'LinkedIn');
-  const [editDateApplied, setEditDateApplied] = useState(app.dateApplied || '');
-  const [editJobLink, setEditJobLink] = useState(app.jobLink || '');
-  const [editCompanyDomain, setEditCompanyDomain] = useState(app.companyDomain || '');
-  const [editContactEmail, setEditContactEmail] = useState(app.contactEmail || '');
+  const [editCompany, setEditCompany] = useState(app?.company || '');
+  const [editRole, setEditRole] = useState(app?.role || '');
+  const [editPlatform, setEditPlatform] = useState<JobPlatform>(app?.platform || 'LinkedIn');
+  const [editDateApplied, setEditDateApplied] = useState(app?.dateApplied || '');
+  const [editJobLink, setEditJobLink] = useState(app?.jobLink || '');
+  const [editCompanyDomain, setEditCompanyDomain] = useState(app?.companyDomain || '');
+  const [editContactEmail, setEditContactEmail] = useState(app?.contactEmail || '');
   const [isSavingInfo, setIsSavingInfo] = useState(false);
 
+  // Unsaved changes guard
+  const [showUnsavedPrompt, setShowUnsavedPrompt] = useState(false);
+
   useEffect(() => {
+    if (!app) return;
     setNotes(app.notes || '');
     setHasUnsavedNotes(false);
     setEmailSender(app.contactEmail || '');
@@ -126,11 +128,11 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({ 
     setEditJobLink(app.jobLink || '');
     setEditCompanyDomain(app.companyDomain || '');
     setEditContactEmail(app.contactEmail || '');
-  }, [app.id, app.notes, app.contactEmail, app.company, app.role, app.platform, app.dateApplied, app.companyDomain, app.jobLink]);
+  }, [app?.id, app?.notes, app?.contactEmail, app?.company, app?.role, app?.platform, app?.dateApplied, app?.companyDomain, app?.jobLink]);
 
   const handleSaveInfo = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!editCompany.trim() || !editRole.trim()) return;
+    if (!app || !editCompany.trim() || !editRole.trim()) return;
     setIsSavingInfo(true);
     try {
       await onUpdateApp(app.id, {
@@ -155,18 +157,20 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({ 
 
   // Tasks
   const handleToggleTask = async (taskId: string) => {
+    if (!app) return;
     const updatedTasks = (app.tasks || []).map((t) => t.id === taskId ? { ...t, completed: !t.completed } : t);
     await onUpdateApp(app.id, { tasks: updatedTasks, updatedAt: new Date().toISOString() });
   };
 
   const handleEditTask = async (taskId: string, updatedFields: Partial<ApplicationTask>) => {
+    if (!app) return;
     const updatedTasks = (app.tasks || []).map((t) => t.id === taskId ? { ...t, ...updatedFields } : t);
     await onUpdateApp(app.id, { tasks: updatedTasks, updatedAt: new Date().toISOString() });
   };
 
   const handleAddTask = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newTaskTitle.trim()) return;
+    if (!app || !newTaskTitle.trim()) return;
     const newTask: ApplicationTask = { id: `task-${Date.now()}`, title: newTaskTitle.trim(), completed: false, dueDate: newTaskDueDate || undefined };
     await onUpdateApp(app.id, { tasks: [...(app.tasks || []), newTask], updatedAt: new Date().toISOString() });
     setNewTaskTitle('');
@@ -174,6 +178,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({ 
   };
 
   const handleDeleteTask = async (taskId: string) => {
+    if (!app) return;
     await onUpdateApp(app.id, { tasks: (app.tasks || []).filter((t) => t.id !== taskId), updatedAt: new Date().toISOString() });
   };
 
@@ -193,7 +198,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({ 
 
   const handleSaveContact = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!cName.trim()) return;
+    if (!app || !cName.trim()) return;
     let updatedContacts: Contact[];
     if (editingContactId) {
       updatedContacts = (app.contacts || []).map((c) =>
@@ -212,13 +217,14 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({ 
   };
 
   const handleDeleteContact = async (contactId: string) => {
+    if (!app) return;
     await onUpdateApp(app.id, { contacts: (app.contacts || []).filter((c) => c.id !== contactId), updatedAt: new Date().toISOString() });
   };
 
   // Email log
   const handleAddEmailLog = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!emailSubject.trim() || !emailSender.trim()) return;
+    if (!app || !emailSubject.trim() || !emailSender.trim()) return;
     const newEmailLog = { id: `email-${Date.now()}`, subject: emailSubject.trim(), sender: emailSender.trim(), recipient: emailRecipient.trim() || undefined, date: emailDate || new Date().toISOString().split('T')[0], snippet: emailSnippet.trim() || undefined };
     await onUpdateApp(app.id, { emails: [...(app.emails || []), newEmailLog], updatedAt: new Date().toISOString() });
     setEmailSubject(''); setEmailSender(app.contactEmail || ''); setEmailRecipient(''); setEmailDate(''); setEmailSnippet('');
@@ -227,10 +233,10 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({ 
 
   // Clipboard
   const handleCopyEmail = () => {
-    if (app.contactEmail) { navigator.clipboard.writeText(app.contactEmail); setCopiedEmail(true); setTimeout(() => setCopiedEmail(false), 2000); }
+    if (app?.contactEmail) { navigator.clipboard.writeText(app.contactEmail); setCopiedEmail(true); setTimeout(() => setCopiedEmail(false), 2000); }
   };
   const handleCopyLink = () => {
-    if (app.jobLink) { navigator.clipboard.writeText(app.jobLink); setCopiedLink(true); setTimeout(() => setCopiedLink(false), 2000); }
+    if (app?.jobLink) { navigator.clipboard.writeText(app.jobLink); setCopiedLink(true); setTimeout(() => setCopiedLink(false), 2000); }
   };
   const handleCopyPhone = (phoneStr: string, contactId: string) => {
     navigator.clipboard.writeText(phoneStr);
@@ -246,12 +252,12 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({ 
       fetchStatusHistory(app.id)
         .then((entries) => { if (isMounted) setHistoryEntries(entries); })
         .finally(() => { if (isMounted) setIsLoadingHistory(false); });
+    } else {
+      setHistoryEntries([]);
     }
     return () => { isMounted = false; };
-  }, [app.id, app.status]);
+  }, [app?.id, app?.status]);
 
-  // Unsaved changes guard
-  const [showUnsavedPrompt, setShowUnsavedPrompt] = useState(false);
   const isDirty = hasUnsavedNotes || isEditingInfo || cName.trim() !== '' || showAddContact;
 
   const handleRequestClose = () => {
@@ -260,22 +266,27 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({ 
   };
 
   useEffect(() => {
+    if (!app) return;
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') { if (showUnsavedPrompt) setShowUnsavedPrompt(false); else handleRequestClose(); }
     };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [showUnsavedPrompt, isDirty]);
+  }, [app, showUnsavedPrompt, isDirty]);
 
   const handleStatusChange = async (newStatus: ApplicationStatus) => {
-    if (newStatus === app.status) return;
+    if (!app || newStatus === app.status) return;
     const now = new Date().toISOString();
     await onUpdateApp(app.id, { status: newStatus, stageUpdatedAt: now, updatedAt: now });
   };
 
-  const handleNotesChange = (val: string) => { setNotes(val); setHasUnsavedNotes(val !== (app.notes || '')); };
+  const handleNotesChange = (val: string) => {
+    setNotes(val);
+    setHasUnsavedNotes(val !== (app?.notes || ''));
+  };
 
   const handleSaveNotes = async () => {
+    if (!app) return;
     setIsSavingNotes(true);
     await onUpdateApp(app.id, { notes: notes.trim(), updatedAt: new Date().toISOString() });
     setIsSavingNotes(false);
@@ -285,8 +296,11 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({ 
   };
 
   const handleDelete = async () => {
+    if (!app) return;
     if (confirm(`Delete application for ${app.company} – ${app.role}?`)) { await onDeleteApp(app.id); onClose(); }
   };
+
+  if (!app) return null;
 
   const daysInStage = calculateDaysInStage(app.stageUpdatedAt);
   const completedTasksCount = app.tasks ? app.tasks.filter((t) => t.completed).length : 0;
@@ -372,14 +386,14 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({ 
                 <div>
                   <label className="block text-[11px] font-mono font-medium text-slate-500 mb-1">Company *</label>
                   <div className="relative">
-                    <Building2 className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-slate-400" />
+                    <Building2 className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-slate-500" />
                     <input type="text" required value={editCompany} onChange={(e) => setEditCompany(e.target.value)} placeholder="e.g. Google" className="w-full bg-white text-slate-900 font-semibold pl-8 pr-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 text-xs transition-all" />
                   </div>
                 </div>
                 <div>
                   <label className="block text-[11px] font-mono font-medium text-slate-500 mb-1">Role *</label>
                   <div className="relative">
-                    <Briefcase className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-slate-400" />
+                    <Briefcase className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-slate-500" />
                     <input type="text" required value={editRole} onChange={(e) => setEditRole(e.target.value)} placeholder="e.g. Senior Software Engineer" className="w-full bg-white text-slate-900 font-semibold pl-8 pr-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 text-xs transition-all" />
                   </div>
                 </div>
@@ -406,14 +420,14 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({ 
                 <div>
                   <label className="block text-[11px] font-mono font-medium text-slate-500 mb-1">Job Posting URL</label>
                   <div className="relative">
-                    <Link className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-slate-400" />
+                    <Link className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-slate-500" />
                     <input type="url" value={editJobLink} onChange={(e) => setEditJobLink(e.target.value)} placeholder="https://company.com/jobs/..." className="w-full bg-white text-slate-900 font-mono pl-8 pr-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 text-xs transition-all" />
                   </div>
                 </div>
                 <div>
                   <label className="block text-[11px] font-mono font-medium text-slate-500 mb-1">Primary Contact Email</label>
                   <div className="relative">
-                    <AtSign className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-slate-400" />
+                    <AtSign className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-slate-500" />
                     <input type="email" value={editContactEmail} onChange={(e) => setEditContactEmail(e.target.value)} placeholder="recruiter@company.com" className="w-full bg-white text-slate-900 font-mono pl-8 pr-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 text-xs transition-all" />
                   </div>
                 </div>
@@ -421,7 +435,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({ 
 
               <div className="flex items-center justify-end gap-2 pt-1">
                 <button type="button" onClick={() => setIsEditingInfo(false)} className="px-3 py-1.5 rounded-xl text-slate-600 hover:bg-slate-100 font-medium text-xs cursor-pointer transition-colors">Cancel</button>
-                <button type="submit" disabled={isSavingInfo || !editCompany.trim() || !editRole.trim()} className="flex items-center gap-1.5 px-4 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-200 disabled:text-slate-400 text-white rounded-xl font-bold text-xs cursor-pointer shadow-sm transition-all">
+                <button type="submit" disabled={isSavingInfo || !editCompany.trim() || !editRole.trim()} className="flex items-center gap-1.5 px-4 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-200 disabled:text-slate-500 text-white rounded-xl font-bold text-xs cursor-pointer shadow-sm transition-all">
                   <Save className="w-3.5 h-3.5" />
                   <span>{isSavingInfo ? 'Saving...' : 'Save Changes'}</span>
                 </button>
@@ -432,10 +446,10 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({ 
           {/* ── Quick Metrics Bar ── */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
-              { label: 'Platform', value: app.platform || '—', icon: <Globe className="w-3.5 h-3.5 text-slate-400" /> },
-              { label: 'Applied', value: app.dateApplied || '—', icon: <Calendar className="w-3.5 h-3.5 text-slate-400" /> },
-              { label: 'In Stage', value: `${daysInStage}d`, icon: <Clock className="w-3.5 h-3.5 text-slate-400" /> },
-              { label: 'Tasks', value: totalTasksCount > 0 ? `${completedTasksCount}/${totalTasksCount}` : '—', icon: <CheckSquare className="w-3.5 h-3.5 text-slate-400" /> },
+              { label: 'Platform', value: app.platform || '—', icon: <Globe className="w-3.5 h-3.5 text-slate-500" /> },
+              { label: 'Applied', value: app.dateApplied || '—', icon: <Calendar className="w-3.5 h-3.5 text-slate-500" /> },
+              { label: 'In Stage', value: `${daysInStage}d`, icon: <Clock className="w-3.5 h-3.5 text-slate-500" /> },
+              { label: 'Tasks', value: totalTasksCount > 0 ? `${completedTasksCount}/${totalTasksCount}` : '—', icon: <CheckSquare className="w-3.5 h-3.5 text-slate-500" /> },
             ].map((m) => (
               <div key={m.label} className="bg-slate-50/80 rounded-xl border border-slate-200/80 px-3.5 py-3 flex items-center gap-3 shadow-2xs hover:border-slate-300 transition-colors">
                 <div className="w-7 h-7 rounded-lg bg-white border border-slate-200/80 flex items-center justify-center shrink-0 shadow-2xs">
@@ -493,7 +507,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({ 
                       value={newTaskTitle}
                       onChange={(e) => setNewTaskTitle(e.target.value)}
                       placeholder="Add a task…"
-                      className="flex-1 bg-white text-slate-900 placeholder-slate-400 px-3 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 text-xs transition-all"
+                      className="flex-1 bg-white text-slate-900 placeholder-slate-500 px-3 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 text-xs transition-all"
                     />
                     <input
                       type="date"
@@ -527,7 +541,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({ 
                   onChange={(e) => handleNotesChange(e.target.value)}
                   onKeyDown={(e) => { if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); if (hasUnsavedNotes) handleSaveNotes(); } }}
                   placeholder="Interview prep notes, follow-up actions, salary details, contacts…"
-                  className="w-full bg-white text-slate-900 placeholder-slate-400 p-3.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 focus:bg-white font-mono text-xs leading-relaxed resize-y shadow-2xs transition-all"
+                  className="w-full bg-white text-slate-900 placeholder-slate-500 p-3.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 focus:bg-white font-mono text-xs leading-relaxed resize-y shadow-2xs transition-all"
                 />
               </div>
 
@@ -555,7 +569,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({ 
                         href={app.jobLink}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                        className="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-colors"
                         title="Open in new tab"
                       >
                         <ExternalLink className="w-3.5 h-3.5" />
@@ -628,13 +642,13 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({ 
 
                 {showAddEmail && (
                   <form onSubmit={handleAddEmailLog} className="p-3 bg-white rounded-xl border border-slate-200 space-y-2 shadow-sm">
-                    <input type="text" required value={emailSubject} onChange={(e) => setEmailSubject(e.target.value)} placeholder="Subject *" className="w-full bg-slate-50 text-slate-900 placeholder-slate-400 px-2.5 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:border-blue-400 text-xs" />
+                    <input type="text" required value={emailSubject} onChange={(e) => setEmailSubject(e.target.value)} placeholder="Subject *" className="w-full bg-slate-50 text-slate-900 placeholder-slate-500 px-2.5 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:border-blue-400 text-xs" />
                     <div className="grid grid-cols-2 gap-2">
-                      <input type="text" required value={emailSender} onChange={(e) => setEmailSender(e.target.value)} placeholder="From *" className="bg-slate-50 text-slate-900 placeholder-slate-400 px-2.5 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:border-blue-400 font-mono text-[11px]" />
-                      <input type="text" value={emailRecipient} onChange={(e) => setEmailRecipient(e.target.value)} placeholder="To (optional)" className="bg-slate-50 text-slate-900 placeholder-slate-400 px-2.5 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:border-blue-400 font-mono text-[11px]" />
+                      <input type="text" required value={emailSender} onChange={(e) => setEmailSender(e.target.value)} placeholder="From *" className="bg-slate-50 text-slate-900 placeholder-slate-500 px-2.5 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:border-blue-400 font-mono text-[11px]" />
+                      <input type="text" value={emailRecipient} onChange={(e) => setEmailRecipient(e.target.value)} placeholder="To (optional)" className="bg-slate-50 text-slate-900 placeholder-slate-500 px-2.5 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:border-blue-400 font-mono text-[11px]" />
                     </div>
                     <input type="date" value={emailDate} onChange={(e) => setEmailDate(e.target.value)} className="w-full bg-slate-50 text-slate-900 px-2.5 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:border-blue-400 font-mono text-[11px]" />
-                    <textarea value={emailSnippet} onChange={(e) => setEmailSnippet(e.target.value)} placeholder="Snippet / summary…" rows={2} className="w-full bg-slate-50 text-slate-900 placeholder-slate-400 p-2 rounded-lg border border-slate-200 text-xs resize-none" />
+                    <textarea value={emailSnippet} onChange={(e) => setEmailSnippet(e.target.value)} placeholder="Snippet / summary…" rows={2} className="w-full bg-slate-50 text-slate-900 placeholder-slate-500 p-2 rounded-lg border border-slate-200 text-xs resize-none" />
                     <div className="flex justify-end gap-2">
                       <button type="button" onClick={() => setShowAddEmail(false)} className="px-3 py-1 text-slate-600 hover:bg-slate-100 rounded-lg text-xs cursor-pointer">Cancel</button>
                       <button type="submit" disabled={!emailSubject.trim() || !emailSender.trim()} className="px-3 py-1 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-200 text-white rounded-lg text-xs font-semibold cursor-pointer">Save</button>
@@ -707,15 +721,15 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({ 
                             </div>
 
                             <div className="grid grid-cols-2 gap-2">
-                              <input type="text" required value={cName} onChange={(e) => setCName(e.target.value)} placeholder="Name *" className="bg-white text-slate-900 placeholder-slate-400 px-2.5 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:border-blue-400 text-xs" />
-                              <input type="text" value={cRole} onChange={(e) => setCRole(e.target.value)} placeholder="Role / Title" className="bg-white text-slate-900 placeholder-slate-400 px-2.5 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:border-blue-400 text-xs" />
+                              <input type="text" required value={cName} onChange={(e) => setCName(e.target.value)} placeholder="Name *" className="bg-white text-slate-900 placeholder-slate-500 px-2.5 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:border-blue-400 text-xs" />
+                              <input type="text" value={cRole} onChange={(e) => setCRole(e.target.value)} placeholder="Role / Title" className="bg-white text-slate-900 placeholder-slate-500 px-2.5 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:border-blue-400 text-xs" />
                             </div>
                             <div className="grid grid-cols-2 gap-2">
-                              <input type="email" value={cEmail} onChange={(e) => setCEmail(e.target.value)} placeholder="Email" className="bg-white text-slate-900 placeholder-slate-400 px-2.5 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:border-blue-400 font-mono text-[11px]" />
-                              <input type="tel" value={cPhone} onChange={(e) => setCPhone(e.target.value)} placeholder="Phone" className="bg-white text-slate-900 placeholder-slate-400 px-2.5 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:border-blue-400 font-mono text-[11px]" />
+                              <input type="email" value={cEmail} onChange={(e) => setCEmail(e.target.value)} placeholder="Email" className="bg-white text-slate-900 placeholder-slate-500 px-2.5 py-1.5 rounded-lg border border-slate-200 font-mono text-[11px]" />
+                              <input type="tel" value={cPhone} onChange={(e) => setCPhone(e.target.value)} placeholder="Phone" className="bg-white text-slate-900 placeholder-slate-500 px-2.5 py-1.5 rounded-lg border border-slate-200 font-mono text-[11px]" />
                             </div>
-                            <input type="url" value={cLinkedIn} onChange={(e) => setCLinkedIn(e.target.value)} placeholder="LinkedIn URL" className="w-full bg-white text-slate-900 placeholder-slate-400 px-2.5 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:border-blue-400 font-mono text-[11px]" />
-                            <textarea value={cNotes} onChange={(e) => setCNotes(e.target.value)} placeholder="Notes about this contact…" rows={2} className="w-full bg-white text-slate-900 placeholder-slate-400 p-2 rounded-lg border border-slate-200 text-xs resize-none" />
+                            <input type="url" value={cLinkedIn} onChange={(e) => setCLinkedIn(e.target.value)} placeholder="LinkedIn URL" className="w-full bg-white text-slate-900 placeholder-slate-500 px-2.5 py-1.5 rounded-lg border border-slate-200 font-mono text-[11px]" />
+                            <textarea value={cNotes} onChange={(e) => setCNotes(e.target.value)} placeholder="Notes about this contact…" rows={2} className="w-full bg-white text-slate-900 placeholder-slate-500 p-2 rounded-lg border border-slate-200 text-xs resize-none" />
                             <div className="flex justify-end gap-2">
                               <button type="button" onClick={handleCancelContactForm} className="px-3 py-1 text-slate-600 hover:bg-slate-100 rounded-lg text-xs cursor-pointer">Cancel</button>
                               <button type="submit" disabled={!cName.trim()} className="px-3 py-1 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-200 text-white rounded-lg text-xs font-semibold cursor-pointer">Save</button>
@@ -741,7 +755,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({ 
                                 <EmailIconButton email={contact.email} title={`Email ${contact.name}`} />
                               )}
                               {contact.linkedIn && (
-                                <a href={contact.linkedIn} target="_blank" rel="noopener noreferrer" className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="LinkedIn">
+                                <a href={contact.linkedIn} target="_blank" rel="noopener noreferrer" className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="LinkedIn">
                                   <Linkedin className="w-3.5 h-3.5" />
                                 </a>
                               )}
@@ -764,7 +778,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({ 
                               {contact.phone && (
                                 <div className="flex items-center justify-between text-[11px] text-slate-500 font-mono bg-slate-50 px-2.5 py-1.5 rounded-lg border border-slate-200/60 group/phone">
                                   <div className="flex items-center gap-1.5 truncate">
-                                    <Phone className="w-3 h-3 text-slate-400 shrink-0" />
+                                    <Phone className="w-3 h-3 text-slate-500 shrink-0" />
                                     <span className="truncate">{contact.phone}</span>
                                   </div>
                                   <button type="button" onClick={() => handleCopyPhone(contact.phone!, contact.id)} className="opacity-0 group-hover/phone:opacity-100 transition-opacity flex items-center gap-1 text-[10px] text-blue-600 hover:text-blue-700 px-1.5 py-0.5 rounded cursor-pointer font-semibold">
@@ -793,15 +807,15 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({ 
                         <span className="text-[11px] font-mono font-bold text-slate-700">New Contact</span>
                       </div>
                       <div className="grid grid-cols-2 gap-2">
-                        <input type="text" required value={cName} onChange={(e) => setCName(e.target.value)} placeholder="Name *" className="bg-white text-slate-900 placeholder-slate-400 px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs" />
-                        <input type="text" value={cRole} onChange={(e) => setCRole(e.target.value)} placeholder="Role / Title" className="bg-white text-slate-900 placeholder-slate-400 px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs" />
+                        <input type="text" required value={cName} onChange={(e) => setCName(e.target.value)} placeholder="Name *" className="bg-white text-slate-900 placeholder-slate-500 px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs" />
+                        <input type="text" value={cRole} onChange={(e) => setCRole(e.target.value)} placeholder="Role / Title" className="bg-white text-slate-900 placeholder-slate-500 px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs" />
                       </div>
                       <div className="grid grid-cols-2 gap-2">
-                        <input type="email" value={cEmail} onChange={(e) => setCEmail(e.target.value)} placeholder="Email" className="bg-white text-slate-900 placeholder-slate-400 px-2.5 py-1.5 rounded-lg border border-slate-200 font-mono text-[11px]" />
-                        <input type="tel" value={cPhone} onChange={(e) => setCPhone(e.target.value)} placeholder="Phone" className="bg-white text-slate-900 placeholder-slate-400 px-2.5 py-1.5 rounded-lg border border-slate-200 font-mono text-[11px]" />
+                        <input type="email" value={cEmail} onChange={(e) => setCEmail(e.target.value)} placeholder="Email" className="bg-white text-slate-900 placeholder-slate-500 px-2.5 py-1.5 rounded-lg border border-slate-200 font-mono text-[11px]" />
+                        <input type="tel" value={cPhone} onChange={(e) => setCPhone(e.target.value)} placeholder="Phone" className="bg-white text-slate-900 placeholder-slate-500 px-2.5 py-1.5 rounded-lg border border-slate-200 font-mono text-[11px]" />
                       </div>
-                      <input type="url" value={cLinkedIn} onChange={(e) => setCLinkedIn(e.target.value)} placeholder="LinkedIn URL" className="w-full bg-white text-slate-900 placeholder-slate-400 px-2.5 py-1.5 rounded-lg border border-slate-200 font-mono text-[11px]" />
-                      <textarea value={cNotes} onChange={(e) => setCNotes(e.target.value)} placeholder="Notes about this contact…" rows={2} className="w-full bg-white text-slate-900 placeholder-slate-400 p-2 rounded-lg border border-slate-200 text-xs resize-none" />
+                      <input type="url" value={cLinkedIn} onChange={(e) => setCLinkedIn(e.target.value)} placeholder="LinkedIn URL" className="w-full bg-white text-slate-900 placeholder-slate-500 px-2.5 py-1.5 rounded-lg border border-slate-200 font-mono text-[11px]" />
+                      <textarea value={cNotes} onChange={(e) => setCNotes(e.target.value)} placeholder="Notes about this contact…" rows={2} className="w-full bg-white text-slate-900 placeholder-slate-500 p-2 rounded-lg border border-slate-200 text-xs resize-none" />
                       <div className="flex justify-end gap-2">
                         <button type="button" onClick={handleCancelContactForm} className="px-3 py-1 text-slate-600 hover:bg-slate-100 rounded-lg text-xs cursor-pointer">Cancel</button>
                         <button type="submit" disabled={!cName.trim()} className="px-3 py-1 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-200 text-white rounded-lg text-xs font-semibold cursor-pointer">Save Contact</button>
@@ -846,7 +860,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({ 
                               {entry.fromStatus ? (
                                 <>
                                   <StatusBadge status={entry.fromStatus} size="sm" />
-                                  <ArrowRight className="w-3 h-3 text-slate-400 shrink-0" />
+                                  <ArrowRight className="w-3 h-3 text-slate-500 shrink-0" />
                                   <StatusBadge status={entry.toStatus} size="sm" />
                                 </>
                               ) : (
