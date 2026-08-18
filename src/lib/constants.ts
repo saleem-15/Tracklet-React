@@ -50,7 +50,7 @@ export const PIPELINE_COLUMNS: {
   { 
     status: 'Applied', 
     title: 'Applied', 
-    dot: 'bg-slate-400',
+    dot: 'bg-slate-500',
     tagBg: 'text-slate-600 bg-slate-100'
   },
   { 

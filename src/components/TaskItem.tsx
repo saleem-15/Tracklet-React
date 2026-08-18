@@ -207,7 +207,7 @@ export const TaskItem: React.FC<TaskItemProps> = ({
               <span
                 className={`text-xs truncate font-semibold block transition-opacity duration-300 ${
                   task.completed
-                    ? 'text-slate-400 opacity-60'
+                    ? 'text-slate-500 opacity-70'
                     : 'text-slate-900 hover:text-blue-600'
                 }`}
               >

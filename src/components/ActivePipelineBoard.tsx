@@ -39,7 +39,7 @@ const PIPELINE_COLUMNS: { status: ApplicationStatus; title: string; dot: string;
   { 
     status: 'Applied', 
     title: 'Applied', 
-    dot: 'bg-slate-400',
+    dot: 'bg-slate-500',
     tagBg: 'text-slate-600 bg-slate-100'
   },
   { 
@@ -358,7 +358,7 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
                               ) : null}
                               {app.contacts && app.contacts.length > 0 ? (
                                 <span className="inline-flex items-center gap-1 text-slate-600 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-200/80" title={`${app.contacts.length} contact(s)`}>
-                                  <Users className="w-2.5 h-2.5 text-slate-400" />
+                                  <Users className="w-2.5 h-2.5 text-slate-500" />
                                   <span>{app.contacts.length} contact{app.contacts.length > 1 ? 's' : ''}</span>
                                 </span>
                               ) : null}

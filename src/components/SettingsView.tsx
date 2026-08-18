@@ -199,7 +199,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   <Sliders className="w-3.5 h-3.5 text-blue-600" />
                   <span>Custom Threshold Range Slider</span>
                 </span>
-                <span className="text-[11px] font-mono text-slate-400">
+                <span className="text-[11px] font-mono text-slate-500">
                   Range: 1h - 168h (1 week)
                 </span>
               </div>
@@ -216,7 +216,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     onChange={(e) => handleThresholdChange(parseInt(e.target.value) || 24)}
                     className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600 focus:outline-none"
                   />
-                  <div className="flex justify-between text-[10px] font-mono text-slate-400">
+                  <div className="flex justify-between text-[10px] font-mono text-slate-500">
                     <span>1 hour</span>
                     <span>24h (1d)</span>
                     <span>48h (2d)</span>
@@ -287,7 +287,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         <span className="font-bold text-slate-900 text-xs truncate">
                           {item.application.company}
                         </span>
-                        <span className="text-slate-400 text-xs font-normal">•</span>
+                        <span className="text-slate-500 text-xs font-normal">•</span>
                         <span className="text-slate-600 text-xs truncate">
                           {item.application.role}
                         </span>
@@ -352,7 +352,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 <span className="text-[11px] text-slate-500">Bulk upload applications file</span>
               </div>
             </div>
-            <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-transform" />
+            <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-transform" />
           </button>
 
           {onExportCSV && (
@@ -368,7 +368,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   <span className="text-[11px] text-slate-500">Download all data as tabular CSV</span>
                 </div>
               </div>
-              <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-slate-700" />
+              <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-slate-700" />
             </button>
           )}
 
@@ -385,7 +385,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   <span className="text-[11px] text-slate-500">Reset to 20+ realistic job entries</span>
                 </div>
               </div>
-              <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-amber-600" />
+              <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-amber-600" />
             </button>
           )}
         </div>

@@ -56,12 +56,12 @@ export const ConversionFunnelCard: React.FC<ConversionFunnelCardProps> = ({
 
                 <div className="flex items-center gap-3">
                   {idx > 0 && (
-                    <span className="text-xs text-slate-400">
+                    <span className="text-xs text-slate-500">
                       Pass rate: <strong className="text-slate-700 font-semibold">{stage.conversionFromPrev}%</strong>
                     </span>
                   )}
                   <span className="font-bold text-slate-900 text-xs">
-                    {stage.count} <span className="font-normal text-slate-400">({stage.percentageOfTotal}%)</span>
+                    {stage.count} <span className="font-normal text-slate-500">({stage.percentageOfTotal}%)</span>
                   </span>
                 </div>
               </div>

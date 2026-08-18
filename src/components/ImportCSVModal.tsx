@@ -356,7 +356,7 @@ export const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
               {/* Sample Template Download Bar */}
               <div className="bg-slate-50 border border-slate-200/80 rounded-[10px] p-3 flex items-center justify-between text-xs text-slate-600">
                 <div className="flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-slate-400" />
+                  <FileText className="w-4 h-4 text-slate-500" />
                   <span>Don't have a CSV formatted yet?</span>
                 </div>
                 <button

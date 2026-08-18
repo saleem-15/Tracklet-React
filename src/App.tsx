@@ -628,7 +628,7 @@ function TrackletAppContent() {
 
         {/* Dynamic Screen View */}
         {authLoading || dataLoading ? (
-          <div className="flex-1 flex items-center justify-center font-mono text-xs text-slate-400">
+          <div className="flex-1 flex items-center justify-center font-mono text-xs text-slate-500">
             Loading Tracklet workspace...
           </div>
         ) : (
