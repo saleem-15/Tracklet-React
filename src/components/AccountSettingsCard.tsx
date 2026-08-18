@@ -233,7 +233,7 @@ export const AccountSettingsCard: React.FC<AccountSettingsCardProps> = ({
                 disabled={isSendingVerif || cooldown > 0}
                 className="px-3 py-1 bg-white hover:bg-amber-100 border border-amber-300 text-amber-900 rounded-lg text-xs font-bold cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
               >
-                {cooldown > 0 && <Clock className="w-3 h-3 text-amber-600 animate-pulse" />}
+                {cooldown > 0 && <Clock className="w-3 h-3 text-amber-600 animate-pulse motion-reduce:animate-none" />}
                 <span>
                   {cooldown > 0
                     ? `Resend in ${cooldown}s`
@@ -316,7 +316,8 @@ export const AccountSettingsCard: React.FC<AccountSettingsCardProps> = ({
               <button
                 type="button"
                 onClick={() => setIsDeleteModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 p-1"
+                aria-label="Close"
+                className="text-slate-500 hover:text-slate-700 p-1 cursor-pointer transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useId } from 'react';
 import { ChevronDown, Check } from 'lucide-react';
 import { UI_TOKENS } from '../theme/tokens';
 
@@ -36,9 +36,23 @@ export function CustomSelectDropdown<T extends string | number = string>({
   disabled = false,
 }: CustomSelectDropdownProps<T>): React.ReactElement {
   const [isOpen, setIsOpen] = useState(false);
+  const [highlightedIndex, setHighlightedIndex] = useState<number>(-1);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const triggerButtonRef = useRef<HTMLButtonElement>(null);
+  const optionRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
-  const selectedOption = options.find((opt) => opt.value === value) || options[0];
+  const uniqueId = useId();
+  const buttonId = `${uniqueId}-btn`;
+  const listboxId = `${uniqueId}-listbox`;
+
+  const selectedIndex = options.findIndex((opt) => opt.value === value);
+  const selectedOption = selectedIndex >= 0 ? options[selectedIndex] : options[0];
+
+  useEffect(() => {
+    if (isOpen) {
+      setHighlightedIndex(selectedIndex >= 0 ? selectedIndex : 0);
+    }
+  }, [isOpen, selectedIndex]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -48,8 +62,23 @@ export function CustomSelectDropdown<T extends string | number = string>({
     };
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && isOpen) {
+      if (!isOpen) return;
+
+      if (event.key === 'Escape') {
+        event.preventDefault();
         setIsOpen(false);
+        triggerButtonRef.current?.focus();
+      } else if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        setHighlightedIndex((prev) => (prev < options.length - 1 ? prev + 1 : 0));
+      } else if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        setHighlightedIndex((prev) => (prev > 0 ? prev - 1 : options.length - 1));
+      } else if (event.key === 'Enter' || event.key === ' ') {
+        if (highlightedIndex >= 0 && highlightedIndex < options.length) {
+          event.preventDefault();
+          handleSelect(options[highlightedIndex].value);
+        }
       }
     };
 
@@ -61,17 +90,24 @@ export function CustomSelectDropdown<T extends string | number = string>({
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isOpen]);
+  }, [isOpen, highlightedIndex, options]);
+
+  useEffect(() => {
+    if (isOpen && highlightedIndex >= 0 && optionRefs.current[highlightedIndex]) {
+      optionRefs.current[highlightedIndex]?.scrollIntoView({ block: 'nearest' });
+    }
+  }, [highlightedIndex, isOpen]);
 
   const handleSelect = (val: T) => {
     if (disabled) return;
     onChange(val);
     setIsOpen(false);
+    triggerButtonRef.current?.focus();
   };
 
   const getButtonStyles = () => {
     if (disabled) {
-      return 'bg-slate-100 text-slate-400 border-slate-200 opacity-60 cursor-not-allowed';
+      return 'bg-slate-100 text-slate-500 border-slate-200 opacity-60 cursor-not-allowed';
     }
 
     if (variant === 'filter') {
@@ -96,13 +132,23 @@ export function CustomSelectDropdown<T extends string | number = string>({
     return `${UI_TOKENS.controlMd} px-3 text-xs`;
   };
 
+  const accessibleLabel = labelPrefix
+    ? `${labelPrefix}: ${selectedOption?.label || placeholder}`
+    : selectedOption?.label || placeholder;
+
   return (
     <div className={`relative inline-block text-left ${className}`} ref={dropdownRef}>
       <button
+        ref={triggerButtonRef}
+        id={buttonId}
         type="button"
         disabled={disabled}
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+        aria-controls={isOpen ? listboxId : undefined}
+        aria-label={accessibleLabel}
         onClick={() => !disabled && setIsOpen(!isOpen)}
-        className={`w-full flex items-center justify-between gap-2 border font-sans transition-all cursor-pointer ${getButtonStyles()} ${getSizeStyles()}`}
+        className={`w-full flex items-center justify-between gap-2 border font-sans transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 ${getButtonStyles()} ${getSizeStyles()}`}
       >
         <span className="truncate flex items-center gap-1.5">
           {selectedOption?.icon}
@@ -117,24 +163,37 @@ export function CustomSelectDropdown<T extends string | number = string>({
         <ChevronDown
           className={`w-3.5 h-3.5 transition-transform duration-150 shrink-0 ml-1 ${
             isOpen ? 'rotate-180' : ''
-          } ${isActive ? 'text-blue-600' : 'text-slate-400'}`}
+          } ${isActive ? 'text-blue-600' : 'text-slate-500'}`}
         />
       </button>
 
       {isOpen && (
         <div
+          id={listboxId}
+          role="listbox"
+          aria-label={labelPrefix || placeholder}
+          tabIndex={-1}
           className={`absolute top-full left-0 mt-1.5 z-50 min-w-[160px] max-h-60 overflow-y-auto bg-white border border-slate-200/90 rounded-[12px] shadow-xl p-1.5 animate-in fade-in zoom-in-95 duration-150 ${menuClassName}`}
         >
-          {options.map((opt) => {
+          {options.map((opt, idx) => {
             const isSelected = opt.value === value;
+            const isHighlighted = idx === highlightedIndex;
+
             return (
               <button
+                ref={(el) => { optionRefs.current[idx] = el; }}
                 key={String(opt.value)}
+                id={`${listboxId}-opt-${idx}`}
+                role="option"
+                aria-selected={isSelected}
                 type="button"
                 onClick={() => handleSelect(opt.value)}
+                onMouseEnter={() => setHighlightedIndex(idx)}
                 className={`w-full text-left px-3 py-1.5 rounded-[8px] text-xs font-medium flex items-center justify-between transition-colors cursor-pointer ${
                   isSelected
                     ? 'bg-blue-50 text-blue-900 font-bold'
+                    : isHighlighted
+                    ? 'bg-slate-100 text-slate-900'
                     : 'text-slate-700 hover:bg-slate-100/80'
                 }`}
               >

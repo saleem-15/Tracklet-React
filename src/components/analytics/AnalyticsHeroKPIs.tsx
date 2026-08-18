@@ -66,7 +66,7 @@ export const AnalyticsHeroKPIs: React.FC<AnalyticsHeroKPIsProps> = ({
             <span className="text-3xl font-bold text-slate-900 tracking-tight">
               {activePipelineCount}
             </span>
-            <span className="text-xs text-slate-400 font-medium">
+            <span className="text-xs text-slate-500 font-medium">
               of {totalApplications} total
             </span>
           </div>

@@ -68,6 +68,7 @@ function TrackletAppContent() {
   const [isAddModalOpen, setIsAddModalOpenState] = useState<boolean>(
     () => _initialUrlState.isAddModalOpen
   );
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState<boolean>(false);
 
   // ── URL-aware tab setter ──
   const setActiveTab = (tab: ActiveTab) => {
@@ -551,8 +552,8 @@ function TrackletAppContent() {
   if (authLoading) {
     return (
       <div className="flex h-screen w-screen items-center justify-center bg-slate-50 font-sans text-xs text-slate-500 select-none">
-        <div className="flex flex-col items-center gap-3 p-8 bg-white border border-slate-200/90 rounded-2xl shadow-xs animate-in fade-in duration-200">
-          <img src="/logo.svg" alt="Tracklet Logo" className="w-10 h-10 animate-pulse" />
+        <div className="flex flex-col items-center gap-3 p-8 bg-white border border-slate-200/90 rounded-2xl shadow-xs animate-in fade-in duration-200 motion-reduce:animate-none">
+          <img src="/logo.svg" alt="Tracklet Logo" className="w-10 h-10 animate-pulse motion-reduce:animate-none" />
           <div className="flex flex-col items-center gap-0.5">
             <span className="font-heading font-bold text-slate-900 text-sm tracking-tight">Tracklet</span>
             <span className="font-mono text-[11px] text-slate-500">Loading workspace...</span>
@@ -610,6 +611,8 @@ function TrackletAppContent() {
         onSignIn={handleSignIn}
         onSignOut={handleSignOut}
         onSeedDemoData={handleSeedDemoData}
+        isMobileOpen={isMobileSidebarOpen}
+        onCloseMobile={() => setIsMobileSidebarOpen(false)}
       />
 
       {/* Main Content Area */}
@@ -623,12 +626,13 @@ function TrackletAppContent() {
             totalFilteredCount={filteredAndSortedApplications.length}
             onExportCSV={() => exportApplicationsToCSV(filteredAndSortedApplications)}
             activeTab={activeTab}
+            onOpenMobileSidebar={() => setIsMobileSidebarOpen(true)}
           />
         )}
 
         {/* Dynamic Screen View */}
         {authLoading || dataLoading ? (
-          <div className="flex-1 flex items-center justify-center font-mono text-xs text-slate-400">
+          <div className="flex-1 flex items-center justify-center font-mono text-xs text-slate-500">
             Loading Tracklet workspace...
           </div>
         ) : (

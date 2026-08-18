@@ -300,7 +300,7 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
                   type="button"
                   onClick={toggleSelectAll}
                   aria-label={allSelected ? "Deselect all applications" : "Select all applications"}
-                  className="text-slate-400 hover:text-slate-700 align-middle transition-colors cursor-pointer"
+                  className="text-slate-500 hover:text-slate-700 align-middle transition-colors cursor-pointer"
                 >
                   {allSelected ? (
                     <CheckSquare className="w-3.5 h-3.5 text-blue-600" />
@@ -311,63 +311,93 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
               </th>
 
               <th
-                onClick={() => onSortChange('company')}
-                className="px-3 py-2.5 font-semibold cursor-pointer hover:text-slate-900 group transition-colors"
+                aria-sort={sort.field === 'company' ? (sort.order === 'asc' ? 'ascending' : 'descending') : 'none'}
+                className="px-3 py-2.5 font-semibold"
               >
-                <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => onSortChange('company')}
+                  aria-label={`Sort by Company (${sort.field === 'company' ? sort.order : 'none'})`}
+                  className="flex items-center gap-1.5 font-semibold text-slate-500 hover:text-slate-900 group transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 rounded"
+                >
                   <span>Company</span>
                   {renderSortIcon('company')}
-                </div>
+                </button>
               </th>
 
               <th
-                onClick={() => onSortChange('role')}
-                className="px-3 py-2.5 font-semibold cursor-pointer hover:text-slate-900 group transition-colors"
+                aria-sort={sort.field === 'role' ? (sort.order === 'asc' ? 'ascending' : 'descending') : 'none'}
+                className="px-3 py-2.5 font-semibold"
               >
-                <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => onSortChange('role')}
+                  aria-label={`Sort by Role (${sort.field === 'role' ? sort.order : 'none'})`}
+                  className="flex items-center gap-1.5 font-semibold text-slate-500 hover:text-slate-900 group transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 rounded"
+                >
                   <span>Role</span>
                   {renderSortIcon('role')}
-                </div>
+                </button>
               </th>
 
               <th
-                onClick={() => onSortChange('platform')}
-                className="px-3 py-2.5 font-semibold cursor-pointer hover:text-slate-900 group transition-colors"
+                aria-sort={sort.field === 'platform' ? (sort.order === 'asc' ? 'ascending' : 'descending') : 'none'}
+                className="px-3 py-2.5 font-semibold"
               >
-                <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => onSortChange('platform')}
+                  aria-label={`Sort by Platform (${sort.field === 'platform' ? sort.order : 'none'})`}
+                  className="flex items-center gap-1.5 font-semibold text-slate-500 hover:text-slate-900 group transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 rounded"
+                >
                   <span>Platform</span>
                   {renderSortIcon('platform')}
-                </div>
+                </button>
               </th>
 
               <th
-                onClick={() => onSortChange('dateApplied')}
-                className="px-3 py-2.5 font-semibold cursor-pointer hover:text-slate-900 group transition-colors"
+                aria-sort={sort.field === 'dateApplied' ? (sort.order === 'asc' ? 'ascending' : 'descending') : 'none'}
+                className="px-3 py-2.5 font-semibold"
               >
-                <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => onSortChange('dateApplied')}
+                  aria-label={`Sort by Applied Date (${sort.field === 'dateApplied' ? sort.order : 'none'})`}
+                  className="flex items-center gap-1.5 font-semibold text-slate-500 hover:text-slate-900 group transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 rounded"
+                >
                   <span>Applied</span>
                   {renderSortIcon('dateApplied')}
-                </div>
+                </button>
               </th>
 
               <th
-                onClick={() => onSortChange('status')}
-                className="px-3 py-2.5 font-semibold cursor-pointer hover:text-slate-900 group transition-colors"
+                aria-sort={sort.field === 'status' ? (sort.order === 'asc' ? 'ascending' : 'descending') : 'none'}
+                className="px-3 py-2.5 font-semibold"
               >
-                <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => onSortChange('status')}
+                  aria-label={`Sort by Status (${sort.field === 'status' ? sort.order : 'none'})`}
+                  className="flex items-center gap-1.5 font-semibold text-slate-500 hover:text-slate-900 group transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 rounded"
+                >
                   <span>Status</span>
                   {renderSortIcon('status')}
-                </div>
+                </button>
               </th>
 
               <th
-                onClick={() => onSortChange('daysInStage')}
-                className="px-3 py-2.5 font-semibold cursor-pointer hover:text-slate-900 group text-right pr-6 transition-colors"
+                aria-sort={sort.field === 'daysInStage' ? (sort.order === 'asc' ? 'ascending' : 'descending') : 'none'}
+                className="px-3 py-2.5 font-semibold text-right pr-6"
               >
-                <div className="flex items-center justify-end gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => onSortChange('daysInStage')}
+                  aria-label={`Sort by In Stage Days (${sort.field === 'daysInStage' ? sort.order : 'none'})`}
+                  className="flex items-center justify-end gap-1.5 font-semibold text-slate-500 hover:text-slate-900 group transition-colors cursor-pointer ml-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 rounded"
+                >
                   <span>In Stage</span>
                   {renderSortIcon('daysInStage')}
-                </div>
+                </button>
               </th>
             </tr>
           </thead>
@@ -424,12 +454,12 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
                       <button
                         type="button"
                         aria-label={`Select application for ${app.company}`}
-                        className="text-slate-400 hover:text-slate-700 align-middle transition-colors cursor-pointer"
+                        className="text-slate-500 hover:text-slate-700 align-middle transition-colors cursor-pointer"
                       >
                         {isSelected ? (
                           <CheckSquare className="w-3.5 h-3.5 text-blue-600" />
                         ) : (
-                          <Square className="w-3.5 h-3.5 group-hover:text-slate-500" />
+                          <Square className="w-3.5 h-3.5 group-hover:text-slate-600" />
                         )}
                       </button>
                     </td>
@@ -451,10 +481,10 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
                             target="_blank"
                             rel="noopener noreferrer"
                             onClick={(e) => e.stopPropagation()}
-                            className="text-slate-400 hover:text-blue-600 opacity-0 group-hover:opacity-100 transition-all shrink-0"
+                            className="text-slate-500 hover:text-blue-600 opacity-0 group-hover:opacity-100 transition-all shrink-0"
                             title="Open job posting link"
                           >
-                            <ExternalLink className="w-3 h-3 text-slate-400 hover:text-blue-600" />
+                            <ExternalLink className="w-3 h-3 text-slate-500 hover:text-blue-600" />
                           </a>
                         )}
                       </div>

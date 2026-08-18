@@ -71,7 +71,7 @@ export const ActivityMomentumCard: React.FC<ActivityMomentumCardProps> = ({
             <span className="text-xl font-bold text-slate-900 tracking-tight">
               +{totalApps}
             </span>
-            <span className="text-[11px] text-slate-400 font-medium">submitted</span>
+            <span className="text-[11px] text-slate-500 font-medium">submitted</span>
           </div>
         </div>
 
@@ -85,7 +85,7 @@ export const ActivityMomentumCard: React.FC<ActivityMomentumCardProps> = ({
             <span className="text-xl font-bold text-slate-900 tracking-tight">
               {totalStageMoves}
             </span>
-            <span className="text-[11px] text-slate-400 font-medium">progressed</span>
+            <span className="text-[11px] text-slate-500 font-medium">progressed</span>
           </div>
         </div>
 
@@ -99,7 +99,7 @@ export const ActivityMomentumCard: React.FC<ActivityMomentumCardProps> = ({
             <span className="text-xl font-bold text-slate-900 tracking-tight">
               {totalTasks}
             </span>
-            <span className="text-[11px] text-slate-400 font-medium">completed</span>
+            <span className="text-[11px] text-slate-500 font-medium">completed</span>
           </div>
         </div>
       </div>

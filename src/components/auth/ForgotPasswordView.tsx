@@ -176,7 +176,7 @@ export const ForgotPasswordView: React.FC<ForgotPasswordViewProps> = ({
         >
           {isSubmitting ? (
             <span className="flex items-center gap-2">
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              <Loader2 className="w-3.5 h-3.5 animate-spin motion-reduce:animate-none" />
               <span>Sending reset link...</span>
             </span>
           ) : resetCooldown > 0 ? (

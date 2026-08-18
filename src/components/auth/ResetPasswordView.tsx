@@ -94,7 +94,7 @@ export const ResetPasswordView: React.FC<ResetPasswordViewProps> = ({
     return (
       <div className="w-full text-center space-y-4 py-8">
         <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-200/80 text-blue-600 flex items-center justify-center mx-auto shadow-2xs">
-          <Loader2 className="w-6 h-6 animate-spin" />
+          <Loader2 className="w-6 h-6 animate-spin motion-reduce:animate-none" />
         </div>
         <div className="space-y-1">
           <h2 className="text-base font-bold text-slate-900">Verifying reset link...</h2>
@@ -228,7 +228,7 @@ export const ResetPasswordView: React.FC<ResetPasswordViewProps> = ({
         >
           {isSubmitting ? (
             <span className="flex items-center gap-2">
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              <Loader2 className="w-3.5 h-3.5 animate-spin motion-reduce:animate-none" />
               <span>Updating password...</span>
             </span>
           ) : (

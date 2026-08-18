@@ -250,7 +250,7 @@ export const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
             <div>
               <h2 className="font-heading font-bold text-sm text-slate-900 flex items-center gap-2">
                 Import Applications via CSV
-                <span className="font-mono text-[10px] bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full font-semibold">
+                <span className="font-mono text-[11px] bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full font-semibold">
                   Batch Upload
                 </span>
               </h2>
@@ -356,7 +356,7 @@ export const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
               {/* Sample Template Download Bar */}
               <div className="bg-slate-50 border border-slate-200/80 rounded-[10px] p-3 flex items-center justify-between text-xs text-slate-600">
                 <div className="flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-slate-400" />
+                  <FileText className="w-4 h-4 text-slate-500" />
                   <span>Don't have a CSV formatted yet?</span>
                 </div>
                 <button
@@ -413,7 +413,7 @@ export const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
                           <td className="p-2.5 font-bold text-slate-900">{app.company}</td>
                           <td className="p-2.5 font-medium">{app.role}</td>
                           <td className="p-2.5">
-                            <span className="font-mono text-[10px] px-1.5 py-0.5 rounded-md bg-blue-50 text-blue-700 font-semibold border border-blue-200/60">
+                            <span className="font-mono text-[11px] px-1.5 py-0.5 rounded-md bg-blue-50 text-blue-700 font-semibold border border-blue-200/60">
                               {app.platform}
                             </span>
                           </td>
@@ -475,7 +475,7 @@ export const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
             >
               {isSubmitting ? (
                 <>
-                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  <RefreshCw className="w-4 h-4 animate-spin motion-reduce:animate-none" />
                   <span>Importing {parsedApplications.length} Entries...</span>
                 </>
               ) : (

@@ -56,7 +56,7 @@ export const PlatformRoiCard: React.FC<PlatformRoiCardProps> = ({
       {/* Sources List */}
       <div className="space-y-3.5 pt-1">
         {metrics.length === 0 ? (
-          <div className="text-center py-8 text-slate-400 text-xs">
+          <div className="text-center py-8 text-slate-500 text-xs">
             No application sources recorded in current scope.
           </div>
         ) : (
@@ -71,7 +71,7 @@ export const PlatformRoiCard: React.FC<PlatformRoiCardProps> = ({
                     <span className={`text-xs font-semibold px-2 py-0.5 rounded-md border ${colors.badge}`}>
                       {item.platform}
                     </span>
-                    <span className="text-slate-400 text-xs">
+                    <span className="text-slate-500 text-xs">
                       {item.totalApps} {item.totalApps === 1 ? 'app' : 'apps'} ({item.sharePct}%)
                     </span>
                   </div>

@@ -211,7 +211,7 @@ export const ResponseVelocityCard: React.FC<ResponseVelocityCardProps> = ({
                       </button>
                     ) : null}
 
-                    <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-all" />
+                    <ChevronRight className="w-3.5 h-3.5 text-slate-500 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-all" />
                   </div>
                 </div>
               );

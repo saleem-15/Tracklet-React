@@ -50,7 +50,7 @@ export const AnalyticsFilterBar: React.FC<AnalyticsFilterBarProps> = ({
         {/* Left: Quick Timeframe Tabs */}
         <div className="flex items-center gap-1 overflow-x-auto pb-1 lg:pb-0 scrollbar-none max-w-full">
           <div className="flex items-center gap-1 bg-slate-100/80 p-1 rounded-xl shrink-0">
-            <Calendar className="w-3.5 h-3.5 text-slate-400 ml-1.5 mr-0.5 shrink-0" />
+            <Calendar className="w-3.5 h-3.5 text-slate-500 ml-1.5 mr-0.5 shrink-0" />
             {TIMEFRAME_OPTIONS.map((opt) => {
               const isActive = filter.timeframe === opt.value;
               return (
