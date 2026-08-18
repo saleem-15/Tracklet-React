@@ -104,7 +104,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 <h2 className="text-base font-bold text-slate-900">
                   'Soon to Expire' Task Notification Indicator
                 </h2>
-                <span className="font-mono text-[10px] text-amber-800 bg-amber-50 border border-amber-200/80 px-2 py-0.5 rounded-full font-semibold">
+                <span className="font-mono text-[11px] text-amber-800 bg-amber-50 border border-amber-200/80 px-2 py-0.5 rounded-full font-semibold">
                   Sidebar Alert
                 </span>
               </div>
@@ -183,7 +183,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       <span className={`font-mono text-xs font-bold ${isActive ? 'text-white' : 'text-slate-900'}`}>
                         {preset}h
                       </span>
-                      <span className={`text-[10px] ${isActive ? 'text-blue-100' : 'text-slate-500'}`}>
+                      <span className={`text-[11px] ${isActive ? 'text-blue-100' : 'text-slate-500'}`}>
                         {days < 1 ? `${preset} hours` : `${days} ${days === 1 ? 'day' : 'days'}`}
                       </span>
                     </button>
@@ -216,7 +216,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     onChange={(e) => handleThresholdChange(parseInt(e.target.value) || 24)}
                     className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600 focus:outline-none"
                   />
-                  <div className="flex justify-between text-[10px] font-mono text-slate-500">
+                  <div className="flex justify-between text-[11px] font-mono text-slate-500">
                     <span>1 hour</span>
                     <span>24h (1d)</span>
                     <span>48h (2d)</span>

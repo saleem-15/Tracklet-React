@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 
 export interface TabOption<T extends string = string> {
   id: T;
@@ -26,6 +26,7 @@ export function SegmentedTabs<T extends string = string>({
 }: SegmentedTabsProps<T>) {
   const activeIndex = Math.max(0, tabs.findIndex((t) => t.id === activeTab));
   const tabCount = tabs.length;
+  const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
   const sizeConfig = {
     sm: {
@@ -34,7 +35,7 @@ export function SegmentedTabs<T extends string = string>({
       insetPx: 2,
     },
     md: {
-      container: 'p-1 rounded-xl text-xs sm:text-[13px] h-10',
+      container: 'p-1 rounded-xl text-xs h-10',
       pill: 'top-1 bottom-1 left-1 rounded-lg',
       insetPx: 4,
     },
@@ -47,9 +48,45 @@ export function SegmentedTabs<T extends string = string>({
 
   const config = sizeConfig[size as 'sm' | 'md' | 'lg'] || sizeConfig.md;
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>, currentIndex: number) => {
+    if (tabCount <= 1) return;
+
+    let targetIndex = -1;
+
+    switch (e.key) {
+      case 'ArrowRight':
+      case 'ArrowDown':
+        e.preventDefault();
+        targetIndex = (currentIndex + 1) % tabCount;
+        break;
+      case 'ArrowLeft':
+      case 'ArrowUp':
+        e.preventDefault();
+        targetIndex = (currentIndex - 1 + tabCount) % tabCount;
+        break;
+      case 'Home':
+        e.preventDefault();
+        targetIndex = 0;
+        break;
+      case 'End':
+        e.preventDefault();
+        targetIndex = tabCount - 1;
+        break;
+      default:
+        return;
+    }
+
+    if (targetIndex >= 0 && targetIndex < tabCount) {
+      const nextTab = tabs[targetIndex];
+      onChange(nextTab.id);
+      tabRefs.current[targetIndex]?.focus();
+    }
+  };
+
   return (
     <div
       role="tablist"
+      aria-orientation="horizontal"
       className={`relative flex items-center bg-slate-100/90 border border-slate-200/80 select-none ${config.container} ${
         fullWidth ? 'w-full' : 'inline-flex'
       } ${className}`}
@@ -58,7 +95,7 @@ export function SegmentedTabs<T extends string = string>({
       {tabCount > 0 && (
         <div
           aria-hidden="true"
-          className={`absolute bg-white shadow-xs border border-slate-200/90 pointer-events-none transition-transform duration-200 ease-out ${config.pill}`}
+          className={`absolute bg-white shadow-xs border border-slate-200/90 pointer-events-none transition-transform duration-200 ease-out motion-reduce:transition-none ${config.pill}`}
           style={{
             width: `calc((100% - ${config.insetPx * 2}px) / ${tabCount})`,
             transform: `translateX(${activeIndex * 100}%)`,
@@ -67,16 +104,21 @@ export function SegmentedTabs<T extends string = string>({
       )}
 
       {/* Tab Buttons */}
-      {tabs.map((tab) => {
+      {tabs.map((tab, idx) => {
         const isActive = tab.id === activeTab;
         return (
           <button
             key={tab.id}
+            ref={(el) => {
+              tabRefs.current[idx] = el;
+            }}
             type="button"
             role="tab"
             aria-selected={isActive}
+            tabIndex={isActive ? 0 : -1}
             onClick={() => onChange(tab.id)}
-            className={`relative z-10 flex-1 flex items-center justify-center gap-1.5 font-bold transition-colors duration-150 cursor-pointer h-full px-2.5 ${
+            onKeyDown={(e) => handleKeyDown(e, idx)}
+            className={`relative z-10 flex-1 flex items-center justify-center gap-1.5 font-bold transition-colors duration-150 motion-reduce:transition-none cursor-pointer h-full px-2.5 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 ${
               isActive ? 'text-slate-900 font-semibold' : 'text-slate-500 hover:text-slate-800'
             }`}
           >
@@ -84,7 +126,7 @@ export function SegmentedTabs<T extends string = string>({
             <span className="truncate">{tab.label}</span>
             {tab.badge !== undefined && (
               <span
-                className={`text-[10px] font-mono font-bold px-1.5 py-0.2 rounded-full ${
+                className={`text-[11px] font-mono font-bold px-1.5 py-0.5 rounded-full ${
                   isActive
                     ? 'bg-blue-50 text-blue-600 border border-blue-200/60'
                     : 'bg-slate-200 text-slate-600'
@@ -99,3 +141,4 @@ export function SegmentedTabs<T extends string = string>({
     </div>
   );
 }
+

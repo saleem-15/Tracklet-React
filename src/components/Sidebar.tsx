@@ -81,10 +81,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <div className="flex items-center gap-2.5 min-w-0">
               <img src="/logo.svg" alt="Tracklet Logo" className="w-7 h-7 shrink-0" />
               <div className="flex flex-col truncate">
-                <span className="font-bold text-slate-900 tracking-tight text-xs sm:text-[14px] leading-none font-heading">
+                <span className="font-bold text-slate-900 tracking-tight text-xs sm:text-sm leading-none font-heading">
                   Tracklet
                 </span>
-                <span className="text-[10px] text-slate-500 font-medium tracking-wide mt-0.5 font-mono">
+                <span className="text-[11px] text-slate-500 font-medium tracking-wide mt-0.5 font-mono">
                   Job OS
                 </span>
               </div>
@@ -98,7 +98,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             onClick={toggleSidebar}
             title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            className="p-1.5 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-200/60 transition-colors cursor-pointer shrink-0"
+            className="relative p-1.5 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-200/60 transition-colors cursor-pointer shrink-0 after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:min-w-[44px] after:min-h-[44px]"
           >
             {isCollapsed ? (
               <PanelLeftOpen className="w-4 h-4" />
@@ -195,7 +195,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               {!isCollapsed && <span className="text-xs">Settings</span>}
             </div>
             {expirySettings.enabled && expiringTasksCount > 0 && (
-              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" title="Tasks due soon" />
+              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse motion-reduce:animate-none" title="Tasks due soon" />
             )}
           </button>
         </nav>
@@ -207,14 +207,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
               expiringTasksCount > 0 ? (
                 <button
                   onClick={() => setActiveTab('settings')}
-                  className="w-full text-left p-2.5 rounded-xl bg-gradient-to-br from-amber-50/90 via-amber-100/40 to-orange-50/60 border border-amber-200/90 shadow-2xs hover:border-amber-300 transition-all cursor-pointer group space-y-1.5"
+                  className="w-full text-left p-2.5 rounded-xl bg-gradient-to-br from-amber-50/90 via-amber-100/40 to-orange-50/60 border border-amber-200/90 shadow-2xs hover:border-amber-300 transition-all motion-reduce:transition-none cursor-pointer group space-y-1.5"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1.5 text-amber-900 font-bold text-xs">
                       <Clock className="w-3.5 h-3.5 text-amber-600" />
                       <span>Soon to Expire</span>
                     </div>
-                    <span className="font-mono text-xs font-extrabold bg-amber-500 text-white px-1.5 py-0.2 rounded-full shadow-2xs animate-pulse">
+                    <span className="font-mono text-xs font-extrabold bg-amber-500 text-white px-1.5 py-0.2 rounded-full shadow-2xs animate-pulse motion-reduce:animate-none">
                       {expiringTasksCount}
                     </span>
                   </div>
@@ -225,7 +225,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   </p>
                   <div className="flex items-center justify-between text-xs font-mono text-amber-700 font-semibold pt-0.5 border-t border-amber-200/60">
                     <span>View in Settings</span>
-                    <ChevronRight className="w-3 h-3 text-amber-600 group-hover:translate-x-0.5 transition-transform" />
+                    <ChevronRight className="w-3 h-3 text-amber-600 group-hover:translate-x-0.5 transition-transform motion-reduce:transition-none" />
                   </div>
                 </button>
               ) : (
@@ -240,7 +240,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <button
                 onClick={() => setActiveTab('settings')}
                 title={`${expiringTasksCount} tasks expiring soon!`}
-                className="w-full flex justify-center p-2 rounded-xl bg-amber-100 border border-amber-300 text-amber-700 animate-pulse"
+                className="w-full flex justify-center p-2 rounded-xl bg-amber-100 border border-amber-300 text-amber-700 animate-pulse motion-reduce:animate-none"
               >
                 <Clock className="w-4 h-4 text-amber-600" />
               </button>
@@ -277,7 +277,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 onClick={onSignOut}
                 title="Sign out"
                 aria-label="Sign out"
-                className="text-slate-500 hover:text-slate-700 p-1 rounded-md hover:bg-slate-100 transition-colors cursor-pointer"
+                className="relative text-slate-500 hover:text-slate-700 p-1 rounded-md hover:bg-slate-100 transition-colors cursor-pointer after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:min-w-[44px] after:min-h-[44px]"
               >
                 <LogOut className="w-3.5 h-3.5" />
               </button>

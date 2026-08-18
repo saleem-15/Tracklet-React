@@ -74,3 +74,16 @@
   scrollbar-color: #cbd5e1 transparent;
   scrollbar-width: thin;
 }
+
+/* Global Reduced Motion Support for WCAG Compliance */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+

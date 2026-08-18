@@ -133,7 +133,7 @@ export const EmailVerificationGate: React.FC<EmailVerificationGateProps> = ({
               <div>
                 <h1 className="text-lg font-bold font-heading text-white tracking-tight flex items-center gap-2">
                   <span>Tracklet</span>
-                  <span className="text-[10px] font-mono font-semibold uppercase px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-400/30">
+                  <span className="text-[11px] font-mono font-semibold uppercase px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-400/30">
                     Security Gate
                   </span>
                 </h1>
@@ -166,7 +166,7 @@ export const EmailVerificationGate: React.FC<EmailVerificationGateProps> = ({
                 <div className="space-y-0.5">
                   <div className="flex items-center gap-2">
                     <h3 className="text-xs font-bold text-slate-100">1. Account Registered</h3>
-                    <span className="text-[10px] font-mono text-emerald-400 font-semibold uppercase">Done</span>
+                    <span className="text-[11px] font-mono text-emerald-400 font-semibold uppercase">Done</span>
                   </div>
                   <p className="text-[11px] text-slate-400 leading-tight">
                     Your credentials and secure vault have been initialized.
@@ -175,13 +175,13 @@ export const EmailVerificationGate: React.FC<EmailVerificationGateProps> = ({
               </div>
 
               <div className="flex items-start gap-2.5 p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/30 backdrop-blur-xs">
-                <div className="w-6 h-6 rounded-lg bg-blue-500/20 text-blue-300 flex items-center justify-center shrink-0 border border-blue-500/40 animate-pulse">
+                <div className="w-6 h-6 rounded-lg bg-blue-500/20 text-blue-300 flex items-center justify-center shrink-0 border border-blue-500/40 animate-pulse motion-reduce:animate-none">
                   <Mail className="w-3.5 h-3.5" />
                 </div>
                 <div className="space-y-0.5">
                   <div className="flex items-center gap-2">
                     <h3 className="text-xs font-bold text-white">2. Confirm Email Ownership</h3>
-                    <span className="text-[10px] font-mono text-amber-300 font-semibold uppercase">Action Required</span>
+                    <span className="text-[11px] font-mono text-amber-300 font-semibold uppercase">Action Required</span>
                   </div>
                   <p className="text-[11px] text-slate-300 leading-tight">
                     Open the verification link sent to your inbox.
@@ -196,7 +196,7 @@ export const EmailVerificationGate: React.FC<EmailVerificationGateProps> = ({
                 <div className="space-y-0.5">
                   <div className="flex items-center gap-2">
                     <h3 className="text-xs font-bold text-slate-300">3. Workspace Activation</h3>
-                    <span className="text-[10px] font-mono text-slate-500 font-semibold uppercase">Locked</span>
+                    <span className="text-[11px] font-mono text-slate-500 font-semibold uppercase">Locked</span>
                   </div>
                   <p className="text-[11px] text-slate-400 leading-tight">
                     Instant access to Kanban board, analytics, and clipping.
@@ -287,9 +287,9 @@ export const EmailVerificationGate: React.FC<EmailVerificationGateProps> = ({
                     className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-blue-600 transition-colors p-1.5 rounded-lg hover:bg-slate-50 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     {isResending ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600" />
+                      <Loader2 className="w-3.5 h-3.5 animate-spin motion-reduce:animate-none text-blue-600" />
                     ) : cooldown > 0 ? (
-                      <Clock className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
+                      <Clock className="w-3.5 h-3.5 text-amber-500 animate-pulse motion-reduce:animate-none" />
                     ) : (
                       <Mail className="w-3.5 h-3.5" />
                     )}

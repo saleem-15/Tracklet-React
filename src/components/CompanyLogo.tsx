@@ -12,7 +12,7 @@ interface CompanyLogoProps {
 }
 
 const SIZE_MAP = {
-  xs: { box: 'w-6 h-6 rounded-md text-[10px]', icon: 'w-3 h-3', imgSize: 'p-0.5' },
+  xs: { box: 'w-6 h-6 rounded-md text-[11px]', icon: 'w-3 h-3', imgSize: 'p-0.5' },
   sm: { box: 'w-8 h-8 rounded-xl text-xs', icon: 'w-4 h-4', imgSize: 'p-1' },
   md: { box: 'w-10 h-10 rounded-xl text-sm', icon: 'w-5 h-5', imgSize: 'p-1.5' },
   lg: { box: 'w-12 h-12 rounded-2xl text-base', icon: 'w-6 h-6', imgSize: 'p-2' },

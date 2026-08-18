@@ -92,24 +92,24 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
         <div className="p-3 rounded-xl bg-slate-50/80 border border-slate-100 flex items-start gap-2.5">
           <Building2 className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
           <div>
-            <h4 className="text-[11px] font-bold text-slate-800">Auto Logos</h4>
-            <p className="text-[10px] text-slate-500 leading-snug">Fetches company branding automatically.</p>
+            <h4 className="text-xs font-bold text-slate-800">Auto Logos</h4>
+            <p className="text-xs text-slate-500 leading-snug">Fetches company branding automatically.</p>
           </div>
         </div>
 
         <div className="p-3 rounded-xl bg-slate-50/80 border border-slate-100 flex items-start gap-2.5">
           <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
           <div>
-            <h4 className="text-[11px] font-bold text-slate-800">Stage Pipeline</h4>
-            <p className="text-[10px] text-slate-500 leading-snug">Drag and drop applications effortlessly.</p>
+            <h4 className="text-xs font-bold text-slate-800">Stage Pipeline</h4>
+            <p className="text-xs text-slate-500 leading-snug">Drag and drop applications effortlessly.</p>
           </div>
         </div>
 
         <div className="p-3 rounded-xl bg-slate-50/80 border border-slate-100 flex items-start gap-2.5">
           <Sparkles className="w-4 h-4 text-purple-600 shrink-0 mt-0.5" />
           <div>
-            <h4 className="text-[11px] font-bold text-slate-800">History & Tasks</h4>
-            <p className="text-[10px] text-slate-500 leading-snug">Track follow-ups, contacts & status dates.</p>
+            <h4 className="text-xs font-bold text-slate-800">History & Tasks</h4>
+            <p className="text-xs text-slate-500 leading-snug">Track follow-ups, contacts & status dates.</p>
           </div>
         </div>
       </div>

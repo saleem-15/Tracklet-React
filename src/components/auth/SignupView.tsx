@@ -123,7 +123,7 @@ export const SignupView: React.FC<SignupViewProps> = ({
         {/* Crisp OR Divider */}
         <div className="relative flex items-center justify-center">
           <div className="border-t border-slate-200 w-full" />
-          <span className="bg-slate-50 px-3 text-[10px] font-mono text-slate-500 uppercase tracking-widest relative shrink-0 font-medium">
+          <span className="bg-slate-50 px-3 text-[11px] font-mono text-slate-500 uppercase tracking-widest relative shrink-0 font-medium">
             OR WITH EMAIL
           </span>
           <div className="border-t border-slate-200 w-full" />
@@ -185,7 +185,7 @@ export const SignupView: React.FC<SignupViewProps> = ({
           >
             {isSubmitting ? (
               <span className="flex items-center gap-2">
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <Loader2 className="w-3.5 h-3.5 animate-spin motion-reduce:animate-none" />
                 <span>Creating account...</span>
               </span>
             ) : (

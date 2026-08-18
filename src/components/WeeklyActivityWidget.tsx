@@ -352,7 +352,7 @@ export const WeeklyActivityWidget: React.FC<WeeklyActivityWidgetProps> = ({
             <span className="text-2xl font-mono font-bold text-slate-900">
               +{addedCount}
             </span>
-            <span className="text-[10px] font-mono text-slate-500">
+            <span className="text-[11px] font-mono text-slate-500">
               {addedCount === 1 ? '1 new app' : `${addedCount} new apps`}
             </span>
           </div>
@@ -370,7 +370,7 @@ export const WeeklyActivityWidget: React.FC<WeeklyActivityWidgetProps> = ({
             <span className="text-2xl font-mono font-bold text-slate-900">
               {tasksCompletedCount}
             </span>
-            <span className="text-[10px] font-mono text-slate-500">
+            <span className="text-[11px] font-mono text-slate-500">
               {tasksCompletedCount === 1 ? '1 task done' : `${tasksCompletedCount} tasks done`}
             </span>
           </div>
@@ -388,7 +388,7 @@ export const WeeklyActivityWidget: React.FC<WeeklyActivityWidgetProps> = ({
             <span className="text-2xl font-mono font-bold text-slate-900">
               {statusChangedCount}
             </span>
-            <span className="text-[10px] font-mono text-slate-500">
+            <span className="text-[11px] font-mono text-slate-500">
               {statusChangedCount === 1 ? '1 stage move' : `${statusChangedCount} stage moves`}
             </span>
           </div>
@@ -402,7 +402,7 @@ export const WeeklyActivityWidget: React.FC<WeeklyActivityWidgetProps> = ({
             <BarChart2 className="w-3.5 h-3.5 text-blue-600" />
             <span>{periodType === 'week' ? 'Daily Activity Distribution' : 'Weekly Activity Distribution'}</span>
           </span>
-          <div className="flex items-center gap-3 text-[10px] font-mono text-slate-500">
+          <div className="flex items-center gap-3 text-[11px] font-mono text-slate-500">
             <span className="flex items-center gap-1">
               <span className="w-2 h-2 rounded-full bg-blue-600 inline-block" /> Apps
             </span>
@@ -419,7 +419,7 @@ export const WeeklyActivityWidget: React.FC<WeeklyActivityWidgetProps> = ({
             return (
               <div key={idx} className="flex flex-col items-center h-full justify-end group">
                 {/* Count tooltip on hover */}
-                <div className="text-[10px] font-mono font-bold text-slate-700 opacity-80 group-hover:opacity-100 transition-opacity mb-1">
+                <div className="text-[11px] font-mono font-bold text-slate-700 opacity-80 group-hover:opacity-100 transition-opacity mb-1">
                   {item.total > 0 ? item.total : ''}
                 </div>
 
@@ -427,7 +427,7 @@ export const WeeklyActivityWidget: React.FC<WeeklyActivityWidgetProps> = ({
                 <div className="w-full max-w-[28px] bg-slate-100 rounded-t-md h-16 flex flex-col justify-end overflow-hidden relative">
                   {item.total > 0 ? (
                     <div 
-                      className="w-full bg-gradient-to-t from-blue-600 to-indigo-500 rounded-t-md transition-all duration-300"
+                      className="w-full bg-gradient-to-t from-blue-600 to-indigo-500 rounded-t-md transition-all duration-300 motion-reduce:transition-none"
                       style={{ height: `${Math.max(15, heightPct)}%` }}
                     />
                   ) : (
@@ -440,7 +440,7 @@ export const WeeklyActivityWidget: React.FC<WeeklyActivityWidgetProps> = ({
                   <span className={`block text-[11px] font-mono font-semibold ${item.isToday ? 'text-blue-600 font-bold' : 'text-slate-600'}`}>
                     {item.name}
                   </span>
-                  <span className="block text-[9px] font-mono text-slate-500 truncate">
+                  <span className="block text-[11px] font-mono text-slate-500 truncate">
                     {item.label}
                   </span>
                 </div>
