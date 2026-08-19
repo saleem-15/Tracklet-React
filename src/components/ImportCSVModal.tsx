@@ -70,6 +70,16 @@ export const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
 
   React.useEffect(() => {
     if (!isOpen) return;
+    const previousActiveElement = document.activeElement as HTMLElement | null;
+
+    // Focus first focusable element inside modal
+    const timer = setTimeout(() => {
+      if (modalRef.current) {
+        const firstFocusable = modalRef.current.querySelector<HTMLElement>('button:not([disabled]), input:not([disabled])');
+        firstFocusable?.focus();
+      }
+    }, 50);
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         onClose();
@@ -90,7 +100,11 @@ export const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
       }
     };
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('keydown', handleKeyDown);
+      previousActiveElement?.focus();
+    };
   }, [isOpen, onClose]);
 
   if (!isOpen) return null;

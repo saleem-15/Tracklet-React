@@ -89,19 +89,10 @@ export const LoginView: React.FC<LoginViewProps> = ({
         <div
           role="alert"
           aria-live="polite"
-          className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex flex-col gap-2 animate-in fade-in"
+          className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-start gap-2 animate-in fade-in"
         >
-          <div className="flex items-start gap-2">
-            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
-            <span className="leading-relaxed font-medium">{errorMessage}</span>
-          </div>
-          <button
-            type="button"
-            onClick={() => onNavigate('signup')}
-            className="self-start text-[11px] font-bold text-blue-700 hover:text-blue-900 underline underline-offset-2 cursor-pointer ml-6"
-          >
-            New to Tracklet? Create an account
-          </button>
+          <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+          <span className="leading-relaxed font-medium">{errorMessage}</span>
         </div>
       )}
 

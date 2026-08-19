@@ -33,6 +33,14 @@ export const StatusHistoryTimeline: React.FC<StatusHistoryTimelineProps> = ({
   createdAt,
   stageUpdatedAt,
 }) => {
+  const sortedHistory = React.useMemo(() => {
+    return [...history].sort((a, b) => {
+      const timeA = new Date(a.timestamp).getTime();
+      const timeB = new Date(b.timestamp).getTime();
+      return (isNaN(timeA) ? 0 : timeA) < (isNaN(timeB) ? 0 : timeB) ? 1 : -1;
+    });
+  }, [history]);
+
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
@@ -46,7 +54,7 @@ export const StatusHistoryTimeline: React.FC<StatusHistoryTimelineProps> = ({
       </div>
 
       <div className="bg-white border border-slate-200/80 rounded-xl p-3.5 max-h-[200px] overflow-y-auto shadow-2xs">
-        {history.length === 0 ? (
+        {sortedHistory.length === 0 ? (
           <div className="flex items-start gap-3">
             <div className="w-2 h-2 rounded-full bg-blue-400 mt-1.5 shrink-0" />
             <div>
@@ -60,7 +68,7 @@ export const StatusHistoryTimeline: React.FC<StatusHistoryTimelineProps> = ({
           </div>
         ) : (
           <div className="relative pl-4 space-y-3.5 before:absolute before:left-1.5 before:top-2 before:bottom-2 before:w-px before:bg-slate-200">
-            {history.map((entry, idx) => (
+            {sortedHistory.map((entry, idx) => (
               <div key={entry.id || idx} className="relative flex items-start gap-3">
                 <div className="absolute -left-4 top-1.5 w-2 h-2 rounded-full bg-blue-500 ring-2 ring-white shrink-0" />
                 <div className="flex-1 min-w-0">

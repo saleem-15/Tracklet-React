@@ -54,8 +54,19 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onShowToast }) => {
 
   const modalRef = React.useRef<HTMLDivElement>(null);
 
-  // Handle escape key and focus trap
+  // Handle escape key and focus trap with focus save/restore
   useEffect(() => {
+    if (!isAuthModalOpen) return;
+    const previousActiveElement = document.activeElement as HTMLElement | null;
+
+    // Focus first input or button in modal
+    const timer = setTimeout(() => {
+      if (modalRef.current) {
+        const firstFocusable = modalRef.current.querySelector<HTMLElement>('input:not([disabled]), button:not([disabled])');
+        firstFocusable?.focus();
+      }
+    }, 50);
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isAuthModalOpen) {
         closeAuthModal();
@@ -76,7 +87,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onShowToast }) => {
       }
     };
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('keydown', handleKeyDown);
+      previousActiveElement?.focus();
+    };
   }, [isAuthModalOpen, closeAuthModal]);
 
   if (!isAuthModalOpen) return null;

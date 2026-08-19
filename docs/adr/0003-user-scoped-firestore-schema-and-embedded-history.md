@@ -41,3 +41,5 @@ Several architectural, security, and cost concerns were identified with this des
 
 ### Negative / Trade-offs
 - Global cross-user querying (e.g. platform-wide administrative analytics) requires Firestore Collection Group queries (`collectionGroup('applications')`) and dedicated composite indexes.
+- **Migration of Legacy Root Documents**: Legacy applications in the flat `/applications` collection are deprecated. All active read/write operations now target `/users/{userId}/applications/{applicationId}`. Offline guest data is migrated on authentication via local application import.
+- **Document Size Bounds**: Firestore enforces a strict 1 MiB maximum document size limit. With status history capped at `MAX_STATUS_HISTORY_ENTRIES = 50` (~5 KB), plus embedded tasks, contacts, and emails, typical documents consume < 25 KB, well within safe thresholds.

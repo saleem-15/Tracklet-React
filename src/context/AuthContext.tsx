@@ -213,11 +213,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setError(null);
     try {
       if (user?.uid) {
-        try {
-          await ApplicationRepository.purgeUserData(user.uid);
-        } catch (purgeErr) {
-          console.warn('Could not purge user data prior to account deletion:', purgeErr);
-        }
+        await ApplicationRepository.purgeUserData(user.uid);
       }
       await AuthRepository.deleteAccount();
       setUser(null);

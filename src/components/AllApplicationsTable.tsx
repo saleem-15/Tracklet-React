@@ -8,6 +8,7 @@ import {
   XCircle,
   Trash2,
   CheckSquare,
+  MinusSquare,
   Square,
   Download
 } from 'lucide-react';
@@ -75,6 +76,8 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
 
   const allSelected =
     applications.length > 0 && selectedIds.size === applications.length;
+  const someSelected =
+    selectedIds.size > 0 && selectedIds.size < applications.length;
 
   const toggleSelectAll = () => {
     if (allSelected) {
@@ -299,13 +302,15 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
                 <button
                   type="button"
                   role="checkbox"
-                  aria-checked={allSelected}
+                  aria-checked={allSelected ? true : someSelected ? 'mixed' : false}
                   onClick={toggleSelectAll}
                   aria-label={allSelected ? "Deselect all applications" : "Select all applications"}
                   className="text-slate-500 hover:text-slate-700 align-middle transition-colors cursor-pointer"
                 >
                   {allSelected ? (
                     <CheckSquare className="w-3.5 h-3.5 text-blue-600" />
+                  ) : someSelected ? (
+                    <MinusSquare className="w-3.5 h-3.5 text-blue-600" />
                   ) : (
                     <Square className="w-3.5 h-3.5" />
                   )}

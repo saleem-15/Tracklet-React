@@ -137,12 +137,20 @@ export const ResetPasswordView: React.FC<ResetPasswordViewProps> = ({
         <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-200/80 text-blue-600 flex items-center justify-center mx-auto shadow-2xs">
           <KeyRound className="w-6 h-6" />
         </div>
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           <h1 className="text-2xl font-extrabold font-heading text-slate-900 tracking-tight">
-            Password reset
+            Password reset link
           </h1>
-          <p className="text-xs text-slate-600 font-sans max-w-xs mx-auto leading-relaxed">
-            If you have already reset your password on the Firebase confirmation page, you can sign in directly with your new password.
+          <div
+            role="alert"
+            aria-live="polite"
+            className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-start gap-2 text-left"
+          >
+            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+            <span className="leading-relaxed font-medium">{codeError}</span>
+          </div>
+          <p className="text-xs text-slate-600 font-sans max-w-xs mx-auto leading-relaxed pt-1">
+            If you have already reset your password on the confirmation page, you can sign in directly.
           </p>
         </div>
         <div className="space-y-2.5 pt-2">

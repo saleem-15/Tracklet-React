@@ -90,7 +90,6 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
     } catch (err: unknown) {
       const msg = getFriendlyAuthErrorMessage(err);
       setLocalError(msg);
-      onShowToast?.('error', 'Google Sign-In Failed', msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -105,7 +104,6 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
     } catch (err: unknown) {
       const msg = getFriendlyAuthErrorMessage(err);
       setLocalError(msg);
-      onShowToast?.('error', 'Sign In Failed', msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -124,7 +122,6 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
     } catch (err: unknown) {
       const msg = getFriendlyAuthErrorMessage(err);
       setLocalError(msg);
-      onShowToast?.('error', 'Registration Error', msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -146,7 +143,6 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
     } catch (err: unknown) {
       const msg = getFriendlyAuthErrorMessage(err);
       setLocalError(msg);
-      onShowToast?.('error', 'Reset Failed', msg);
     } finally {
       setIsSubmitting(false);
     }

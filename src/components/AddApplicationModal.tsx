@@ -54,6 +54,16 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
 
   useEffect(() => {
     if (!isOpen) return;
+    const previousActiveElement = document.activeElement as HTMLElement | null;
+
+    // Move focus to first input inside dialog
+    const timer = setTimeout(() => {
+      if (dialogRef.current) {
+        const firstInput = dialogRef.current.querySelector<HTMLElement>('input:not([disabled]), button:not([disabled])');
+        firstInput?.focus();
+      }
+    }, 50);
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         handleRequestClose();
@@ -74,7 +84,11 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
       }
     };
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('keydown', handleKeyDown);
+      previousActiveElement?.focus();
+    };
   }, [isOpen, onClose, isDirty]);
 
   if (!isOpen) return null;
