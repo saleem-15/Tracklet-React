@@ -32,6 +32,7 @@ interface AllApplicationsTableProps {
   onSortChange: (field: SortField) => void;
   onBulkUpdateStatus: (ids: string[], newStatus: ApplicationStatus) => void;
   onBulkDelete: (ids: string[]) => void;
+  onShowToast?: (type: 'success' | 'error' | 'info' | 'warning', title: string, description?: string) => void;
 }
 
 function getStageUrgencyClass(status: ApplicationStatus, daysInStage: number): string {
@@ -68,6 +69,7 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
   onSortChange,
   onBulkUpdateStatus,
   onBulkDelete,
+  onShowToast,
 }) => {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [focusedIndex, setFocusedIndex] = useState<number>(-1);
@@ -106,7 +108,12 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
 
   const handleExportSelectedCSV = () => {
     const selectedApps = applications.filter((a) => selectedIds.has(a.id));
-    exportApplicationsToCSV(selectedApps, 'tracklet_selected_applications');
+    const ok = exportApplicationsToCSV(selectedApps, 'tracklet_selected_applications');
+    if (ok) {
+      onShowToast?.('success', 'Export Complete', `Exported ${selectedApps.length} applications to CSV.`);
+    } else {
+      onShowToast?.('warning', 'Export Empty', 'Select at least one application to export.');
+    }
   };
 
   const handleBulkArchive = () => {

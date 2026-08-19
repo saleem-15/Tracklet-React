@@ -160,10 +160,11 @@ export const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
   const processCSVContent = (content: string) => {
     const parsed = parseRawCSV(content);
     if (parsed.length < 2) {
-      alert('CSV file must contain a header row and at least one data row.');
+      setParseError('CSV file must contain a header row and at least one data row.');
       return;
     }
 
+    setParseError(null);
     const detectedHeaders = parsed[0];
     const rows = parsed.slice(1);
 
@@ -178,7 +179,7 @@ export const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
 
   const handlePasteSubmit = () => {
     if (!csvText.trim()) {
-      alert('Please paste valid CSV content.');
+      setParseError('Please paste valid CSV content.');
       return;
     }
     processCSVContent(csvText);
@@ -255,18 +256,19 @@ export const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
 
   const handleExecuteImport = async () => {
     if (parsedApplications.length === 0) {
-      alert('No valid applications detected to import.');
+      setParseError('No valid applications detected to import.');
       return;
     }
 
     setIsSubmitting(true);
+    setParseError(null);
     try {
       await onImport(parsedApplications);
       setImportedCount(parsedApplications.length);
       setStep('success');
     } catch (err) {
       console.error('Import failed:', err);
-      alert('Import failed. Please verify your CSV format and try again.');
+      setParseError('Import failed. Please verify your CSV format and try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -275,6 +277,7 @@ export const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
   const resetModal = () => {
     setStep('upload');
     setCsvText('');
+    setParseError(null);
   };
 
   const downloadSampleCSV = () => {
@@ -467,7 +470,7 @@ export const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
                       {parsedApplications.map((app, idx) => (
                         <tr key={idx} className="hover:bg-slate-50">
                           <td className="p-2.5 font-bold text-slate-900">{app.company}</td>
-                          <td className="p-2.5 font-medium">{app.role}</td>
+                          <td className="p-2.5 text-slate-700">{app.role}</td>
                           <td className="p-2.5">
                             <span className="font-mono text-[11px] px-1.5 py-0.5 rounded-md bg-blue-50 text-blue-700 font-semibold border border-blue-200/60">
                               {app.platform}
@@ -481,6 +484,13 @@ export const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
                   </table>
                 </div>
               </div>
+
+              {parseError && (
+                <div className="bg-rose-50 border border-rose-200 text-rose-800 p-3 rounded-[10px] text-xs flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
+                  <span>{parseError}</span>
+                </div>
+              )}
             </div>
           )}
 

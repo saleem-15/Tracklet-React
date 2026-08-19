@@ -7,6 +7,7 @@ import { AddApplicationTasksSection } from './add-modal/AddApplicationTasksSecti
 import { AddApplicationContactsSection } from './add-modal/AddApplicationContactsSection';
 import { AddApplicationNotesSection } from './add-modal/AddApplicationNotesSection';
 import { AddApplicationFooter } from './add-modal/AddApplicationFooter';
+import { UnsavedChangesPrompt } from './detail/UnsavedChangesPrompt';
 
 export interface AddApplicationModalProps {
   isOpen: boolean;
@@ -31,6 +32,7 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
   const [notes, setNotes] = useState('');
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [tasks, setTasks] = useState<ApplicationTask[]>([]);
+  const [showUnsavedPrompt, setShowUnsavedPrompt] = useState(false);
 
   const isDirty =
     company.trim() !== '' ||
@@ -42,9 +44,7 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
 
   const handleRequestClose = () => {
     if (isDirty) {
-      if (confirm('Discard unsaved job application entry?')) {
-        onClose();
-      }
+      setShowUnsavedPrompt(true);
     } else {
       onClose();
     }
@@ -260,6 +260,16 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
           />
         </form>
       </div>
+
+      {showUnsavedPrompt && (
+        <UnsavedChangesPrompt
+          onKeepEditing={() => setShowUnsavedPrompt(false)}
+          onDiscardAndExit={() => {
+            setShowUnsavedPrompt(false);
+            onClose();
+          }}
+        />
+      )}
     </div>
   );
 };

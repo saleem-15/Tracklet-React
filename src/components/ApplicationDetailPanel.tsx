@@ -107,11 +107,8 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
 
   const handleDelete = async () => {
     if (!app) return;
-    if (confirm(`Delete application for ${app.company} – ${app.role}?`)) {
-      await onDeleteApp(app.id);
-      onShowToast?.('info', 'Application deleted');
-      onClose();
-    }
+    onClose();
+    await onDeleteApp(app.id);
   };
 
   // Task handlers

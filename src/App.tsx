@@ -655,6 +655,15 @@ function TrackletAppContent() {
       });
   }, [applications, filter, sort]);
 
+  const handleExportCSV = useCallback(() => {
+    const success = exportApplicationsToCSV(filteredAndSortedApplications);
+    if (success) {
+      addToast('success', 'Export Complete', `Exported ${filteredAndSortedApplications.length} applications to CSV.`);
+    } else {
+      addToast('warning', 'Export Empty', 'No applications available to export.');
+    }
+  }, [filteredAndSortedApplications, addToast]);
+
   const selectedApp = useMemo(() => {
     return applications.find((a) => a.id === selectedAppId) || null;
   }, [applications, selectedAppId]);
@@ -735,7 +744,7 @@ function TrackletAppContent() {
             setFilter={setFilter}
             onOpenAddModal={() => setIsAddModalOpen(true)}
             totalFilteredCount={filteredAndSortedApplications.length}
-            onExportCSV={() => exportApplicationsToCSV(filteredAndSortedApplications)}
+            onExportCSV={handleExportCSV}
             activeTab={activeTab}
             onOpenMobileSidebar={() => setIsMobileSidebarOpen(true)}
           />
@@ -761,6 +770,7 @@ function TrackletAppContent() {
                 onSortChange={handleSortChange}
                 onBulkUpdateStatus={handleBulkUpdateStatus}
                 onBulkDelete={handleBulkDelete}
+                onShowToast={addToast}
               />
             )}
 
@@ -796,7 +806,7 @@ function TrackletAppContent() {
                   onUpdateSettings={handleUpdateExpirySettings}
                   applications={applications}
                   onSelectApplication={(id) => setSelectedAppId(id)}
-                  onExportCSV={() => exportApplicationsToCSV(filteredAndSortedApplications)}
+                  onExportCSV={handleExportCSV}
                   onImportCSV={handleBatchImportApplications}
                   onSeedDemoData={handleSeedDemoData}
                   onShowToast={addToast}
