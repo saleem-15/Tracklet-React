@@ -5,6 +5,7 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   sendEmailVerification as firebaseSendEmailVerification,
+  applyActionCode as firebaseApplyActionCode,
   sendPasswordResetEmail as firebaseSendPasswordResetEmail,
   verifyPasswordResetCode as firebaseVerifyPasswordResetCode,
   confirmPasswordReset as firebaseConfirmPasswordReset,
@@ -110,6 +111,13 @@ export class AuthRepository {
     } catch {
       // Ignore localStorage error
     }
+  }
+
+  /**
+   * Apply an out-of-band verification action code (oobCode).
+   */
+  static async applyActionCode(code: string): Promise<void> {
+    await firebaseApplyActionCode(auth, code);
   }
 
   /**

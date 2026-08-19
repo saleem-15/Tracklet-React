@@ -23,6 +23,7 @@ export interface AuthContextType {
   signInWithEmail: (email: string, password: string) => Promise<void>;
   signUpWithEmail: (email: string, password: string) => Promise<void>;
   sendEmailVerification: () => Promise<void>;
+  applyActionCode: (code: string) => Promise<void>;
   sendPasswordReset: (email: string) => Promise<void>;
   verifyPasswordResetCode: (code: string) => Promise<string>;
   confirmPasswordReset: (code: string, newPass: string) => Promise<void>;
@@ -131,6 +132,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
+  const applyActionCode = useCallback(async (code: string) => {
+    setError(null);
+    try {
+      await AuthRepository.applyActionCode(code);
+      const reloaded = await AuthRepository.reloadUser();
+      if (reloaded) {
+        setUser(reloaded);
+        setAuthUser(AuthRepository.mapToAuthUser(reloaded));
+      }
+    } catch (err: unknown) {
+      const friendlyMsg = getFriendlyAuthErrorMessage(err);
+      setError(friendlyMsg);
+      throw new Error(friendlyMsg);
+    }
+  }, []);
+
   const sendPasswordReset = useCallback(async (email: string) => {
     setError(null);
     try {
@@ -226,6 +243,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     signInWithEmail,
     signUpWithEmail,
     sendEmailVerification,
+    applyActionCode,
     sendPasswordReset,
     verifyPasswordResetCode,
     confirmPasswordReset,
