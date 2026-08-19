@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { History, ArrowRight } from 'lucide-react';
 import { ApplicationStatus, StatusHistoryEntry } from '../../types';
 import { StatusBadge } from '../StatusBadge';
-import { fetchStatusHistory } from '../../lib/historyService';
 
 export interface StatusHistoryTimelineProps {
-  appId: string;
+  history?: StatusHistoryEntry[];
   currentStatus: ApplicationStatus;
   createdAt?: string;
   stageUpdatedAt?: string;
@@ -29,33 +28,11 @@ function formatTimestamp(isoString: string): string {
 }
 
 export const StatusHistoryTimeline: React.FC<StatusHistoryTimelineProps> = ({
-  appId,
+  history = [],
   currentStatus,
   createdAt,
   stageUpdatedAt,
 }) => {
-  const [historyEntries, setHistoryEntries] = useState<StatusHistoryEntry[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-
-  useEffect(() => {
-    let isMounted = true;
-    if (appId) {
-      setIsLoading(true);
-      fetchStatusHistory(appId)
-        .then((entries) => {
-          if (isMounted) setHistoryEntries(entries);
-        })
-        .finally(() => {
-          if (isMounted) setIsLoading(false);
-        });
-    } else {
-      setHistoryEntries([]);
-    }
-    return () => {
-      isMounted = false;
-    };
-  }, [appId, currentStatus]);
-
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
@@ -64,14 +41,12 @@ export const StatusHistoryTimeline: React.FC<StatusHistoryTimelineProps> = ({
           Status History
         </h3>
         <span className="text-[11px] font-mono text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">
-          {historyEntries.length} {historyEntries.length === 1 ? 'event' : 'events'}
+          {history.length} {history.length === 1 ? 'event' : 'events'}
         </span>
       </div>
 
       <div className="bg-white border border-slate-200/80 rounded-xl p-3.5 max-h-[200px] overflow-y-auto shadow-2xs">
-        {isLoading ? (
-          <div className="text-slate-500 font-mono text-[11px] text-center py-2">Loading…</div>
-        ) : historyEntries.length === 0 ? (
+        {history.length === 0 ? (
           <div className="flex items-start gap-3">
             <div className="w-2 h-2 rounded-full bg-blue-400 mt-1.5 shrink-0" />
             <div>
@@ -85,7 +60,7 @@ export const StatusHistoryTimeline: React.FC<StatusHistoryTimelineProps> = ({
           </div>
         ) : (
           <div className="relative pl-4 space-y-3.5 before:absolute before:left-1.5 before:top-2 before:bottom-2 before:w-px before:bg-slate-200">
-            {historyEntries.map((entry, idx) => (
+            {history.map((entry, idx) => (
               <div key={entry.id || idx} className="relative flex items-start gap-3">
                 <div className="absolute -left-4 top-1.5 w-2 h-2 rounded-full bg-blue-500 ring-2 ring-white shrink-0" />
                 <div className="flex-1 min-w-0">

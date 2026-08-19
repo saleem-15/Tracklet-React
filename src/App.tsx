@@ -6,9 +6,11 @@ import {
   SortState, 
   ApplicationStatus, 
   SortField,
-  ExpiryNotificationSettings
+  ExpiryNotificationSettings,
+  StatusHistoryEntry
 } from './types';
 import { ApplicationRepository } from './lib/applicationRepository';
+import { appendStatusHistory } from './lib/historyService';
 import { exportApplicationsToCSV } from './lib/exportCsv';
 import { calculateDaysInStage } from './lib/sampleData';
 import { Sidebar } from './components/Sidebar';
@@ -334,15 +336,22 @@ function TrackletAppContent() {
   const handleUpdateApplication = async (id: string, updates: Partial<Application>) => {
     const currentApp = applications.find((a) => a.id === id);
     const isStatusChanged = updates.status && currentApp && updates.status !== currentApp.status;
+    const now = new Date().toISOString();
+
+    const mergedUpdates = { ...updates };
+    if (isStatusChanged && updates.status && currentApp) {
+      mergedUpdates.history = appendStatusHistory(currentApp.history, updates.status, currentApp.status, now);
+      mergedUpdates.stageUpdatedAt = now;
+    }
 
     setApplications((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, ...updates, updatedAt: new Date().toISOString() } : a))
+      prev.map((a) => (a.id === id ? { ...a, ...mergedUpdates, updatedAt: now } : a))
     );
 
     try {
       await ApplicationRepository.updateApplication(
         id,
-        updates,
+        mergedUpdates,
         user?.emailVerified ? user.uid : undefined
       );
 
@@ -374,21 +383,24 @@ function TrackletAppContent() {
   const handleBulkUpdateStatus = async (ids: string[], newStatus: ApplicationStatus) => {
     const now = new Date().toISOString();
     const previousSnapshot = applications.filter((a) => ids.includes(a.id));
-    const previousStatusMap = new Map<string, { status: ApplicationStatus; stageUpdatedAt: string }>(
-      previousSnapshot.map((a) => [a.id, { status: a.status, stageUpdatedAt: a.stageUpdatedAt }])
+    const previousStatusMap = new Map<string, { status: ApplicationStatus; stageUpdatedAt: string; history?: StatusHistoryEntry[] }>(
+      previousSnapshot.map((a) => [a.id, { status: a.status, stageUpdatedAt: a.stageUpdatedAt, history: a.history }])
     );
 
     setApplications((prev) =>
-      prev.map((a) =>
-        ids.includes(a.id) ? { ...a, status: newStatus, stageUpdatedAt: now, updatedAt: now } : a
-      )
+      prev.map((a) => {
+        if (!ids.includes(a.id)) return a;
+        const updatedHist = appendStatusHistory(a.history, newStatus, a.status, now);
+        return { ...a, status: newStatus, history: updatedHist, stageUpdatedAt: now, updatedAt: now };
+      })
     );
 
     try {
       await ApplicationRepository.batchUpdateStatus(
         ids,
         newStatus,
-        user?.emailVerified ? user.uid : undefined
+        user?.emailVerified ? user.uid : undefined,
+        applications
       );
 
       addToast(

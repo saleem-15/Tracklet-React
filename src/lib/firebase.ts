@@ -18,6 +18,7 @@ import {
 } from 'firebase/auth';
 import { 
   getFirestore, 
+  initializeFirestore,
   collection, 
   doc, 
   getDocs, 
@@ -50,9 +51,18 @@ export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
 
-// Initialize Firestore with custom database ID if present in config
+// Initialize Firestore with custom database ID and ignoreUndefinedProperties
 const firestoreDatabaseId = (firebaseAppletConfig as Record<string, string | undefined>).firestoreDatabaseId;
-export const db = getFirestore(app, firestoreDatabaseId || undefined);
+
+let firestoreInstance;
+try {
+  firestoreInstance = initializeFirestore(app, {
+    ignoreUndefinedProperties: true,
+  }, firestoreDatabaseId || undefined);
+} catch {
+  firestoreInstance = getFirestore(app, firestoreDatabaseId || undefined);
+}
+export const db = firestoreInstance;
 
 export { 
   collection, 

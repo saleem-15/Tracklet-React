@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { User as FirebaseUser } from 'firebase/auth';
 import { AuthRepository } from '../lib/authRepository';
+import { ApplicationRepository } from '../lib/applicationRepository';
 import { AuthUser, AuthViewMode } from '../types';
 import { getFriendlyAuthErrorMessage } from '../lib/authErrors';
 
@@ -194,6 +195,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const deleteAccount = useCallback(async () => {
     setError(null);
     try {
+      if (user?.uid) {
+        try {
+          await ApplicationRepository.purgeUserData(user.uid);
+        } catch (purgeErr) {
+          console.warn('Could not purge user data prior to account deletion:', purgeErr);
+        }
+      }
       await AuthRepository.deleteAccount();
       setUser(null);
       setAuthUser(null);
@@ -202,7 +210,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setError(friendlyMsg);
       throw new Error(friendlyMsg);
     }
-  }, []);
+  }, [user?.uid]);
 
   const value: AuthContextType = {
     user,

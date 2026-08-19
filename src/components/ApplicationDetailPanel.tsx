@@ -247,7 +247,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
               />
 
               <StatusHistoryTimeline
-                appId={app.id}
+                history={app.history}
                 currentStatus={app.status}
                 createdAt={app.createdAt}
                 stageUpdatedAt={app.stageUpdatedAt}

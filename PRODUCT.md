@@ -22,7 +22,7 @@ Tracklet works without an account (guest mode, localStorage) and without any set
 
 ## Operating Context
 
-Users interact with Tracklet during or right after applying for jobs — often daily during an active search. Typical rituals: logging a new application after submitting it, checking the pipeline board to see what's stale, updating a status after hearing back from a recruiter, and reviewing stats to understand search velocity. The tool should be fast and low-friction, never in the user's way.
+Users interact with Tracklet during or right after applying for jobs — often daily during an active search. Typical rituals: logging a new application after submitting it, checking the pipeline board to see what's stale, updating a status after hearing back from a recruiter, and reviewing stats to understand search  velocity. The tool should be fast and low-friction, never in the user's way.
 
 ## Capabilities and Constraints
 
@@ -58,3 +58,20 @@ Name: **Tracklet** — short, purposeful, tool-like. No confirmed tagline, logo,
 ## Accessibility & Inclusion
 
 No product-specific accessibility requirement confirmed yet. Standard web accessibility (WCAG 2.1 AA) is a reasonable baseline for a public web tool.
+
+```mermaid 
+graph TD
+  subgraph Current ["Current Schema (Flat Root Collection)"]
+    A["applications/ (Root Collection)"] --> B["{applicationId} (Document)<br>userId: 'uid_123'<br>company: 'Google'..."]
+    B --> C["history/ (Sub-collection)"]
+    C --> D["{historyId} (Document)"]
+  end
+
+  subgraph Hierarchical ["Your Proposed Schema (User-Scoped Sub-collection)"]
+    U["users/ (Collection)"] --> UDoc["{userId} (Document)"]
+    UDoc --> UApp["applications/ (Sub-collection)"]
+    UApp --> UAppDoc["{applicationId} (Document)<br>company: 'Google'..."]
+    UAppDoc --> UHist["history/ (Sub-collection)"]
+    UHist --> UHistDoc["{historyId} (Document)"]
+  end
+
