@@ -74,12 +74,6 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
   const [draggedAppId, setDraggedAppId] = useState<string | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<ApplicationStatus | null>(null);
   const [isAttentionDismissed, setIsAttentionDismissed] = useState(false);
-  const [lastMovedNotice, setLastMovedNotice] = useState<{
-    id: string;
-    company: string;
-    fromStatus: ApplicationStatus;
-    toStatus: ApplicationStatus;
-  } | null>(null);
 
   // Column refs for mobile stage jump scrolling
   const columnRefs = useRef<{ [key in ApplicationStatus]?: HTMLDivElement | null }>({});
@@ -133,14 +127,7 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
     if (id) {
       const app = applications.find((a) => a.id === id);
       if (app && app.status !== targetStatus) {
-        const prevStatus = app.status;
         onUpdateStatus(id, targetStatus);
-        setLastMovedNotice({
-          id,
-          company: app.company,
-          fromStatus: prevStatus,
-          toStatus: targetStatus,
-        });
       }
     }
     setDraggedAppId(null);
@@ -149,38 +136,11 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
 
   const handleQuickAdvance = (e: React.SyntheticEvent, app: Application, nextStatus: ApplicationStatus) => {
     e.stopPropagation();
-    const prevStatus = app.status;
     onUpdateStatus(app.id, nextStatus);
-    setLastMovedNotice({
-      id: app.id,
-      company: app.company,
-      fromStatus: prevStatus,
-      toStatus: nextStatus,
-    });
   };
 
   return (
     <div className="flex-1 bg-white flex flex-col h-full min-h-0 select-none overflow-hidden relative">
-      {/* Status move notification toast */}
-      {lastMovedNotice && (
-        <div className="absolute bottom-4 right-4 sm:right-6 z-30 bg-slate-900 text-white px-3.5 py-2.5 rounded-xl shadow-xl flex items-center gap-3 text-xs animate-in fade-in slide-in-from-bottom-2 duration-200 max-w-[90vw]">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-          <span className="truncate">
-            Moved <strong className="font-semibold text-white">{lastMovedNotice.company}</strong> to <span className="font-mono text-blue-300 font-semibold">{lastMovedNotice.toStatus}</span>
-          </span>
-          <button
-            type="button"
-            onClick={() => {
-              onUpdateStatus(lastMovedNotice.id, lastMovedNotice.fromStatus);
-              setLastMovedNotice(null);
-            }}
-            className="ml-auto shrink-0 bg-slate-800 hover:bg-slate-700 text-amber-300 hover:text-amber-200 font-semibold px-2 py-1 rounded border border-slate-700 text-[11px] transition-colors cursor-pointer min-h-[30px]"
-          >
-            Undo
-          </button>
-        </div>
-      )}
-
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
         {/* "Needs Attention Today" Hero Banner (Responsive layout) */}
         {!isAttentionDismissed && staleApps.length > 0 && (

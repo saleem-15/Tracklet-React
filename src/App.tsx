@@ -131,10 +131,11 @@ function TrackletAppContent() {
     type: 'success' | 'error' | 'info' | 'warning',
     title: string,
     description?: string,
-    action?: { label: string; onClick: () => void }
+    action?: { label: string; onClick: () => void },
+    stage?: ApplicationStatus
   ) => {
     const id = `toast-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
-    setToasts((prev) => [...prev, { id, type, title, description, action }]);
+    setToasts((prev) => [...prev.slice(-4), { id, type, title, description, action, stage }]);
   }, []);
 
   const dismissToast = (id: string) => {
@@ -291,7 +292,7 @@ function TrackletAppContent() {
       const freshDocs = await ApplicationRepository.seedDemoData(user?.emailVerified ? user.uid : undefined);
       setApplications(freshDocs);
       setSelectedAppId(null);
-      addToast('info', 'Workspace Reset', 'Sample job application dataset loaded.');
+      addToast('info', 'Sample data loaded', '10 demo applications ready.');
     } catch (err) {
       console.error('Failed to seed demo data:', err);
       addToast('error', 'Error', 'Could not load demo dataset.');
@@ -368,7 +369,21 @@ function TrackletAppContent() {
       }
 
       if (isStatusChanged && updates.status && currentApp) {
-        addToast('info', 'Status Updated', `${currentApp.company} moved to ${updates.status}`);
+        const prevStatus = currentApp.status;
+        const targetStatus = updates.status;
+        const companyName = currentApp.company;
+        addToast(
+          'success',
+          `Moved ${companyName} to`,
+          undefined,
+          {
+            label: 'Undo',
+            onClick: () => {
+              handleUpdateApplication(id, { status: prevStatus });
+            },
+          },
+          targetStatus
+        );
       }
     } catch (err) {
       console.error('Failed to update application:', err);
@@ -396,7 +411,25 @@ function TrackletAppContent() {
     try {
       await ApplicationRepository.deleteApplication(id, user?.emailVerified ? user.uid : undefined);
       if (targetApp) {
-        addToast('info', 'Application Removed', `Deleted ${targetApp.company} record.`);
+        addToast(
+          'info',
+          `Deleted ${targetApp.company}`,
+          undefined,
+          {
+            label: 'Undo',
+            onClick: async () => {
+              setApplications((prev) => {
+                const next = [targetApp, ...prev];
+                if (!user?.emailVerified) ApplicationRepository.saveGuestApplications(next);
+                return next;
+              });
+              if (user?.emailVerified) {
+                await ApplicationRepository.addApplication(targetApp, user.uid);
+              }
+              addToast('success', `Restored ${targetApp.company}`);
+            },
+          }
+        );
       }
     } catch (err) {
       console.error('Failed to delete application:', err);
@@ -441,8 +474,8 @@ function TrackletAppContent() {
 
       addToast(
         'success',
-        'Bulk Status Updated',
-        `Moved ${ids.length} application${ids.length === 1 ? '' : 's'} to ${newStatus}`,
+        `Moved ${ids.length} application${ids.length === 1 ? '' : 's'} to`,
+        undefined,
         {
           label: 'Undo',
           onClick: async () => {
@@ -463,9 +496,10 @@ function TrackletAppContent() {
                 }, user.uid);
               }
             }
-            addToast('info', 'Status Reverted', `Restored ${ids.length} application status${ids.length === 1 ? '' : 'es'}.`);
+            addToast('info', 'Restored previous statuses');
           },
-        }
+        },
+        newStatus
       );
     } catch (err) {
       console.error('Bulk update failed:', err);
@@ -783,6 +817,7 @@ function TrackletAppContent() {
         onClose={() => setSelectedAppId(null)}
         onUpdateApp={handleUpdateApplication}
         onDeleteApp={handleDeleteApplication}
+        onShowToast={addToast}
       />
 
       {/* Add Application Modal */}

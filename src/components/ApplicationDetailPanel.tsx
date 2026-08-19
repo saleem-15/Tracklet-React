@@ -18,6 +18,13 @@ export interface ApplicationDetailPanelProps {
   onClose: () => void;
   onUpdateApp: (id: string, updates: Partial<Application>) => Promise<void>;
   onDeleteApp: (id: string) => Promise<void>;
+  onShowToast?: (
+    type: 'success' | 'error' | 'info' | 'warning',
+    title: string,
+    description?: string,
+    action?: { label: string; onClick: () => void },
+    stage?: ApplicationStatus
+  ) => void;
 }
 
 export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
@@ -25,6 +32,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
   onClose,
   onUpdateApp,
   onDeleteApp,
+  onShowToast,
 }) => {
   const [notes, setNotes] = useState(app?.notes || '');
   const [isSavingNotes, setIsSavingNotes] = useState(false);
@@ -78,6 +86,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
     setIsEditingInfo(false);
     setShowSavedToast(true);
     setTimeout(() => setShowSavedToast(false), 2000);
+    onShowToast?.('success', 'Application updated');
   };
 
   const handleNotesChange = (val: string) => {
@@ -93,12 +102,14 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
     setHasUnsavedNotes(false);
     setShowSavedToast(true);
     setTimeout(() => setShowSavedToast(false), 2000);
+    onShowToast?.('success', 'Notes saved');
   };
 
   const handleDelete = async () => {
     if (!app) return;
     if (confirm(`Delete application for ${app.company} – ${app.role}?`)) {
       await onDeleteApp(app.id);
+      onShowToast?.('info', 'Application deleted');
       onClose();
     }
   };
@@ -117,13 +128,29 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
   const handleAddTask = async (title: string, dueDate?: string) => {
     const newTask: ApplicationTask = { id: `task-${Date.now()}`, title, completed: false, dueDate };
     await onUpdateApp(app.id, { tasks: [...(app.tasks || []), newTask], updatedAt: new Date().toISOString() });
+    onShowToast?.('success', 'Task added', title);
   };
 
   const handleDeleteTask = async (taskId: string) => {
+    const deletedTask = (app.tasks || []).find((t) => t.id === taskId);
+    const updatedTasks = (app.tasks || []).filter((t) => t.id !== taskId);
     await onUpdateApp(app.id, {
-      tasks: (app.tasks || []).filter((t) => t.id !== taskId),
+      tasks: updatedTasks,
       updatedAt: new Date().toISOString(),
     });
+
+    if (deletedTask) {
+      onShowToast?.('info', `Task deleted (${deletedTask.title})`, undefined, {
+        label: 'Undo',
+        onClick: async () => {
+          await onUpdateApp(app.id, {
+            tasks: [...(app.tasks || []), deletedTask],
+            updatedAt: new Date().toISOString(),
+          });
+          onShowToast?.('success', 'Restored task');
+        },
+      });
+    }
   };
 
   // Contact handlers
@@ -148,13 +175,29 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
       updates.contactEmail = contactData.email;
     }
     await onUpdateApp(app.id, updates);
+    onShowToast?.('success', editingId ? 'Contact updated' : 'Contact added', contactData.name || 'Contact');
   };
 
   const handleDeleteContact = async (contactId: string) => {
+    const deletedContact = (app.contacts || []).find((c) => c.id === contactId);
+    const updatedContacts = (app.contacts || []).filter((c) => c.id !== contactId);
     await onUpdateApp(app.id, {
-      contacts: (app.contacts || []).filter((c) => c.id !== contactId),
+      contacts: updatedContacts,
       updatedAt: new Date().toISOString(),
     });
+
+    if (deletedContact) {
+      onShowToast?.('info', `Contact deleted (${deletedContact.name})`, undefined, {
+        label: 'Undo',
+        onClick: async () => {
+          await onUpdateApp(app.id, {
+            contacts: [...(app.contacts || []), deletedContact],
+            updatedAt: new Date().toISOString(),
+          });
+          onShowToast?.('success', `Restored ${deletedContact.name}`);
+        },
+      });
+    }
   };
 
   // Email handlers
