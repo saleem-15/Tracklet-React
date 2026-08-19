@@ -61,7 +61,7 @@ Standard web accessibility (WCAG 2.1 AA) is the baseline for Tracklet, with keyb
 
 ## Data Model & Architecture
 
-```mermaid 
+```mermaid
 graph TD
   subgraph Legacy ["Legacy Schema (Flat Root Collection)"]
     A["applications/ (Root Collection)"] --> B["{applicationId} (Document)<br>userId: 'uid_123'<br>company: 'Google'..."]

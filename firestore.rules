@@ -17,7 +17,7 @@ service cloud.firestore {
 
       match /applications/{applicationId} {
         allow read, delete: if isOwner(userId);
-        allow create, update: if isOwner(userId) && (request.resource.data.userId == null || request.resource.data.userId == userId);
+        allow create, update: if isOwner(userId) && (request.resource.data.userId == null || request.resource.data.userId == request.auth.uid);
       }
     }
 

@@ -359,11 +359,13 @@ function TrackletAppContent() {
     });
 
     try {
-      await ApplicationRepository.updateApplication(
-        id,
-        mergedUpdates,
-        user?.emailVerified ? user.uid : undefined
-      );
+      if (user?.emailVerified) {
+        await ApplicationRepository.updateApplication(
+          id,
+          mergedUpdates,
+          user.uid
+        );
+      }
 
       if (isStatusChanged && updates.status && currentApp) {
         addToast('info', 'Status Updated', `${currentApp.company} moved to ${updates.status}`);
@@ -428,12 +430,14 @@ function TrackletAppContent() {
     });
 
     try {
-      await ApplicationRepository.batchUpdateStatus(
-        ids,
-        newStatus,
-        user?.emailVerified ? user.uid : undefined,
-        applications
-      );
+      if (user?.emailVerified) {
+        await ApplicationRepository.batchUpdateStatus(
+          ids,
+          newStatus,
+          user.uid,
+          applications
+        );
+      }
 
       addToast(
         'success',

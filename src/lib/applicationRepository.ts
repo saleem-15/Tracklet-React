@@ -17,28 +17,26 @@ import { createStatusHistoryEntry, appendStatusHistory } from './historyService'
  * Strips undefined properties recursively so Firestore does not reject document writes.
  * Supports nested objects, array elements, and primitive values.
  */
-function sanitizeValue(value: unknown): unknown {
-  if (value === undefined) return undefined;
-  if (value === null) return null;
-  if (Array.isArray(value)) {
-    return value
-      .filter((item) => item !== undefined)
-      .map((item) => sanitizeValue(item));
-  }
-  if (typeof value === 'object') {
-    const result: Record<string, unknown> = {};
-    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
-      if (v !== undefined) {
-        result[k] = sanitizeValue(v);
+function sanitizeForFirestore<T extends Record<string, unknown>>(obj: T): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(obj)) {
+    if (value !== undefined) {
+      if (Array.isArray(value)) {
+        // Recursively sanitize array elements that are objects
+        result[key] = value.map((item) => {
+          if (item !== null && typeof item === 'object' && !Array.isArray(item)) {
+            return sanitizeForFirestore(item as Record<string, unknown>);
+          }
+          return item;
+        });
+      } else if (value !== null && typeof value === 'object') {
+        result[key] = sanitizeForFirestore(value as Record<string, unknown>);
+      } else {
+        result[key] = value;
       }
     }
-    return result;
   }
-  return value;
-}
-
-function sanitizeForFirestore<T extends Record<string, unknown>>(obj: T): Record<string, unknown> {
-  return (sanitizeValue(obj) as Record<string, unknown>) || {};
+  return result;
 }
 
 /**

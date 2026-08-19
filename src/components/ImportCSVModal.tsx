@@ -67,16 +67,23 @@ export const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
 
   React.useEffect(() => {
     if (!isOpen) return;
-    const previousActiveElement = document.activeElement as HTMLElement | null;
 
-    // Focus first focusable element inside modal
+    // Save previously focused element
+    previousFocusRef.current = document.activeElement as HTMLElement | null;
+
+    // Move focus to first focusable element inside modal
     const timer = setTimeout(() => {
       if (modalRef.current) {
-        const firstFocusable = modalRef.current.querySelector<HTMLElement>('button:not([disabled]), input:not([disabled])');
-        firstFocusable?.focus();
+        const focusable = modalRef.current.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusable.length > 0) {
+          focusable[0].focus();
+        }
       }
     }, 50);
 
@@ -103,7 +110,10 @@ export const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
     return () => {
       clearTimeout(timer);
       window.removeEventListener('keydown', handleKeyDown);
-      previousActiveElement?.focus();
+      // Restore focus when modal closes
+      if (previousFocusRef.current && document.body.contains(previousFocusRef.current)) {
+        previousFocusRef.current.focus();
+      }
     };
   }, [isOpen, onClose]);
 

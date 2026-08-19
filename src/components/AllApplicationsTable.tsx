@@ -76,8 +76,7 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
 
   const allSelected =
     applications.length > 0 && selectedIds.size === applications.length;
-  const someSelected =
-    selectedIds.size > 0 && selectedIds.size < applications.length;
+  const someSelected = selectedIds.size > 0 && selectedIds.size < applications.length;
 
   const toggleSelectAll = () => {
     if (allSelected) {

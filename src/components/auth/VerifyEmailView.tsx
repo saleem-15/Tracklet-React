@@ -123,9 +123,8 @@ export const VerifyEmailView: React.FC<VerifyEmailViewProps> = ({
     };
   }, [autoVerifiedSuccess, checkVerificationSilently]);
 
-  const processedCodesRef = useRef<Set<string>>(new Set());
-
   // 3. Handle direct oobCode in URL if arriving from email confirmation action link
+  const processedCodesRef = useRef<Set<string>>(new Set());
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const oobCode = params.get('oobCode');
