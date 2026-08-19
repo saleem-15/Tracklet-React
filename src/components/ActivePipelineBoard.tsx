@@ -226,7 +226,7 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
         </div>
 
         {/* ── Desktop Column Headers Bar (Visible on md: ≥ 768px) ── */}
-        <div className="hidden md:grid md:grid-cols-5 bg-slate-50/90 border-b border-slate-200/80 sticky top-0 z-10 backdrop-blur-xs min-w-[900px]">
+        <div className="hidden md:grid md:grid-cols-5 bg-slate-50/80 border-b border-slate-200/80 sticky top-0 z-10 backdrop-blur-xs min-w-[900px]">
           {PIPELINE_COLUMNS.map((col) => {
             const count = applications.filter((app) => app.status === col.status).length;
             const isTargeting = dragOverColumn === col.status;
@@ -234,7 +234,7 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
             return (
               <div
                 key={col.status}
-                className={`px-4 py-3 flex items-center justify-between transition-colors ${
+                className={`px-3 py-2.5 flex items-center justify-between transition-colors ${
                   isTargeting ? 'bg-blue-50/80' : ''
                 }`}
               >
@@ -251,7 +251,7 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
         </div>
 
         {applications.length === 0 ? (
-          <div className="flex-1 flex items-center justify-center p-6 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto">
             {totalAppCount === 0 && onOpenAddModal && onSeedDemoData ? (
               <OnboardingEmptyState
                 onOpenAddModal={onOpenAddModal}

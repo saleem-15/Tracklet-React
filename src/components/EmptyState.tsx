@@ -19,11 +19,11 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
 }) => {
   if (isFiltered) {
     return (
-      <div className="flex flex-col items-center justify-center p-6 text-center my-auto max-w-md mx-auto">
+      <div className="flex flex-col items-center justify-center text-center max-w-md mx-auto py-12 sm:py-16 px-4 animate-in fade-in-50 zoom-in-95 duration-200">
         <div className="w-11 h-11 rounded-xl bg-amber-50 text-amber-600 border border-amber-200/80 flex items-center justify-center mb-3 shadow-2xs">
           <SearchX className="w-5 h-5" />
         </div>
-        <h3 className="text-base font-bold text-slate-900 mb-1.5 tracking-tight font-heading">
+        <h3 className="text-base sm:text-lg font-bold text-slate-900 mb-1.5 tracking-tight font-heading">
           {title || 'No matching applications found'}
         </h3>
         <p className="text-xs text-slate-500 mb-5 max-w-sm leading-relaxed">
@@ -56,18 +56,20 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   }
 
   return (
-    <div className="flex flex-col items-center justify-center p-6 text-center max-w-md mx-auto my-auto">
+    <div className="flex flex-col items-center justify-center text-center max-w-md mx-auto py-12 sm:py-16 px-4 animate-in fade-in-50 zoom-in-95 duration-200">
       {/* Visual Icon */}
       <div className="w-11 h-11 rounded-xl bg-blue-50 text-blue-600 border border-blue-200/70 flex items-center justify-center mb-3 shadow-2xs">
         <Briefcase className="w-5 h-5 stroke-[2]" />
       </div>
 
-      <h3 className="text-base font-bold text-slate-900 mb-1.5 tracking-tight font-heading">
-        {title || 'No applications yet'}
-      </h3>
-      <p className="text-xs text-slate-500 mb-5 max-w-sm leading-relaxed">
-        {description || 'Start tracking your job search by keeping applications, interviews, and follow-ups organized in one place.'}
-      </p>
+      <div className="space-y-1.5 mb-5">
+        <h3 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight font-heading">
+          {title || 'No applications yet'}
+        </h3>
+        <p className="text-xs text-slate-500 max-w-sm mx-auto leading-relaxed">
+          {description || 'Start tracking your job search by keeping applications, interviews, and follow-ups organized in one place.'}
+        </p>
+      </div>
 
       {/* Primary Action Button */}
       {onAddApplication && (

@@ -411,7 +411,7 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
           <tbody className="divide-y divide-slate-100">
             {applications.length === 0 ? (
               <tr>
-                <td colSpan={7} className="py-8 px-4">
+                <td colSpan={7} className="p-0">
                   {totalAppCount === 0 && onOpenAddModal && onSeedDemoData ? (
                     <OnboardingEmptyState
                       onOpenAddModal={onOpenAddModal}
