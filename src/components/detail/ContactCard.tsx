@@ -44,7 +44,7 @@ export const ContactCard: React.FC<ContactCardProps> = ({
               href={contact.linkedIn}
               target="_blank"
               rel="noopener noreferrer"
-              className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+              className="p-1.5 text-blue-700 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors"
               title="LinkedIn"
             >
               <Linkedin className="w-3.5 h-3.5" />

@@ -19,10 +19,10 @@ export const IconButton: React.FC<IconButtonProps> = ({
   ...props
 }) => {
   const variantStyles = {
-    default: 'text-slate-500 hover:text-blue-600 hover:bg-blue-50 active:bg-blue-100',
-    primary: 'text-blue-600 hover:text-blue-700 hover:bg-blue-50 active:bg-blue-100',
-    danger: 'text-slate-500 hover:text-rose-600 hover:bg-rose-50 active:bg-rose-100',
-    subtle: 'text-slate-500 hover:text-slate-700 hover:bg-slate-100 active:bg-slate-200',
+    default: 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 active:bg-slate-200',
+    primary: 'text-blue-700 hover:text-blue-800 hover:bg-blue-50 active:bg-blue-100',
+    danger: 'text-rose-700 hover:text-rose-800 hover:bg-rose-50 active:bg-rose-100',
+    subtle: 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 active:bg-slate-200',
   };
 
   const sizeStyles = {
@@ -112,7 +112,7 @@ export const EmailIconButton: React.FC<EmailIconButtonProps> = ({
     rel="noopener noreferrer"
     title={title}
     aria-label={title}
-    className={`relative inline-flex items-center justify-center text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-colors rounded-lg after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:min-w-[44px] after:min-h-[44px] after:w-full after:h-full ${
+    className={`relative inline-flex items-center justify-center text-blue-700 hover:text-blue-800 hover:bg-blue-50 transition-colors rounded-lg after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:min-w-[44px] after:min-h-[44px] after:w-full after:h-full ${
       size === 'md' ? 'p-2' : 'p-1.5'
     } ${className}`}
   >

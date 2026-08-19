@@ -21,7 +21,7 @@ export const ApplicationDetailFooter: React.FC<ApplicationDetailFooterProps> = (
       <button
         type="button"
         onClick={onDelete}
-        className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white hover:bg-rose-50 text-slate-500 hover:text-rose-600 border border-slate-200 hover:border-rose-200 transition-all font-medium shadow-2xs cursor-pointer text-xs"
+        className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white hover:bg-rose-50 text-rose-700 hover:text-rose-800 border border-slate-200 hover:border-rose-200 transition-all font-medium shadow-2xs cursor-pointer text-xs"
       >
         <Trash2 className="w-3.5 h-3.5" />
         Delete

@@ -162,7 +162,11 @@ export const ApplicationInfoEditor: React.FC<ApplicationInfoEditorProps> = ({
         <button
           type="submit"
           disabled={isSaving || !editCompany.trim() || !editRole.trim()}
-          className="flex items-center gap-1.5 px-4 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-200 disabled:text-slate-500 text-white rounded-xl font-bold text-xs cursor-pointer shadow-sm transition-all"
+          className={`flex items-center gap-1.5 px-4 py-1.5 rounded-xl font-bold text-xs shadow-sm transition-all ${
+            isSaving || !editCompany.trim() || !editRole.trim()
+              ? 'bg-slate-200 text-slate-500 cursor-not-allowed'
+              : 'bg-blue-600 hover:bg-blue-700 text-white cursor-pointer'
+          }`}
         >
           <Save className="w-3.5 h-3.5" />
           <span>{isSaving ? 'Saving...' : 'Save Changes'}</span>
