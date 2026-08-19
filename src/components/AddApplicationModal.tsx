@@ -51,9 +51,26 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
   };
 
   const dialogRef = React.useRef<HTMLDivElement>(null);
+  const previousFocusRef = React.useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     if (!isOpen) return;
+
+    // Save previously focused element
+    previousFocusRef.current = document.activeElement as HTMLElement;
+
+    // Move focus to first focusable element in the modal
+    setTimeout(() => {
+      if (dialogRef.current) {
+        const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusable.length > 0) {
+          focusable[0].focus();
+        }
+      }
+    }, 0);
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         handleRequestClose();
@@ -74,7 +91,13 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
       }
     };
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      // Restore focus when modal closes
+      if (previousFocusRef.current && document.body.contains(previousFocusRef.current)) {
+        previousFocusRef.current.focus();
+      }
+    };
   }, [isOpen, onClose, isDirty]);
 
   if (!isOpen) return null;

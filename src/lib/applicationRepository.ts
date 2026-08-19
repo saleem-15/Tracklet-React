@@ -20,7 +20,15 @@ function sanitizeForFirestore<T extends Record<string, unknown>>(obj: T): Record
   const result: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(obj)) {
     if (value !== undefined) {
-      if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+      if (Array.isArray(value)) {
+        // Recursively sanitize array elements that are objects
+        result[key] = value.map((item) => {
+          if (item !== null && typeof item === 'object' && !Array.isArray(item)) {
+            return sanitizeForFirestore(item as Record<string, unknown>);
+          }
+          return item;
+        });
+      } else if (value !== null && typeof value === 'object') {
         result[key] = sanitizeForFirestore(value as Record<string, unknown>);
       } else {
         result[key] = value;

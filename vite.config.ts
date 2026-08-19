@@ -23,13 +23,17 @@ export default defineConfig(() => {
         output: {
           manualChunks(id) {
             if (id.includes('node_modules')) {
-              if (id.includes('firebase')) {
+              // Extract package path after the final node_modules/ segment
+              const parts = id.split('node_modules/');
+              const packagePath = parts[parts.length - 1];
+
+              if (packagePath.includes('firebase')) {
                 return 'vendor-firebase';
               }
-              if (id.includes('lucide-react')) {
+              if (packagePath.includes('lucide-react')) {
                 return 'vendor-icons';
               }
-              if (id.includes('motion')) {
+              if (packagePath.includes('motion')) {
                 return 'vendor-motion';
               }
               return 'vendor';

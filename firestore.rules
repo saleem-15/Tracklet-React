@@ -16,7 +16,8 @@ service cloud.firestore {
       allow read, write: if isOwner(userId);
 
       match /applications/{applicationId} {
-        allow read, write: if isOwner(userId);
+        allow read: if isOwner(userId);
+        allow write: if isOwner(userId) && (!request.resource.data.keys().hasAny(['userId']) || request.resource.data.userId == request.auth.uid);
       }
     }
 

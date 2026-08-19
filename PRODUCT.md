@@ -59,7 +59,9 @@ Name: **Tracklet** — short, purposeful, tool-like. No confirmed tagline, logo,
 
 No product-specific accessibility requirement confirmed yet. Standard web accessibility (WCAG 2.1 AA) is a reasonable baseline for a public web tool.
 
-```mermaid 
+## Data Model
+
+```mermaid
 graph TD
   subgraph Current ["Current Schema (Flat Root Collection)"]
     A["applications/ (Root Collection)"] --> B["{applicationId} (Document)<br>userId: 'uid_123'<br>company: 'Google'..."]
@@ -67,11 +69,9 @@ graph TD
     C --> D["{historyId} (Document)"]
   end
 
-  subgraph Hierarchical ["Your Proposed Schema (User-Scoped Sub-collection)"]
+  subgraph Hierarchical ["New Schema (User-Scoped Sub-collection)"]
     U["users/ (Collection)"] --> UDoc["{userId} (Document)"]
     UDoc --> UApp["applications/ (Sub-collection)"]
-    UApp --> UAppDoc["{applicationId} (Document)<br>company: 'Google'..."]
-    UAppDoc --> UHist["history/ (Sub-collection)"]
-    UHist --> UHistDoc["{historyId} (Document)"]
+    UApp --> UAppDoc["{applicationId} (Document)<br>company: 'Google'<br>history: [embedded array]"]
   end
 

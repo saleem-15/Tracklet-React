@@ -53,9 +53,27 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onShowToast }) => {
   }, [isAuthModalOpen, authModalMode, clearError]);
 
   const modalRef = React.useRef<HTMLDivElement>(null);
+  const previousFocusRef = React.useRef<HTMLElement | null>(null);
 
   // Handle escape key and focus trap
   useEffect(() => {
+    if (!isAuthModalOpen) return;
+
+    // Save previously focused element
+    previousFocusRef.current = document.activeElement as HTMLElement;
+
+    // Move focus to first focusable element in the modal
+    setTimeout(() => {
+      if (modalRef.current) {
+        const focusable = modalRef.current.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusable.length > 0) {
+          focusable[0].focus();
+        }
+      }
+    }, 0);
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isAuthModalOpen) {
         closeAuthModal();
@@ -76,7 +94,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onShowToast }) => {
       }
     };
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      // Restore focus when modal closes
+      if (previousFocusRef.current && document.body.contains(previousFocusRef.current)) {
+        previousFocusRef.current.focus();
+      }
+    };
   }, [isAuthModalOpen, closeAuthModal]);
 
   if (!isAuthModalOpen) return null;

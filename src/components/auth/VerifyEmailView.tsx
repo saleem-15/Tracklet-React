@@ -120,11 +120,18 @@ export const VerifyEmailView: React.FC<VerifyEmailViewProps> = ({
   }, [autoVerifiedSuccess, checkVerificationSilently]);
 
   // 3. Handle direct oobCode in URL if arriving from email confirmation action link
+  const processedCodesRef = useRef(new Set<string>());
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const oobCode = params.get('oobCode');
 
     if (!oobCode) return;
+
+    // Check if this code has already been processed
+    if (processedCodesRef.current.has(oobCode)) return;
+
+    // Mark code as processed before starting request
+    processedCodesRef.current.add(oobCode);
 
     let isMounted = true;
     setIsAutoVerifying(true);
@@ -296,7 +303,7 @@ export const VerifyEmailView: React.FC<VerifyEmailViewProps> = ({
       <div className="flex flex-col items-center justify-center gap-1.5 py-1">
         <div className="flex items-center gap-2 text-xs font-semibold text-slate-700">
           <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+            <span className="animate-ping motion-reduce:animate-none absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-600"></span>
           </span>
           <span>Waiting for verification…</span>

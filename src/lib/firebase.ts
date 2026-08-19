@@ -60,7 +60,8 @@ try {
   firestoreInstance = initializeFirestore(app, {
     ignoreUndefinedProperties: true,
   }, firestoreDatabaseId || undefined);
-} catch {
+} catch (err) {
+  console.error('Firestore initialization failed, falling back to getFirestore:', err);
   firestoreInstance = getFirestore(app, firestoreDatabaseId || undefined);
 }
 export const db = firestoreInstance;

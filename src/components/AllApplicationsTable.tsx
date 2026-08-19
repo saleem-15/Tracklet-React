@@ -75,6 +75,7 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
 
   const allSelected =
     applications.length > 0 && selectedIds.size === applications.length;
+  const someSelected = selectedIds.size > 0 && selectedIds.size < applications.length;
 
   const toggleSelectAll = () => {
     if (allSelected) {
@@ -299,7 +300,7 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
                 <button
                   type="button"
                   role="checkbox"
-                  aria-checked={allSelected}
+                  aria-checked={allSelected ? true : someSelected ? "mixed" : false}
                   onClick={toggleSelectAll}
                   aria-label={allSelected ? "Deselect all applications" : "Select all applications"}
                   className="text-slate-500 hover:text-slate-700 align-middle transition-colors cursor-pointer"

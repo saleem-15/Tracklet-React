@@ -344,16 +344,20 @@ function TrackletAppContent() {
       mergedUpdates.stageUpdatedAt = now;
     }
 
-    setApplications((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, ...mergedUpdates, updatedAt: now } : a))
-    );
+    const updatedApps = applications.map((a) => (a.id === id ? { ...a, ...mergedUpdates, updatedAt: now } : a));
+    setApplications(updatedApps);
 
     try {
-      await ApplicationRepository.updateApplication(
-        id,
-        mergedUpdates,
-        user?.emailVerified ? user.uid : undefined
-      );
+      if (user?.emailVerified) {
+        await ApplicationRepository.updateApplication(
+          id,
+          mergedUpdates,
+          user.uid
+        );
+      } else {
+        // Guest mode: persist to localStorage
+        ApplicationRepository.saveGuestApplications(updatedApps);
+      }
 
       if (isStatusChanged && updates.status && currentApp) {
         addToast('info', 'Status Updated', `${currentApp.company} moved to ${updates.status}`);
@@ -387,21 +391,25 @@ function TrackletAppContent() {
       previousSnapshot.map((a) => [a.id, { status: a.status, stageUpdatedAt: a.stageUpdatedAt, history: a.history }])
     );
 
-    setApplications((prev) =>
-      prev.map((a) => {
-        if (!ids.includes(a.id)) return a;
-        const updatedHist = appendStatusHistory(a.history, newStatus, a.status, now);
-        return { ...a, status: newStatus, history: updatedHist, stageUpdatedAt: now, updatedAt: now };
-      })
-    );
+    const updatedApps = applications.map((a) => {
+      if (!ids.includes(a.id)) return a;
+      const updatedHist = appendStatusHistory(a.history, newStatus, a.status, now);
+      return { ...a, status: newStatus, history: updatedHist, stageUpdatedAt: now, updatedAt: now };
+    });
+    setApplications(updatedApps);
 
     try {
-      await ApplicationRepository.batchUpdateStatus(
-        ids,
-        newStatus,
-        user?.emailVerified ? user.uid : undefined,
-        applications
-      );
+      if (user?.emailVerified) {
+        await ApplicationRepository.batchUpdateStatus(
+          ids,
+          newStatus,
+          user.uid,
+          applications
+        );
+      } else {
+        // Guest mode: persist to localStorage
+        ApplicationRepository.saveGuestApplications(updatedApps);
+      }
 
       addToast(
         'success',
@@ -410,16 +418,18 @@ function TrackletAppContent() {
         {
           label: 'Undo',
           onClick: async () => {
-            setApplications((prev) =>
-              prev.map((a) => {
-                const old = previousStatusMap.get(a.id);
-                return old ? { ...a, status: old.status, stageUpdatedAt: old.stageUpdatedAt } : a;
-              })
-            );
+            const revertedApps = applications.map((a) => {
+              const old = previousStatusMap.get(a.id);
+              return old ? { ...a, status: old.status, stageUpdatedAt: old.stageUpdatedAt, history: old.history } : a;
+            });
+            setApplications(revertedApps);
             if (user?.emailVerified) {
               for (const [appId, oldData] of previousStatusMap.entries()) {
-                await ApplicationRepository.updateApplication(appId, { status: oldData.status }, user.uid);
+                await ApplicationRepository.updateApplication(appId, { status: oldData.status, stageUpdatedAt: oldData.stageUpdatedAt, history: oldData.history }, user.uid);
               }
+            } else {
+              // Guest mode: persist reverted state
+              ApplicationRepository.saveGuestApplications(revertedApps);
             }
             addToast('info', 'Status Reverted', `Restored ${ids.length} application status${ids.length === 1 ? '' : 'es'}.`);
           },

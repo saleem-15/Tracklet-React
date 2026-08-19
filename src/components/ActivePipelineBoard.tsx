@@ -340,10 +340,10 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
                             if (e.key === 'Enter' || e.key === ' ') {
                               e.preventDefault();
                               onSelectApp(app);
-                            } else if (e.key === 'ArrowRight' && nextColumn) {
+                            } else if (e.key === 'ArrowRight' && nextColumn && e.target === e.currentTarget) {
                               e.preventDefault();
                               handleQuickAdvance(e, app, nextColumn.status);
-                            } else if (e.key === 'ArrowLeft' && prevColumn) {
+                            } else if (e.key === 'ArrowLeft' && prevColumn && e.target === e.currentTarget) {
                               e.preventDefault();
                               handleQuickAdvance(e, app, prevColumn.status);
                             }
