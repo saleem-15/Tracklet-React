@@ -19,15 +19,15 @@
   /* Tracklet Design System Single-Source Tokens */
   .control-sm {
     height: 32px;
-    border-radius: 10px;
+    border-radius: 8px;
   }
   .control-md {
     height: 34px;
-    border-radius: 10px;
+    border-radius: 12px;
   }
   .control-lg {
     height: 36px;
-    border-radius: 10px;
+    border-radius: 12px;
   }
 }
 
