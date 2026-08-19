@@ -1,5 +1,6 @@
 import React from 'react';
-import { Plus, Sparkles, FileText, Kanban, Clock, ShieldCheck } from 'lucide-react';
+import { Plus, Briefcase } from 'lucide-react';
+import { UI_TOKENS } from '../theme/tokens';
 
 interface OnboardingEmptyStateProps {
   onOpenAddModal: () => void;
@@ -11,73 +12,42 @@ export const OnboardingEmptyState: React.FC<OnboardingEmptyStateProps> = ({
   onSeedDemoData,
 }) => {
   return (
-    <div className="flex-1 flex items-center justify-center p-6 min-h-[400px]">
-      <div className="max-w-xl w-full bg-white rounded-2xl border border-slate-200/90 shadow-lg overflow-hidden text-center p-8 space-y-6 animate-in fade-in-50 zoom-in-95 duration-200">
-        {/* Icon & Title */}
-        <div className="space-y-3">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-md shadow-blue-500/25">
-            <Sparkles className="w-7 h-7 text-amber-300" />
-          </div>
-          <h2 className="text-xl font-bold font-heading text-slate-900 tracking-tight">
-            Welcome to Your Job Pipeline
+    <div className="flex-1 flex items-center justify-center p-4 sm:p-6 my-auto">
+      <div className="max-w-md w-full bg-white rounded-2xl border border-slate-200/90 shadow-2xs text-center p-6 sm:p-7 space-y-4 animate-in fade-in-50 zoom-in-95 duration-200">
+        {/* Subtle Icon Badge */}
+        <div className="w-11 h-11 rounded-xl bg-blue-50 border border-blue-200/70 text-blue-600 flex items-center justify-center mx-auto shadow-2xs">
+          <Briefcase className="w-5 h-5 stroke-[2]" />
+        </div>
+
+        {/* Direct Copy */}
+        <div className="space-y-1.5">
+          <h2 className="text-base sm:text-lg font-bold font-heading text-slate-900 tracking-tight">
+            No applications yet
           </h2>
-          <p className="text-xs text-slate-500 max-w-md mx-auto leading-relaxed font-sans">
-            Tracklet gives you high clarity over every job application, interview stage, contact, and follow-up task.
+          <p className="text-xs text-slate-500 max-w-sm mx-auto leading-relaxed">
+            Start tracking your job search by keeping applications, interviews, and follow-ups organized in one place.
           </p>
         </div>
 
-        {/* Feature Highlights Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-left">
-          <div className="p-3 rounded-xl bg-slate-50/80 border border-slate-200/80 space-y-1">
-            <div className="flex items-center gap-1.5 text-blue-600 font-bold text-xs">
-              <Kanban className="w-4 h-4" />
-              <span>Pipeline Board</span>
-            </div>
-            <p className="text-[11px] text-slate-500 leading-tight">
-              Drag applications across active interview stages.
-            </p>
-          </div>
-
-          <div className="p-3 rounded-xl bg-slate-50/80 border border-slate-200/80 space-y-1">
-            <div className="flex items-center gap-1.5 text-amber-600 font-bold text-xs">
-              <Clock className="w-4 h-4" />
-              <span>Task Expiry</span>
-            </div>
-            <p className="text-[11px] text-slate-500 leading-tight">
-              Get alerted before recruiter tasks or interviews expire.
-            </p>
-          </div>
-
-          <div className="p-3 rounded-xl bg-slate-50/80 border border-slate-200/80 space-y-1">
-            <div className="flex items-center gap-1.5 text-emerald-600 font-bold text-xs">
-              <FileText className="w-4 h-4" />
-              <span>Full History</span>
-            </div>
-            <p className="text-[11px] text-slate-500 leading-tight">
-              Track timeline records for every stage change.
-            </p>
-          </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="space-y-3 pt-2">
+        {/* Action Controls */}
+        <div className="pt-2 space-y-3 flex flex-col items-center">
           <button
             type="button"
             onClick={onOpenAddModal}
-            className="w-full h-[38px] flex items-center justify-center gap-2 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white font-bold text-xs shadow-xs shadow-blue-500/20 transition-all cursor-pointer"
+            className={UI_TOKENS.btnPrimary}
           >
-            <Plus className="w-4 h-4 stroke-[2.5]" />
-            <span>Log Your First Application</span>
+            <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+            <span>Add Application</span>
           </button>
 
           <div className="flex items-center justify-center gap-1.5 text-xs text-slate-500">
-            <span>Want to test with sample data?</span>
+            <span>Want to explore first?</span>
             <button
               type="button"
               onClick={onSeedDemoData}
-              className="text-blue-600 hover:text-blue-800 font-semibold underline underline-offset-2 cursor-pointer"
+              className="text-blue-600 hover:text-blue-700 font-semibold underline underline-offset-2 cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 rounded"
             >
-              Load Sample Demo Dataset
+              Load sample dataset
             </button>
           </div>
         </div>
