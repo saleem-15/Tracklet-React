@@ -133,9 +133,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onShowToast }) => {
       await signInWithGoogle();
       onShowToast?.('success', 'Signed In', 'Welcome back to Tracklet!');
     } catch (err: unknown) {
-      const msg = getFriendlyAuthErrorMessage(err);
+      const msg = err instanceof Error ? err.message : getFriendlyAuthErrorMessage(err);
       setLocalError(msg);
-      onShowToast?.('error', 'Google Sign-In Failed', msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -155,9 +154,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onShowToast }) => {
         setResetCooldown(60);
         onShowToast?.('info', 'Instructions Dispatched', `If an account exists for ${email.trim()}, reset instructions were sent.`);
       } catch (err: unknown) {
-        const msg = getFriendlyAuthErrorMessage(err);
+        const msg = err instanceof Error ? err.message : getFriendlyAuthErrorMessage(err);
         setLocalError(msg);
-        onShowToast?.('error', 'Reset Failed', msg);
       } finally {
         setIsSubmitting(false);
       }
@@ -174,9 +172,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onShowToast }) => {
           'A verification link has been sent to your email. Please verify to access your workspace.'
         );
       } catch (err: unknown) {
-        const msg = getFriendlyAuthErrorMessage(err);
+        const msg = err instanceof Error ? err.message : getFriendlyAuthErrorMessage(err);
         setLocalError(msg);
-        onShowToast?.('error', 'Registration Error', msg);
       } finally {
         setIsSubmitting(false);
       }
@@ -187,9 +184,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onShowToast }) => {
         await signInWithEmail(email.trim(), password);
         onShowToast?.('success', 'Signed In', 'Welcome back!');
       } catch (err: unknown) {
-        const msg = getFriendlyAuthErrorMessage(err);
+        const msg = err instanceof Error ? err.message : getFriendlyAuthErrorMessage(err);
         setLocalError(msg);
-        onShowToast?.('error', 'Sign In Failed', msg);
       } finally {
         setIsSubmitting(false);
       }

@@ -25,6 +25,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
     sendPasswordReset,
     verifyPasswordResetCode,
     confirmPasswordReset,
+    clearError,
   } = useAuth();
 
   const [mode, setMode] = useState<AuthRouteMode>(() => getAuthModeFromPath(window.location.pathname));
@@ -66,15 +67,17 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
       setMode(pathMode);
       setLocalError(null);
       setResetSent(false);
+      clearError();
     };
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
+  }, [clearError]);
 
   const handleNavigate = (newMode: AuthRouteMode) => {
     setMode(newMode);
     setLocalError(null);
     setResetSent(false);
+    clearError();
     const targetPath = getPathForAuthMode(newMode);
     if (window.location.pathname !== targetPath) {
       window.history.pushState(null, '', targetPath);
@@ -88,7 +91,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
       await signInWithGoogle();
       onShowToast?.('success', 'Signed In', 'Welcome to Tracklet!');
     } catch (err: unknown) {
-      const msg = getFriendlyAuthErrorMessage(err);
+      const msg = err instanceof Error ? err.message : getFriendlyAuthErrorMessage(err);
       setLocalError(msg);
     } finally {
       setIsSubmitting(false);
@@ -102,7 +105,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
       await signInWithEmail(email, pass);
       onShowToast?.('success', 'Signed In', 'Welcome back!');
     } catch (err: unknown) {
-      const msg = getFriendlyAuthErrorMessage(err);
+      const msg = err instanceof Error ? err.message : getFriendlyAuthErrorMessage(err);
       setLocalError(msg);
     } finally {
       setIsSubmitting(false);
@@ -120,7 +123,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
         'A verification link has been sent to your email. Please verify to access your workspace.'
       );
     } catch (err: unknown) {
-      const msg = getFriendlyAuthErrorMessage(err);
+      const msg = err instanceof Error ? err.message : getFriendlyAuthErrorMessage(err);
       setLocalError(msg);
     } finally {
       setIsSubmitting(false);
@@ -141,7 +144,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
         `If an account exists for ${email}, reset instructions were sent.`
       );
     } catch (err: unknown) {
-      const msg = getFriendlyAuthErrorMessage(err);
+      const msg = err instanceof Error ? err.message : getFriendlyAuthErrorMessage(err);
       setLocalError(msg);
     } finally {
       setIsSubmitting(false);
