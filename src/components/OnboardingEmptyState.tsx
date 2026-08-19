@@ -41,13 +41,13 @@ export const OnboardingEmptyState: React.FC<OnboardingEmptyStateProps> = ({
           </button>
 
           <div className="flex items-center justify-center gap-1.5 text-xs text-slate-500">
-            <span>Want to explore first?</span>
+            <span>Just exploring?</span>
             <button
               type="button"
               onClick={onSeedDemoData}
               className="text-blue-600 hover:text-blue-700 font-semibold underline underline-offset-2 cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 rounded"
             >
-              Load sample dataset
+              Load sample data
             </button>
           </div>
         </div>
