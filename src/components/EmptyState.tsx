@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, SearchX, FileStack, FilterX } from 'lucide-react';
+import { Plus, SearchX, BriefcaseBusiness, FilterX } from 'lucide-react';
 import { UI_TOKENS } from '../theme/tokens';
 
 interface EmptyStateProps {
@@ -59,7 +59,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
     <div className="flex flex-col items-center justify-center text-center max-w-md mx-auto py-12 sm:py-16 px-4 animate-in fade-in-50 zoom-in-95 duration-200">
       {/* Visual Icon */}
       <div className="w-11 h-11 rounded-xl bg-blue-50 text-blue-600 border border-blue-200/70 flex items-center justify-center mb-3 shadow-2xs">
-        <FileStack className="w-5 h-5 stroke-[1.85]" />
+        <BriefcaseBusiness className="w-5 h-5 stroke-[1.85]" />
       </div>
 
       <div className="space-y-1.5 mb-5">

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, FileStack } from 'lucide-react';
+import { Plus, BriefcaseBusiness } from 'lucide-react';
 import { UI_TOKENS } from '../theme/tokens';
 
 interface OnboardingEmptyStateProps {
@@ -15,7 +15,7 @@ export const OnboardingEmptyState: React.FC<OnboardingEmptyStateProps> = ({
     <div className="flex flex-col items-center justify-center text-center max-w-md mx-auto py-12 sm:py-16 px-4 animate-in fade-in-50 zoom-in-95 duration-200">
       {/* Subtle Icon Badge */}
       <div className="w-11 h-11 rounded-xl bg-blue-50 border border-blue-200/70 text-blue-600 flex items-center justify-center mb-3 shadow-2xs">
-        <FileStack className="w-5 h-5 stroke-[1.85]" />
+        <BriefcaseBusiness className="w-5 h-5 stroke-[1.85]" />
       </div>
 
       {/* Direct Copy */}
