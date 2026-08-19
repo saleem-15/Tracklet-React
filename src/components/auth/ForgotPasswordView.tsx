@@ -98,7 +98,7 @@ export const ForgotPasswordView: React.FC<ForgotPasswordViewProps> = ({
                 disabled={resetCooldown > 0 || isSubmitting}
                 className="font-bold text-blue-600 hover:text-blue-800 underline underline-offset-2 cursor-pointer disabled:opacity-50 disabled:no-underline disabled:cursor-not-allowed ml-0.5"
               >
-                {resetCooldown > 0 ? `Resend in ${resetCooldown}s` : 'Click to resend'}
+                {resetCooldown > 0 ? `Resend in ${resetCooldown}s` : 'Resend'}
               </button>
             </p>
 
