@@ -147,7 +147,7 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
     setDragOverColumn(null);
   };
 
-  const handleQuickAdvance = (e: React.MouseEvent, app: Application, nextStatus: ApplicationStatus) => {
+  const handleQuickAdvance = (e: React.SyntheticEvent, app: Application, nextStatus: ApplicationStatus) => {
     e.stopPropagation();
     const prevStatus = app.status;
     onUpdateStatus(app.id, nextStatus);
@@ -273,6 +273,7 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
                 .filter((app) => app.status === col.status)
                 .sort((a, b) => calculateDaysInStage(b.stageUpdatedAt) - calculateDaysInStage(a.stageUpdatedAt));
               const isTargeting = dragOverColumn === col.status;
+              const prevColumn = index > 0 ? PIPELINE_COLUMNS[index - 1] : null;
               const nextColumn = index < PIPELINE_COLUMNS.length - 1 ? PIPELINE_COLUMNS[index + 1] : null;
 
               return (
@@ -339,6 +340,12 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
                             if (e.key === 'Enter' || e.key === ' ') {
                               e.preventDefault();
                               onSelectApp(app);
+                            } else if (e.key === 'ArrowRight' && nextColumn) {
+                              e.preventDefault();
+                              handleQuickAdvance(e, app, nextColumn.status);
+                            } else if (e.key === 'ArrowLeft' && prevColumn) {
+                              e.preventDefault();
+                              handleQuickAdvance(e, app, prevColumn.status);
                             }
                           }}
                           className={`p-3.5 rounded-xl border transition-all cursor-grab active:cursor-grabbing group relative focus:outline-none focus:ring-2 focus:ring-blue-500/50 ${

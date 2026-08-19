@@ -52,11 +52,27 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onShowToast }) => {
     }
   }, [isAuthModalOpen, authModalMode, clearError]);
 
-  // Handle escape key
+  const modalRef = React.useRef<HTMLDivElement>(null);
+
+  // Handle escape key and focus trap
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isAuthModalOpen) {
         closeAuthModal();
+      } else if (e.key === 'Tab' && isAuthModalOpen && modalRef.current) {
+        const focusable = modalRef.current.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -168,6 +184,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onShowToast }) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 animate-in fade-in duration-200">
       <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={authModalMode === 'signin' ? 'Sign In' : authModalMode === 'signup' ? 'Sign Up' : 'Reset Password'}
         className="relative w-full max-w-md bg-white rounded-2xl border border-slate-200/90 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >

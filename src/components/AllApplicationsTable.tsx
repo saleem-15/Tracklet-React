@@ -298,6 +298,8 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
               <th className="w-10 px-3 py-2.5 text-center">
                 <button
                   type="button"
+                  role="checkbox"
+                  aria-checked={allSelected}
                   onClick={toggleSelectAll}
                   aria-label={allSelected ? "Deselect all applications" : "Select all applications"}
                   className="text-slate-500 hover:text-slate-700 align-middle transition-colors cursor-pointer"
@@ -453,6 +455,8 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
                     <td className="px-3 py-1 text-center align-middle" onClick={(e) => toggleSelectOne(e, app.id)}>
                       <button
                         type="button"
+                        role="checkbox"
+                        aria-checked={isSelected}
                         aria-label={`Select application for ${app.company}`}
                         className="text-slate-500 hover:text-slate-700 align-middle transition-colors cursor-pointer"
                       >
