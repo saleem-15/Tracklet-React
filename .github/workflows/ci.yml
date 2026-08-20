@@ -16,6 +16,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE20: false
+
 jobs:
   validate:
     name: Lint, Test & Build (Node ${{ matrix.node-version }})
