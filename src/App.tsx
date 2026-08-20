@@ -338,6 +338,7 @@ function TrackletAppContent() {
     } catch (err) {
       console.error('Batch import failed:', err);
       addToast('error', 'Import Failed', 'Could not import applications.');
+      throw err;
     }
   };
 
@@ -808,6 +809,7 @@ function TrackletAppContent() {
                   onSelectApplication={(id) => setSelectedAppId(id)}
                   onExportCSV={handleExportCSV}
                   onImportCSV={handleBatchImportApplications}
+                  onImportJSON={handleBatchImportApplications}
                   onSeedDemoData={handleSeedDemoData}
                   onShowToast={addToast}
                   onAccountDeleted={() => {

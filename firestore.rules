@@ -20,6 +20,8 @@ service cloud.firestore {
         && (data.role is string && data.role.size() > 0 && data.role.size() <= 200)
         && (data.status is string && isValidStatus(data.status))
         && (data.platform is string && data.platform.size() > 0 && data.platform.size() <= 100)
+        && (data.dateApplied is string && data.dateApplied.size() > 0 && data.dateApplied.size() <= 40)
+        && (data.userId is string && data.userId == request.auth.uid)
         && (!('notes' in data) || (data.notes is string && data.notes.size() <= 20000))
         && (!('jobLink' in data) || (data.jobLink is string && data.jobLink.size() <= 3000))
         && (!('companyDomain' in data) || (data.companyDomain is string && data.companyDomain.size() <= 200))
@@ -27,8 +29,7 @@ service cloud.firestore {
         && (!('contacts' in data) || (data.contacts is list && data.contacts.size() <= 50))
         && (!('tasks' in data) || (data.tasks is list && data.tasks.size() <= 100))
         && (!('emails' in data) || (data.emails is list && data.emails.size() <= 100))
-        && (!('history' in data) || (data.history is list && data.history.size() <= 100))
-        && (!('userId' in data) || data.userId == null || data.userId == request.auth.uid);
+        && (!('history' in data) || (data.history is list && data.history.size() <= 100));
     }
 
     // User document & User Applications Sub-collection

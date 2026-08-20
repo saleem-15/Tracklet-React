@@ -29,6 +29,9 @@ export default defineConfig(() => {
               if (packagePath.includes('firebase')) {
                 return 'vendor-firebase';
               }
+              if (packagePath.includes('@sentry')) {
+                return 'vendor-sentry';
+              }
               if (packagePath.includes('lucide-react')) {
                 return 'vendor-icons';
               }
