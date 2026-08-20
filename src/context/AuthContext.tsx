@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import * as Sentry from '@sentry/react';
 import { User as FirebaseUser } from 'firebase/auth';
 import { AuthRepository } from '../lib/authRepository';
 import { ApplicationRepository } from '../lib/applicationRepository';
@@ -72,9 +73,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
         setUser(currentUser);
         setAuthUser(AuthRepository.mapToAuthUser(currentUser));
+        Sentry.setUser({
+          id: currentUser.uid,
+          email: currentUser.email || undefined,
+        });
       } else {
         setUser(null);
         setAuthUser(null);
+        Sentry.setUser(null);
       }
       setLoading(false);
     });

@@ -9,6 +9,8 @@ interface ImportMetaEnv {
   readonly VITE_FIREBASE_APP_ID?: string;
   readonly VITE_FIREBASE_MEASUREMENT_ID?: string;
   readonly VITE_FIREBASE_DATABASE_ID?: string;
+  readonly VITE_SENTRY_DSN?: string;
+  readonly VITE_APP_VERSION?: string;
 }
 
 interface ImportMeta {

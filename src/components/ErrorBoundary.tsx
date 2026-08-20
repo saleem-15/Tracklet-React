@@ -1,4 +1,5 @@
 import React from 'react';
+import * as Sentry from '@sentry/react';
 import { AlertTriangle, RefreshCw, Copy, Check, ChevronDown, ChevronUp, Home } from 'lucide-react';
 
 interface ErrorBoundaryProps {
@@ -31,6 +32,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
 
   public componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error('Uncaught error in component tree:', error, errorInfo);
+    Sentry.captureReactException(error, errorInfo);
     this.setState({ errorInfo });
   }
 
