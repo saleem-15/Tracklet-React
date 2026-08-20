@@ -79,7 +79,7 @@ export const AddApplicationContactsSection: React.FC<AddApplicationContactsSecti
                         href={c.linkedIn}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="p-1 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                        className="p-1 text-blue-700 hover:text-blue-800 hover:bg-blue-50 rounded transition-colors"
                         title="LinkedIn Profile"
                       >
                         <Linkedin className="w-3.5 h-3.5" />

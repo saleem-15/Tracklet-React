@@ -59,6 +59,17 @@ src/
 - `App.tsx` holds top-level state (`applications`, `filter`, `sort`, `user`, `activeTab`, `selectedAppId`).
 - Do NOT add new global state to `App.tsx` unless necessary. Component-specific transient UI state (e.g., active dropdown tab) should remain local.
 
+### D. User Feedback & Notification Hierarchy
+1. **Single Notification System**: Always dispatch notifications via the top-level `addToast` / `onShowToast` prop. Never create local floating toast state inside child components.
+2. **Notification Types & Hierarchy**:
+   - **Snackbar (`addToast`)**: For immediate action receipts (3–6s).
+     - Status changes: ALWAYS pass the target `stage` token and an `Undo` callback.
+     - Destructive item/contact/task deletes: ALWAYS provide an `Undo` callback.
+     - Created/Updated items: Short, compact confirmation receipt.
+   - **Inline Banner**: For persistent/contextual information that requires user attention (e.g., >14 days stale warning, unverified email gate).
+   - **Modal Dialog**: For pre-action destructive confirmations (e.g., "Reset workspace?", "Delete account?"). Follow with a lightweight receipt snackbar.
+3. **Zero Browser Dialogs**: NEVER use native `window.alert()`, `window.confirm()`, or `window.prompt()`. Use custom in-app modal dialogs (e.g. `UnsavedChangesPrompt`) for pre-action gates, or lightweight Snackbars with `Undo` callbacks for immediate reversible actions.
+
 ---
 
 ## 4. Verification Checklist Before Marking Work Complete

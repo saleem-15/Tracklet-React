@@ -49,7 +49,7 @@ export const ApplicationQuickLinks: React.FC<ApplicationQuickLinksProps> = ({
                 href={jobLink}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                className="p-1.5 rounded-lg text-blue-700 hover:text-blue-800 hover:bg-blue-50 transition-colors"
                 title="Open in new tab"
               >
                 <ExternalLink className="w-3.5 h-3.5" />

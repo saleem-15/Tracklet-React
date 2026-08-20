@@ -58,6 +58,7 @@ export interface Application {
   contacts?: Contact[];
   tasks?: ApplicationTask[];
   emails?: EmailLog[];
+  history?: StatusHistoryEntry[];
   logoUrl?: string;
   companyDomain?: string;
   stageUpdatedAt: string; // ISO date string or YYYY-MM-DD

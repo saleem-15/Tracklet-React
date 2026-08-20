@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { useAuth } from '../context/AuthContext';
 import { getFriendlyAuthErrorMessage } from '../lib/authErrors';
 import { getAuthModeFromPath, getPathForAuthMode, AuthRouteMode } from '../lib/routeUtils';
@@ -17,6 +17,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
   onShowToast,
   onContinueAsGuest,
 }) => {
+  const shouldReduceMotion = useReducedMotion();
   const {
     signInWithGoogle,
     signInWithEmail,
@@ -24,6 +25,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
     sendPasswordReset,
     verifyPasswordResetCode,
     confirmPasswordReset,
+    clearError,
   } = useAuth();
 
   const [mode, setMode] = useState<AuthRouteMode>(() => getAuthModeFromPath(window.location.pathname));
@@ -65,15 +67,17 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
       setMode(pathMode);
       setLocalError(null);
       setResetSent(false);
+      clearError();
     };
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
+  }, [clearError]);
 
   const handleNavigate = (newMode: AuthRouteMode) => {
     setMode(newMode);
     setLocalError(null);
     setResetSent(false);
+    clearError();
     const targetPath = getPathForAuthMode(newMode);
     if (window.location.pathname !== targetPath) {
       window.history.pushState(null, '', targetPath);
@@ -87,9 +91,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
       await signInWithGoogle();
       onShowToast?.('success', 'Signed In', 'Welcome to Tracklet!');
     } catch (err: unknown) {
-      const msg = getFriendlyAuthErrorMessage(err);
+      const msg = err instanceof Error ? err.message : getFriendlyAuthErrorMessage(err);
       setLocalError(msg);
-      onShowToast?.('error', 'Google Sign-In Failed', msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -102,9 +105,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
       await signInWithEmail(email, pass);
       onShowToast?.('success', 'Signed In', 'Welcome back!');
     } catch (err: unknown) {
-      const msg = getFriendlyAuthErrorMessage(err);
+      const msg = err instanceof Error ? err.message : getFriendlyAuthErrorMessage(err);
       setLocalError(msg);
-      onShowToast?.('error', 'Sign In Failed', msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -121,9 +123,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
         'A verification link has been sent to your email. Please verify to access your workspace.'
       );
     } catch (err: unknown) {
-      const msg = getFriendlyAuthErrorMessage(err);
+      const msg = err instanceof Error ? err.message : getFriendlyAuthErrorMessage(err);
       setLocalError(msg);
-      onShowToast?.('error', 'Registration Error', msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -143,9 +144,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
         `If an account exists for ${email}, reset instructions were sent.`
       );
     } catch (err: unknown) {
-      const msg = getFriendlyAuthErrorMessage(err);
+      const msg = err instanceof Error ? err.message : getFriendlyAuthErrorMessage(err);
       setLocalError(msg);
-      onShowToast?.('error', 'Reset Failed', msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -158,10 +158,10 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
           {mode === 'signin' && (
             <motion.div
               key="signin"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2, ease: 'easeOut' }}
+              initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 10 }}
+              animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+              exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -10 }}
+              transition={{ duration: shouldReduceMotion ? 0.01 : 0.2, ease: 'easeOut' }}
               className="w-full"
             >
               <LoginView
@@ -178,10 +178,10 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
           {mode === 'signup' && (
             <motion.div
               key="signup"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2, ease: 'easeOut' }}
+              initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 10 }}
+              animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+              exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -10 }}
+              transition={{ duration: shouldReduceMotion ? 0.01 : 0.2, ease: 'easeOut' }}
               className="w-full"
             >
               <SignupView
@@ -198,10 +198,10 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
           {mode === 'forgot-password' && (
             <motion.div
               key="forgot-password"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2, ease: 'easeOut' }}
+              initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 10 }}
+              animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+              exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -10 }}
+              transition={{ duration: shouldReduceMotion ? 0.01 : 0.2, ease: 'easeOut' }}
               className="w-full"
             >
               <ForgotPasswordView
@@ -218,10 +218,10 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
           {mode === 'reset-password' && (
             <motion.div
               key="reset-password"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2, ease: 'easeOut' }}
+              initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 10 }}
+              animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+              exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -10 }}
+              transition={{ duration: shouldReduceMotion ? 0.01 : 0.2, ease: 'easeOut' }}
               className="w-full"
             >
               <ResetPasswordView

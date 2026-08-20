@@ -87,6 +87,15 @@ export function getFriendlyAuthErrorMessage(error: unknown): string {
     case 'auth/invalid-action-code':
       return 'The verification or password reset link is invalid or has already been used.';
 
+    case 'auth/credential-already-in-use':
+      return 'This credential is already linked to another user account.';
+
+    case 'auth/user-token-expired':
+      return 'Your authentication session has expired. Please sign in again.';
+
+    case 'auth/internal-error':
+      return 'An internal authentication error occurred. Please try again in a moment.';
+
     case 'auth/unauthorized-domain':
       return 'This domain is not authorized in your Firebase Auth settings. Please add your host in Firebase Console > Authentication > Settings > Authorized domains.';
 

@@ -52,15 +52,56 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onShowToast }) => {
     }
   }, [isAuthModalOpen, authModalMode, clearError]);
 
-  // Handle escape key
+  const modalRef = React.useRef<HTMLDivElement>(null);
+  const previousFocusRef = React.useRef<HTMLElement | null>(null);
+
+  // Handle escape key and focus trap with focus save/restore
   useEffect(() => {
+    if (!isAuthModalOpen) return;
+
+    // Save previously focused element
+    previousFocusRef.current = document.activeElement as HTMLElement | null;
+
+    // Move focus to first focusable element in the modal
+    const timer = setTimeout(() => {
+      if (modalRef.current) {
+        const focusable = modalRef.current.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusable.length > 0) {
+          focusable[0].focus();
+        }
+      }
+    }, 50);
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isAuthModalOpen) {
         closeAuthModal();
+      } else if (e.key === 'Tab' && isAuthModalOpen && modalRef.current) {
+        const focusable = modalRef.current.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('keydown', handleKeyDown);
+      // Restore focus when modal closes
+      if (previousFocusRef.current && document.body.contains(previousFocusRef.current)) {
+        previousFocusRef.current.focus();
+      }
+    };
   }, [isAuthModalOpen, closeAuthModal]);
 
   if (!isAuthModalOpen) return null;
@@ -102,9 +143,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onShowToast }) => {
       await signInWithGoogle();
       onShowToast?.('success', 'Signed In', 'Welcome back to Tracklet!');
     } catch (err: unknown) {
-      const msg = getFriendlyAuthErrorMessage(err);
+      const msg = err instanceof Error ? err.message : getFriendlyAuthErrorMessage(err);
       setLocalError(msg);
-      onShowToast?.('error', 'Google Sign-In Failed', msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -124,9 +164,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onShowToast }) => {
         setResetCooldown(60);
         onShowToast?.('info', 'Instructions Dispatched', `If an account exists for ${email.trim()}, reset instructions were sent.`);
       } catch (err: unknown) {
-        const msg = getFriendlyAuthErrorMessage(err);
+        const msg = err instanceof Error ? err.message : getFriendlyAuthErrorMessage(err);
         setLocalError(msg);
-        onShowToast?.('error', 'Reset Failed', msg);
       } finally {
         setIsSubmitting(false);
       }
@@ -143,9 +182,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onShowToast }) => {
           'A verification link has been sent to your email. Please verify to access your workspace.'
         );
       } catch (err: unknown) {
-        const msg = getFriendlyAuthErrorMessage(err);
+        const msg = err instanceof Error ? err.message : getFriendlyAuthErrorMessage(err);
         setLocalError(msg);
-        onShowToast?.('error', 'Registration Error', msg);
       } finally {
         setIsSubmitting(false);
       }
@@ -156,9 +194,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onShowToast }) => {
         await signInWithEmail(email.trim(), password);
         onShowToast?.('success', 'Signed In', 'Welcome back!');
       } catch (err: unknown) {
-        const msg = getFriendlyAuthErrorMessage(err);
+        const msg = err instanceof Error ? err.message : getFriendlyAuthErrorMessage(err);
         setLocalError(msg);
-        onShowToast?.('error', 'Sign In Failed', msg);
       } finally {
         setIsSubmitting(false);
       }
@@ -168,6 +205,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onShowToast }) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 animate-in fade-in duration-200">
       <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={authModalMode === 'signin' ? 'Sign In' : authModalMode === 'signup' ? 'Sign Up' : 'Reset Password'}
         className="relative w-full max-w-md bg-white rounded-2xl border border-slate-200/90 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >

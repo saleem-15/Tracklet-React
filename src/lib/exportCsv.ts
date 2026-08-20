@@ -4,10 +4,9 @@ import { calculateDaysInStage } from './sampleData';
 export function exportApplicationsToCSV(
   applications: Application[],
   filenamePrefix: string = 'tracklet_job_applications'
-) {
+): boolean {
   if (!applications || applications.length === 0) {
-    alert('No applications to export.');
-    return;
+    return false;
   }
 
   const headers = [
@@ -53,4 +52,5 @@ export function exportApplicationsToCSV(
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
+  return true;
 }

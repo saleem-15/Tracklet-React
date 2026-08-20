@@ -74,12 +74,6 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
   const [draggedAppId, setDraggedAppId] = useState<string | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<ApplicationStatus | null>(null);
   const [isAttentionDismissed, setIsAttentionDismissed] = useState(false);
-  const [lastMovedNotice, setLastMovedNotice] = useState<{
-    id: string;
-    company: string;
-    fromStatus: ApplicationStatus;
-    toStatus: ApplicationStatus;
-  } | null>(null);
 
   // Column refs for mobile stage jump scrolling
   const columnRefs = useRef<{ [key in ApplicationStatus]?: HTMLDivElement | null }>({});
@@ -133,146 +127,114 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
     if (id) {
       const app = applications.find((a) => a.id === id);
       if (app && app.status !== targetStatus) {
-        const prevStatus = app.status;
         onUpdateStatus(id, targetStatus);
-        setLastMovedNotice({
-          id,
-          company: app.company,
-          fromStatus: prevStatus,
-          toStatus: targetStatus,
-        });
       }
     }
     setDraggedAppId(null);
     setDragOverColumn(null);
   };
 
-  const handleQuickAdvance = (e: React.MouseEvent, app: Application, nextStatus: ApplicationStatus) => {
+  const handleQuickAdvance = (e: React.SyntheticEvent, app: Application, nextStatus: ApplicationStatus) => {
     e.stopPropagation();
-    const prevStatus = app.status;
     onUpdateStatus(app.id, nextStatus);
-    setLastMovedNotice({
-      id: app.id,
-      company: app.company,
-      fromStatus: prevStatus,
-      toStatus: nextStatus,
-    });
   };
 
   return (
     <div className="flex-1 bg-white flex flex-col h-full min-h-0 select-none overflow-hidden relative">
-      {/* Status move notification toast */}
-      {lastMovedNotice && (
-        <div className="absolute bottom-4 right-4 sm:right-6 z-30 bg-slate-900 text-white px-3.5 py-2.5 rounded-xl shadow-xl flex items-center gap-3 text-xs animate-in fade-in slide-in-from-bottom-2 duration-200 max-w-[90vw]">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-          <span className="truncate">
-            Moved <strong className="font-semibold text-white">{lastMovedNotice.company}</strong> to <span className="font-mono text-blue-300 font-semibold">{lastMovedNotice.toStatus}</span>
-          </span>
-          <button
-            type="button"
-            onClick={() => {
-              onUpdateStatus(lastMovedNotice.id, lastMovedNotice.fromStatus);
-              setLastMovedNotice(null);
-            }}
-            className="ml-auto shrink-0 bg-slate-800 hover:bg-slate-700 text-amber-300 hover:text-amber-200 font-semibold px-2 py-1 rounded border border-slate-700 text-[11px] transition-colors cursor-pointer min-h-[30px]"
-          >
-            Undo
-          </button>
-        </div>
-      )}
-
-      {applications.length === 0 ? (
-        <div className="flex-1 flex items-center justify-center p-6 overflow-y-auto">
-          {totalAppCount === 0 && onOpenAddModal && onSeedDemoData ? (
-            <OnboardingEmptyState
-              onOpenAddModal={onOpenAddModal}
-              onSeedDemoData={onSeedDemoData}
-            />
-          ) : (
-            <EmptyState
-              isFiltered={totalAppCount > 0}
-              onAddApplication={onOpenAddModal}
-              onResetFilters={onResetFilters}
-            />
-          )}
-        </div>
-      ) : (
-        <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-          {/* "Needs Attention Today" Hero Banner (Responsive layout) */}
-          {!isAttentionDismissed && staleApps.length > 0 && (
-            <div className="bg-amber-500/10 border-b border-amber-500/20 px-3.5 py-2.5 flex items-center justify-between text-xs text-amber-900 shrink-0 gap-2">
-              <div className="flex items-center gap-2 font-medium min-w-0">
-                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse motion-reduce:animate-none shrink-0" />
-                <span className="leading-snug">
-                  <strong className="font-semibold text-amber-950">Attention Needed:</strong>{' '}
-                  <span className="font-semibold">{staleApps.length} application{staleApps.length > 1 ? 's' : ''}</span> have been in active hiring stages for over 14 days without progress updates.
-                </span>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setIsAttentionDismissed(true)}
-                className="text-amber-700 hover:text-amber-950 p-1.5 rounded transition-colors cursor-pointer shrink-0 min-h-[36px] min-w-[36px] flex items-center justify-center"
-                title="Dismiss announcement"
-              >
-                <X className="w-4 h-4" />
-              </button>
+      <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+        {/* "Needs Attention Today" Hero Banner (Responsive layout) */}
+        {!isAttentionDismissed && staleApps.length > 0 && (
+          <div className="bg-amber-500/10 border-b border-amber-500/20 px-3.5 py-2.5 flex items-center justify-between text-xs text-amber-900 shrink-0 gap-2">
+            <div className="flex items-center gap-2 font-medium min-w-0">
+              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse motion-reduce:animate-none shrink-0" />
+              <span className="leading-snug">
+                <strong className="font-semibold text-amber-950">Attention Needed:</strong>{' '}
+                <span className="font-semibold">{staleApps.length} application{staleApps.length > 1 ? 's' : ''}</span> have been in active hiring stages for over 14 days without progress updates.
+              </span>
             </div>
-          )}
 
-          {/* ── Mobile Stage Jump Tabs Bar (Visible only on < 768px) ── */}
-          <div className="md:hidden flex items-center gap-1.5 p-2 bg-slate-50/95 border-b border-slate-200/80 overflow-x-auto shrink-0 no-scrollbar">
-            {PIPELINE_COLUMNS.map((col) => {
-              const count = applications.filter((app) => app.status === col.status).length;
-              return (
-                <button
-                  key={col.status}
-                  type="button"
-                  onClick={() => scrollToColumn(col.status)}
-                  className="px-3 py-1.5 rounded-lg bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 shadow-2xs font-semibold text-xs whitespace-nowrap flex items-center gap-1.5 cursor-pointer shrink-0 min-h-[34px]"
-                >
-                  <span className={`w-2 h-2 rounded-full ${col.dot}`} />
+            <button
+              type="button"
+              onClick={() => setIsAttentionDismissed(true)}
+              className="text-amber-700 hover:text-amber-950 p-1.5 rounded transition-colors cursor-pointer shrink-0 min-h-[36px] min-w-[36px] flex items-center justify-center"
+              title="Dismiss announcement"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
+        {/* ── Mobile Stage Jump Tabs Bar (Visible only on < 768px) ── */}
+        <div className="md:hidden flex items-center gap-1.5 p-2 bg-slate-50/95 border-b border-slate-200/80 overflow-x-auto shrink-0 no-scrollbar">
+          {PIPELINE_COLUMNS.map((col) => {
+            const count = applications.filter((app) => app.status === col.status).length;
+            return (
+              <button
+                key={col.status}
+                type="button"
+                onClick={() => scrollToColumn(col.status)}
+                className="px-3 py-1.5 rounded-lg bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 shadow-2xs font-semibold text-xs whitespace-nowrap flex items-center gap-1.5 cursor-pointer shrink-0 min-h-[34px]"
+              >
+                <span className={`w-2 h-2 rounded-full ${col.dot}`} />
+                <span>{col.title}</span>
+                <span className="font-mono text-[11px] text-slate-500 font-bold bg-slate-100 px-1.5 py-0.5 rounded-full">
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* ── Desktop Column Headers Bar (Visible on md: ≥ 768px) ── */}
+        <div className="hidden md:grid md:grid-cols-5 bg-slate-50/80 border-b border-slate-200/80 sticky top-0 z-10 backdrop-blur-xs min-w-[900px]">
+          {PIPELINE_COLUMNS.map((col) => {
+            const count = applications.filter((app) => app.status === col.status).length;
+            const isTargeting = dragOverColumn === col.status;
+
+            return (
+              <div
+                key={col.status}
+                className={`px-3 py-2.5 flex items-center justify-between transition-colors ${
+                  isTargeting ? 'bg-blue-50/80' : ''
+                }`}
+              >
+                <div className="flex items-center gap-2 font-heading font-bold text-slate-800 text-xs tracking-tight">
+                  <span className={`w-2 h-2 rounded-full ${col.dot} shadow-xs shrink-0`} />
                   <span>{col.title}</span>
-                  <span className="font-mono text-[11px] text-slate-500 font-bold bg-slate-100 px-1.5 py-0.5 rounded-full">
-                    {count}
+                  <span className="font-mono text-[11px] font-semibold text-slate-500 ml-0.5">
+                    ({count})
                   </span>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* ── Desktop Column Headers Bar (Visible on md: ≥ 768px) ── */}
-          <div className="hidden md:grid md:grid-cols-5 bg-slate-50/90 border-b border-slate-200/80 sticky top-0 z-10 backdrop-blur-xs min-w-[900px]">
-            {PIPELINE_COLUMNS.map((col) => {
-              const count = applications.filter((app) => app.status === col.status).length;
-              const isTargeting = dragOverColumn === col.status;
-
-              return (
-                <div
-                  key={col.status}
-                  className={`px-4 py-3 flex items-center justify-between transition-colors ${
-                    isTargeting ? 'bg-blue-50/80' : ''
-                  }`}
-                >
-                  <div className="flex items-center gap-2 font-heading font-bold text-slate-800 text-xs tracking-tight">
-                    <span className={`w-2 h-2 rounded-full ${col.dot} shadow-xs shrink-0`} />
-                    <span>{col.title}</span>
-                    <span className="font-mono text-[11px] font-semibold text-slate-500 ml-0.5">
-                      ({count})
-                    </span>
-                  </div>
                 </div>
-              );
-            })}
-          </div>
+              </div>
+            );
+          })}
+        </div>
 
-          {/* ── Kanban Columns Area (Mobile Horizontal Swipe Snap + Desktop 5-Col Grid) ── */}
-          <div className="flex-1 flex md:grid md:grid-cols-5 min-h-0 overflow-x-auto md:overflow-y-auto snap-x snap-mandatory md:snap-none scroll-smooth p-3 md:p-0 gap-3 md:gap-0 md:min-w-[900px]">
+        {applications.length === 0 ? (
+          <div className="flex-1 overflow-y-auto">
+            {totalAppCount === 0 && onOpenAddModal && onSeedDemoData ? (
+              <OnboardingEmptyState
+                onOpenAddModal={onOpenAddModal}
+                onSeedDemoData={onSeedDemoData}
+              />
+            ) : (
+              <EmptyState
+                isFiltered={totalAppCount > 0}
+                onAddApplication={onOpenAddModal}
+                onResetFilters={onResetFilters}
+              />
+            )}
+          </div>
+        ) : (
+          <>
+            {/* ── Kanban Columns Area (Mobile Horizontal Swipe Snap + Desktop 5-Col Grid) ── */}
+            <div className="flex-1 flex md:grid md:grid-cols-5 min-h-0 overflow-x-auto md:overflow-y-auto snap-x snap-mandatory md:snap-none scroll-smooth p-3 md:p-0 gap-3 md:gap-0 md:min-w-[900px]">
             {PIPELINE_COLUMNS.map((col, index) => {
               const columnApps = applications
                 .filter((app) => app.status === col.status)
                 .sort((a, b) => calculateDaysInStage(b.stageUpdatedAt) - calculateDaysInStage(a.stageUpdatedAt));
               const isTargeting = dragOverColumn === col.status;
+              const prevColumn = index > 0 ? PIPELINE_COLUMNS[index - 1] : null;
               const nextColumn = index < PIPELINE_COLUMNS.length - 1 ? PIPELINE_COLUMNS[index + 1] : null;
 
               return (
@@ -336,9 +298,16 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
                           onDragEnd={handleDragEnd}
                           onClick={() => onSelectApp(app)}
                           onKeyDown={(e) => {
+                            if (e.target !== e.currentTarget) return;
                             if (e.key === 'Enter' || e.key === ' ') {
                               e.preventDefault();
                               onSelectApp(app);
+                            } else if (e.key === 'ArrowRight' && nextColumn && e.target === e.currentTarget) {
+                              e.preventDefault();
+                              handleQuickAdvance(e, app, nextColumn.status);
+                            } else if (e.key === 'ArrowLeft' && prevColumn && e.target === e.currentTarget) {
+                              e.preventDefault();
+                              handleQuickAdvance(e, app, prevColumn.status);
                             }
                           }}
                           className={`p-3.5 rounded-xl border transition-all cursor-grab active:cursor-grabbing group relative focus:outline-none focus:ring-2 focus:ring-blue-500/50 ${
@@ -503,8 +472,9 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
               </div>
             </div>
           </div>
-        </div>
+        </>
       )}
+      </div>
     </div>
   );
 };

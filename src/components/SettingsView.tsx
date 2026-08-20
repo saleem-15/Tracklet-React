@@ -312,7 +312,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         <button
                           type="button"
                           onClick={() => onSelectApplication(item.application.id)}
-                          className="p-1.5 text-slate-500 hover:text-blue-700 hover:bg-blue-100/80 rounded-lg transition-colors cursor-pointer"
+                          className="p-1.5 text-blue-700 hover:text-blue-900 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
                           title="Open Application Details"
                         >
                           <ChevronRight className="w-4 h-4" />

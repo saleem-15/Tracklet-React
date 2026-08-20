@@ -6,6 +6,7 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   sendEmailVerification,
+  applyActionCode,
   sendPasswordResetEmail,
   verifyPasswordResetCode,
   confirmPasswordReset,
@@ -18,6 +19,7 @@ import {
 } from 'firebase/auth';
 import { 
   getFirestore, 
+  initializeFirestore,
   collection, 
   doc, 
   getDocs, 
@@ -32,16 +34,28 @@ import {
   serverTimestamp, 
   orderBy
 } from 'firebase/firestore';
-import firebaseAppletConfig from '../../firebase-applet-config.json';
+// Check if Firebase environment variables are configured
+export const isFirebaseConfigured = Boolean(
+  import.meta.env.VITE_FIREBASE_API_KEY &&
+  import.meta.env.VITE_FIREBASE_PROJECT_ID &&
+  import.meta.env.VITE_FIREBASE_APP_ID &&
+  import.meta.env.VITE_FIREBASE_API_KEY !== 'YOUR_API_KEY'
+);
+
+if (!isFirebaseConfigured) {
+  console.warn(
+    '[Tracklet] Firebase environment variables (VITE_FIREBASE_*) are not fully configured. Using fallback demo configuration for offline/guest mode.'
+  );
+}
 
 const activeConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || firebaseAppletConfig.apiKey,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || firebaseAppletConfig.authDomain,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || firebaseAppletConfig.projectId,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || firebaseAppletConfig.storageBucket,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || firebaseAppletConfig.messagingSenderId,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || firebaseAppletConfig.appId,
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || firebaseAppletConfig.measurementId,
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || 'demo-api-key',
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'demo-tracklet.firebaseapp.com',
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || 'demo-tracklet',
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || 'demo-tracklet.firebasestorage.app',
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '000000000000',
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || '1:000000000000:web:00000000000000',
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || undefined,
 };
 
 const app = !getApps().length ? initializeApp(activeConfig) : getApp();
@@ -50,9 +64,19 @@ export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
 
-// Initialize Firestore with custom database ID if present in config
-const firestoreDatabaseId = (firebaseAppletConfig as Record<string, string | undefined>).firestoreDatabaseId;
-export const db = getFirestore(app, firestoreDatabaseId || undefined);
+// Initialize Firestore with optional custom database ID and ignoreUndefinedProperties
+const firestoreDatabaseId = import.meta.env.VITE_FIREBASE_DATABASE_ID || undefined;
+
+let firestoreInstance;
+try {
+  firestoreInstance = initializeFirestore(app, {
+    ignoreUndefinedProperties: true,
+  }, firestoreDatabaseId);
+} catch (err) {
+  console.warn('Firestore initialization with custom settings failed, falling back to getFirestore:', err);
+  firestoreInstance = getFirestore(app, firestoreDatabaseId);
+}
+export const db = firestoreInstance;
 
 export { 
   collection, 
@@ -72,6 +96,7 @@ export {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   sendEmailVerification,
+  applyActionCode,
   sendPasswordResetEmail,
   verifyPasswordResetCode,
   confirmPasswordReset,

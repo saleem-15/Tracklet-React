@@ -6,9 +6,11 @@ import {
   SortState, 
   ApplicationStatus, 
   SortField,
-  ExpiryNotificationSettings
+  ExpiryNotificationSettings,
+  StatusHistoryEntry
 } from './types';
 import { ApplicationRepository } from './lib/applicationRepository';
+import { appendStatusHistory } from './lib/historyService';
 import { exportApplicationsToCSV } from './lib/exportCsv';
 import { calculateDaysInStage } from './lib/sampleData';
 import { Sidebar } from './components/Sidebar';
@@ -129,10 +131,11 @@ function TrackletAppContent() {
     type: 'success' | 'error' | 'info' | 'warning',
     title: string,
     description?: string,
-    action?: { label: string; onClick: () => void }
+    action?: { label: string; onClick: () => void },
+    stage?: ApplicationStatus
   ) => {
     const id = `toast-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
-    setToasts((prev) => [...prev, { id, type, title, description, action }]);
+    setToasts((prev) => [...prev.slice(-4), { id, type, title, description, action, stage }]);
   }, []);
 
   const dismissToast = (id: string) => {
@@ -289,7 +292,7 @@ function TrackletAppContent() {
       const freshDocs = await ApplicationRepository.seedDemoData(user?.emailVerified ? user.uid : undefined);
       setApplications(freshDocs);
       setSelectedAppId(null);
-      addToast('info', 'Workspace Reset', 'Sample job application dataset loaded.');
+      addToast('info', 'Sample data loaded', '10 demo applications ready.');
     } catch (err) {
       console.error('Failed to seed demo data:', err);
       addToast('error', 'Error', 'Could not load demo dataset.');
@@ -305,7 +308,11 @@ function TrackletAppContent() {
         newApp,
         user?.emailVerified ? user.uid : undefined
       );
-      setApplications((prev) => [created, ...prev]);
+      setApplications((prev) => {
+        const next = [created, ...prev];
+        if (!user?.emailVerified) ApplicationRepository.saveGuestApplications(next);
+        return next;
+      });
       addToast('success', 'Application Added', `Logged ${newApp.company} (${newApp.role})`);
     } catch (err) {
       console.error('Failed to add application:', err);
@@ -322,7 +329,11 @@ function TrackletAppContent() {
         newApps,
         user?.emailVerified ? user.uid : undefined
       );
-      setApplications((prev) => [...imported, ...prev]);
+      setApplications((prev) => {
+        const next = [...imported, ...prev];
+        if (!user?.emailVerified) ApplicationRepository.saveGuestApplications(next);
+        return next;
+      });
       addToast('success', 'Batch Import Complete', `Successfully imported ${newApps.length} applications.`);
     } catch (err) {
       console.error('Batch import failed:', err);
@@ -334,39 +345,102 @@ function TrackletAppContent() {
   const handleUpdateApplication = async (id: string, updates: Partial<Application>) => {
     const currentApp = applications.find((a) => a.id === id);
     const isStatusChanged = updates.status && currentApp && updates.status !== currentApp.status;
+    const now = new Date().toISOString();
 
-    setApplications((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, ...updates, updatedAt: new Date().toISOString() } : a))
-    );
+    const mergedUpdates = { ...updates };
+    if (isStatusChanged && updates.status && currentApp) {
+      mergedUpdates.history = appendStatusHistory(currentApp.history, updates.status, currentApp.status, now);
+      mergedUpdates.stageUpdatedAt = now;
+    }
+
+    setApplications((prev) => {
+      const next = prev.map((a) => (a.id === id ? { ...a, ...mergedUpdates, updatedAt: now } : a));
+      if (!user?.emailVerified) ApplicationRepository.saveGuestApplications(next);
+      return next;
+    });
 
     try {
-      await ApplicationRepository.updateApplication(
-        id,
-        updates,
-        user?.emailVerified ? user.uid : undefined
-      );
+      if (user?.emailVerified) {
+        await ApplicationRepository.updateApplication(
+          id,
+          mergedUpdates,
+          user.uid
+        );
+      }
 
       if (isStatusChanged && updates.status && currentApp) {
-        addToast('info', 'Status Updated', `${currentApp.company} moved to ${updates.status}`);
+        const prevStatus = currentApp.status;
+        const targetStatus = updates.status;
+        const companyName = currentApp.company;
+        addToast(
+          'success',
+          `Moved ${companyName} to`,
+          undefined,
+          {
+            label: 'Undo',
+            onClick: () => {
+              handleUpdateApplication(id, { status: prevStatus });
+            },
+          },
+          targetStatus
+        );
       }
     } catch (err) {
       console.error('Failed to update application:', err);
+      if (currentApp) {
+        setApplications((prev) => {
+          const reverted = prev.map((a) => (a.id === id ? currentApp : a));
+          if (!user?.emailVerified) ApplicationRepository.saveGuestApplications(reverted);
+          return reverted;
+        });
+      }
+      addToast('error', 'Update Failed', 'Could not save changes to cloud.');
     }
   };
 
   // Delete Application
   const handleDeleteApplication = async (id: string) => {
     const targetApp = applications.find((a) => a.id === id);
-    setApplications((prev) => prev.filter((a) => a.id !== id));
+    setApplications((prev) => {
+      const next = prev.filter((a) => a.id !== id);
+      if (!user?.emailVerified) ApplicationRepository.saveGuestApplications(next);
+      return next;
+    });
     if (selectedAppId === id) setSelectedAppId(null);
 
     try {
       await ApplicationRepository.deleteApplication(id, user?.emailVerified ? user.uid : undefined);
       if (targetApp) {
-        addToast('info', 'Application Removed', `Deleted ${targetApp.company} record.`);
+        addToast(
+          'info',
+          `Deleted ${targetApp.company}`,
+          undefined,
+          {
+            label: 'Undo',
+            onClick: async () => {
+              setApplications((prev) => {
+                const next = [targetApp, ...prev];
+                if (!user?.emailVerified) ApplicationRepository.saveGuestApplications(next);
+                return next;
+              });
+              if (user?.emailVerified) {
+                await ApplicationRepository.addApplication(targetApp, user.uid);
+              }
+              addToast('success', `Restored ${targetApp.company}`);
+            },
+          }
+        );
       }
     } catch (err) {
       console.error('Failed to delete application:', err);
+      if (targetApp) {
+        setApplications((prev) => {
+          const next = [targetApp, ...prev];
+          if (!user?.emailVerified) ApplicationRepository.saveGuestApplications(next);
+          return next;
+        });
+      }
+      addToast('error', 'Delete Failed', 'Could not delete application record.');
     }
   };
 
@@ -374,47 +448,70 @@ function TrackletAppContent() {
   const handleBulkUpdateStatus = async (ids: string[], newStatus: ApplicationStatus) => {
     const now = new Date().toISOString();
     const previousSnapshot = applications.filter((a) => ids.includes(a.id));
-    const previousStatusMap = new Map<string, { status: ApplicationStatus; stageUpdatedAt: string }>(
-      previousSnapshot.map((a) => [a.id, { status: a.status, stageUpdatedAt: a.stageUpdatedAt }])
+    const previousStatusMap = new Map<string, { status: ApplicationStatus; stageUpdatedAt?: string; history?: StatusHistoryEntry[] }>(
+      previousSnapshot.map((a) => [a.id, { status: a.status, stageUpdatedAt: a.stageUpdatedAt, history: a.history }])
     );
 
-    setApplications((prev) =>
-      prev.map((a) =>
-        ids.includes(a.id) ? { ...a, status: newStatus, stageUpdatedAt: now, updatedAt: now } : a
-      )
-    );
+    setApplications((prev) => {
+      const next = prev.map((a) => {
+        if (!ids.includes(a.id)) return a;
+        const updatedHist = appendStatusHistory(a.history, newStatus, a.status, now);
+        return { ...a, status: newStatus, history: updatedHist, stageUpdatedAt: now, updatedAt: now };
+      });
+      if (!user?.emailVerified) ApplicationRepository.saveGuestApplications(next);
+      return next;
+    });
 
     try {
-      await ApplicationRepository.batchUpdateStatus(
-        ids,
-        newStatus,
-        user?.emailVerified ? user.uid : undefined
-      );
+      if (user?.emailVerified) {
+        await ApplicationRepository.batchUpdateStatus(
+          ids,
+          newStatus,
+          user.uid,
+          applications
+        );
+      }
 
       addToast(
         'success',
-        'Bulk Status Updated',
-        `Moved ${ids.length} application${ids.length === 1 ? '' : 's'} to ${newStatus}`,
+        `Moved ${ids.length} application${ids.length === 1 ? '' : 's'} to`,
+        undefined,
         {
           label: 'Undo',
           onClick: async () => {
-            setApplications((prev) =>
-              prev.map((a) => {
+            setApplications((prev) => {
+              const reverted = prev.map((a) => {
                 const old = previousStatusMap.get(a.id);
-                return old ? { ...a, status: old.status, stageUpdatedAt: old.stageUpdatedAt } : a;
-              })
-            );
+                return old ? { ...a, status: old.status, stageUpdatedAt: old.stageUpdatedAt, history: old.history } : a;
+              });
+              if (!user?.emailVerified) ApplicationRepository.saveGuestApplications(reverted);
+              return reverted;
+            });
             if (user?.emailVerified) {
               for (const [appId, oldData] of previousStatusMap.entries()) {
-                await ApplicationRepository.updateApplication(appId, { status: oldData.status }, user.uid);
+                await ApplicationRepository.updateApplication(appId, {
+                  status: oldData.status,
+                  stageUpdatedAt: oldData.stageUpdatedAt,
+                  history: oldData.history
+                }, user.uid);
               }
             }
-            addToast('info', 'Status Reverted', `Restored ${ids.length} application status${ids.length === 1 ? '' : 'es'}.`);
+            addToast('info', 'Restored previous statuses');
           },
-        }
+        },
+        newStatus
       );
     } catch (err) {
       console.error('Bulk update failed:', err);
+      setApplications((prev) => {
+        const reverted = prev.map((a) => {
+          const old = previousStatusMap.get(a.id);
+          return old ? { ...a, status: old.status, stageUpdatedAt: old.stageUpdatedAt, history: old.history } : a;
+        });
+        if (!user?.emailVerified) ApplicationRepository.saveGuestApplications(reverted);
+        return reverted;
+      });
+      addToast('error', 'Bulk Update Failed', 'Could not apply bulk status changes.');
     }
   };
 
@@ -423,7 +520,11 @@ function TrackletAppContent() {
     const deletedApps = applications.filter((a) => ids.includes(a.id));
     const count = ids.length;
 
-    setApplications((prev) => prev.filter((a) => !ids.includes(a.id)));
+    setApplications((prev) => {
+      const next = prev.filter((a) => !ids.includes(a.id));
+      if (!user?.emailVerified) ApplicationRepository.saveGuestApplications(next);
+      return next;
+    });
     if (selectedAppId && ids.includes(selectedAppId)) setSelectedAppId(null);
 
     try {
@@ -436,7 +537,11 @@ function TrackletAppContent() {
         {
           label: 'Undo',
           onClick: async () => {
-            setApplications((prev) => [...deletedApps, ...prev]);
+            setApplications((prev) => {
+              const next = [...deletedApps, ...prev];
+              if (!user?.emailVerified) ApplicationRepository.saveGuestApplications(next);
+              return next;
+            });
             if (user?.emailVerified) {
               await ApplicationRepository.batchImport(deletedApps, user.uid);
             }
@@ -446,6 +551,12 @@ function TrackletAppContent() {
       );
     } catch (err) {
       console.error('Bulk delete failed:', err);
+      setApplications((prev) => {
+        const next = [...deletedApps, ...prev];
+        if (!user?.emailVerified) ApplicationRepository.saveGuestApplications(next);
+        return next;
+      });
+      addToast('error', 'Delete Failed', 'Could not delete applications.');
     }
   };
 
@@ -544,6 +655,15 @@ function TrackletAppContent() {
       });
   }, [applications, filter, sort]);
 
+  const handleExportCSV = useCallback(() => {
+    const success = exportApplicationsToCSV(filteredAndSortedApplications);
+    if (success) {
+      addToast('success', 'Export Complete', `Exported ${filteredAndSortedApplications.length} applications to CSV.`);
+    } else {
+      addToast('warning', 'Export Empty', 'No applications available to export.');
+    }
+  }, [filteredAndSortedApplications, addToast]);
+
   const selectedApp = useMemo(() => {
     return applications.find((a) => a.id === selectedAppId) || null;
   }, [applications, selectedAppId]);
@@ -624,7 +744,7 @@ function TrackletAppContent() {
             setFilter={setFilter}
             onOpenAddModal={() => setIsAddModalOpen(true)}
             totalFilteredCount={filteredAndSortedApplications.length}
-            onExportCSV={() => exportApplicationsToCSV(filteredAndSortedApplications)}
+            onExportCSV={handleExportCSV}
             activeTab={activeTab}
             onOpenMobileSidebar={() => setIsMobileSidebarOpen(true)}
           />
@@ -650,6 +770,7 @@ function TrackletAppContent() {
                 onSortChange={handleSortChange}
                 onBulkUpdateStatus={handleBulkUpdateStatus}
                 onBulkDelete={handleBulkDelete}
+                onShowToast={addToast}
               />
             )}
 
@@ -685,7 +806,7 @@ function TrackletAppContent() {
                   onUpdateSettings={handleUpdateExpirySettings}
                   applications={applications}
                   onSelectApplication={(id) => setSelectedAppId(id)}
-                  onExportCSV={() => exportApplicationsToCSV(filteredAndSortedApplications)}
+                  onExportCSV={handleExportCSV}
                   onImportCSV={handleBatchImportApplications}
                   onSeedDemoData={handleSeedDemoData}
                   onShowToast={addToast}
@@ -706,6 +827,7 @@ function TrackletAppContent() {
         onClose={() => setSelectedAppId(null)}
         onUpdateApp={handleUpdateApplication}
         onDeleteApp={handleDeleteApplication}
+        onShowToast={addToast}
       />
 
       {/* Add Application Modal */}

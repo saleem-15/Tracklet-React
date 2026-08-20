@@ -22,32 +22,25 @@
           "type": "array",
           "items": { "type": "object" }
         },
+        "emails": {
+          "type": "array",
+          "items": { "type": "object" }
+        },
+        "history": {
+          "type": "array",
+          "items": { "type": "object" }
+        },
         "stageUpdatedAt": { "type": "string" },
         "createdAt": { "type": "string" },
         "updatedAt": { "type": "string" }
       },
       "required": ["userId", "company", "role", "platform", "dateApplied", "status"]
-    },
-    "history": {
-      "title": "StatusHistory",
-      "description": "Log of status changes for a job application",
-      "type": "object",
-      "properties": {
-        "fromStatus": { "type": "string" },
-        "toStatus": { "type": "string" },
-        "timestamp": { "type": "string" }
-      },
-      "required": ["toStatus", "timestamp"]
     }
   },
   "firestore": {
-    "applications": {
+    "users/{userId}/applications": {
       "entity": "application",
-      "schema": "applications/{applicationId}"
-    },
-    "applications/{applicationId}/history": {
-      "entity": "history",
-      "schema": "applications/{applicationId}/history/{historyId}"
+      "schema": "users/{userId}/applications/{applicationId}"
     }
   }
 }

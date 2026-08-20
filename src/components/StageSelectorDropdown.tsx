@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useId } from 'react';
 import { ApplicationStatus } from '../types';
 import { ChevronDown, Check } from 'lucide-react';
 import { UI_TOKENS } from '../theme/tokens';
+import { STAGE_CONFIG_MAP, APPLICATION_STATUSES } from '../lib/constants';
 
 interface StageSelectorDropdownProps {
   currentStatus: ApplicationStatus;
@@ -9,68 +10,6 @@ interface StageSelectorDropdownProps {
   size?: 'sm' | 'md';
   className?: string;
 }
-
-const STAGE_CONFIG: Record<ApplicationStatus, { label: string; bg: string; text: string; border: string; dot: string }> = {
-  Saved: {
-    label: 'Saved',
-    bg: 'bg-purple-50 hover:bg-purple-100/80',
-    text: 'text-purple-700',
-    border: 'border-purple-200/80',
-    dot: 'bg-purple-500',
-  },
-  Applied: {
-    label: 'Applied',
-    bg: 'bg-slate-100 hover:bg-slate-200/80',
-    text: 'text-slate-700',
-    border: 'border-slate-200/80',
-    dot: 'bg-slate-500',
-  },
-  Screening: {
-    label: 'Screening',
-    bg: 'bg-amber-50 hover:bg-amber-100/80',
-    text: 'text-amber-700',
-    border: 'border-amber-200/80',
-    dot: 'bg-amber-500',
-  },
-  Interview: {
-    label: 'Interview',
-    bg: 'bg-blue-50 hover:bg-blue-100/80',
-    text: 'text-blue-700',
-    border: 'border-blue-200/80',
-    dot: 'bg-blue-500',
-  },
-  Offer: {
-    label: 'Offer',
-    bg: 'bg-emerald-50 hover:bg-emerald-100/80',
-    text: 'text-emerald-700',
-    border: 'border-emerald-200/80',
-    dot: 'bg-emerald-500',
-  },
-  Rejected: {
-    label: 'Rejected',
-    bg: 'bg-rose-50 hover:bg-rose-100/80',
-    text: 'text-rose-700',
-    border: 'border-rose-200/80',
-    dot: 'bg-rose-500',
-  },
-  Archived: {
-    label: 'Archived',
-    bg: 'bg-slate-50 hover:bg-slate-100/80',
-    text: 'text-slate-500',
-    border: 'border-slate-200/60',
-    dot: 'bg-slate-500',
-  },
-};
-
-const ALL_STATUSES: ApplicationStatus[] = [
-  'Saved',
-  'Applied',
-  'Screening',
-  'Interview',
-  'Offer',
-  'Rejected',
-  'Archived',
-];
 
 export const StageSelectorDropdown: React.FC<StageSelectorDropdownProps> = ({
   currentStatus,
@@ -88,8 +27,8 @@ export const StageSelectorDropdown: React.FC<StageSelectorDropdownProps> = ({
   const buttonId = `${uniqueId}-stage-btn`;
   const listboxId = `${uniqueId}-stage-listbox`;
 
-  const currentConfig = STAGE_CONFIG[currentStatus] || STAGE_CONFIG['Applied'];
-  const currentIndex = ALL_STATUSES.indexOf(currentStatus);
+  const currentConfig = STAGE_CONFIG_MAP[currentStatus] || STAGE_CONFIG_MAP['Applied'];
+  const currentIndex = APPLICATION_STATUSES.indexOf(currentStatus);
 
   useEffect(() => {
     if (isOpen) {
@@ -113,14 +52,14 @@ export const StageSelectorDropdown: React.FC<StageSelectorDropdownProps> = ({
         triggerButtonRef.current?.focus();
       } else if (event.key === 'ArrowDown') {
         event.preventDefault();
-        setHighlightedIndex((prev) => (prev < ALL_STATUSES.length - 1 ? prev + 1 : 0));
+        setHighlightedIndex((prev) => (prev < APPLICATION_STATUSES.length - 1 ? prev + 1 : 0));
       } else if (event.key === 'ArrowUp') {
         event.preventDefault();
-        setHighlightedIndex((prev) => (prev > 0 ? prev - 1 : ALL_STATUSES.length - 1));
+        setHighlightedIndex((prev) => (prev > 0 ? prev - 1 : APPLICATION_STATUSES.length - 1));
       } else if (event.key === 'Enter' || event.key === ' ') {
-        if (highlightedIndex >= 0 && highlightedIndex < ALL_STATUSES.length) {
+        if (highlightedIndex >= 0 && highlightedIndex < APPLICATION_STATUSES.length) {
           event.preventDefault();
-          handleSelect(ALL_STATUSES[highlightedIndex]);
+          handleSelect(APPLICATION_STATUSES[highlightedIndex]);
         }
       }
     };
@@ -193,8 +132,8 @@ export const StageSelectorDropdown: React.FC<StageSelectorDropdownProps> = ({
           <div className="px-2 py-1 text-[11px] font-mono font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-100 mb-1">
             Advance Stage
           </div>
-          {ALL_STATUSES.map((status, idx) => {
-            const config = STAGE_CONFIG[status];
+          {APPLICATION_STATUSES.map((status, idx) => {
+            const config = STAGE_CONFIG_MAP[status];
             const isSelected = status === currentStatus;
             const isHighlighted = idx === highlightedIndex;
 

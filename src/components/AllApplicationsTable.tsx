@@ -8,6 +8,7 @@ import {
   XCircle,
   Trash2,
   CheckSquare,
+  MinusSquare,
   Square,
   Download
 } from 'lucide-react';
@@ -31,6 +32,7 @@ interface AllApplicationsTableProps {
   onSortChange: (field: SortField) => void;
   onBulkUpdateStatus: (ids: string[], newStatus: ApplicationStatus) => void;
   onBulkDelete: (ids: string[]) => void;
+  onShowToast?: (type: 'success' | 'error' | 'info' | 'warning', title: string, description?: string) => void;
 }
 
 function getStageUrgencyClass(status: ApplicationStatus, daysInStage: number): string {
@@ -67,6 +69,7 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
   onSortChange,
   onBulkUpdateStatus,
   onBulkDelete,
+  onShowToast,
 }) => {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [focusedIndex, setFocusedIndex] = useState<number>(-1);
@@ -75,6 +78,7 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
 
   const allSelected =
     applications.length > 0 && selectedIds.size === applications.length;
+  const someSelected = selectedIds.size > 0 && selectedIds.size < applications.length;
 
   const toggleSelectAll = () => {
     if (allSelected) {
@@ -104,7 +108,12 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
 
   const handleExportSelectedCSV = () => {
     const selectedApps = applications.filter((a) => selectedIds.has(a.id));
-    exportApplicationsToCSV(selectedApps, 'tracklet_selected_applications');
+    const ok = exportApplicationsToCSV(selectedApps, 'tracklet_selected_applications');
+    if (ok) {
+      onShowToast?.('success', 'Export Complete', `Exported ${selectedApps.length} applications to CSV.`);
+    } else {
+      onShowToast?.('warning', 'Export Empty', 'Select at least one application to export.');
+    }
   };
 
   const handleBulkArchive = () => {
@@ -298,12 +307,16 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
               <th className="w-10 px-3 py-2.5 text-center">
                 <button
                   type="button"
+                  role="checkbox"
+                  aria-checked={allSelected ? true : someSelected ? 'mixed' : false}
                   onClick={toggleSelectAll}
                   aria-label={allSelected ? "Deselect all applications" : "Select all applications"}
                   className="text-slate-500 hover:text-slate-700 align-middle transition-colors cursor-pointer"
                 >
                   {allSelected ? (
                     <CheckSquare className="w-3.5 h-3.5 text-blue-600" />
+                  ) : someSelected ? (
+                    <MinusSquare className="w-3.5 h-3.5 text-blue-600" />
                   ) : (
                     <Square className="w-3.5 h-3.5" />
                   )}
@@ -405,7 +418,7 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
           <tbody className="divide-y divide-slate-100">
             {applications.length === 0 ? (
               <tr>
-                <td colSpan={7} className="py-8 px-4">
+                <td colSpan={7} className="p-0">
                   {totalAppCount === 0 && onOpenAddModal && onSeedDemoData ? (
                     <OnboardingEmptyState
                       onOpenAddModal={onOpenAddModal}
@@ -453,6 +466,8 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
                     <td className="px-3 py-1 text-center align-middle" onClick={(e) => toggleSelectOne(e, app.id)}>
                       <button
                         type="button"
+                        role="checkbox"
+                        aria-checked={isSelected}
                         aria-label={`Select application for ${app.company}`}
                         className="text-slate-500 hover:text-slate-700 align-middle transition-colors cursor-pointer"
                       >

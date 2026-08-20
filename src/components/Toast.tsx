@@ -1,15 +1,19 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { CheckCircle2, AlertCircle, AlertTriangle, Info, X } from 'lucide-react';
+import { ApplicationStatus } from '../types';
+import { STAGE_CONFIG_MAP } from '../lib/constants';
 
 export interface ToastMessage {
   id: string;
   type: 'success' | 'error' | 'info' | 'warning';
   title: string;
   description?: string;
+  stage?: ApplicationStatus;
   action?: {
     label: string;
     onClick: () => void;
   };
+  duration?: number;
 }
 
 interface ToastProps {
@@ -20,9 +24,15 @@ interface ToastProps {
 export const ToastContainer: React.FC<ToastProps> = ({ toasts, onDismiss }) => {
   if (toasts.length === 0) return null;
 
+  // Limit max visible toasts to 3 to prevent cluttering the board
+  const visibleToasts = toasts.slice(-3);
+
   return (
-    <div className="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none select-none">
-      {toasts.map((toast) => (
+    <div
+      aria-label="Notifications"
+      className="fixed bottom-4 sm:bottom-5 right-4 sm:right-5 z-50 flex flex-col gap-2 max-w-[calc(100vw-2rem)] sm:max-w-md w-auto pointer-events-none select-none items-end"
+    >
+      {visibleToasts.map((toast) => (
         <ToastItem key={toast.id} toast={toast} onDismiss={onDismiss} />
       ))}
     </div>
@@ -33,29 +43,52 @@ const ToastItem: React.FC<{ toast: ToastMessage; onDismiss: (id: string) => void
   toast,
   onDismiss,
 }) => {
+  const [isPaused, setIsPaused] = useState(false);
+  const startTimeRef = useRef<number>(Date.now());
+  const remainingTimeRef = useRef<number>(toast.duration || (toast.action ? 6000 : 4000));
+  const timerIdRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   useEffect(() => {
-    // Give more time if there is an undo action
-    const duration = toast.action ? 6000 : 4000;
-    const timer = setTimeout(() => {
-      onDismiss(toast.id);
-    }, duration);
-    return () => clearTimeout(timer);
-  }, [toast.id, toast.action, onDismiss]);
+    if (isPaused) {
+      if (timerIdRef.current) {
+        clearTimeout(timerIdRef.current);
+        timerIdRef.current = null;
+      }
+      const elapsed = Date.now() - startTimeRef.current;
+      remainingTimeRef.current = Math.max(1000, remainingTimeRef.current - elapsed);
+    } else {
+      startTimeRef.current = Date.now();
+      timerIdRef.current = setTimeout(() => {
+        onDismiss(toast.id);
+      }, remainingTimeRef.current);
+    }
+
+    return () => {
+      if (timerIdRef.current) {
+        clearTimeout(timerIdRef.current);
+      }
+    };
+  }, [isPaused, toast.id, onDismiss]);
+
+  const stageConfig = toast.stage ? STAGE_CONFIG_MAP[toast.stage] : null;
 
   return (
     <div
-      className={`pointer-events-auto flex items-center justify-between gap-3 px-4 py-3 rounded-2xl border shadow-xl backdrop-blur-md text-xs font-sans transition-all animate-in slide-in-from-bottom-5 duration-200 min-w-[320px] ${
-        toast.type === 'success'
-          ? 'bg-emerald-950/90 border-emerald-800/80 text-emerald-100 shadow-emerald-950/20'
-          : toast.type === 'error'
-          ? 'bg-rose-950/90 border-rose-800/80 text-rose-100 shadow-rose-950/20'
+      role={toast.type === 'error' ? 'alert' : 'status'}
+      aria-live={toast.type === 'error' ? 'assertive' : 'polite'}
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+      className={`pointer-events-auto flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-2xl border shadow-2xl backdrop-blur-md text-xs font-sans transition-all duration-200 animate-in fade-in slide-in-from-bottom-3 min-w-[280px] max-w-full sm:max-w-md ${
+        toast.type === 'error'
+          ? 'bg-slate-900/95 border-rose-800/80 text-slate-100 shadow-rose-950/30'
           : toast.type === 'warning'
-          ? 'bg-amber-950/90 border-amber-800/80 text-amber-100 shadow-amber-950/20'
-          : 'bg-slate-900/90 border-slate-700/80 text-slate-100 shadow-slate-950/20'
+          ? 'bg-slate-900/95 border-amber-800/80 text-slate-100 shadow-amber-950/30'
+          : 'bg-slate-900/95 border-slate-800 text-slate-100 shadow-slate-950/40'
       }`}
     >
-      <div className="flex items-center gap-3 min-w-0 flex-1">
-        <div className="shrink-0">
+      {/* Icon & Message Container */}
+      <div className="flex items-center gap-2.5 min-w-0 flex-1">
+        <div className="shrink-0 flex items-center justify-center">
           {toast.type === 'success' ? (
             <CheckCircle2 className="w-4 h-4 text-emerald-400" />
           ) : toast.type === 'error' ? (
@@ -67,14 +100,30 @@ const ToastItem: React.FC<{ toast: ToastMessage; onDismiss: (id: string) => void
           )}
         </div>
 
-        <div className="min-w-0 flex-1 space-y-0.5">
-          <p className="font-bold tracking-tight text-xs leading-snug truncate">{toast.title}</p>
+        <div className="min-w-0 flex-1 flex items-center flex-wrap gap-x-2 gap-y-1">
+          <span className="font-semibold text-white tracking-tight text-xs leading-snug">
+            {toast.title}
+          </span>
+
+          {/* Stage badge with specific stage colors */}
+          {stageConfig && (
+            <span
+              className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md font-mono text-[11px] font-semibold border ${stageConfig.darkBadge}`}
+            >
+              <span className={`w-1.5 h-1.5 rounded-full ${stageConfig.dot} shrink-0`} />
+              <span>{toast.stage}</span>
+            </span>
+          )}
+
           {toast.description && (
-            <p className="text-[11px] opacity-80 leading-normal line-clamp-1">{toast.description}</p>
+            <span className="text-[11px] text-slate-300/90 leading-snug truncate">
+              {toast.description}
+            </span>
           )}
         </div>
       </div>
 
+      {/* Actions / Close */}
       <div className="flex items-center gap-2 shrink-0">
         {toast.action && (
           <button
@@ -83,7 +132,7 @@ const ToastItem: React.FC<{ toast: ToastMessage; onDismiss: (id: string) => void
               toast.action?.onClick();
               onDismiss(toast.id);
             }}
-            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-white/20 hover:bg-white/30 text-white font-semibold text-[11px] border border-white/25 transition-all cursor-pointer shadow-2xs"
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 active:scale-95 text-amber-300 hover:text-amber-200 font-semibold text-[11px] border border-slate-700 transition-all cursor-pointer shadow-2xs"
           >
             {toast.action.label}
           </button>
@@ -93,7 +142,7 @@ const ToastItem: React.FC<{ toast: ToastMessage; onDismiss: (id: string) => void
           type="button"
           onClick={() => onDismiss(toast.id)}
           aria-label="Dismiss notification"
-          className="text-slate-300 hover:text-white p-0.5 rounded-md hover:bg-white/10 transition-colors cursor-pointer"
+          className="text-slate-400 hover:text-slate-200 p-1 rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
         >
           <X className="w-3.5 h-3.5" />
         </button>

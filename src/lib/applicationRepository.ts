@@ -6,24 +6,66 @@ import {
   updateDoc, 
   deleteDoc, 
   doc, 
-  query, 
-  where, 
   writeBatch 
 } from './firebase';
 import { Application, ApplicationStatus } from '../types';
 import { INITIAL_SAMPLE_APPLICATIONS } from './sampleData';
 import { LOCAL_STORAGE_KEYS } from './constants';
-import { addStatusHistoryEntry } from './historyService';
+import { createStatusHistoryEntry, appendStatusHistory } from './historyService';
+
+/**
+ * Strips undefined properties recursively so Firestore does not reject document writes.
+ * Supports nested objects, array elements, and primitive values.
+ */
+function sanitizeForFirestore<T extends Record<string, unknown>>(obj: T): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(obj)) {
+    if (value !== undefined) {
+      if (Array.isArray(value)) {
+        // Recursively sanitize array elements that are objects
+        result[key] = value.map((item) => {
+          if (item !== null && typeof item === 'object' && !Array.isArray(item)) {
+            return sanitizeForFirestore(item as Record<string, unknown>);
+          }
+          return item;
+        });
+      } else if (value !== null && typeof value === 'object') {
+        result[key] = sanitizeForFirestore(value as Record<string, unknown>);
+      } else {
+        result[key] = value;
+      }
+    }
+  }
+  return result;
+}
+
+/**
+ * Helper to commit Firestore batch operations in safe chunks (< 500 operations per batch).
+ */
+async function commitInChunks<T>(
+  items: T[],
+  operation: (batch: ReturnType<typeof writeBatch>, item: T) => void
+): Promise<void> {
+  const CHUNK_SIZE = 450;
+  for (let i = 0; i < items.length; i += CHUNK_SIZE) {
+    const chunk = items.slice(i, i + CHUNK_SIZE);
+    const batch = writeBatch(db);
+    for (const item of chunk) {
+      operation(batch, item);
+    }
+    await batch.commit();
+  }
+}
 
 export class ApplicationRepository {
   /**
-   * Load applications from Firestore if authenticated, or localStorage if guest.
+   * Load applications from Firestore if authenticated (/users/{userId}/applications), or localStorage if guest.
    */
   static async loadApplications(userId?: string): Promise<Application[]> {
     if (userId) {
       try {
-        const q = query(collection(db, 'applications'), where('userId', '==', userId));
-        const querySnapshot = await getDocs(q);
+        const userAppCol = collection(db, 'users', userId, 'applications');
+        const querySnapshot = await getDocs(userAppCol);
         const docsData: Application[] = [];
         querySnapshot.forEach((docSnap) => {
           docsData.push({
@@ -32,13 +74,10 @@ export class ApplicationRepository {
           });
         });
 
-        if (docsData.length === 0) {
-          return [];
-        }
         return docsData;
       } catch (err) {
         console.error('Error fetching Firestore applications:', err);
-        return [];
+        throw err;
       }
     } else {
       return this.loadGuestApplications();
@@ -73,15 +112,20 @@ export class ApplicationRepository {
   }
 
   /**
-   * Add a new application record.
+   * Add a new application record to /users/{userId}/applications with embedded history.
    */
   static async addApplication(
     newApp: Omit<Application, 'id' | 'userId' | 'createdAt' | 'updatedAt' | 'stageUpdatedAt'>,
     userId?: string
   ): Promise<Application> {
     const now = new Date().toISOString();
+    const initialHistory = newApp.history && newApp.history.length > 0
+      ? newApp.history
+      : [createStatusHistoryEntry(newApp.status, undefined, now)];
+
     const appData = {
       ...newApp,
+      history: initialHistory,
       stageUpdatedAt: now,
       createdAt: now,
       updatedAt: now,
@@ -92,14 +136,15 @@ export class ApplicationRepository {
     if (userId) {
       let createdId = '';
       try {
-        const docRef = await addDoc(collection(db, 'applications'), {
+        const payload = sanitizeForFirestore({
           ...appData,
           userId,
         });
+        const docRef = await addDoc(collection(db, 'users', userId, 'applications'), payload);
         createdId = docRef.id;
       } catch (err) {
-        console.error('Failed to add document to Firestore (offline fallback):', err);
-        createdId = `offline-${Date.now()}`;
+        console.error('Failed to add document to Firestore:', err);
+        throw err;
       }
       createdApp = {
         id: createdId,
@@ -114,12 +159,11 @@ export class ApplicationRepository {
       };
     }
 
-    await addStatusHistoryEntry(createdApp.id, newApp.status, undefined, now);
     return createdApp;
   }
 
   /**
-   * Update an existing application record.
+   * Update an existing application record at /users/{userId}/applications/{id}.
    */
   static async updateApplication(
     id: string,
@@ -127,14 +171,15 @@ export class ApplicationRepository {
     userId?: string
   ): Promise<Partial<Application>> {
     const now = new Date().toISOString();
-    const updatedFields = { ...updates, updatedAt: now };
+    const updatedFields = sanitizeForFirestore({ ...updates, updatedAt: now });
 
     if (userId) {
       try {
-        const docRef = doc(db, 'applications', id);
+        const docRef = doc(db, 'users', userId, 'applications', id);
         await updateDoc(docRef, updatedFields);
       } catch (err) {
         console.error('Failed to update Firestore application:', err);
+        throw err;
       }
     }
 
@@ -142,38 +187,54 @@ export class ApplicationRepository {
   }
 
   /**
-   * Delete an application.
+   * Delete an application at /users/{userId}/applications/{id}.
    */
   static async deleteApplication(id: string, userId?: string): Promise<void> {
     if (userId) {
       try {
-        await deleteDoc(doc(db, 'applications', id));
+        await deleteDoc(doc(db, 'users', userId, 'applications', id));
       } catch (err) {
         console.error('Failed to delete application from Firestore:', err);
+        throw err;
       }
     }
   }
 
   /**
-   * Batch update status for multiple applications.
+   * Batch update status for multiple applications at /users/{userId}/applications/{id}.
    */
   static async batchUpdateStatus(
     ids: string[],
     newStatus: ApplicationStatus,
-    userId?: string
+    userId?: string,
+    currentApps?: Application[]
   ): Promise<void> {
     const now = new Date().toISOString();
 
     if (userId) {
       try {
-        const batch = writeBatch(db);
-        ids.forEach((id) => {
-          const dRef = doc(db, 'applications', id);
-          batch.update(dRef, { status: newStatus, stageUpdatedAt: now, updatedAt: now });
+        const appMap = currentApps ? new Map(currentApps.map((a) => [a.id, a])) : null;
+        await commitInChunks(ids, (batch, id) => {
+          const dRef = doc(db, 'users', userId, 'applications', id);
+          const current = appMap?.get(id);
+          const updatedHistory = current
+            ? appendStatusHistory(current.history, newStatus, current.status, now)
+            : undefined;
+
+          const updatePayload: Record<string, unknown> = {
+            status: newStatus,
+            stageUpdatedAt: now,
+            updatedAt: now,
+          };
+          if (updatedHistory) {
+            updatePayload.history = updatedHistory;
+          }
+
+          batch.update(dRef, sanitizeForFirestore(updatePayload));
         });
-        await batch.commit();
       } catch (err) {
         console.error('Failed bulk status update in Firestore:', err);
+        throw err;
       }
     }
   }
@@ -184,19 +245,18 @@ export class ApplicationRepository {
   static async batchDelete(ids: string[], userId?: string): Promise<void> {
     if (userId) {
       try {
-        const batch = writeBatch(db);
-        ids.forEach((id) => {
-          batch.delete(doc(db, 'applications', id));
+        await commitInChunks(ids, (batch, id) => {
+          batch.delete(doc(db, 'users', userId, 'applications', id));
         });
-        await batch.commit();
       } catch (err) {
         console.error('Failed bulk delete in Firestore:', err);
+        throw err;
       }
     }
   }
 
   /**
-   * Batch import applications (from CSV).
+   * Batch import applications (from CSV) into /users/{userId}/applications.
    */
   static async batchImport(
     newApps: Omit<Application, 'id' | 'userId' | 'createdAt' | 'updatedAt' | 'stageUpdatedAt'>[],
@@ -207,31 +267,46 @@ export class ApplicationRepository {
 
     if (userId) {
       try {
-        const batch = writeBatch(db);
+        const itemsWithRefs = newApps.map((appItem) => {
+          const docRef = doc(collection(db, 'users', userId, 'applications'));
+          const initialHistory = appItem.history && appItem.history.length > 0
+            ? appItem.history
+            : [createStatusHistoryEntry(appItem.status, undefined, now)];
 
-        for (const appItem of newApps) {
-          const docRef = doc(collection(db, 'applications'));
-          const appObj: Omit<Application, 'id'> = {
+          const appObj = sanitizeForFirestore({
             ...appItem,
+            history: initialHistory,
             userId,
             stageUpdatedAt: now,
             createdAt: now,
             updatedAt: now,
-          };
-          batch.set(docRef, appObj);
-          createdList.push({ id: docRef.id, ...appObj });
-        }
+          });
 
-        await batch.commit();
+          return { docRef, appObj };
+        });
+
+        await commitInChunks(itemsWithRefs, (batch, { docRef, appObj }) => {
+          batch.set(docRef, appObj);
+        });
+
+        itemsWithRefs.forEach(({ docRef, appObj }) => {
+          createdList.push({ id: docRef.id, ...(appObj as unknown as Omit<Application, 'id'>) });
+        });
       } catch (err) {
         console.error('Failed batch import in Firestore:', err);
+        throw err;
       }
     } else {
       newApps.forEach((appItem, index) => {
+        const initialHistory = appItem.history && appItem.history.length > 0
+          ? appItem.history
+          : [createStatusHistoryEntry(appItem.status, undefined, now)];
+
         createdList.push({
           id: `imported-${Date.now()}-${index}`,
           userId: 'guest',
           ...appItem,
+          history: initialHistory,
           stageUpdatedAt: now,
           createdAt: now,
           updatedAt: now,
@@ -239,46 +314,55 @@ export class ApplicationRepository {
       });
     }
 
-    for (const app of createdList) {
-      await addStatusHistoryEntry(app.id, app.status, undefined, now);
-    }
-
     return createdList;
   }
 
   /**
-   * Reset / re-seed demo data.
+   * Reset / re-seed demo data under /users/{userId}/applications.
    */
   static async seedDemoData(userId?: string): Promise<Application[]> {
+    const now = new Date().toISOString();
+    const initialWithHistory = INITIAL_SAMPLE_APPLICATIONS.map((item) => ({
+      ...item,
+      history: item.history && item.history.length > 0
+        ? item.history
+        : [createStatusHistoryEntry(item.status, undefined, item.createdAt || now)],
+    }));
+
     if (userId) {
       try {
-        // Clear existing Firestore applications for this user
-        const q = query(collection(db, 'applications'), where('userId', '==', userId));
-        const snap = await getDocs(q);
-        const deleteBatch = writeBatch(db);
-        snap.forEach((d) => deleteBatch.delete(d.ref));
-        await deleteBatch.commit();
+        const snap = await getDocs(collection(db, 'users', userId, 'applications'));
+        if (!snap.empty) {
+          await commitInChunks(snap.docs, (batch, d) => {
+            batch.delete(d.ref);
+          });
+        }
 
         // Seed new batch
-        const insertBatch = writeBatch(db);
-        const freshDocs: Application[] = [];
-        for (const item of INITIAL_SAMPLE_APPLICATIONS) {
-          const docRef = doc(collection(db, 'applications'));
-          const appObj: Omit<Application, 'id'> = {
+        const itemsWithRefs = initialWithHistory.map((item) => {
+          const docRef = doc(collection(db, 'users', userId, 'applications'));
+          const appObj = sanitizeForFirestore({
             ...item,
             userId,
-          };
-          insertBatch.set(docRef, appObj);
-          freshDocs.push({ id: docRef.id, ...appObj });
-        }
-        await insertBatch.commit();
-        return freshDocs;
+          });
+          return { docRef, appObj };
+        });
+
+        await commitInChunks(itemsWithRefs, (batch, { docRef, appObj }) => {
+          batch.set(docRef, appObj);
+        });
+
+        return itemsWithRefs.map(({ docRef, appObj }) => ({
+          id: docRef.id,
+          ...(appObj as unknown as Omit<Application, 'id'>),
+        }));
       } catch (err) {
         console.error('Failed to reset Firestore demo data:', err);
+        throw err;
       }
     }
 
-    const initial = INITIAL_SAMPLE_APPLICATIONS.map((item, idx) => ({
+    const initial = initialWithHistory.map((item, idx) => ({
       ...item,
       id: `guest-${idx + 1}`,
       userId: 'guest',
@@ -288,28 +372,24 @@ export class ApplicationRepository {
   }
 
   /**
-   * Permanently purge all user applications and history records from Firestore (GDPR).
+   * Permanently purge all user applications from Firestore (GDPR).
    */
   static async purgeUserData(userId: string): Promise<void> {
     if (!userId) return;
 
     try {
-      const q = query(collection(db, 'applications'), where('userId', '==', userId));
-      const snap = await getDocs(q);
+      const snap = await getDocs(collection(db, 'users', userId, 'applications'));
 
       if (!snap.empty) {
-        const batch = writeBatch(db);
-        for (const docSnap of snap.docs) {
-          // Purge sub-collection history entries
-          try {
-            const histSnap = await getDocs(collection(db, 'applications', docSnap.id, 'history'));
-            histSnap.forEach((hDoc) => batch.delete(hDoc.ref));
-          } catch (hErr) {
-            console.warn('Could not fetch sub-collection history for purge:', hErr);
-          }
+        await commitInChunks(snap.docs, (batch, docSnap) => {
           batch.delete(docSnap.ref);
-        }
-        await batch.commit();
+        });
+      }
+
+      try {
+        await deleteDoc(doc(db, 'users', userId));
+      } catch {
+        // ignore missing user profile doc
       }
     } catch (err) {
       console.error('Failed to purge user data from Firestore:', err);

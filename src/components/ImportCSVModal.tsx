@@ -66,6 +66,56 @@ export const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
   const [importedCount, setImportedCount] = useState(0);
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
+
+  React.useEffect(() => {
+    if (!isOpen) return;
+
+    // Save previously focused element
+    previousFocusRef.current = document.activeElement as HTMLElement | null;
+
+    // Move focus to first focusable element inside modal
+    const timer = setTimeout(() => {
+      if (modalRef.current) {
+        const focusable = modalRef.current.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusable.length > 0) {
+          focusable[0].focus();
+        }
+      }
+    }, 50);
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      } else if (e.key === 'Tab' && modalRef.current) {
+        const focusable = modalRef.current.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('keydown', handleKeyDown);
+      // Restore focus when modal closes
+      if (previousFocusRef.current && document.body.contains(previousFocusRef.current)) {
+        previousFocusRef.current.focus();
+      }
+    };
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -110,10 +160,11 @@ export const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
   const processCSVContent = (content: string) => {
     const parsed = parseRawCSV(content);
     if (parsed.length < 2) {
-      alert('CSV file must contain a header row and at least one data row.');
+      setParseError('CSV file must contain a header row and at least one data row.');
       return;
     }
 
+    setParseError(null);
     const detectedHeaders = parsed[0];
     const rows = parsed.slice(1);
 
@@ -128,7 +179,7 @@ export const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
 
   const handlePasteSubmit = () => {
     if (!csvText.trim()) {
-      alert('Please paste valid CSV content.');
+      setParseError('Please paste valid CSV content.');
       return;
     }
     processCSVContent(csvText);
@@ -205,18 +256,19 @@ export const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
 
   const handleExecuteImport = async () => {
     if (parsedApplications.length === 0) {
-      alert('No valid applications detected to import.');
+      setParseError('No valid applications detected to import.');
       return;
     }
 
     setIsSubmitting(true);
+    setParseError(null);
     try {
       await onImport(parsedApplications);
       setImportedCount(parsedApplications.length);
       setStep('success');
     } catch (err) {
       console.error('Import failed:', err);
-      alert('Import failed. Please verify your CSV format and try again.');
+      setParseError('Import failed. Please verify your CSV format and try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -225,6 +277,7 @@ export const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
   const resetModal = () => {
     setStep('upload');
     setCsvText('');
+    setParseError(null);
   };
 
   const downloadSampleCSV = () => {
@@ -240,7 +293,13 @@ export const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className={`w-full max-w-2xl ${UI_TOKENS.modal} overflow-hidden flex flex-col my-auto text-slate-900 animate-in zoom-in-95 duration-150`}>
+      <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Import Applications via CSV"
+        className={`w-full max-w-2xl ${UI_TOKENS.modal} overflow-hidden flex flex-col my-auto text-slate-900 animate-in zoom-in-95 duration-150`}
+      >
         {/* Modal Header */}
         <div className="px-6 py-4 border-b border-slate-200/80 flex items-center justify-between bg-slate-50/50">
           <div className="flex items-center gap-3">
@@ -411,7 +470,7 @@ export const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
                       {parsedApplications.map((app, idx) => (
                         <tr key={idx} className="hover:bg-slate-50">
                           <td className="p-2.5 font-bold text-slate-900">{app.company}</td>
-                          <td className="p-2.5 font-medium">{app.role}</td>
+                          <td className="p-2.5 text-slate-700">{app.role}</td>
                           <td className="p-2.5">
                             <span className="font-mono text-[11px] px-1.5 py-0.5 rounded-md bg-blue-50 text-blue-700 font-semibold border border-blue-200/60">
                               {app.platform}
@@ -425,6 +484,13 @@ export const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
                   </table>
                 </div>
               </div>
+
+              {parseError && (
+                <div className="bg-rose-50 border border-rose-200 text-rose-800 p-3 rounded-[10px] text-xs flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
+                  <span>{parseError}</span>
+                </div>
+              )}
             </div>
           )}
 

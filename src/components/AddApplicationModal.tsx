@@ -7,6 +7,7 @@ import { AddApplicationTasksSection } from './add-modal/AddApplicationTasksSecti
 import { AddApplicationContactsSection } from './add-modal/AddApplicationContactsSection';
 import { AddApplicationNotesSection } from './add-modal/AddApplicationNotesSection';
 import { AddApplicationFooter } from './add-modal/AddApplicationFooter';
+import { UnsavedChangesPrompt } from './detail/UnsavedChangesPrompt';
 
 export interface AddApplicationModalProps {
   isOpen: boolean;
@@ -31,6 +32,7 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
   const [notes, setNotes] = useState('');
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [tasks, setTasks] = useState<ApplicationTask[]>([]);
+  const [showUnsavedPrompt, setShowUnsavedPrompt] = useState(false);
 
   const isDirty =
     company.trim() !== '' ||
@@ -42,23 +44,61 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
 
   const handleRequestClose = () => {
     if (isDirty) {
-      if (confirm('Discard unsaved job application entry?')) {
-        onClose();
-      }
+      setShowUnsavedPrompt(true);
     } else {
       onClose();
     }
   };
 
+  const dialogRef = React.useRef<HTMLDivElement>(null);
+  const previousFocusRef = React.useRef<HTMLElement | null>(null);
+
   useEffect(() => {
     if (!isOpen) return;
+
+    // Save previously focused element
+    previousFocusRef.current = document.activeElement as HTMLElement | null;
+
+    // Move focus to first focusable input or button inside dialog
+    const timer = setTimeout(() => {
+      if (dialogRef.current) {
+        const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusable.length > 0) {
+          focusable[0].focus();
+        }
+      }
+    }, 50);
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         handleRequestClose();
+      } else if (e.key === 'Tab' && dialogRef.current) {
+        const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('keydown', handleKeyDown);
+      // Restore focus when modal closes
+      if (previousFocusRef.current && document.body.contains(previousFocusRef.current)) {
+        previousFocusRef.current.focus();
+      }
+    };
   }, [isOpen, onClose, isDirty]);
 
   if (!isOpen) return null;
@@ -152,6 +192,10 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
       onClick={handleRequestClose}
     >
       <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Add Job Application"
         className="w-full max-w-4xl max-h-[92vh] bg-white border border-slate-200/90 rounded-2xl flex flex-col shadow-2xl text-slate-900 animate-in zoom-in-95 duration-200 overflow-hidden my-auto"
         onClick={(e) => e.stopPropagation()}
       >
@@ -216,6 +260,16 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
           />
         </form>
       </div>
+
+      {showUnsavedPrompt && (
+        <UnsavedChangesPrompt
+          onKeepEditing={() => setShowUnsavedPrompt(false)}
+          onDiscardAndExit={() => {
+            setShowUnsavedPrompt(false);
+            onClose();
+          }}
+        />
+      )}
     </div>
   );
 };

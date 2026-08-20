@@ -98,7 +98,7 @@ export const ForgotPasswordView: React.FC<ForgotPasswordViewProps> = ({
                 disabled={resetCooldown > 0 || isSubmitting}
                 className="font-bold text-blue-600 hover:text-blue-800 underline underline-offset-2 cursor-pointer disabled:opacity-50 disabled:no-underline disabled:cursor-not-allowed ml-0.5"
               >
-                {resetCooldown > 0 ? `Resend in ${resetCooldown}s` : 'Click to resend'}
+                {resetCooldown > 0 ? `Resend in ${resetCooldown}s` : 'Resend'}
               </button>
             </p>
 
@@ -134,19 +134,10 @@ export const ForgotPasswordView: React.FC<ForgotPasswordViewProps> = ({
         <div
           role="alert"
           aria-live="polite"
-          className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex flex-col gap-2 animate-in fade-in"
+          className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-start gap-2 animate-in fade-in"
         >
-          <div className="flex items-start gap-2">
-            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
-            <span className="leading-relaxed font-medium">{errorMessage}</span>
-          </div>
-          <button
-            type="button"
-            onClick={() => onNavigate('signup')}
-            className="self-start text-[11px] font-bold text-blue-700 hover:text-blue-900 underline underline-offset-2 cursor-pointer ml-6"
-          >
-            Don't have an account? Create one
-          </button>
+          <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+          <span className="leading-relaxed font-medium">{errorMessage}</span>
         </div>
       )}
 

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { User as FirebaseUser } from 'firebase/auth';
 import { AuthRepository } from '../lib/authRepository';
+import { ApplicationRepository } from '../lib/applicationRepository';
 import { AuthUser, AuthViewMode } from '../types';
 import { getFriendlyAuthErrorMessage } from '../lib/authErrors';
 
@@ -22,6 +23,7 @@ export interface AuthContextType {
   signInWithEmail: (email: string, password: string) => Promise<void>;
   signUpWithEmail: (email: string, password: string) => Promise<void>;
   sendEmailVerification: () => Promise<void>;
+  applyActionCode: (code: string) => Promise<void>;
   sendPasswordReset: (email: string) => Promise<void>;
   verifyPasswordResetCode: (code: string) => Promise<string>;
   confirmPasswordReset: (code: string, newPass: string) => Promise<void>;
@@ -130,6 +132,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
+  const applyActionCode = useCallback(async (code: string) => {
+    setError(null);
+    try {
+      await AuthRepository.applyActionCode(code);
+      const reloaded = await AuthRepository.reloadUser();
+      if (reloaded) {
+        setUser(reloaded);
+        setAuthUser(AuthRepository.mapToAuthUser(reloaded));
+      }
+    } catch (err: unknown) {
+      const friendlyMsg = getFriendlyAuthErrorMessage(err);
+      setError(friendlyMsg);
+      throw new Error(friendlyMsg);
+    }
+  }, []);
+
   const sendPasswordReset = useCallback(async (email: string) => {
     setError(null);
     try {
@@ -194,6 +212,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const deleteAccount = useCallback(async () => {
     setError(null);
     try {
+      if (user?.uid) {
+        // Purge user data first; if it fails, stop before deleting auth account
+        try {
+          await ApplicationRepository.purgeUserData(user.uid);
+        } catch (purgeErr) {
+          console.error('Failed to purge user data; aborting account deletion:', purgeErr);
+          const friendlyMsg = 'Failed to delete application data. Please try again.';
+          setError(friendlyMsg);
+          throw new Error(friendlyMsg);
+        }
+      }
       await AuthRepository.deleteAccount();
       setUser(null);
       setAuthUser(null);
@@ -202,7 +231,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setError(friendlyMsg);
       throw new Error(friendlyMsg);
     }
-  }, []);
+  }, [user?.uid]);
 
   const value: AuthContextType = {
     user,
@@ -218,6 +247,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     signInWithEmail,
     signUpWithEmail,
     sendEmailVerification,
+    applyActionCode,
     sendPasswordReset,
     verifyPasswordResetCode,
     confirmPasswordReset,

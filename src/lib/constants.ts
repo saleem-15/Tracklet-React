@@ -114,3 +114,66 @@ export function getInitials(name: string): string {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
+export const STAGE_CONFIG_MAP: Record<
+  ApplicationStatus,
+  { label: string; dot: string; bg: string; text: string; border: string; darkBadge: string }
+> = {
+  Saved: {
+    label: 'Saved',
+    dot: 'bg-purple-400',
+    bg: 'bg-purple-50 hover:bg-purple-100/80',
+    text: 'text-purple-700',
+    border: 'border-purple-200/80',
+    darkBadge: 'bg-purple-500/20 text-purple-200 border-purple-500/30',
+  },
+  Applied: {
+    label: 'Applied',
+    dot: 'bg-slate-400',
+    bg: 'bg-slate-100 hover:bg-slate-200/80',
+    text: 'text-slate-700',
+    border: 'border-slate-200/80',
+    darkBadge: 'bg-slate-700/60 text-slate-200 border-slate-600/50',
+  },
+  Screening: {
+    label: 'Screening',
+    dot: 'bg-amber-400',
+    bg: 'bg-amber-50 hover:bg-amber-100/80',
+    text: 'text-amber-700',
+    border: 'border-amber-200/80',
+    darkBadge: 'bg-amber-500/20 text-amber-200 border-amber-500/30',
+  },
+  Interview: {
+    label: 'Interview',
+    dot: 'bg-blue-400',
+    bg: 'bg-blue-50 hover:bg-blue-100/80',
+    text: 'text-blue-700',
+    border: 'border-blue-200/80',
+    darkBadge: 'bg-blue-500/20 text-blue-200 border-blue-500/30',
+  },
+  Offer: {
+    label: 'Offer',
+    dot: 'bg-emerald-400',
+    bg: 'bg-emerald-50 hover:bg-emerald-100/80',
+    text: 'text-emerald-700',
+    border: 'border-emerald-200/80',
+    darkBadge: 'bg-emerald-500/20 text-emerald-200 border-emerald-500/30',
+  },
+  Rejected: {
+    label: 'Rejected',
+    dot: 'bg-rose-400',
+    bg: 'bg-rose-50 hover:bg-rose-100/80',
+    text: 'text-rose-700',
+    border: 'border-rose-200/80',
+    darkBadge: 'bg-rose-500/20 text-rose-200 border-rose-500/30',
+  },
+  Archived: {
+    label: 'Archived',
+    dot: 'bg-slate-400',
+    bg: 'bg-slate-50 hover:bg-slate-100/80',
+    text: 'text-slate-500',
+    border: 'border-slate-200/60',
+    darkBadge: 'bg-slate-700/50 text-slate-300 border-slate-600/40',
+  },
+};
+
+

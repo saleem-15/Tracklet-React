@@ -1,4 +1,4 @@
-﻿# Product
+# Product
 
 <!-- impeccable:product-schema 1 -->
 
@@ -22,7 +22,7 @@ Tracklet works without an account (guest mode, localStorage) and without any set
 
 ## Operating Context
 
-Users interact with Tracklet during or right after applying for jobs — often daily during an active search. Typical rituals: logging a new application after submitting it, checking the pipeline board to see what's stale, updating a status after hearing back from a recruiter, and reviewing stats to understand search velocity. The tool should be fast and low-friction, never in the user's way.
+Users interact with Tracklet during or right after applying for jobs — often daily during an active search. Typical rituals: logging a new application after submitting it, checking the pipeline board to see what's stale, updating a status after hearing back from a recruiter, and reviewing stats to understand search  velocity. The tool should be fast and low-friction, never in the user's way.
 
 ## Capabilities and Constraints
 
@@ -57,4 +57,5 @@ Name: **Tracklet** — short, purposeful, tool-like. No confirmed tagline, logo,
 
 ## Accessibility & Inclusion
 
-No product-specific accessibility requirement confirmed yet. Standard web accessibility (WCAG 2.1 AA) is a reasonable baseline for a public web tool.
+Standard web accessibility (WCAG 2.1 AA) is the baseline for Tracklet, with keyboard shortcuts, high contrast WCAG-compliant colors, screen reader ARIA annotations, and motion-reduction support.
+
