@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   Settings, 
   Clock, 
@@ -14,10 +14,13 @@ import {
   RefreshCw,
   Download,
   Upload,
-  FileSpreadsheet
+  FileSpreadsheet,
+  FileCode2,
+  Database
 } from 'lucide-react';
 import { Application, ExpiryNotificationSettings } from '../types';
 import { getExpiringSoonTasks } from '../lib/expiryUtils';
+import { exportApplicationsToJSON, validateAndParseJSONBackup } from '../lib/backupJson';
 import { ImportCSVModal } from './ImportCSVModal';
 import { AccountSettingsCard } from './AccountSettingsCard';
 import { UI_TOKENS } from '../theme/tokens';
@@ -28,7 +31,11 @@ interface SettingsViewProps {
   applications: Application[];
   onSelectApplication?: (appId: string) => void;
   onExportCSV?: () => void;
+  onExportJSON?: () => void;
   onImportCSV?: (
+    apps: Omit<Application, 'id' | 'userId' | 'createdAt' | 'updatedAt' | 'stageUpdatedAt'>[]
+  ) => Promise<void>;
+  onImportJSON?: (
     apps: Omit<Application, 'id' | 'userId' | 'createdAt' | 'updatedAt' | 'stageUpdatedAt'>[]
   ) => Promise<void>;
   onSeedDemoData?: () => void;
@@ -44,12 +51,15 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   applications,
   onSelectApplication,
   onExportCSV,
+  onExportJSON,
   onImportCSV,
+  onImportJSON,
   onSeedDemoData,
   onShowToast,
   onAccountDeleted,
 }) => {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const jsonFileInputRef = useRef<HTMLInputElement>(null);
   const expiringTasks = getExpiringSoonTasks(applications, settings.expiryThresholdHours);
 
   const handleToggle = () => {
@@ -66,6 +76,45 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       ...settings,
       expiryThresholdHours: hours,
     });
+  };
+
+  const handleExportJSON = () => {
+    if (onExportJSON) {
+      onExportJSON();
+    } else {
+      const success = exportApplicationsToJSON(applications);
+      if (success) {
+        onShowToast?.('success', 'JSON Backup Exported', `Saved 1:1 complete snapshot of ${applications.length} applications.`);
+      } else {
+        onShowToast?.('warning', 'Backup Empty', 'No applications available to backup.');
+      }
+    }
+  };
+
+  const handleJSONFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const content = event.target?.result as string;
+        const res = validateAndParseJSONBackup(content);
+        if (!res.success || !res.applications) {
+          onShowToast?.('error', 'Restore Failed', res.error || 'Invalid backup file.');
+          return;
+        }
+        const importFn = onImportJSON || onImportCSV;
+        if (importFn) {
+          await importFn(res.applications);
+          onShowToast?.('success', 'Backup Restored', `Successfully imported ${res.applications.length} applications from JSON backup.`);
+        }
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : 'Could not read backup file.';
+        onShowToast?.('error', 'Import Error', msg);
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
   };
 
   return (
@@ -331,30 +380,86 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </div>
       </div>
 
-      {/* Additional Settings: Data Management, CSV Import & Export */}
-      <div className={`p-6 space-y-4 ${UI_TOKENS.card}`}>
-        <h3 className="text-sm font-bold text-slate-900 font-mono uppercase tracking-wider">
-          Data & System Operations
-        </h3>
+      {/* Additional Settings: Data Management, CSV & JSON Backup */}
+      <div className={`p-6 space-y-5 ${UI_TOKENS.card}`}>
+        <div className="flex items-center justify-between">
+          <div className="space-y-0.5">
+            <h3 className="text-sm font-bold text-slate-900 font-mono uppercase tracking-wider flex items-center gap-2">
+              <Database className="w-4 h-4 text-blue-600" />
+              <span>Data Portability & Backup</span>
+            </h3>
+            <p className="text-xs text-slate-500 font-sans">
+              Export and restore your complete workspace, contacts, tasks, status histories, and application records.
+            </p>
+          </div>
+        </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        {/* Hidden JSON file picker input */}
+        <input
+          ref={jsonFileInputRef}
+          type="file"
+          accept=".json,application/json"
+          onChange={handleJSONFileChange}
+          className="hidden"
+          aria-label="Upload JSON Backup"
+        />
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          {/* JSON Full Backup */}
           <button
             type="button"
-            onClick={() => setIsImportModalOpen(true)}
-            className="flex items-center justify-between p-3.5 rounded-[10px] border border-blue-200/90 bg-gradient-to-br from-blue-50/80 via-indigo-50/30 to-blue-50/50 hover:bg-blue-100/60 hover:border-blue-300 text-blue-950 transition-all cursor-pointer shadow-2xs group"
+            onClick={handleExportJSON}
+            className="flex items-center justify-between p-3.5 rounded-[10px] border border-blue-200/90 bg-gradient-to-br from-blue-50/90 via-indigo-50/40 to-blue-50/60 hover:bg-blue-100/70 hover:border-blue-300 text-blue-950 transition-all cursor-pointer shadow-2xs group"
           >
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-[8px] bg-blue-600 text-white flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform">
+                <FileCode2 className="w-4 h-4" />
+              </div>
+              <div className="text-left">
+                <span className="block font-bold text-xs text-slate-900">Download JSON Backup</span>
+                <span className="text-[11px] text-slate-500">1:1 complete dataset snapshot</span>
+              </div>
+            </div>
+            <Download className="w-4 h-4 text-blue-600 group-hover:translate-y-0.5 transition-transform" />
+          </button>
+
+          {/* JSON Full Restore */}
+          <button
+            type="button"
+            onClick={() => jsonFileInputRef.current?.click()}
+            className="flex items-center justify-between p-3.5 rounded-[10px] border border-indigo-200/90 bg-gradient-to-br from-indigo-50/90 via-violet-50/30 to-indigo-50/50 hover:bg-indigo-100/70 hover:border-indigo-300 text-indigo-950 transition-all cursor-pointer shadow-2xs group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-[8px] bg-indigo-600 text-white flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform">
                 <Upload className="w-4 h-4" />
               </div>
               <div className="text-left">
-                <span className="block font-bold text-xs text-slate-900">Import Applications CSV</span>
-                <span className="text-[11px] text-slate-500">Bulk upload applications file</span>
+                <span className="block font-bold text-xs text-slate-900">Restore from JSON</span>
+                <span className="text-[11px] text-slate-500">Import backup JSON file</span>
               </div>
             </div>
-            <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-transform" />
+            <ChevronRight className="w-4 h-4 text-indigo-600 group-hover:translate-x-0.5 transition-transform" />
           </button>
 
+          {/* CSV Import */}
+          <button
+            type="button"
+            onClick={() => setIsImportModalOpen(true)}
+            className="flex items-center justify-between p-3.5 rounded-[10px] border border-slate-200 bg-slate-50 hover:bg-slate-100/80 hover:border-slate-300 text-slate-800 transition-all cursor-pointer shadow-2xs group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-[8px] bg-slate-700 text-white flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform">
+                <FileSpreadsheet className="w-4 h-4" />
+              </div>
+              <div className="text-left">
+                <span className="block font-bold text-xs text-slate-900">Import CSV</span>
+                <span className="text-[11px] text-slate-500">Bulk upload spreadsheet</span>
+              </div>
+            </div>
+            <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-slate-700 group-hover:translate-x-0.5 transition-transform" />
+          </button>
+
+          {/* CSV Export */}
           {onExportCSV && (
             <button
               type="button"
@@ -364,28 +469,29 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               <div className="flex items-center gap-3">
                 <Download className="w-4 h-4 text-slate-600 group-hover:scale-110 transition-transform" />
                 <div className="text-left">
-                  <span className="block font-bold text-xs text-slate-900">Export Applications CSV</span>
-                  <span className="text-[11px] text-slate-500">Download all data as tabular CSV</span>
+                  <span className="block font-bold text-xs text-slate-900">Export CSV</span>
+                  <span className="text-[11px] text-slate-500">Tabular spreadsheet export</span>
                 </div>
               </div>
               <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-slate-700" />
             </button>
           )}
 
+          {/* Sample Demo Data Reload */}
           {onSeedDemoData && (
             <button
               type="button"
               onClick={onSeedDemoData}
-              className="flex items-center justify-between p-3.5 rounded-[10px] border border-slate-200 bg-slate-50 hover:bg-amber-100/60 hover:border-amber-300 text-amber-950 transition-all cursor-pointer shadow-2xs group"
+              className="flex items-center justify-between p-3.5 rounded-[10px] border border-amber-200 bg-amber-50/60 hover:bg-amber-100/80 hover:border-amber-300 text-amber-950 transition-all cursor-pointer shadow-2xs group sm:col-span-2 lg:col-span-4"
             >
               <div className="flex items-center gap-3">
                 <RefreshCw className="w-4 h-4 text-amber-600 group-hover:rotate-180 transition-transform duration-500" />
                 <div className="text-left">
                   <span className="block font-bold text-xs text-slate-900">Reload Sample Demo Data</span>
-                  <span className="text-[11px] text-slate-500">Reset to 20+ realistic job entries</span>
+                  <span className="text-[11px] text-slate-500">Reset workspace to 20+ curated job applications for testing</span>
                 </div>
               </div>
-              <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-amber-600" />
+              <ChevronRight className="w-4 h-4 text-amber-600 group-hover:translate-x-0.5 transition-transform" />
             </button>
           )}
         </div>

@@ -808,6 +808,7 @@ function TrackletAppContent() {
                   onSelectApplication={(id) => setSelectedAppId(id)}
                   onExportCSV={handleExportCSV}
                   onImportCSV={handleBatchImportApplications}
+                  onImportJSON={handleBatchImportApplications}
                   onSeedDemoData={handleSeedDemoData}
                   onShowToast={addToast}
                   onAccountDeleted={() => {
