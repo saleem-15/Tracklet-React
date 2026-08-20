@@ -103,35 +103,54 @@ export function validateAndParseJSONBackup(jsonString: string): JSONImportResult
     const logoUrl = typeof record.logoUrl === 'string' ? record.logoUrl.trim() : undefined;
     const companyDomain = typeof record.companyDomain === 'string' ? record.companyDomain.trim() : undefined;
 
-    // Validate sub-arrays if present
+    // Validate sub-arrays if present with non-null object filtering
     const contacts = Array.isArray(record.contacts)
-      ? (record.contacts as Record<string, unknown>[]).map((c, idx) => ({
-          id: typeof c.id === 'string' ? c.id : `c-${idx}`,
-          name: typeof c.name === 'string' ? c.name : 'Contact',
-          role: typeof c.role === 'string' ? c.role : undefined,
-          email: typeof c.email === 'string' ? c.email : undefined,
-          phone: typeof c.phone === 'string' ? c.phone : undefined,
-          linkedIn: typeof c.linkedIn === 'string' ? c.linkedIn : undefined,
-          notes: typeof c.notes === 'string' ? c.notes : undefined,
-        }))
+      ? (record.contacts as unknown[])
+          .filter((c): c is Record<string, unknown> => c !== null && typeof c === 'object')
+          .map((c, idx) => ({
+            id: typeof c.id === 'string' ? c.id : `c-${idx}`,
+            name: typeof c.name === 'string' ? c.name : 'Contact',
+            role: typeof c.role === 'string' ? c.role : undefined,
+            email: typeof c.email === 'string' ? c.email : undefined,
+            phone: typeof c.phone === 'string' ? c.phone : undefined,
+            linkedIn: typeof c.linkedIn === 'string' ? c.linkedIn : undefined,
+            notes: typeof c.notes === 'string' ? c.notes : undefined,
+          }))
       : undefined;
 
     const tasks = Array.isArray(record.tasks)
-      ? (record.tasks as Record<string, unknown>[]).map((t, idx) => ({
-          id: typeof t.id === 'string' ? t.id : `t-${idx}`,
-          title: typeof t.title === 'string' ? t.title : 'Task',
-          completed: Boolean(t.completed),
-          dueDate: typeof t.dueDate === 'string' ? t.dueDate : undefined,
-        }))
+      ? (record.tasks as unknown[])
+          .filter((t): t is Record<string, unknown> => t !== null && typeof t === 'object')
+          .map((t, idx) => ({
+            id: typeof t.id === 'string' ? t.id : `t-${idx}`,
+            title: typeof t.title === 'string' ? t.title : 'Task',
+            completed: Boolean(t.completed),
+            dueDate: typeof t.dueDate === 'string' ? t.dueDate : undefined,
+          }))
+      : undefined;
+
+    const emails = Array.isArray(record.emails)
+      ? (record.emails as unknown[])
+          .filter((e): e is Record<string, unknown> => e !== null && typeof e === 'object')
+          .map((e, idx) => ({
+            id: typeof e.id === 'string' ? e.id : `e-${idx}`,
+            subject: typeof e.subject === 'string' ? e.subject : 'Email',
+            sender: typeof e.sender === 'string' ? e.sender : 'Unknown',
+            recipient: typeof e.recipient === 'string' ? e.recipient : undefined,
+            date: typeof e.date === 'string' ? e.date : new Date().toISOString().slice(0, 10),
+            snippet: typeof e.snippet === 'string' ? e.snippet : undefined,
+          }))
       : undefined;
 
     const history = Array.isArray(record.history)
-      ? (record.history as Record<string, unknown>[]).map((h, idx) => ({
-          id: typeof h.id === 'string' ? h.id : `h-${idx}`,
-          toStatus: normalizeCSVStatus(typeof h.toStatus === 'string' ? h.toStatus : 'Applied'),
-          fromStatus: typeof h.fromStatus === 'string' ? normalizeCSVStatus(h.fromStatus) : undefined,
-          timestamp: typeof h.timestamp === 'string' ? h.timestamp : new Date().toISOString(),
-        }))
+      ? (record.history as unknown[])
+          .filter((h): h is Record<string, unknown> => h !== null && typeof h === 'object')
+          .map((h, idx) => ({
+            id: typeof h.id === 'string' ? h.id : `h-${idx}`,
+            toStatus: normalizeCSVStatus(typeof h.toStatus === 'string' ? h.toStatus : 'Applied'),
+            fromStatus: typeof h.fromStatus === 'string' ? normalizeCSVStatus(h.fromStatus) : undefined,
+            timestamp: typeof h.timestamp === 'string' ? h.timestamp : new Date().toISOString(),
+          }))
       : undefined;
 
     sanitizedList.push({
@@ -147,6 +166,7 @@ export function validateAndParseJSONBackup(jsonString: string): JSONImportResult
       companyDomain,
       contacts,
       tasks,
+      emails,
       history,
     });
   }

@@ -95,6 +95,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
+    reader.onerror = () => {
+      onShowToast?.('error', 'File Read Error', 'Failed to read the backup file from disk.');
+    };
+    reader.onabort = () => {
+      onShowToast?.('warning', 'File Read Aborted', 'Backup file upload was canceled.');
+    };
     reader.onload = async (event) => {
       try {
         const content = event.target?.result as string;

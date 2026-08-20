@@ -338,6 +338,7 @@ function TrackletAppContent() {
     } catch (err) {
       console.error('Batch import failed:', err);
       addToast('error', 'Import Failed', 'Could not import applications.');
+      throw err;
     }
   };
 
