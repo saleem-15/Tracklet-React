@@ -26,7 +26,7 @@ import { AuthModal } from './components/AuthModal';
 import { EmailVerificationGate } from './components/EmailVerificationGate';
 import { GuestMigrationModal } from './components/GuestMigrationModal';
 import { loadExpirySettings, saveExpirySettings } from './lib/expiryUtils';
-import { setupExtensionSync } from './lib/extensionSync';
+import { setupExtensionSync, syncAuthSessionToExtension } from './lib/extensionSync';
 import { LOCAL_STORAGE_KEYS } from './lib/constants';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ToastContainer, ToastMessage } from './components/Toast';
@@ -196,22 +196,47 @@ function TrackletAppContent() {
     }
   }, [authLoading, user?.uid, user?.emailVerified, loadData]);
 
+  // Sync Auth Session to Browser Extension on login/logout
+  useEffect(() => {
+    syncAuthSessionToExtension(user);
+  }, [user]);
+
   // Browser Extension Sync Listener
   useEffect(() => {
     const cleanup = setupExtensionSync({
-      onApplicationReceived: async (clippedApp) => {
-        if (user && user.emailVerified) {
-          const created = await ApplicationRepository.addApplication(clippedApp, user.uid);
-          setApplications((prev) => [created, ...prev]);
-        } else if (!user) {
-          const created = await ApplicationRepository.addApplication(clippedApp);
-          setApplications((prev) => [created, ...prev]);
+      onApplicationReceived: async (clippedApp, persistedToCloud) => {
+        let finalApp = clippedApp;
+
+        // If clipped while offline/guest and now authenticated with verified email, persist to Firestore
+        if (!persistedToCloud && user && user.emailVerified && (!clippedApp.userId || clippedApp.userId === 'guest')) {
+          try {
+            finalApp = await ApplicationRepository.addApplication(clippedApp, user.uid);
+          } catch (err) {
+            console.error('Failed to add unpersisted application to Firestore:', err);
+          }
         }
+
+        setApplications((prev) => {
+          const existingIdx = prev.findIndex((a) => a.id === finalApp.id);
+          let next: Application[];
+          if (existingIdx >= 0) {
+            next = [...prev];
+            next[existingIdx] = finalApp;
+          } else {
+            next = [finalApp, ...prev];
+          }
+
+          // In guest mode, immediately persist to localStorage so data is NEVER lost on tab close/refresh
+          if (!user?.emailVerified) {
+            ApplicationRepository.saveGuestApplications(next);
+          }
+          return next;
+        });
 
         addToast(
           'success',
           'Clipped via Tracklet Extension',
-          `Saved "${clippedApp.role}" at ${clippedApp.company}`
+          `Saved "${finalApp.role}" at ${finalApp.company}`
         );
       },
     });

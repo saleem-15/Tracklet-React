@@ -14,6 +14,11 @@
   --surface: #ffffff;
   
   /* Stage Tints from StageSelectorDropdown.tsx */
+  --stage-saved-bg: #faf5ff;
+  --stage-saved-text: #7e22ce;
+  --stage-saved-border: #e9d5ff;
+  --stage-saved-dot: #a855f7;
+
   --stage-wishlist-bg: #faf5ff;
   --stage-wishlist-text: #7e22ce;
   --stage-wishlist-border: #e9d5ff;

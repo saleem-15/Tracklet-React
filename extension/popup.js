@@ -1,6 +1,7 @@
 /**
  * Tracklet Popup Controller
- * Manages form state, live page extraction, custom stage & editable platform dropdowns, and cross-tab broadcasts.
+ * Manages form state, live page extraction, custom stage & editable platform dropdowns,
+ * direct Firebase Firestore persistence, and cross-tab broadcasts.
  */
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -40,10 +41,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   let selectedStage = 'Applied';
   let currentDomain = '';
   let existingAppId = null;
+  let currentUserSession = null;
+  let currentFirebaseConfig = null;
 
-  // STAGE CONFIG Matching StageSelectorDropdown.tsx
+  // STAGE CONFIG Matching StageSelectorDropdown.tsx & constants.ts
   const STAGE_CONFIG = {
-    Wishlist: { bg: 'var(--stage-wishlist-bg)', text: 'var(--stage-wishlist-text)', border: 'var(--stage-wishlist-border)', dot: 'var(--stage-wishlist-dot)' },
+    Saved: { bg: 'var(--stage-saved-bg)', text: 'var(--stage-saved-text)', border: 'var(--stage-saved-border)', dot: 'var(--stage-saved-dot)' },
+    Wishlist: { bg: 'var(--stage-saved-bg)', text: 'var(--stage-saved-text)', border: 'var(--stage-saved-border)', dot: 'var(--stage-saved-dot)' }, // Alias
     Applied: { bg: 'var(--stage-applied-bg)', text: 'var(--stage-applied-text)', border: 'var(--stage-applied-border)', dot: 'var(--stage-applied-dot)' },
     Screening: { bg: 'var(--stage-screening-bg)', text: 'var(--stage-screening-text)', border: 'var(--stage-screening-border)', dot: 'var(--stage-screening-dot)' },
     Interview: { bg: 'var(--stage-interview-bg)', text: 'var(--stage-interview-text)', border: 'var(--stage-interview-border)', dot: 'var(--stage-interview-dot)' },
@@ -55,6 +59,35 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Initialize today's date in YYYY-MM-DD
   const today = new Date().toISOString().split('T')[0];
   dateAppliedInput.value = today;
+
+  // Load cached Auth Session & Firebase Config
+  try {
+    const storageResult = await chrome.storage.local.get(['tracklet_user_session', 'tracklet_firebase_config']);
+    currentUserSession = storageResult.tracklet_user_session || null;
+    currentFirebaseConfig = storageResult.tracklet_firebase_config || null;
+  } catch (err) {
+    console.warn('Failed to load session from storage:', err);
+  }
+
+  // Request latest auth session via BroadcastChannel if web app is active
+  try {
+    const authBc = new BroadcastChannel('tracklet_extension_channel');
+    authBc.onmessage = (event) => {
+      if (event.data && event.data.type === 'TRACKLET_AUTH_SYNC') {
+        currentUserSession = event.data.payload?.user || null;
+        currentFirebaseConfig = event.data.payload?.config || null;
+        if (currentUserSession) {
+          chrome.storage.local.set({
+            tracklet_user_session: currentUserSession,
+            tracklet_firebase_config: currentFirebaseConfig
+          });
+        }
+      }
+    };
+    authBc.postMessage({ type: 'REQUEST_TRACKLET_AUTH' });
+  } catch (e) {
+    // ignore
+  }
 
   // Custom Platform Dropdown Handlers
   platformTrigger.addEventListener('click', (e) => {
@@ -113,24 +146,27 @@ document.addEventListener('DOMContentLoaded', async () => {
   stageOptionItems.forEach(item => {
     item.addEventListener('click', (e) => {
       e.stopPropagation();
-      const stage = item.getAttribute('data-stage');
+      let stage = item.getAttribute('data-stage');
+      if (stage === 'Wishlist') stage = 'Saved';
       updateStageUI(stage);
       stageSelectorContainer.classList.remove('open');
     });
   });
 
   function updateStageUI(stage) {
-    selectedStage = stage;
-    const config = STAGE_CONFIG[stage] || STAGE_CONFIG['Applied'];
+    const canonicalStage = stage === 'Wishlist' ? 'Saved' : stage;
+    selectedStage = canonicalStage;
+    const config = STAGE_CONFIG[canonicalStage] || STAGE_CONFIG['Applied'];
     
-    stageLabelText.textContent = stage;
+    stageLabelText.textContent = canonicalStage;
     stageDot.style.backgroundColor = config.dot;
     stageTriggerBtn.style.backgroundColor = config.bg;
     stageTriggerBtn.style.color = config.text;
     stageTriggerBtn.style.borderColor = config.border;
 
     stageOptionItems.forEach(item => {
-      if (item.getAttribute('data-stage') === stage) {
+      const itemStage = item.getAttribute('data-stage');
+      if (itemStage === canonicalStage || (itemStage === 'Wishlist' && canonicalStage === 'Saved')) {
         item.classList.add('selected');
       } else {
         item.classList.remove('selected');
@@ -255,6 +291,87 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
+  /**
+   * Direct write to Firebase Firestore via REST API
+   */
+  async function pushToFirestoreDirectly(payload, userSession, config) {
+    const projectId = config?.projectId || 'demo-tracklet';
+    const apiKey = config?.apiKey;
+    const userId = userSession.uid;
+    const idToken = userSession.idToken;
+
+    let url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/users/${userId}/applications`;
+    if (apiKey && apiKey !== 'demo-api-key') {
+      url += `?key=${encodeURIComponent(apiKey)}`;
+    }
+
+    const historyEntries = [
+      {
+        mapValue: {
+          fields: {
+            id: { stringValue: `hist-${Date.now()}` },
+            stage: { stringValue: payload.status },
+            timestamp: { stringValue: payload.stageUpdatedAt || new Date().toISOString() }
+          }
+        }
+      }
+    ];
+
+    const fields = {
+      company: { stringValue: payload.company },
+      role: { stringValue: payload.role },
+      platform: { stringValue: payload.platform },
+      status: { stringValue: payload.status },
+      dateApplied: { stringValue: payload.dateApplied },
+      userId: { stringValue: userId },
+      stageUpdatedAt: { stringValue: payload.stageUpdatedAt || new Date().toISOString() },
+      createdAt: { stringValue: payload.createdAt || new Date().toISOString() },
+      updatedAt: { stringValue: payload.updatedAt || new Date().toISOString() },
+      history: {
+        arrayValue: {
+          values: historyEntries
+        }
+      }
+    };
+
+    if (payload.jobLink) {
+      fields.jobLink = { stringValue: payload.jobLink };
+    }
+    if (payload.notes) {
+      fields.notes = { stringValue: payload.notes };
+    }
+    if (payload.companyDomain) {
+      fields.companyDomain = { stringValue: payload.companyDomain };
+    }
+    if (payload.logoUrl) {
+      fields.logoUrl = { stringValue: payload.logoUrl };
+    }
+
+    const headers = { 'Content-Type': 'application/json' };
+    if (idToken) {
+      headers['Authorization'] = `Bearer ${idToken}`;
+    }
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ fields })
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      throw new Error(`Firestore REST HTTP ${response.status}: ${errText}`);
+    }
+
+    const resData = await response.json();
+    const docId = resData.name ? resData.name.split('/').pop() : `cloud-${Date.now()}`;
+    return {
+      ...payload,
+      id: docId,
+      userId
+    };
+  }
+
   async function handleSave() {
     const company = companyInput.value.trim();
     const role = roleInput.value.trim();
@@ -268,9 +385,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       : selectedPlatform;
 
     const nowISO = new Date().toISOString();
-    const applicationPayload = {
-      id: existingAppId || `ext-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-      userId: 'guest',
+    const basePayload = {
       company,
       role,
       platform: finalPlatform,
@@ -285,28 +400,53 @@ document.addEventListener('DOMContentLoaded', async () => {
       updatedAt: nowISO
     };
 
-    // 1. Broadcast event via BroadcastChannel for real-time tab sync
+    let finalizedApp = null;
+    let savedToCloud = false;
+
+    // 1. Direct Cloud Persist if user session is available
+    if (currentUserSession && currentUserSession.uid) {
+      try {
+        finalizedApp = await pushToFirestoreDirectly(basePayload, currentUserSession, currentFirebaseConfig);
+        savedToCloud = true;
+      } catch (cloudErr) {
+        console.warn('Direct Firestore push failed (offline or auth expired), falling back to local storage:', cloudErr);
+      }
+    }
+
+    // 2. Local fallback if guest or cloud write unavailable
+    if (!finalizedApp) {
+      finalizedApp = {
+        ...basePayload,
+        id: existingAppId || `ext-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+        userId: currentUserSession?.uid || 'guest'
+      };
+    }
+
+    // 3. Broadcast to all open Tracklet tabs for instant UI update
     try {
       const bc = new BroadcastChannel('tracklet_extension_channel');
       bc.postMessage({
         type: 'TRACKLET_EXT_ADD_APPLICATION',
-        payload: applicationPayload
+        payload: finalizedApp,
+        persistedToCloud: savedToCloud
       });
       bc.close();
     } catch (e) {
       console.warn('BroadcastChannel unavailable:', e);
     }
 
-    // 2. Persist in chrome.storage.local
+    // 4. Update extension local storage & pending queue
     chrome.storage.local.get(['tracklet_pending_apps', 'tracklet_guest_apps_v1'], (result) => {
       let pending = result.tracklet_pending_apps || [];
       let guestApps = result.tracklet_guest_apps_v1 || [];
 
       if (existingAppId) {
-        guestApps = guestApps.map(app => app.id === existingAppId ? applicationPayload : app);
+        guestApps = guestApps.map(app => app.id === existingAppId ? finalizedApp : app);
       } else {
-        guestApps = [applicationPayload, ...guestApps];
-        pending = [applicationPayload, ...pending];
+        guestApps = [finalizedApp, ...guestApps];
+        if (!savedToCloud) {
+          pending = [finalizedApp, ...pending];
+        }
       }
 
       chrome.storage.local.set({
@@ -321,8 +461,8 @@ document.addEventListener('DOMContentLoaded', async () => {
           successTitle.textContent = 'Application Updated!';
           successSubtitle.textContent = `${company} — ${role} updated in Tracklet.`;
         } else {
-          successTitle.textContent = 'Application Saved!';
-          successSubtitle.textContent = `${company} — ${role} added to Tracklet.`;
+          successTitle.textContent = savedToCloud ? 'Saved to Cloud!' : 'Application Saved!';
+          successSubtitle.textContent = `${company} — ${role} logged to Tracklet.`;
         }
 
         mainContainer.style.display = 'none';

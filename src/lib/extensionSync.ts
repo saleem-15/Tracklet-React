@@ -1,19 +1,77 @@
 /**
  * Extension Sync Listener for Tracklet Web App
- * Real-time event listener and background queue syncer for browser extension clipped applications.
+ * Real-time event listener, auth session broadcaster, and background queue syncer
+ * for browser extension clipped applications.
  */
 
 import { Application } from '../types';
+import { User } from './firebase';
 
 declare const chrome: any;
 
 export interface ExtensionSyncCallbacks {
-  onApplicationReceived: (app: Application) => void;
+  onApplicationReceived: (app: Application, persistedToCloud?: boolean) => void;
   onApplicationUpdated?: (app: Application) => void;
 }
 
 const BROADCAST_CHANNEL_NAME = 'tracklet_extension_channel';
 const PENDING_STORAGE_KEY = 'tracklet_pending_apps';
+
+let activeUserSession: { uid: string; email?: string | null; idToken?: string } | null = null;
+
+/**
+ * Sync active user auth state & Firebase config to extension via BroadcastChannel and runtime messages
+ */
+export async function syncAuthSessionToExtension(user: User | null): Promise<void> {
+  let idToken: string | undefined;
+  if (user) {
+    try {
+      idToken = await user.getIdToken();
+    } catch {
+      // ignore
+    }
+    activeUserSession = {
+      uid: user.uid,
+      email: user.email,
+      idToken
+    };
+  } else {
+    activeUserSession = null;
+  }
+
+  const payload = {
+    user: activeUserSession,
+    config: {
+      projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || 'demo-tracklet',
+      apiKey: import.meta.env.VITE_FIREBASE_API_KEY || 'demo-api-key'
+    }
+  };
+
+  // 1. BroadcastChannel across all tabs
+  try {
+    const channel = new BroadcastChannel(BROADCAST_CHANNEL_NAME);
+    channel.postMessage({
+      type: 'TRACKLET_AUTH_SYNC',
+      payload
+    });
+    channel.close();
+  } catch {
+    // ignore
+  }
+
+  // 2. Direct extension message if extension ID is configured
+  const EXTENSION_ID = import.meta.env.VITE_TRACKLET_EXTENSION_ID;
+  if (typeof chrome !== 'undefined' && chrome.runtime?.sendMessage && EXTENSION_ID) {
+    try {
+      chrome.runtime.sendMessage(EXTENSION_ID, {
+        type: 'SYNC_TRACKLET_AUTH',
+        payload
+      });
+    } catch {
+      // extension not installed or inactive
+    }
+  }
+}
 
 /**
  * Initializes listeners for extension events (BroadcastChannel & postMessage)
@@ -24,20 +82,38 @@ export function setupExtensionSync(callbacks: ExtensionSyncCallbacks): () => voi
   try {
     channel = new BroadcastChannel(BROADCAST_CHANNEL_NAME);
     channel.onmessage = (event) => {
-      if (event.data && event.data.type === 'TRACKLET_EXT_ADD_APPLICATION') {
+      if (!event.data) return;
+
+      if (event.data.type === 'TRACKLET_EXT_ADD_APPLICATION') {
         const app: Application = event.data.payload;
-        callbacks.onApplicationReceived(app);
+        const persistedToCloud: boolean = Boolean(event.data.persistedToCloud);
+        callbacks.onApplicationReceived(app, persistedToCloud);
+      } else if (event.data.type === 'REQUEST_TRACKLET_AUTH') {
+        // Respond to extension request for auth session
+        if (channel) {
+          channel.postMessage({
+            type: 'TRACKLET_AUTH_SYNC',
+            payload: {
+              user: activeUserSession,
+              config: {
+                projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || 'demo-tracklet',
+                apiKey: import.meta.env.VITE_FIREBASE_API_KEY || 'demo-api-key'
+              }
+            }
+          });
+        }
       }
     };
   } catch (e) {
     console.warn('BroadcastChannel not supported in this browser:', e);
   }
 
-  // 2. Window postMessage Listener (Content Script bridge)
+  // 2. Window postMessage Listener (Content Script bridge fallback)
   const windowMessageHandler = (event: MessageEvent) => {
     if (event.data && event.data.type === 'TRACKLET_EXT_ADD_APPLICATION') {
       const app: Application = event.data.payload;
-      callbacks.onApplicationReceived(app);
+      const persistedToCloud: boolean = Boolean(event.data.persistedToCloud);
+      callbacks.onApplicationReceived(app, persistedToCloud);
     }
   };
   window.addEventListener('message', windowMessageHandler);
