@@ -47,10 +47,11 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
 
   private handleCopyDiagnostics = async () => {
     const { error, errorInfo } = this.state;
+    const sanitizedUrl = `${window.location.origin}${window.location.pathname}`;
     const diagnosticReport = [
       `=== Tracklet Crash Report ===`,
       `Timestamp: ${new Date().toISOString()}`,
-      `URL: ${window.location.href}`,
+      `URL: ${sanitizedUrl}`,
       `User Agent: ${navigator.userAgent}`,
       `Error Message: ${error?.message || 'Unknown error'}`,
       `Error Stack:\n${error?.stack || 'No stack trace available'}`,
