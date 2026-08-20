@@ -47,7 +47,17 @@ export async function syncAuthSessionToExtension(user: User | null): Promise<voi
     }
   };
 
-  // 1. BroadcastChannel across all tabs
+  // 1. Content Script Bridge (Primary & universal mechanism across all origins)
+  try {
+    window.postMessage({
+      type: 'TRACKLET_WEB_AUTH_SYNC',
+      payload
+    }, '*');
+  } catch {
+    // ignore
+  }
+
+  // 2. BroadcastChannel across all same-origin tabs
   try {
     const channel = new BroadcastChannel(BROADCAST_CHANNEL_NAME);
     channel.postMessage({

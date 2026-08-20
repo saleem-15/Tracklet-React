@@ -225,11 +225,35 @@ function extractPageData() {
   };
 }
 
-// Listen for messages from popup or background script
+// 1. Listen for runtime messages from popup or background script
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'EXTRACT_PAGE_DATA') {
     const data = extractPageData();
     sendResponse(data);
+  } else if (request.action === 'TRACKLET_EXT_INCOMING_APP') {
+    // Deliver newly saved application directly to Tracklet web app running in this tab
+    window.postMessage({
+      type: 'TRACKLET_EXT_ADD_APPLICATION',
+      payload: request.payload,
+      persistedToCloud: request.persistedToCloud
+    }, '*');
+    sendResponse({ received: true });
   }
   return true;
+});
+
+// 2. Listen for auth session and config sync from Tracklet web app window
+window.addEventListener('message', (event) => {
+  if (!event.data || typeof event.data !== 'object') return;
+
+  if (event.data.type === 'TRACKLET_WEB_AUTH_SYNC') {
+    try {
+      chrome.runtime.sendMessage({
+        action: 'SYNC_USER_SESSION',
+        payload: event.data.payload
+      });
+    } catch {
+      // Extension context invalidated or reloaded
+    }
+  }
 });

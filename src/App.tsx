@@ -196,15 +196,27 @@ function TrackletAppContent() {
     }
   }, [authLoading, user?.uid, user?.emailVerified, loadData]);
 
-  // Sync Auth Session to Browser Extension on login/logout
+  // Sync Auth Session to Browser Extension on login/logout & token refresh
   useEffect(() => {
     syncAuthSessionToExtension(user);
+    // Periodically refresh auth token every 15 minutes to keep extension session fresh
+    const interval = setInterval(() => {
+      if (user) {
+        syncAuthSessionToExtension(user);
+      }
+    }, 1000 * 60 * 15);
+    return () => clearInterval(interval);
   }, [user]);
 
   // Browser Extension Sync Listener
   useEffect(() => {
     const cleanup = setupExtensionSync({
       onApplicationReceived: async (clippedApp, persistedToCloud) => {
+        // Multi-account guard: if tab is logged in and clipped item is explicitly for another user, skip
+        if (user && clippedApp.userId && clippedApp.userId !== 'guest' && clippedApp.userId !== user.uid) {
+          return;
+        }
+
         let finalApp = clippedApp;
 
         // If clipped while offline/guest and now authenticated with verified email, persist to Firestore

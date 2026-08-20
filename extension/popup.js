@@ -21,6 +21,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   const successTitle = document.getElementById('success-title');
   const successSubtitle = document.getElementById('success-subtitle');
   const openTrackletLink = document.getElementById('open-tracklet-link');
+  const userAccountDot = document.getElementById('user-account-dot');
+  const userAccountEmail = document.getElementById('user-account-email');
 
   // Custom Platform Elements
   const platformSelectContainer = document.getElementById('platform-select-container');
@@ -44,6 +46,19 @@ document.addEventListener('DOMContentLoaded', async () => {
   let currentUserSession = null;
   let currentFirebaseConfig = null;
 
+  function updateUserBadge(session) {
+    if (session && session.email) {
+      userAccountDot.classList.add('connected');
+      userAccountEmail.textContent = `Saving to: ${session.email}`;
+    } else if (session && session.uid) {
+      userAccountDot.classList.add('connected');
+      userAccountEmail.textContent = `Saving to Account (${session.uid.substring(0, 6)}...)`;
+    } else {
+      userAccountDot.classList.remove('connected');
+      userAccountEmail.textContent = 'Guest Mode (Local Only)';
+    }
+  }
+
   // STAGE CONFIG Matching StageSelectorDropdown.tsx & constants.ts
   const STAGE_CONFIG = {
     Saved: { bg: 'var(--stage-saved-bg)', text: 'var(--stage-saved-text)', border: 'var(--stage-saved-border)', dot: 'var(--stage-saved-dot)' },
@@ -65,6 +80,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const storageResult = await chrome.storage.local.get(['tracklet_user_session', 'tracklet_firebase_config']);
     currentUserSession = storageResult.tracklet_user_session || null;
     currentFirebaseConfig = storageResult.tracklet_firebase_config || null;
+    updateUserBadge(currentUserSession);
   } catch (err) {
     console.warn('Failed to load session from storage:', err);
   }
@@ -422,18 +438,18 @@ document.addEventListener('DOMContentLoaded', async () => {
       };
     }
 
-    // 3. Broadcast to all open Tracklet tabs for instant UI update
-    try {
-      const bc = new BroadcastChannel('tracklet_extension_channel');
-      bc.postMessage({
-        type: 'TRACKLET_EXT_ADD_APPLICATION',
-        payload: finalizedApp,
-        persistedToCloud: savedToCloud
+    // 3. Deliver to open Tracklet tabs via content scripts
+    chrome.tabs.query({}, (tabs) => {
+      tabs.forEach((t) => {
+        if (t.id) {
+          chrome.tabs.sendMessage(t.id, {
+            action: 'TRACKLET_EXT_INCOMING_APP',
+            payload: finalizedApp,
+            persistedToCloud: savedToCloud
+          }).catch(() => {});
+        }
       });
-      bc.close();
-    } catch (e) {
-      console.warn('BroadcastChannel unavailable:', e);
-    }
+    });
 
     // 4. Update extension local storage & pending queue
     chrome.storage.local.get(['tracklet_pending_apps', 'tracklet_guest_apps_v1'], (result) => {

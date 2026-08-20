@@ -102,6 +102,39 @@ body {
   border-bottom: 1px solid var(--neutral-border);
 }
 
+.user-account-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: var(--stage-applied-bg);
+  border: 1px solid var(--neutral-border);
+  border-radius: 8px;
+  font-size: 11px;
+  color: var(--neutral-muted);
+}
+
+.user-account-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: var(--neutral-subtle);
+  flex-shrink: 0;
+  transition: background-color 0.2s ease;
+}
+
+.user-account-dot.connected {
+  background-color: #10b981;
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.4);
+}
+
+.user-account-email {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .brand {
   display: flex;
   align-items: center;

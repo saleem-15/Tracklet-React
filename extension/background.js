@@ -151,18 +151,18 @@ async function saveAndSyncApplication(appData) {
     };
   }
 
-  // 1. Broadcast to open tabs
-  try {
-    const bc = new BroadcastChannel('tracklet_extension_channel');
-    bc.postMessage({
-      type: 'TRACKLET_EXT_ADD_APPLICATION',
-      payload: finalizedApp,
-      persistedToCloud: savedToCloud
+  // 1. Deliver to open web tabs via content scripts
+  chrome.tabs.query({}, (tabs) => {
+    tabs.forEach((t) => {
+      if (t.id) {
+        chrome.tabs.sendMessage(t.id, {
+          action: 'TRACKLET_EXT_INCOMING_APP',
+          payload: finalizedApp,
+          persistedToCloud: savedToCloud
+        }).catch(() => {});
+      }
     });
-    bc.close();
-  } catch (e) {
-    // ignore
-  }
+  });
 
   // 2. Persist in chrome.storage.local
   chrome.storage.local.get(['tracklet_pending_apps', 'tracklet_guest_apps_v1'], (result) => {
@@ -188,6 +188,34 @@ async function saveAndSyncApplication(appData) {
   });
 }
 
+// Listen for runtime messages (internal popup & content script bridge)
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.action === 'SYNC_USER_SESSION') {
+    const user = message.payload?.user || null;
+    const config = message.payload?.config || null;
+
+    chrome.storage.local.set({
+      tracklet_user_session: user,
+      tracklet_firebase_config: config
+    }, () => {
+      sendResponse({ success: true });
+    });
+    return true;
+  }
+
+  if (message.action === 'FLASH_SUCCESS') {
+    chrome.action.setBadgeText({ text: '✓' });
+    chrome.action.setBadgeBackgroundColor({ color: '#2563eb' });
+    setTimeout(() => {
+      chrome.action.setBadgeText({ text: '' });
+    }, 2500);
+    sendResponse({ success: true });
+    return true;
+  }
+
+  return true;
+});
+
 // Listen for external auth synchronization messages from Tracklet Web App
 chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => {
   if (message && message.type === 'SYNC_TRACKLET_AUTH') {
@@ -199,17 +227,4 @@ chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => 
     });
     return true;
   }
-});
-
-// Listen for internal messages from popup
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.action === 'FLASH_SUCCESS') {
-    chrome.action.setBadgeText({ text: '✓' });
-    chrome.action.setBadgeBackgroundColor({ color: '#2563eb' });
-    setTimeout(() => {
-      chrome.action.setBadgeText({ text: '' });
-    }, 2500);
-    sendResponse({ success: true });
-  }
-  return true;
 });
