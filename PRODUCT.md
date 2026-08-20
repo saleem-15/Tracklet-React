@@ -59,19 +59,3 @@ Name: **Tracklet** — short, purposeful, tool-like. No confirmed tagline, logo,
 
 Standard web accessibility (WCAG 2.1 AA) is the baseline for Tracklet, with keyboard shortcuts, high contrast WCAG-compliant colors, screen reader ARIA annotations, and motion-reduction support.
 
-## Data Model & Architecture
-
-```mermaid
-graph TD
-  subgraph Legacy ["Legacy Schema (Flat Root Collection)"]
-    A["applications/ (Root Collection)"] --> B["{applicationId} (Document)<br>userId: 'uid_123'<br>company: 'Google'..."]
-    B --> C["history/ (Sub-collection)"]
-    C --> D["{historyId} (Document)"]
-  end
-
-  subgraph NewSchema ["New Schema (User-Scoped with Embedded History)"]
-    U["users/ (Collection)"] --> UDoc["{userId} (Document)"]
-    UDoc --> UApp["applications/ (Sub-collection)"]
-    UApp --> UAppDoc["{applicationId} (Document)<br>company: 'Google'...<br>history: [{ id, toStatus, timestamp }]<br>tasks: [{ id, title, completed }]<br>contacts: [{ id, name, email }]"]
-  end
-```
