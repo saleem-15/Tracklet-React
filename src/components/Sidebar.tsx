@@ -16,6 +16,7 @@ import {
 import { ActiveTab, Application, ExpiryNotificationSettings } from '../types';
 import { User } from '../lib/firebase';
 import { getExpiringSoonTasks } from '../lib/expiryUtils';
+import { ACTIVE_STATUSES } from '../lib/constants';
 
 interface SidebarProps {
   activeTab: ActiveTab;
@@ -83,8 +84,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
     }
   };
 
-  const activePipelineCount = applications.filter(
-    (a) => a.status === 'Screening' || a.status === 'Interview' || a.status === 'Offer'
+  const activePipelineCount = applications.filter((a) =>
+    ACTIVE_STATUSES.includes(a.status)
   ).length;
 
   const totalCount = applications.filter((a) => a.status !== 'Archived').length;

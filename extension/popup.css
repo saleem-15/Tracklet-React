@@ -14,6 +14,11 @@
   --surface: #ffffff;
   
   /* Stage Tints from StageSelectorDropdown.tsx */
+  --stage-saved-bg: #faf5ff;
+  --stage-saved-text: #7e22ce;
+  --stage-saved-border: #e9d5ff;
+  --stage-saved-dot: #a855f7;
+
   --stage-wishlist-bg: #faf5ff;
   --stage-wishlist-text: #7e22ce;
   --stage-wishlist-border: #e9d5ff;
@@ -82,10 +87,10 @@ body {
 }
 
 .container {
-  padding: 16px;
+  padding: 14px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
 /* Header Bar */
@@ -95,6 +100,47 @@ body {
   justify-content: space-between;
   padding-bottom: 10px;
   border-bottom: 1px solid var(--neutral-border);
+}
+
+.header-status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5.5px;
+  padding: 3.5px 8px;
+  background: #f8fafc;
+  border: 1px solid var(--neutral-border);
+  border-radius: 9999px;
+  font-size: 11px;
+  color: var(--neutral-muted);
+  cursor: default;
+  transition: all 0.15s ease;
+}
+
+.header-status-chip:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.user-account-dot {
+  width: 6.5px;
+  height: 6.5px;
+  border-radius: 50%;
+  background-color: var(--neutral-subtle);
+  flex-shrink: 0;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.user-account-dot.connected {
+  background-color: #10b981;
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.45);
+}
+
+.user-account-label {
+  font-weight: 600;
+  font-size: 10.5px;
+  letter-spacing: -0.01em;
+  color: var(--neutral-body);
+  white-space: nowrap;
 }
 
 .brand {
@@ -118,54 +164,10 @@ body {
 .brand-title {
   font-family: var(--font-display);
   font-weight: 800;
-  font-size: 15.5px;
+  font-size: 16px;
   letter-spacing: -0.025em;
   color: var(--neutral-dark);
   line-height: 1.2;
-}
-
-.brand-subtitle {
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--neutral-muted);
-}
-
-/* Header Platform Status Badge (Non-interactive) */
-.platform-status-badge {
-  display: inline-flex;
-  align-items: center;
-  font-family: var(--font-mono);
-  font-size: 10.5px;
-  font-weight: 600;
-  padding: 3px 9px;
-  border-radius: 9999px;
-  background-color: #eff6ff;
-  color: #1d4ed8;
-  border: 1px solid #bfdbfe;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-}
-
-/* Polished Compact Autofill Status Pill */
-.autofill-signal {
-  align-self: flex-start;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 10.5px;
-  font-weight: 600;
-  color: #2563eb;
-  background-color: #eff6ff;
-  padding: 3px 9px;
-  border-radius: 9999px;
-  border: 1px solid #dbeafe;
-  box-shadow: 0 1px 2px rgba(37, 99, 235, 0.04);
-}
-
-.autofill-signal svg {
-  width: 12px;
-  height: 12px;
-  color: #2563eb;
 }
 
 /* Duplicate Banner */
@@ -287,6 +289,19 @@ textarea:focus {
   background-color: #ffffff;
   border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
+}
+
+.input-error {
+  border-color: #f43f5e !important;
+  background-color: #fff1f2 !important;
+  box-shadow: 0 0 0 3px rgba(244, 63, 94, 0.18) !important;
+  animation: fieldShake 0.35s ease;
+}
+
+@keyframes fieldShake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-3px); }
+  40%, 80% { transform: translateX(3px); }
 }
 
 textarea {
@@ -517,14 +532,132 @@ textarea {
   box-shadow: none !important;
 }
 
-.kbd-badge {
+/* Already Saved View (Detect, Inform & Route) */
+.already-saved-view {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  animation: fadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.already-saved-card {
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  border: 1px solid var(--neutral-border);
+  border-radius: 16px;
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.already-saved-icon-badge {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background-color: #eff6ff;
+  color: var(--primary);
+  border: 1px solid #bfdbfe;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.12);
+}
+
+.already-saved-badge {
   font-family: var(--font-mono);
   font-size: 10px;
-  font-weight: 600;
-  background: rgba(255, 255, 255, 0.2);
-  padding: 2px 6px;
-  border-radius: 6px;
-  letter-spacing: 0.02em;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #2563eb;
+  background-color: #eff6ff;
+  padding: 2.5px 8px;
+  border-radius: 9999px;
+  border: 1px solid #dbeafe;
+  display: inline-block;
+  margin-bottom: 4px;
+}
+
+.already-saved-company {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--neutral-dark);
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+.already-saved-role {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--neutral-body);
+  margin-top: 2px;
+}
+
+.already-saved-meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+.already-saved-stage-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 11.5px;
+  font-weight: 700;
+  border: 1px solid var(--neutral-border);
+  background: white;
+}
+
+.already-saved-date {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--neutral-muted);
+}
+
+.already-saved-date svg {
+  color: var(--neutral-subtle);
+}
+
+.save-new-prompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--neutral-muted);
+  text-align: center;
+}
+
+.btn-text-link {
+  background: none;
+  border: none;
+  color: var(--primary);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 11.5px;
+  cursor: pointer;
+  padding: 2px 4px;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color 0.15s ease;
+}
+
+.btn-text-link:hover {
+  color: var(--primary-hover);
 }
 
 /* Success View */
@@ -602,7 +735,7 @@ textarea {
   height: 100%;
   background-color: #10b981;
   width: 100%;
-  animation: countdown 1.8s linear forwards;
+  animation: countdown 3.2s linear forwards;
 }
 
 @keyframes countdown {

@@ -1,6 +1,6 @@
 /**
  * Tracklet Extension Background Service Worker (Manifest V3)
- * Manages context menus, badge indicators, and cross-tab event messaging.
+ * Manages context menus, badge indicators, external auth sync, and direct Firestore saving.
  */
 
 // Initialize Context Menu on Install
@@ -13,29 +13,39 @@ chrome.runtime.onInstalled.addListener(() => {
 });
 
 // Handle Context Menu Clicks
-chrome.contextMenus.onClicked.addListener((info, tab) => {
+chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   if (info.menuItemId === 'tracklet-save-page' && tab && tab.id) {
-    // Inject or send message to content script
-    chrome.tabs.sendMessage(tab.id, { action: 'EXTRACT_PAGE_DATA' }, (response) => {
-      if (chrome.runtime.lastError || !response) {
-        // Fallback: store basic info directly
-        const fallbackData = {
-          role: tab.title || 'Job Opening',
-          company: getDomainName(tab.url),
-          platform: 'Company Site',
-          jobLink: tab.url,
-          notes: info.selectionText || '',
-          dateApplied: new Date().toISOString().split('T')[0],
-          status: 'Wishlist',
-          createdAt: new Date().toISOString()
+    chrome.tabs.sendMessage(tab.id, { action: 'EXTRACT_PAGE_DATA' }, async (response) => {
+      const nowISO = new Date().toISOString();
+      const today = nowISO.split('T')[0];
+
+      let baseData = {
+        role: tab.title || 'Job Opening',
+        company: getDomainName(tab.url),
+        platform: 'Company Site',
+        jobLink: tab.url || '',
+        notes: info.selectionText || '',
+        dateApplied: today,
+        status: 'Saved',
+        stageUpdatedAt: nowISO,
+        createdAt: nowISO,
+        updatedAt: nowISO
+      };
+
+      if (!chrome.runtime.lastError && response) {
+        baseData = {
+          ...baseData,
+          company: response.company || baseData.company,
+          role: response.role || baseData.role,
+          platform: response.platform || baseData.platform,
+          jobLink: response.jobLink || baseData.jobLink,
+          notes: info.selectionText || response.notes || '',
+          companyDomain: response.domain || '',
+          logoUrl: response.domain ? `https://logo.clearbit.com/${response.domain}` : undefined
         };
-        savePendingApplication(fallbackData);
-      } else {
-        if (info.selectionText) {
-          response.notes = info.selectionText;
-        }
-        savePendingApplication(response);
       }
+
+      await saveAndSyncApplication(baseData);
     });
   }
 });
@@ -45,44 +55,159 @@ function getDomainName(urlStr) {
   try {
     const url = new URL(urlStr);
     const host = url.hostname.replace(/^www\./, '');
-    return host.split('.')[0].toUpperCase();
+    const name = host.split('.')[0];
+    return name.charAt(0).toUpperCase() + name.slice(1);
   } catch (e) {
     return 'Company';
   }
 }
 
-// Save application to chrome.storage.local
-function savePendingApplication(appData) {
-  const newApp = {
-    id: `ext-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-    userId: 'guest',
-    company: appData.company || 'Unknown Company',
-    role: appData.role || 'Job Role',
-    platform: appData.platform || 'Company Site',
-    dateApplied: new Date().toISOString().split('T')[0],
-    status: appData.status || 'Applied',
-    jobLink: appData.jobLink || '',
-    notes: appData.notes || '',
-    companyDomain: appData.domain || '',
-    stageUpdatedAt: new Date().toISOString(),
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+// Push to Firestore REST API (supports POST for create and PATCH for update)
+async function pushToFirestoreDirectly(payload, userSession, config, docIdToUpdate = null) {
+  const projectId = config?.projectId || 'demo-tracklet';
+  const apiKey = config?.apiKey;
+  const userId = userSession.uid;
+  const idToken = userSession.idToken;
+
+  let url = docIdToUpdate
+    ? `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/users/${userId}/applications/${docIdToUpdate}`
+    : `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/users/${userId}/applications`;
+
+  const queryParams = [];
+  if (apiKey && apiKey !== 'demo-api-key') {
+    queryParams.push(`key=${encodeURIComponent(apiKey)}`);
+  }
+  if (docIdToUpdate) {
+    const updateFields = ['company', 'role', 'platform', 'status', 'dateApplied', 'stageUpdatedAt', 'updatedAt', 'jobLink', 'notes', 'companyDomain', 'logoUrl', 'history'];
+    updateFields.forEach(f => queryParams.push(`updateMask.fieldPaths=${f}`));
+  }
+  if (queryParams.length > 0) {
+    url += `?${queryParams.join('&')}`;
+  }
+
+  const fields = {
+    company: { stringValue: payload.company },
+    role: { stringValue: payload.role },
+    platform: { stringValue: payload.platform },
+    status: { stringValue: payload.status },
+    dateApplied: { stringValue: payload.dateApplied },
+    userId: { stringValue: userId },
+    stageUpdatedAt: { stringValue: payload.stageUpdatedAt || new Date().toISOString() },
+    createdAt: { stringValue: payload.createdAt || new Date().toISOString() },
+    updatedAt: { stringValue: payload.updatedAt || new Date().toISOString() },
+    history: {
+      arrayValue: {
+        values: [
+          {
+            mapValue: {
+              fields: {
+                id: { stringValue: `hist-${Date.now()}` },
+                stage: { stringValue: payload.status },
+                timestamp: { stringValue: payload.stageUpdatedAt || new Date().toISOString() }
+              }
+            }
+          }
+        ]
+      }
+    }
   };
 
-  chrome.storage.local.get(['tracklet_pending_apps', 'tracklet_guest_apps_v1'], (result) => {
-    const pending = result.tracklet_pending_apps || [];
-    const guestApps = result.tracklet_guest_apps_v1 || [];
+  if (payload.jobLink) fields.jobLink = { stringValue: payload.jobLink };
+  if (payload.notes) fields.notes = { stringValue: payload.notes };
+  if (payload.companyDomain) fields.companyDomain = { stringValue: payload.companyDomain };
+  if (payload.logoUrl) fields.logoUrl = { stringValue: payload.logoUrl };
 
-    const updatedPending = [newApp, ...pending];
-    const updatedGuest = [newApp, ...guestApps];
+  const headers = { 'Content-Type': 'application/json' };
+  if (idToken) headers['Authorization'] = `Bearer ${idToken}`;
+
+  const method = docIdToUpdate ? 'PATCH' : 'POST';
+  const response = await fetch(url, {
+    method,
+    headers,
+    body: JSON.stringify({ fields })
+  });
+
+  if (!response.ok) {
+    throw new Error(`Firestore REST error: ${response.statusText}`);
+  }
+
+  const resData = await response.json();
+  const docId = docIdToUpdate || (resData.name ? resData.name.split('/').pop() : `cloud-${Date.now()}`);
+  return { ...payload, id: docId, userId };
+}
+
+// Save application and broadcast to open tabs
+async function saveAndSyncApplication(appData) {
+  const { tracklet_user_session, tracklet_firebase_config, tracklet_apps_index, tracklet_guest_apps_v1 } = await chrome.storage.local.get([
+    'tracklet_user_session',
+    'tracklet_firebase_config',
+    'tracklet_apps_index',
+    'tracklet_guest_apps_v1'
+  ]);
+
+  // Check for existing app match by URL or company+role
+  const allKnown = [...(tracklet_apps_index || []), ...(tracklet_guest_apps_v1 || [])];
+  const existing = allKnown.find(a => 
+    (a.jobLink && appData.jobLink && a.jobLink.toLowerCase().trim() === appData.jobLink.toLowerCase().trim()) ||
+    (a.company && appData.company && a.company.toLowerCase().trim() === appData.company.toLowerCase().trim() && a.role && appData.role && a.role.toLowerCase().trim() === appData.role.toLowerCase().trim())
+  );
+  const existingAppId = existing ? existing.id : null;
+
+  let finalizedApp = null;
+  let savedToCloud = false;
+
+  if (tracklet_user_session && tracklet_user_session.uid) {
+    try {
+      finalizedApp = await pushToFirestoreDirectly(appData, tracklet_user_session, tracklet_firebase_config, existingAppId);
+      savedToCloud = true;
+    } catch (e) {
+      console.warn('Direct Firestore save failed from background worker:', e);
+    }
+  }
+
+  if (!finalizedApp) {
+    finalizedApp = {
+      ...appData,
+      id: existingAppId || `ext-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      userId: tracklet_user_session?.uid || 'guest'
+    };
+  }
+
+  // 1. Deliver to open web tabs via content scripts
+  chrome.tabs.query({}, (tabs) => {
+    tabs.forEach((t) => {
+      if (t.id) {
+        chrome.tabs.sendMessage(t.id, {
+          action: 'TRACKLET_EXT_INCOMING_APP',
+          payload: finalizedApp,
+          persistedToCloud: savedToCloud
+        }).catch(() => {});
+      }
+    });
+  });
+
+  // 2. Persist in chrome.storage.local
+  chrome.storage.local.get(['tracklet_pending_apps', 'tracklet_guest_apps_v1'], (result) => {
+    let pending = result.tracklet_pending_apps || [];
+    let guestApps = result.tracklet_guest_apps_v1 || [];
+
+    if (existingAppId) {
+      guestApps = guestApps.map(app => app.id === existingAppId ? finalizedApp : app);
+      pending = pending.map(app => app.id === existingAppId ? finalizedApp : app);
+    } else {
+      guestApps = [finalizedApp, ...guestApps];
+      if (!savedToCloud) {
+        pending = [finalizedApp, ...pending];
+      }
+    }
 
     chrome.storage.local.set({
-      tracklet_pending_apps: updatedPending,
-      tracklet_guest_apps_v1: updatedGuest
+      tracklet_pending_apps: pending,
+      tracklet_guest_apps_v1: guestApps
     }, () => {
-      // Flash success badge on extension icon
+      // Flash badge
       chrome.action.setBadgeText({ text: '✓' });
-      chrome.action.setBadgeBackgroundColor({ color: '#059669' }); // Emerald green
+      chrome.action.setBadgeBackgroundColor({ color: '#059669' });
       setTimeout(() => {
         chrome.action.setBadgeText({ text: '' });
       }, 2500);
@@ -90,8 +215,30 @@ function savePendingApplication(appData) {
   });
 }
 
-// Listen for custom messages from popup
+// Listen for runtime messages (internal popup & content script bridge)
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.action === 'SYNC_USER_SESSION') {
+    const user = message.payload?.user || null;
+    const config = message.payload?.config || null;
+
+    chrome.storage.local.set({
+      tracklet_user_session: user,
+      tracklet_firebase_config: config
+    }, () => {
+      sendResponse({ success: true });
+    });
+    return true;
+  }
+
+  if (message.action === 'SYNC_APPS_INDEX') {
+    chrome.storage.local.set({
+      tracklet_apps_index: message.payload || []
+    }, () => {
+      sendResponse({ success: true });
+    });
+    return true;
+  }
+
   if (message.action === 'FLASH_SUCCESS') {
     chrome.action.setBadgeText({ text: '✓' });
     chrome.action.setBadgeBackgroundColor({ color: '#2563eb' });
@@ -99,6 +246,21 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       chrome.action.setBadgeText({ text: '' });
     }, 2500);
     sendResponse({ success: true });
+    return true;
   }
+
   return true;
+});
+
+// Listen for external auth synchronization messages from Tracklet Web App
+chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => {
+  if (message && message.type === 'SYNC_TRACKLET_AUTH') {
+    chrome.storage.local.set({
+      tracklet_user_session: message.payload?.user || null,
+      tracklet_firebase_config: message.payload?.config || null
+    }, () => {
+      sendResponse({ success: true });
+    });
+    return true;
+  }
 });
