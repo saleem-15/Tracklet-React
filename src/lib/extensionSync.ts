@@ -201,9 +201,6 @@ export function syncApplicationsToExtension(applications: Application[]): void {
     role: a.role,
     status: a.status,
     platform: a.platform,
-    workLocation: a.workLocation,
-    employmentType: a.employmentType,
-    location: a.location || '',
     notes: a.notes || '',
   }));
 
