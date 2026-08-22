@@ -21,7 +21,7 @@ service cloud.firestore {
         && (data.status is string && isValidStatus(data.status))
         && (data.platform is string && data.platform.size() > 0 && data.platform.size() <= 100)
         && (data.dateApplied is string && data.dateApplied.size() > 0 && data.dateApplied.size() <= 40)
-        && (data.userId is string && data.userId == request.auth.uid)
+        && (!('userId' in data) || data.userId == null || (data.userId is string && data.userId == request.auth.uid))
         && (!('notes' in data) || (data.notes is string && data.notes.size() <= 20000))
         && (!('jobLink' in data) || (data.jobLink is string && data.jobLink.size() <= 3000))
         && (!('companyDomain' in data) || (data.companyDomain is string && data.companyDomain.size() <= 200))
