@@ -5,6 +5,7 @@ import { UI_TOKENS } from '../../theme/tokens';
 import { CompanyLogo } from '../CompanyLogo';
 import { StageSelectorDropdown } from '../StageSelectorDropdown';
 import { CloseIconButton } from '../IconButton';
+import { JobTypeBadges } from '../JobTypeBadges';
 
 export interface ApplicationDetailHeaderProps {
   app: Application;
@@ -27,7 +28,18 @@ export const ApplicationDetailHeader: React.FC<ApplicationDetailHeaderProps> = (
         <CompanyLogo company={app.company} jobLink={app.jobLink} logoUrl={app.logoUrl} companyDomain={app.companyDomain} size="lg" />
         <div className="min-w-0">
           <h2 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight truncate leading-tight">{app.company}</h2>
-          <p className="text-xs font-semibold text-slate-500 truncate mt-0.5">{app.role}</p>
+          <p className="text-xs font-semibold text-slate-500 truncate mt-0.5 flex items-center gap-1.5">
+            <span className="truncate">{app.role}</span>
+            {(app.workLocation || app.employmentType) && (
+              <JobTypeBadges
+                workLocation={app.workLocation}
+                employmentType={app.employmentType}
+              />
+            )}
+          </p>
+          {app.location && (
+            <p className="text-[11px] font-mono text-slate-400 truncate mt-0.5">{app.location}</p>
+          )}
         </div>
       </div>
 

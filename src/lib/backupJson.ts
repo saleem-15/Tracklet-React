@@ -1,5 +1,5 @@
-import { Application, ApplicationStatus, JobPlatform } from '../types';
-import { normalizeCSVStatus, normalizeCSVPlatform, normalizeCSVDate } from './importCsv';
+import { Application, ApplicationStatus, JobPlatform, WorkLocation, EmploymentType } from '../types';
+import { normalizeCSVStatus, normalizeCSVPlatform, normalizeCSVDate, normalizeCSVWorkLocation, normalizeCSVEmploymentType } from './importCsv';
 
 export interface JSONBackupEnvelope {
   version: string;
@@ -7,6 +7,9 @@ export interface JSONBackupEnvelope {
   appCount: number;
   applications: Application[];
 }
+
+const WORK_LOCATION_VALUES = new Set<WorkLocation>(['Remote', 'Hybrid', 'Onsite']);
+const EMPLOYMENT_TYPE_VALUES = new Set<EmploymentType>(['Full-time', 'Part-time', 'Contract', 'Internship']);
 
 /**
  * Exports complete 1:1 application data (including contacts, tasks, status history, notes) as a formatted JSON backup file.
@@ -94,6 +97,24 @@ export function validateAndParseJSONBackup(jsonString: string): JSONImportResult
     const rawPlatform = typeof record.platform === 'string' ? record.platform : 'Company Site';
     const platform: JobPlatform = normalizeCSVPlatform(rawPlatform);
 
+    const rawWorkLocation = typeof record.workLocation === 'string' ? record.workLocation : '';
+    let workLocation: WorkLocation | undefined;
+    if (rawWorkLocation) {
+      workLocation = WORK_LOCATION_VALUES.has(rawWorkLocation as WorkLocation)
+        ? (rawWorkLocation as WorkLocation)
+        : normalizeCSVWorkLocation(rawWorkLocation);
+    }
+
+    const rawEmploymentType = typeof record.employmentType === 'string' ? record.employmentType : '';
+    let employmentType: EmploymentType | undefined;
+    if (rawEmploymentType) {
+      employmentType = EMPLOYMENT_TYPE_VALUES.has(rawEmploymentType as EmploymentType)
+        ? (rawEmploymentType as EmploymentType)
+        : normalizeCSVEmploymentType(rawEmploymentType);
+    }
+
+    const jobLocation = typeof record.location === 'string' ? record.location.trim() || undefined : undefined;
+
     const rawDate = typeof record.dateApplied === 'string' ? record.dateApplied : '';
     const dateApplied = normalizeCSVDate(rawDate);
 
@@ -157,6 +178,9 @@ export function validateAndParseJSONBackup(jsonString: string): JSONImportResult
       company: company || 'Unknown Company',
       role: role || 'Unknown Role',
       platform,
+      workLocation,
+      employmentType,
+      location: jobLocation,
       dateApplied,
       status,
       jobLink,

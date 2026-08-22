@@ -1,7 +1,7 @@
 import React from 'react';
 import { Clock } from 'lucide-react';
-import { JobPlatform } from '../../types';
-import { JOB_PLATFORMS } from '../../lib/constants';
+import { JobPlatform, WorkLocation, EmploymentType } from '../../types';
+import { JOB_PLATFORMS, WORK_LOCATIONS, EMPLOYMENT_TYPES } from '../../lib/constants';
 import { CustomSelectDropdown } from '../CustomSelectDropdown';
 
 export interface AddApplicationMetadataFormProps {
@@ -9,6 +9,12 @@ export interface AddApplicationMetadataFormProps {
   onPlatformChange: (val: JobPlatform) => void;
   dateApplied: string;
   onDateAppliedChange: (val: string) => void;
+  workLocation: WorkLocation | '';
+  onWorkLocationChange: (val: WorkLocation | '') => void;
+  employmentType: EmploymentType | '';
+  onEmploymentTypeChange: (val: EmploymentType | '') => void;
+  jobLocation: string;
+  onJobLocationChange: (val: string) => void;
 }
 
 export const AddApplicationMetadataForm: React.FC<AddApplicationMetadataFormProps> = ({
@@ -16,6 +22,12 @@ export const AddApplicationMetadataForm: React.FC<AddApplicationMetadataFormProp
   onPlatformChange,
   dateApplied,
   onDateAppliedChange,
+  workLocation,
+  onWorkLocationChange,
+  employmentType,
+  onEmploymentTypeChange,
+  jobLocation,
+  onJobLocationChange,
 }) => {
   return (
     <div className="space-y-3 bg-slate-50/80 rounded-xl border border-slate-200/80 p-4 shadow-2xs">
@@ -33,6 +45,46 @@ export const AddApplicationMetadataForm: React.FC<AddApplicationMetadataFormProp
             options={JOB_PLATFORMS.map((p) => ({ label: p, value: p }))}
             className="w-full"
             size="md"
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-[11px] font-mono font-medium text-slate-500 mb-1">Work Type</label>
+            <CustomSelectDropdown<WorkLocation | ''>
+              value={workLocation}
+              onChange={(val) => onWorkLocationChange(val)}
+              options={[
+                { label: 'Not set', value: '' },
+                ...WORK_LOCATIONS.map((w) => ({ label: w, value: w })),
+              ]}
+              className="w-full"
+              size="md"
+            />
+          </div>
+          <div>
+            <label className="block text-[11px] font-mono font-medium text-slate-500 mb-1">Job Type</label>
+            <CustomSelectDropdown<EmploymentType | ''>
+              value={employmentType}
+              onChange={(val) => onEmploymentTypeChange(val)}
+              options={[
+                { label: 'Not set', value: '' },
+                ...EMPLOYMENT_TYPES.map((e) => ({ label: e, value: e })),
+              ]}
+              className="w-full"
+              size="md"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-[11px] font-mono font-medium text-slate-500 mb-1">Job Location</label>
+          <input
+            type="text"
+            value={jobLocation}
+            onChange={(e) => onJobLocationChange(e.target.value)}
+            placeholder="e.g. San Francisco, CA or Remote"
+            className="w-full bg-white text-slate-900 px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 font-mono text-xs transition-all shadow-2xs"
           />
         </div>
 

@@ -1,4 +1,4 @@
-import { ActiveTab, FilterState, JobPlatform, ApplicationStatus } from '../types';
+import { ActiveTab, FilterState, JobPlatform, ApplicationStatus, WorkLocation, EmploymentType } from '../types';
 
 // ─── Path ↔ Tab mapping ──────────────────────────────────────────────────────
 
@@ -64,6 +64,8 @@ export const DEFAULT_FILTER: FilterState = {
   search: '',
   platform: 'All',
   status: 'All',
+  workLocation: 'All',
+  employmentType: 'All',
   dateRange: 'all',
 };
 
@@ -73,6 +75,8 @@ const QP = {
   SEARCH: 'q',
   PLATFORM: 'platform',
   STATUS: 'status',
+  WORK_LOCATION: 'loc',
+  EMPLOYMENT_TYPE: 'emp',
   DATE: 'date',
   APP: 'app',
   NEW: 'new',
@@ -94,6 +98,10 @@ export function readUrlState(): UrlState {
     platform: (params.get(QP.PLATFORM) as JobPlatform | 'All') ?? DEFAULT_FILTER.platform,
     status:
       (params.get(QP.STATUS) as ApplicationStatus | 'All' | 'Active') ?? DEFAULT_FILTER.status,
+    workLocation:
+      (params.get(QP.WORK_LOCATION) as WorkLocation | 'All') ?? DEFAULT_FILTER.workLocation,
+    employmentType:
+      (params.get(QP.EMPLOYMENT_TYPE) as EmploymentType | 'All') ?? DEFAULT_FILTER.employmentType,
     dateRange:
       (params.get(QP.DATE) as FilterState['dateRange']) ?? DEFAULT_FILTER.dateRange,
   };
@@ -117,6 +125,8 @@ function buildSearchParams(
   if (filter.search) params.set(QP.SEARCH, filter.search);
   if (filter.platform !== 'All') params.set(QP.PLATFORM, filter.platform);
   if (filter.status !== 'All') params.set(QP.STATUS, filter.status);
+  if (filter.workLocation !== 'All') params.set(QP.WORK_LOCATION, filter.workLocation);
+  if (filter.employmentType !== 'All') params.set(QP.EMPLOYMENT_TYPE, filter.employmentType);
   if (filter.dateRange !== 'all') params.set(QP.DATE, filter.dateRange);
   if (selectedAppId) params.set(QP.APP, selectedAppId);
   if (isAddModalOpen) params.set(QP.NEW, '1');

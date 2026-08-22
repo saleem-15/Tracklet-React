@@ -4,6 +4,8 @@ import {
   autoDetectFieldMapping,
   normalizeCSVStatus,
   normalizeCSVPlatform,
+  normalizeCSVWorkLocation,
+  normalizeCSVEmploymentType,
   normalizeCSVDate,
 } from '../../src/lib/importCsv';
 
@@ -49,6 +51,35 @@ describe('importCsv', () => {
       expect(mapping.platform).toBe(4);
       expect(mapping.notes).toBe(5);
     });
+
+    it('detects work location and employment type columns', () => {
+      const headers = [
+        'Company',
+        'Role',
+        'Platform',
+        'Work Location',
+        'Employment Type',
+        'Date Applied',
+        'Status',
+      ];
+      const mapping = autoDetectFieldMapping(headers);
+
+      expect(mapping.workLocation).toBe(3);
+      expect(mapping.employmentType).toBe(4);
+    });
+
+    it('detects alternate header spellings for the new fields', () => {
+      expect(autoDetectFieldMapping(['Workplace Type']).workLocation).toBe(0);
+      expect(autoDetectFieldMapping(['Work Model']).workLocation).toBe(0);
+      expect(autoDetectFieldMapping(['Remote Status']).workLocation).toBe(0);
+      expect(autoDetectFieldMapping(['Job Type']).employmentType).toBe(0);
+    });
+
+    it('returns -1 for the new fields when no matching headers exist', () => {
+      const mapping = autoDetectFieldMapping(['Company', 'Role']);
+      expect(mapping.workLocation).toBe(-1);
+      expect(mapping.employmentType).toBe(-1);
+    });
   });
 
   describe('normalizeCSVStatus', () => {
@@ -70,6 +101,52 @@ describe('importCsv', () => {
       expect(normalizeCSVPlatform('Lever.co')).toBe('Lever');
       expect(normalizeCSVPlatform('Referred by Friend')).toBe('Referral');
       expect(normalizeCSVPlatform('Unknown Site')).toBe('Other');
+    });
+  });
+
+  describe('normalizeCSVWorkLocation', () => {
+    it('normalizes common workplace variants', () => {
+      expect(normalizeCSVWorkLocation('Remote')).toBe('Remote');
+      expect(normalizeCSVWorkLocation('WFH')).toBe('Remote');
+      expect(normalizeCSVWorkLocation('Fully Remote')).toBe('Remote');
+      expect(normalizeCSVWorkLocation('work from home')).toBe('Remote');
+      expect(normalizeCSVWorkLocation('Hybrid')).toBe('Hybrid');
+      expect(normalizeCSVWorkLocation('Hybrid Remote')).toBe('Hybrid');
+      expect(normalizeCSVWorkLocation('Partially Remote')).toBe('Hybrid');
+      expect(normalizeCSVWorkLocation('Onsite')).toBe('Onsite');
+      expect(normalizeCSVWorkLocation('On-site')).toBe('Onsite');
+      expect(normalizeCSVWorkLocation('In Office')).toBe('Onsite');
+    });
+
+    it('returns undefined for empty or unrecognized values', () => {
+      expect(normalizeCSVWorkLocation('')).toBeUndefined();
+      expect(normalizeCSVWorkLocation('   ')).toBeUndefined();
+      expect(normalizeCSVWorkLocation('Yes')).toBeUndefined();
+      expect(normalizeCSVWorkLocation('New York City')).toBeUndefined();
+    });
+  });
+
+  describe('normalizeCSVEmploymentType', () => {
+    it('normalizes common employment variants', () => {
+      expect(normalizeCSVEmploymentType('Full Time')).toBe('Full-time');
+      expect(normalizeCSVEmploymentType('full-time')).toBe('Full-time');
+      expect(normalizeCSVEmploymentType('FT')).toBe('Full-time');
+      expect(normalizeCSVEmploymentType('Permanent')).toBe('Full-time');
+      expect(normalizeCSVEmploymentType('Part Time')).toBe('Part-time');
+      expect(normalizeCSVEmploymentType('PT')).toBe('Part-time');
+      expect(normalizeCSVEmploymentType('Contractor')).toBe('Contract');
+      expect(normalizeCSVEmploymentType('Freelance')).toBe('Contract');
+      expect(normalizeCSVEmploymentType('C2C')).toBe('Contract');
+      expect(normalizeCSVEmploymentType('Temporary')).toBe('Contract');
+      expect(normalizeCSVEmploymentType('Internship')).toBe('Internship');
+      expect(normalizeCSVEmploymentType('Co-op')).toBe('Internship');
+      expect(normalizeCSVEmploymentType('Trainee')).toBe('Internship');
+    });
+
+    it('returns undefined for empty or unrecognized values', () => {
+      expect(normalizeCSVEmploymentType('')).toBeUndefined();
+      expect(normalizeCSVEmploymentType('  ')).toBeUndefined();
+      expect(normalizeCSVEmploymentType('Unknown')).toBeUndefined();
     });
   });
 

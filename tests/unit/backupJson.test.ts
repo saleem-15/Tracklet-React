@@ -71,4 +71,50 @@ describe('backupJson', () => {
     expect(result.applications).toHaveLength(2);
     expect(result.applications![1].status).toBe('Offer');
   });
+
+  it('preserves valid work location, employment type, and job location values', () => {
+    const rawData = [
+      {
+        company: 'Linear',
+        role: 'Frontend Engineer',
+        workLocation: 'Remote',
+        employmentType: 'Full-time',
+        location: 'San Francisco, CA',
+      },
+    ];
+
+    const result = validateAndParseJSONBackup(JSON.stringify(rawData));
+    expect(result.success).toBe(true);
+    expect(result.applications![0].workLocation).toBe('Remote');
+    expect(result.applications![0].employmentType).toBe('Full-time');
+    expect(result.applications![0].location).toBe('San Francisco, CA');
+  });
+
+  it('normalizes non-canonical work location and employment type values on restore', () => {
+    const rawData = [
+      {
+        company: 'Stripe',
+        role: 'Backend Engineer',
+        workLocation: 'WFH',
+        employmentType: 'full time',
+      },
+      {
+        company: 'Vercel',
+        role: 'Platform Engineer',
+        workLocation: 'Totally Bogus',
+        employmentType: 'Gig',
+        location: '',
+      },
+    ];
+
+    const result = validateAndParseJSONBackup(JSON.stringify(rawData));
+    expect(result.success).toBe(true);
+    // Free-text variants are normalized into canonical values
+    expect(result.applications![0].workLocation).toBe('Remote');
+    expect(result.applications![0].employmentType).toBe('Full-time');
+    // Unrecognized values and empty strings become undefined
+    expect(result.applications![1].workLocation).toBeUndefined();
+    expect(result.applications![1].employmentType).toBeUndefined();
+    expect(result.applications![1].location).toBeUndefined();
+  });
 });

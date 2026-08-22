@@ -1,4 +1,4 @@
-import { ApplicationStatus, JobPlatform } from '../types';
+import { ApplicationStatus, JobPlatform, WorkLocation, EmploymentType } from '../types';
 
 export const APPLICATION_STATUSES: ApplicationStatus[] = [
   'Saved',
@@ -34,6 +34,32 @@ export const JOB_PLATFORMS: JobPlatform[] = [
   'Wellfound',
   'Other',
 ];
+
+export const WORK_LOCATIONS: WorkLocation[] = [
+  'Remote',
+  'Hybrid',
+  'Onsite',
+];
+
+export const EMPLOYMENT_TYPES: EmploymentType[] = [
+  'Full-time',
+  'Part-time',
+  'Contract',
+  'Internship',
+];
+
+export const WORK_LOCATION_BADGE_STYLES: Record<WorkLocation, string> = {
+  Remote: 'bg-emerald-50 text-emerald-700 border-emerald-200/80',
+  Hybrid: 'bg-indigo-50 text-indigo-700 border-indigo-200/80',
+  Onsite: 'bg-amber-50 text-amber-700 border-amber-200/80',
+};
+
+export const EMPLOYMENT_TYPE_BADGE_STYLES: Record<EmploymentType, string> = {
+  'Full-time': 'bg-blue-50 text-blue-700 border-blue-200/80',
+  'Part-time': 'bg-purple-50 text-purple-700 border-purple-200/80',
+  Contract: 'bg-orange-50 text-orange-700 border-orange-200/80',
+  Internship: 'bg-pink-50 text-pink-700 border-pink-200/80',
+};
 
 export const PIPELINE_COLUMNS: {
   status: ApplicationStatus;

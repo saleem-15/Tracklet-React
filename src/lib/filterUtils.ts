@@ -17,11 +17,22 @@ export function filterAndSortApplications(
         const matchCompany = app.company.toLowerCase().includes(q);
         const matchRole = app.role.toLowerCase().includes(q);
         const matchNotes = app.notes ? app.notes.toLowerCase().includes(q) : false;
-        if (!matchCompany && !matchRole && !matchNotes) return false;
+        const matchLocation = app.location ? app.location.toLowerCase().includes(q) : false;
+        if (!matchCompany && !matchRole && !matchNotes && !matchLocation) return false;
       }
 
       // Platform filter
       if (filter.platform !== 'All' && app.platform !== filter.platform) {
+        return false;
+      }
+
+      // Work location filter (Remote / Hybrid / Onsite)
+      if (filter.workLocation !== 'All' && app.workLocation !== filter.workLocation) {
+        return false;
+      }
+
+      // Employment type filter (Full-time / Part-time / Contract / Internship)
+      if (filter.employmentType !== 'All' && app.employmentType !== filter.employmentType) {
         return false;
       }
 
