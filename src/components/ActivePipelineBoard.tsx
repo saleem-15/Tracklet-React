@@ -380,7 +380,7 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
 
                           {/* Notes snippet if present */}
                           {app.notes ? (
-                            <p className="text-slate-500 text-[11px] line-clamp-2 bg-slate-50/80 p-2 rounded-lg border border-slate-200/60 mb-2.5 font-sans leading-relaxed">
+                            <p className="text-slate-500 text-[11px] max-h-[4em] overflow-hidden bg-slate-50/80 px-2 py-1 rounded-lg border border-slate-200/60 mb-2.5 font-sans leading-relaxed">
                               {app.notes}
                             </p>
                           ) : null}
