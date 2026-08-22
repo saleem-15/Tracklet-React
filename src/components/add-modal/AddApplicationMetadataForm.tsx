@@ -58,6 +58,7 @@ export const AddApplicationMetadataForm: React.FC<AddApplicationMetadataFormProp
                 { label: 'Not set', value: '' },
                 ...WORK_LOCATIONS.map((w) => ({ label: w, value: w })),
               ]}
+              labelPrefix="Work Type"
               className="w-full"
               size="md"
             />
@@ -71,6 +72,7 @@ export const AddApplicationMetadataForm: React.FC<AddApplicationMetadataFormProp
                 { label: 'Not set', value: '' },
                 ...EMPLOYMENT_TYPES.map((e) => ({ label: e, value: e })),
               ]}
+              labelPrefix="Job Type"
               className="w-full"
               size="md"
             />
@@ -78,8 +80,9 @@ export const AddApplicationMetadataForm: React.FC<AddApplicationMetadataFormProp
         </div>
 
         <div>
-          <label className="block text-[11px] font-mono font-medium text-slate-500 mb-1">Job Location</label>
+          <label htmlFor="add-job-location" className="block text-[11px] font-mono font-medium text-slate-500 mb-1">Job Location</label>
           <input
+            id="add-job-location"
             type="text"
             value={jobLocation}
             onChange={(e) => onJobLocationChange(e.target.value)}

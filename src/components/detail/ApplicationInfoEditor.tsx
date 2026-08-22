@@ -138,6 +138,7 @@ export const ApplicationInfoEditor: React.FC<ApplicationInfoEditorProps> = ({
               { label: 'Not set', value: '' },
               ...WORK_LOCATIONS.map((w) => ({ label: w, value: w })),
             ]}
+            labelPrefix="Work Type"
             className="w-full"
           />
         </div>
@@ -150,12 +151,14 @@ export const ApplicationInfoEditor: React.FC<ApplicationInfoEditorProps> = ({
               { label: 'Not set', value: '' },
               ...EMPLOYMENT_TYPES.map((e) => ({ label: e, value: e })),
             ]}
+            labelPrefix="Job Type"
             className="w-full"
           />
         </div>
         <div>
-          <label className="block text-[11px] font-mono font-medium text-slate-500 mb-1">Job Location</label>
+          <label htmlFor="edit-job-location" className="block text-[11px] font-mono font-medium text-slate-500 mb-1">Job Location</label>
           <input
+            id="edit-job-location"
             type="text"
             value={editJobLocation}
             onChange={(e) => setEditJobLocation(e.target.value)}
