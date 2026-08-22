@@ -26,7 +26,7 @@ import { AuthModal } from './components/AuthModal';
 import { EmailVerificationGate } from './components/EmailVerificationGate';
 import { GuestMigrationModal } from './components/GuestMigrationModal';
 import { loadExpirySettings, saveExpirySettings } from './lib/expiryUtils';
-import { setupExtensionSync } from './lib/extensionSync';
+import { setupExtensionSync, syncAuthSessionToExtension, syncApplicationsToExtension, normalizeJobUrl } from './lib/extensionSync';
 import { LOCAL_STORAGE_KEYS } from './lib/constants';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ToastContainer, ToastMessage } from './components/Toast';
@@ -196,23 +196,96 @@ function TrackletAppContent() {
     }
   }, [authLoading, user?.uid, user?.emailVerified, loadData]);
 
+  // Sync Auth Session to Browser Extension on login/logout & token refresh
+  useEffect(() => {
+    syncAuthSessionToExtension(user);
+    // Periodically refresh auth token every 15 minutes to keep extension session fresh
+    const interval = setInterval(() => {
+      if (user) {
+        syncAuthSessionToExtension(user);
+      }
+    }, 1000 * 60 * 15);
+    return () => clearInterval(interval);
+  }, [user]);
+
+  // Sync applications index to Chrome Extension for instant duplicate detection
+  useEffect(() => {
+    if (applications.length >= 0) {
+      syncApplicationsToExtension(applications);
+    }
+  }, [applications]);
+
   // Browser Extension Sync Listener
   useEffect(() => {
     const cleanup = setupExtensionSync({
-      onApplicationReceived: async (clippedApp) => {
-        if (user && user.emailVerified) {
-          const created = await ApplicationRepository.addApplication(clippedApp, user.uid);
-          setApplications((prev) => [created, ...prev]);
-        } else if (!user) {
-          const created = await ApplicationRepository.addApplication(clippedApp);
-          setApplications((prev) => [created, ...prev]);
+      onApplicationReceived: async (clippedApp, persistedToCloud) => {
+        // Multi-account guard: if tab is logged in and clipped item is explicitly for another user, skip
+        if (user && clippedApp.userId && clippedApp.userId !== 'guest' && clippedApp.userId !== user.uid) {
+          return;
         }
 
-        addToast(
-          'success',
-          'Clipped via Tracklet Extension',
-          `Saved "${clippedApp.role}" at ${clippedApp.company}`
-        );
+        const normUrl = clippedApp.jobLink ? normalizeJobUrl(clippedApp.jobLink) : '';
+
+        setApplications((prev) => {
+          const existingIdx = prev.findIndex((a) => 
+            a.id === clippedApp.id || 
+            (normUrl && a.jobLink && normalizeJobUrl(a.jobLink) === normUrl) ||
+            (a.company.trim().toLowerCase() === clippedApp.company.trim().toLowerCase() && a.role.trim().toLowerCase() === clippedApp.role.trim().toLowerCase())
+          );
+
+          let next: Application[];
+          let finalApp = clippedApp;
+          const isUpdate = existingIdx >= 0;
+
+          if (isUpdate) {
+            const existingApp = prev[existingIdx];
+            finalApp = {
+              ...existingApp,
+              ...clippedApp,
+              id: existingApp.id, // Preserve existing application ID
+              history: clippedApp.history || existingApp.history,
+              updatedAt: new Date().toISOString(),
+            };
+            next = [...prev];
+            next[existingIdx] = finalApp;
+
+            // If clipped while offline/guest and now authenticated with verified email, persist update to Firestore
+            if (user?.emailVerified && !persistedToCloud) {
+              ApplicationRepository.updateApplication(existingApp.id, finalApp, user.uid).catch((err) => {
+                console.error('Failed to update application in Firestore:', err);
+              });
+            }
+
+            addToast(
+              'success',
+              'Updated via Tracklet Extension',
+              `Updated "${finalApp.role}" at ${finalApp.company}`
+            );
+          } else {
+            next = [finalApp, ...prev];
+
+            // If clipped while offline/guest and now authenticated with verified email, add to Firestore
+            if (user?.emailVerified && !persistedToCloud) {
+              ApplicationRepository.addApplication(finalApp, user.uid).then((created) => {
+                setApplications((curr) => curr.map((a) => a.id === finalApp.id ? created : a));
+              }).catch((err) => {
+                console.error('Failed to add unpersisted application to Firestore:', err);
+              });
+            }
+
+            addToast(
+              'success',
+              'Clipped via Tracklet Extension',
+              `Saved "${finalApp.role}" at ${finalApp.company}`
+            );
+          }
+
+          // In guest mode, immediately persist to localStorage so data is NEVER lost on tab close/refresh
+          if (!user?.emailVerified) {
+            ApplicationRepository.saveGuestApplications(next);
+          }
+          return next;
+        });
       },
     });
 
