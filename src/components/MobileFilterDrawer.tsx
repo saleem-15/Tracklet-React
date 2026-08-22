@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { X, Filter, RotateCcw, Check, Search } from 'lucide-react';
-import { FilterState, JobPlatform, ApplicationStatus } from '../types';
+import { FilterState, JobPlatform, ApplicationStatus, WorkLocation, EmploymentType } from '../types';
 import { UI_TOKENS } from '../theme/tokens';
 
 interface MobileFilterDrawerProps {
@@ -23,6 +23,10 @@ const PLATFORMS: JobPlatform[] = [
   'Wellfound',
   'Other',
 ];
+
+const WORK_LOCATIONS: WorkLocation[] = ['Remote', 'Hybrid', 'Onsite'];
+
+const EMPLOYMENT_TYPES: EmploymentType[] = ['Full-time', 'Part-time', 'Contract', 'Internship'];
 
 const STATUSES: { status: ApplicationStatus; label: string; dot: string }[] = [
   { status: 'Saved', label: 'Saved', dot: 'bg-purple-500' },
@@ -81,6 +85,8 @@ export const MobileFilterDrawer: React.FC<MobileFilterDrawerProps> = ({
     filter.search !== '' ||
     filter.platform !== 'All' ||
     filter.status !== 'All' ||
+    filter.workLocation !== 'All' ||
+    filter.employmentType !== 'All' ||
     filter.dateRange !== 'all';
 
   const resetFilters = () => {
@@ -88,6 +94,8 @@ export const MobileFilterDrawer: React.FC<MobileFilterDrawerProps> = ({
       search: '',
       platform: 'All',
       status: 'All',
+      workLocation: 'All',
+      employmentType: 'All',
       dateRange: 'all',
     });
   };
@@ -282,6 +290,104 @@ export const MobileFilterDrawer: React.FC<MobileFilterDrawerProps> = ({
                     }`}
                   >
                     <span>{platform}</span>
+                    {isSelected && <Check className="w-3.5 h-3.5 stroke-[2.5]" />}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Work Type Filter Pills */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="font-semibold text-slate-700 block">Work Type</label>
+              {filter.workLocation !== 'All' && (
+                <button
+                  type="button"
+                  onClick={() => setFilter((prev) => ({ ...prev, workLocation: 'All' }))}
+                  className="text-[11px] text-blue-600 hover:underline font-medium cursor-pointer"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setFilter((prev) => ({ ...prev, workLocation: 'All' }))}
+                className={`px-3 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer min-h-[40px] flex items-center gap-1.5 ${
+                  filter.workLocation === 'All'
+                    ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
+                    : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+                }`}
+              >
+                {filter.workLocation === 'All' && <Check className="w-3.5 h-3.5 stroke-[2.5]" />}
+                <span>All Types</span>
+              </button>
+
+              {WORK_LOCATIONS.map((loc) => {
+                const isSelected = filter.workLocation === loc;
+                return (
+                  <button
+                    key={loc}
+                    type="button"
+                    onClick={() => setFilter((prev) => ({ ...prev, workLocation: prev.workLocation === loc ? 'All' : loc }))}
+                    className={`px-3 py-2 rounded-xl text-xs font-medium border transition-all cursor-pointer min-h-[40px] flex items-center gap-1.5 ${
+                      isSelected
+                        ? 'bg-blue-600 text-white border-blue-600 font-bold shadow-xs'
+                        : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200'
+                    }`}
+                  >
+                    <span>{loc}</span>
+                    {isSelected && <Check className="w-3.5 h-3.5 stroke-[2.5]" />}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Job Type Filter Pills */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="font-semibold text-slate-700 block">Job Type</label>
+              {filter.employmentType !== 'All' && (
+                <button
+                  type="button"
+                  onClick={() => setFilter((prev) => ({ ...prev, employmentType: 'All' }))}
+                  className="text-[11px] text-blue-600 hover:underline font-medium cursor-pointer"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setFilter((prev) => ({ ...prev, employmentType: 'All' }))}
+                className={`px-3 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer min-h-[40px] flex items-center gap-1.5 ${
+                  filter.employmentType === 'All'
+                    ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
+                    : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+                }`}
+              >
+                {filter.employmentType === 'All' && <Check className="w-3.5 h-3.5 stroke-[2.5]" />}
+                <span>All Types</span>
+              </button>
+
+              {EMPLOYMENT_TYPES.map((emp) => {
+                const isSelected = filter.employmentType === emp;
+                return (
+                  <button
+                    key={emp}
+                    type="button"
+                    onClick={() => setFilter((prev) => ({ ...prev, employmentType: prev.employmentType === emp ? 'All' : emp }))}
+                    className={`px-3 py-2 rounded-xl text-xs font-medium border transition-all cursor-pointer min-h-[40px] flex items-center gap-1.5 ${
+                      isSelected
+                        ? 'bg-blue-600 text-white border-blue-600 font-bold shadow-xs'
+                        : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200'
+                    }`}
+                  >
+                    <span>{emp}</span>
                     {isSelected && <Check className="w-3.5 h-3.5 stroke-[2.5]" />}
                   </button>
                 );

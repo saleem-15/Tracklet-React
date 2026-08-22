@@ -18,6 +18,17 @@ export type JobPlatform =
   | 'Wellfound'
   | 'Other';
 
+export type WorkLocation = 
+  | 'Remote'
+  | 'Hybrid'
+  | 'Onsite';
+
+export type EmploymentType = 
+  | 'Full-time'
+  | 'Part-time'
+  | 'Contract'
+  | 'Internship';
+
 export interface Contact {
   id: string;
   name: string;
@@ -50,6 +61,9 @@ export interface Application {
   company: string;
   role: string;
   platform: JobPlatform;
+  workLocation?: WorkLocation;
+  employmentType?: EmploymentType;
+  location?: string;
   dateApplied: string; // YYYY-MM-DD
   status: ApplicationStatus;
   jobLink?: string;
@@ -80,6 +94,8 @@ export interface FilterState {
   search: string;
   platform: JobPlatform | 'All';
   status: ApplicationStatus | 'All' | 'Active';
+  workLocation: WorkLocation | 'All';
+  employmentType: EmploymentType | 'All';
   dateRange: 'all' | 'this_week' | 'last_week' | 'this_month' | 'last_month' | '7days' | '30days' | '60days';
 }
 

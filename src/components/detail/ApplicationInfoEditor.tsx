@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Pencil, Building2, Briefcase, Link, AtSign, Save } from 'lucide-react';
-import { Application, JobPlatform } from '../../types';
-import { JOB_PLATFORMS } from '../../lib/constants';
+import { Application, JobPlatform, WorkLocation, EmploymentType } from '../../types';
+import { JOB_PLATFORMS, WORK_LOCATIONS, EMPLOYMENT_TYPES } from '../../lib/constants';
 import { CustomSelectDropdown } from '../CustomSelectDropdown';
 
 export interface ApplicationInfoEditorProps {
@@ -18,6 +18,9 @@ export const ApplicationInfoEditor: React.FC<ApplicationInfoEditorProps> = ({
   const [editCompany, setEditCompany] = useState(app.company || '');
   const [editRole, setEditRole] = useState(app.role || '');
   const [editPlatform, setEditPlatform] = useState<JobPlatform>(app.platform || 'LinkedIn');
+  const [editWorkLocation, setEditWorkLocation] = useState<WorkLocation | ''>(app.workLocation || '');
+  const [editEmploymentType, setEditEmploymentType] = useState<EmploymentType | ''>(app.employmentType || '');
+  const [editJobLocation, setEditJobLocation] = useState(app.location || '');
   const [editDateApplied, setEditDateApplied] = useState(app.dateApplied || '');
   const [editJobLink, setEditJobLink] = useState(app.jobLink || '');
   const [editCompanyDomain, setEditCompanyDomain] = useState(app.companyDomain || '');
@@ -33,6 +36,9 @@ export const ApplicationInfoEditor: React.FC<ApplicationInfoEditorProps> = ({
         company: editCompany.trim(),
         role: editRole.trim(),
         platform: editPlatform,
+        workLocation: editWorkLocation || undefined,
+        employmentType: editEmploymentType || undefined,
+        location: editJobLocation.trim() || undefined,
         dateApplied: editDateApplied,
         jobLink: editJobLink.trim() || undefined,
         companyDomain: editCompanyDomain.trim() || undefined,
@@ -121,7 +127,48 @@ export const ApplicationInfoEditor: React.FC<ApplicationInfoEditorProps> = ({
         </div>
       </div>
 
-      {/* Row 3: Job Link + Contact Email */}
+      {/* Row 3: Work Type + Job Type + Job Location */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div>
+          <label className="block text-[11px] font-mono font-medium text-slate-500 mb-1">Work Type</label>
+          <CustomSelectDropdown<WorkLocation | ''>
+            value={editWorkLocation}
+            onChange={(val) => setEditWorkLocation(val)}
+            options={[
+              { label: 'Not set', value: '' },
+              ...WORK_LOCATIONS.map((w) => ({ label: w, value: w })),
+            ]}
+            labelPrefix="Work Type"
+            className="w-full"
+          />
+        </div>
+        <div>
+          <label className="block text-[11px] font-mono font-medium text-slate-500 mb-1">Job Type</label>
+          <CustomSelectDropdown<EmploymentType | ''>
+            value={editEmploymentType}
+            onChange={(val) => setEditEmploymentType(val)}
+            options={[
+              { label: 'Not set', value: '' },
+              ...EMPLOYMENT_TYPES.map((e) => ({ label: e, value: e })),
+            ]}
+            labelPrefix="Job Type"
+            className="w-full"
+          />
+        </div>
+        <div>
+          <label htmlFor="edit-job-location" className="block text-[11px] font-mono font-medium text-slate-500 mb-1">Job Location</label>
+          <input
+            id="edit-job-location"
+            type="text"
+            value={editJobLocation}
+            onChange={(e) => setEditJobLocation(e.target.value)}
+            placeholder="e.g. San Francisco, CA"
+            className="w-full bg-white text-slate-900 font-mono px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 text-xs transition-all"
+          />
+        </div>
+      </div>
+
+      {/* Row 4: Job Link + Contact Email */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <label className="block text-[11px] font-mono font-medium text-slate-500 mb-1">Job Posting URL</label>

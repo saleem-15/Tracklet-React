@@ -1,4 +1,4 @@
-import { Application, ApplicationStatus, JobPlatform } from '../types';
+import { Application, ApplicationStatus, JobPlatform, WorkLocation, EmploymentType } from '../types';
 
 /**
  * Robust RFC 4180 compliant CSV parser
@@ -56,6 +56,8 @@ export interface CSVFieldMapping {
   company: number;
   role: number;
   platform: number;
+  workLocation: number;
+  employmentType: number;
   dateApplied: number;
   status: number;
   jobLink: number;
@@ -80,6 +82,8 @@ export function autoDetectFieldMapping(headers: string[]): CSVFieldMapping {
     company: findIdx(['company', 'organization', 'employer', 'companyname']),
     role: findIdx(['role', 'jobtitle', 'title', 'position', 'job', 'roletext']),
     platform: findIdx(['platform', 'source', 'jobboard', 'site', 'channel', 'portal']),
+    workLocation: findIdx(['worklocation', 'workplacetype', 'worktype', 'workmodel', 'workarrangement', 'remotestatus']),
+    employmentType: findIdx(['employmenttype', 'jobtype', 'employementtype']),
     dateApplied: findIdx(['dateapplied', 'applieddate', 'date', 'applicationdate', 'appliedon']),
     status: findIdx(['status', 'stage', 'applicationstatus', 'state', 'progress']),
     jobLink: findIdx(['joblink', 'joblistingurl', 'url', 'link', 'joburl', 'website', 'posting']),
@@ -117,6 +121,47 @@ export function normalizeCSVPlatform(raw: string): JobPlatform {
   return 'Other';
 }
 
+/**
+ * Maps free-text workplace values ("WFH", "on-site", "Hybrid Remote", ...) to
+ * a WorkLocation. Returns undefined for unrecognized input so callers can omit the field.
+ */
+export function normalizeCSVWorkLocation(raw: string): WorkLocation | undefined {
+  if (!raw) return undefined;
+  const clean = raw.trim().toLowerCase().replace(/[^a-z]/g, '');
+  if (!clean) return undefined;
+
+  if (clean.startsWith('hybrid')) return 'Hybrid';
+  if ((clean.startsWith('part') || clean.startsWith('most')) && clean.endsWith('remote')) return 'Hybrid';
+  if (
+    clean === 'remote' ||
+    clean === 'wfh' ||
+    clean === 'anywhere' ||
+    clean.endsWith('remote') ||
+    clean.includes('workfromhome') ||
+    clean.includes('homeoffice')
+  ) {
+    return 'Remote';
+  }
+  if (clean === 'onsite' || clean === 'inoffice' || clean === 'inperson' || clean === 'office' || clean === 'atoffice') return 'Onsite';
+  return undefined;
+}
+
+/**
+ * Maps free-text employment values ("full time", "FT", "c2c", "co-op", ...) to
+ * an EmploymentType. Returns undefined for unrecognized input.
+ */
+export function normalizeCSVEmploymentType(raw: string): EmploymentType | undefined {
+  if (!raw) return undefined;
+  const clean = raw.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+  if (!clean) return undefined;
+
+  if (clean.startsWith('fulltime') || clean === 'ft' || clean === 'permanent' || clean === 'salaried') return 'Full-time';
+  if (clean.startsWith('parttime') || clean === 'pt') return 'Part-time';
+  if (clean.startsWith('contract') || clean === 'c2c' || clean === 'freelance' || clean.startsWith('temp') || clean === '1099') return 'Contract';
+  if (clean.startsWith('internship') || clean === 'intern' || clean === 'trainee' || clean === 'coop') return 'Internship';
+  return undefined;
+}
+
 export function normalizeCSVDate(raw: string): string {
   if (!raw) return new Date().toISOString().slice(0, 10);
   const clean = raw.trim();
@@ -139,10 +184,11 @@ export function normalizeCSVDate(raw: string): string {
 }
 
 export function downloadSampleCSVTemplate() {
-  const sampleCSV = `Company,Role,Platform,Date Applied,Status,Job Listing URL,Notes
-Linear,Senior Frontend Engineer,LinkedIn,2026-07-20,Interview,https://linear.app/careers/fe-eng,"Great recruiter phone screen on Monday. Technical round scheduled."
-Stripe,Full Stack Developer,Company Site,2026-07-18,Screening,https://stripe.com/jobs/dev,"Submitted resume via company portal."
-OpenAI,AI Product Engineer,Referral,2026-07-25,Applied,https://openai.com/careers,"Referred by Alex from engineering team."`;
+  const sampleCSV = `Company,Role,Platform,Work Location,Employment Type,Job Location,Date Applied,Status,Job Listing URL,Notes
+Linear,Senior Frontend Engineer,LinkedIn,Hybrid,Full-time,San Francisco CA,2026-07-20,Interview,https://linear.app/careers/fe-eng,"Great recruiter phone screen on Monday. Technical round scheduled."
+Stripe,Full Stack Developer,Company Site,Remote,Full-time,"Seattle, WA",2026-07-18,Screening,https://stripe.com/jobs/dev,"Submitted resume via company portal."
+OpenAI,AI Product Engineer,Referral,Onsite,Contract,"San Francisco, CA",2026-07-25,Applied,https://openai.com/careers,"Referred by Alex from engineering team."
+Supabase,Support Engineer,Lever,Remote,Part-time,Remote,2026-07-26,Applied,https://supabase.com/careers,"Fully remote company with async culture."`;
 
   const blob = new Blob([sampleCSV], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);

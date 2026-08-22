@@ -48,6 +48,8 @@ const DEFAULT_FILTER: FilterState = {
   search: '',
   platform: 'All',
   status: 'All',
+  workLocation: 'All',
+  employmentType: 'All',
   dateRange: 'all',
 };
 

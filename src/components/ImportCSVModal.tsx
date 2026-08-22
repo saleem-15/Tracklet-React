@@ -24,6 +24,8 @@ import {
   CSVFieldMapping, 
   normalizeCSVStatus, 
   normalizeCSVPlatform, 
+  normalizeCSVWorkLocation, 
+  normalizeCSVEmploymentType, 
   normalizeCSVDate, 
   downloadSampleCSVTemplate 
 } from '../lib/importCsv';
@@ -51,6 +53,8 @@ export const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
     company: -1,
     role: -1,
     platform: -1,
+    workLocation: -1,
+    employmentType: -1,
     dateApplied: -1,
     status: -1,
     jobLink: -1,
@@ -201,6 +205,12 @@ export const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
     const rawPlatform = mapping.platform >= 0 ? row[mapping.platform] : '';
     const platform = normalizeCSVPlatform(rawPlatform);
 
+    const rawWorkLocation = mapping.workLocation >= 0 ? row[mapping.workLocation] : '';
+    const workLocation = normalizeCSVWorkLocation(rawWorkLocation);
+
+    const rawEmploymentType = mapping.employmentType >= 0 ? row[mapping.employmentType] : '';
+    const employmentType = normalizeCSVEmploymentType(rawEmploymentType);
+
     const rawStatus = mapping.status >= 0 ? row[mapping.status] : '';
     const status = normalizeCSVStatus(rawStatus);
 
@@ -217,11 +227,8 @@ export const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
     const salary = mapping.salary >= 0 ? row[mapping.salary]?.trim() : undefined;
     const location = mapping.location >= 0 ? row[mapping.location]?.trim() : undefined;
 
-    const extraDetails: string[] = [];
-    if (location) extraDetails.push(`Location: ${location}`);
-    if (salary) extraDetails.push(`Salary: ${salary}`);
-    if (extraDetails.length > 0) {
-      const extraStr = extraDetails.join(' | ');
+    if (salary) {
+      const extraStr = `Salary: ${salary}`;
       notes = notes ? `${notes}\n(${extraStr})` : extraStr;
     }
 
@@ -242,6 +249,9 @@ export const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
       companyDomain,
       role: finalRole,
       platform,
+      workLocation: workLocation || undefined,
+      employmentType: employmentType || undefined,
+      location: location || undefined,
       dateApplied,
       status,
       jobLink: jobLink || undefined,
@@ -281,7 +291,7 @@ export const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
   };
 
   const downloadSampleCSV = () => {
-    const sample = `Company,Role,Platform,Date Applied,Status,Job Listing URL,Notes\nLinear,Frontend Engineer,LinkedIn,2026-07-20,Interview,https://linear.app/careers,Referred by Sarah\nStripe,Full Stack Developer,Company Site,2026-07-18,Applied,https://stripe.com/jobs,Applied via direct referral\nNotion,Product Designer,Otta,2026-07-15,Screening,,Recruiter call scheduled`;
+    const sample = `Company,Role,Platform,Work Location,Employment Type,Job Location,Date Applied,Status,Job Listing URL,Notes\nLinear,Frontend Engineer,LinkedIn,Hybrid,Full-time,"San Francisco, CA",2026-07-20,Interview,https://linear.app/careers,Referred by Sarah\nStripe,Full Stack Developer,Company Site,Remote,Contract,"Seattle, WA",2026-07-18,Applied,https://stripe.com/jobs,Applied via direct referral\nNotion,Product Designer,Otta,Onsite,Internship,"New York, NY",2026-07-15,Screening,,Recruiter call scheduled`;
     const blob = new Blob([sample], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');

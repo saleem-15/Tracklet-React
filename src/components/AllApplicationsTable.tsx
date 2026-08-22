@@ -15,6 +15,7 @@ import {
 import { Application, SortField, SortState, ApplicationStatus } from '../types';
 import { StatusBadge } from './StatusBadge';
 import { CompanyLogo } from './CompanyLogo';
+import { JobTypeBadges } from './JobTypeBadges';
 import { EmptyState } from './EmptyState';
 import { OnboardingEmptyState } from './OnboardingEmptyState';
 import { calculateDaysInStage, formatAppDate } from '../lib/dateUtils';
@@ -507,7 +508,15 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
 
                     {/* Role */}
                     <td className="px-3 py-1 text-slate-700 font-medium truncate max-w-[220px] align-middle">
-                      {app.role}
+                      <span className="flex items-center gap-1.5">
+                        <span className="truncate">{app.role}</span>
+                        {(app.workLocation || app.employmentType) && (
+                          <JobTypeBadges
+                            workLocation={app.workLocation}
+                            employmentType={app.employmentType}
+                          />
+                        )}
+                      </span>
                     </td>
 
                     {/* Platform */}

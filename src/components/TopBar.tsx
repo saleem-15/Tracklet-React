@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Search, Plus, Filter, X, Menu, SlidersHorizontal } from 'lucide-react';
-import { FilterState, JobPlatform, ApplicationStatus, ActiveTab } from '../types';
+import { FilterState, JobPlatform, ApplicationStatus, ActiveTab, WorkLocation, EmploymentType } from '../types';
 import { FilterSelectDropdown } from './FilterSelectDropdown';
 import { MobileFilterDrawer } from './MobileFilterDrawer';
 import { UI_TOKENS } from '../theme/tokens';
@@ -40,6 +40,20 @@ const STATUSES: ApplicationStatus[] = [
 const PLATFORM_OPTIONS = [
   { label: 'All', value: 'All' },
   ...PLATFORMS.map((p) => ({ label: p, value: p })),
+];
+
+const WORK_LOCATIONS: WorkLocation[] = ['Remote', 'Hybrid', 'Onsite'];
+
+const EMPLOYMENT_TYPES: EmploymentType[] = ['Full-time', 'Part-time', 'Contract', 'Internship'];
+
+const WORK_LOCATION_OPTIONS = [
+  { label: 'All', value: 'All' },
+  ...WORK_LOCATIONS.map((w) => ({ label: w, value: w })),
+];
+
+const EMPLOYMENT_TYPE_OPTIONS = [
+  { label: 'All', value: 'All' },
+  ...EMPLOYMENT_TYPES.map((e) => ({ label: e, value: e })),
 ];
 
 const STATUS_OPTIONS = [
@@ -97,6 +111,8 @@ export const TopBar: React.FC<TopBarProps> = ({
     filter.search !== '',
     filter.platform !== 'All',
     filter.status !== 'All',
+    filter.workLocation !== 'All',
+    filter.employmentType !== 'All',
     filter.dateRange !== 'all',
   ].filter(Boolean).length;
 
@@ -107,6 +123,8 @@ export const TopBar: React.FC<TopBarProps> = ({
       search: '',
       platform: 'All',
       status: 'All',
+      workLocation: 'All',
+      employmentType: 'All',
       dateRange: 'all',
     });
   };
@@ -170,6 +188,24 @@ export const TopBar: React.FC<TopBarProps> = ({
                 isActive={filter.status !== 'All'}
               />
             )}
+
+            {/* Work Location Filter (Remote / Hybrid / Onsite) */}
+            <FilterSelectDropdown
+              labelPrefix="Work"
+              value={filter.workLocation}
+              onChange={(val) => setFilter((prev) => ({ ...prev, workLocation: val as any }))}
+              options={WORK_LOCATION_OPTIONS}
+              isActive={filter.workLocation !== 'All'}
+            />
+
+            {/* Employment Type Filter (Full-time / Part-time / Contract / Internship) */}
+            <FilterSelectDropdown
+              labelPrefix="Job Type"
+              value={filter.employmentType}
+              onChange={(val) => setFilter((prev) => ({ ...prev, employmentType: val as any }))}
+              options={EMPLOYMENT_TYPE_OPTIONS}
+              isActive={filter.employmentType !== 'All'}
+            />
 
             {/* Date Filter */}
             <FilterSelectDropdown

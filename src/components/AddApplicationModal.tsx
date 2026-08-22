@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { JobPlatform, ApplicationStatus, Application, Contact, ApplicationTask } from '../types';
+import { JobPlatform, WorkLocation, EmploymentType, ApplicationStatus, Application, Contact, ApplicationTask } from '../types';
 import { AddApplicationHeader } from './add-modal/AddApplicationHeader';
 import { AddApplicationCoreForm } from './add-modal/AddApplicationCoreForm';
 import { AddApplicationMetadataForm } from './add-modal/AddApplicationMetadataForm';
@@ -26,6 +26,9 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
   const [companyDomain, setCompanyDomain] = useState('');
   const [role, setRole] = useState('');
   const [platform, setPlatform] = useState<JobPlatform>('LinkedIn');
+  const [workLocation, setWorkLocation] = useState<WorkLocation | ''>('');
+  const [employmentType, setEmploymentType] = useState<EmploymentType | ''>('');
+  const [jobLocation, setJobLocation] = useState('');
   const [dateApplied, setDateApplied] = useState(todayStr);
   const [status, setStatus] = useState<ApplicationStatus>('Saved');
   const [jobLink, setJobLink] = useState('');
@@ -39,6 +42,9 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
     role.trim() !== '' ||
     notes.trim() !== '' ||
     jobLink.trim() !== '' ||
+    workLocation !== '' ||
+    employmentType !== '' ||
+    jobLocation.trim() !== '' ||
     contacts.length > 0 ||
     tasks.length > 0;
 
@@ -159,6 +165,9 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
       companyDomain: companyDomain.trim() || undefined,
       role: role.trim(),
       platform,
+      workLocation: workLocation || undefined,
+      employmentType: employmentType || undefined,
+      location: jobLocation.trim() || undefined,
       dateApplied: dateApplied || todayStr,
       status,
       jobLink: formattedJobLink || undefined,
@@ -174,6 +183,9 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
     setCompanyDomain('');
     setRole('');
     setPlatform('LinkedIn');
+    setWorkLocation('');
+    setEmploymentType('');
+    setJobLocation('');
     setDateApplied(todayStr);
     setStatus('Saved');
     setJobLink('');
@@ -243,6 +255,12 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
                   onPlatformChange={setPlatform}
                   dateApplied={dateApplied}
                   onDateAppliedChange={setDateApplied}
+                  workLocation={workLocation}
+                  onWorkLocationChange={setWorkLocation}
+                  employmentType={employmentType}
+                  onEmploymentTypeChange={setEmploymentType}
+                  jobLocation={jobLocation}
+                  onJobLocationChange={setJobLocation}
                 />
 
                 <AddApplicationContactsSection
