@@ -26,7 +26,7 @@ import { AuthModal } from './components/AuthModal';
 import { EmailVerificationGate } from './components/EmailVerificationGate';
 import { GuestMigrationModal } from './components/GuestMigrationModal';
 import { loadExpirySettings, saveExpirySettings } from './lib/expiryUtils';
-import { setupExtensionSync, syncAuthSessionToExtension } from './lib/extensionSync';
+import { setupExtensionSync, syncAuthSessionToExtension, syncApplicationsToExtension, normalizeJobUrl } from './lib/extensionSync';
 import { LOCAL_STORAGE_KEYS } from './lib/constants';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ToastContainer, ToastMessage } from './components/Toast';
@@ -208,6 +208,13 @@ function TrackletAppContent() {
     return () => clearInterval(interval);
   }, [user]);
 
+  // Sync applications index to Chrome Extension for instant duplicate detection
+  useEffect(() => {
+    if (applications.length >= 0) {
+      syncApplicationsToExtension(applications);
+    }
+  }, [applications]);
+
   // Browser Extension Sync Listener
   useEffect(() => {
     const cleanup = setupExtensionSync({
@@ -217,25 +224,60 @@ function TrackletAppContent() {
           return;
         }
 
-        let finalApp = clippedApp;
-
-        // If clipped while offline/guest and now authenticated with verified email, persist to Firestore
-        if (!persistedToCloud && user && user.emailVerified && (!clippedApp.userId || clippedApp.userId === 'guest')) {
-          try {
-            finalApp = await ApplicationRepository.addApplication(clippedApp, user.uid);
-          } catch (err) {
-            console.error('Failed to add unpersisted application to Firestore:', err);
-          }
-        }
+        const normUrl = clippedApp.jobLink ? normalizeJobUrl(clippedApp.jobLink) : '';
 
         setApplications((prev) => {
-          const existingIdx = prev.findIndex((a) => a.id === finalApp.id);
+          const existingIdx = prev.findIndex((a) => 
+            a.id === clippedApp.id || 
+            (normUrl && a.jobLink && normalizeJobUrl(a.jobLink) === normUrl) ||
+            (a.company.trim().toLowerCase() === clippedApp.company.trim().toLowerCase() && a.role.trim().toLowerCase() === clippedApp.role.trim().toLowerCase())
+          );
+
           let next: Application[];
-          if (existingIdx >= 0) {
+          let finalApp = clippedApp;
+          const isUpdate = existingIdx >= 0;
+
+          if (isUpdate) {
+            const existingApp = prev[existingIdx];
+            finalApp = {
+              ...existingApp,
+              ...clippedApp,
+              id: existingApp.id, // Preserve existing application ID
+              history: clippedApp.history || existingApp.history,
+              updatedAt: new Date().toISOString(),
+            };
             next = [...prev];
             next[existingIdx] = finalApp;
+
+            // If clipped while offline/guest and now authenticated with verified email, persist update to Firestore
+            if (user?.emailVerified && !persistedToCloud) {
+              ApplicationRepository.updateApplication(existingApp.id, finalApp, user.uid).catch((err) => {
+                console.error('Failed to update application in Firestore:', err);
+              });
+            }
+
+            addToast(
+              'success',
+              'Updated via Tracklet Extension',
+              `Updated "${finalApp.role}" at ${finalApp.company}`
+            );
           } else {
             next = [finalApp, ...prev];
+
+            // If clipped while offline/guest and now authenticated with verified email, add to Firestore
+            if (user?.emailVerified && !persistedToCloud) {
+              ApplicationRepository.addApplication(finalApp, user.uid).then((created) => {
+                setApplications((curr) => curr.map((a) => a.id === finalApp.id ? created : a));
+              }).catch((err) => {
+                console.error('Failed to add unpersisted application to Firestore:', err);
+              });
+            }
+
+            addToast(
+              'success',
+              'Clipped via Tracklet Extension',
+              `Saved "${finalApp.role}" at ${finalApp.company}`
+            );
           }
 
           // In guest mode, immediately persist to localStorage so data is NEVER lost on tab close/refresh
@@ -244,12 +286,6 @@ function TrackletAppContent() {
           }
           return next;
         });
-
-        addToast(
-          'success',
-          'Clipped via Tracklet Extension',
-          `Saved "${finalApp.role}" at ${finalApp.company}`
-        );
       },
     });
 

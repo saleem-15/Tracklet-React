@@ -62,16 +62,27 @@ function getDomainName(urlStr) {
   }
 }
 
-// Push to Firestore REST API
-async function pushToFirestoreDirectly(payload, userSession, config) {
+// Push to Firestore REST API (supports POST for create and PATCH for update)
+async function pushToFirestoreDirectly(payload, userSession, config, docIdToUpdate = null) {
   const projectId = config?.projectId || 'demo-tracklet';
   const apiKey = config?.apiKey;
   const userId = userSession.uid;
   const idToken = userSession.idToken;
 
-  let url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/users/${userId}/applications`;
+  let url = docIdToUpdate
+    ? `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/users/${userId}/applications/${docIdToUpdate}`
+    : `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/users/${userId}/applications`;
+
+  const queryParams = [];
   if (apiKey && apiKey !== 'demo-api-key') {
-    url += `?key=${encodeURIComponent(apiKey)}`;
+    queryParams.push(`key=${encodeURIComponent(apiKey)}`);
+  }
+  if (docIdToUpdate) {
+    const updateFields = ['company', 'role', 'platform', 'status', 'dateApplied', 'stageUpdatedAt', 'updatedAt', 'jobLink', 'notes', 'companyDomain', 'logoUrl', 'history'];
+    updateFields.forEach(f => queryParams.push(`updateMask.fieldPaths=${f}`));
+  }
+  if (queryParams.length > 0) {
+    url += `?${queryParams.join('&')}`;
   }
 
   const fields = {
@@ -109,8 +120,9 @@ async function pushToFirestoreDirectly(payload, userSession, config) {
   const headers = { 'Content-Type': 'application/json' };
   if (idToken) headers['Authorization'] = `Bearer ${idToken}`;
 
+  const method = docIdToUpdate ? 'PATCH' : 'POST';
   const response = await fetch(url, {
-    method: 'POST',
+    method,
     headers,
     body: JSON.stringify({ fields })
   });
@@ -120,23 +132,33 @@ async function pushToFirestoreDirectly(payload, userSession, config) {
   }
 
   const resData = await response.json();
-  const docId = resData.name ? resData.name.split('/').pop() : `cloud-${Date.now()}`;
+  const docId = docIdToUpdate || (resData.name ? resData.name.split('/').pop() : `cloud-${Date.now()}`);
   return { ...payload, id: docId, userId };
 }
 
 // Save application and broadcast to open tabs
 async function saveAndSyncApplication(appData) {
-  const { tracklet_user_session, tracklet_firebase_config } = await chrome.storage.local.get([
+  const { tracklet_user_session, tracklet_firebase_config, tracklet_apps_index, tracklet_guest_apps_v1 } = await chrome.storage.local.get([
     'tracklet_user_session',
-    'tracklet_firebase_config'
+    'tracklet_firebase_config',
+    'tracklet_apps_index',
+    'tracklet_guest_apps_v1'
   ]);
+
+  // Check for existing app match by URL or company+role
+  const allKnown = [...(tracklet_apps_index || []), ...(tracklet_guest_apps_v1 || [])];
+  const existing = allKnown.find(a => 
+    (a.jobLink && appData.jobLink && a.jobLink.toLowerCase().trim() === appData.jobLink.toLowerCase().trim()) ||
+    (a.company && appData.company && a.company.toLowerCase().trim() === appData.company.toLowerCase().trim() && a.role && appData.role && a.role.toLowerCase().trim() === appData.role.toLowerCase().trim())
+  );
+  const existingAppId = existing ? existing.id : null;
 
   let finalizedApp = null;
   let savedToCloud = false;
 
   if (tracklet_user_session && tracklet_user_session.uid) {
     try {
-      finalizedApp = await pushToFirestoreDirectly(appData, tracklet_user_session, tracklet_firebase_config);
+      finalizedApp = await pushToFirestoreDirectly(appData, tracklet_user_session, tracklet_firebase_config, existingAppId);
       savedToCloud = true;
     } catch (e) {
       console.warn('Direct Firestore save failed from background worker:', e);
@@ -146,7 +168,7 @@ async function saveAndSyncApplication(appData) {
   if (!finalizedApp) {
     finalizedApp = {
       ...appData,
-      id: `ext-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      id: existingAppId || `ext-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
       userId: tracklet_user_session?.uid || 'guest'
     };
   }
@@ -169,9 +191,14 @@ async function saveAndSyncApplication(appData) {
     let pending = result.tracklet_pending_apps || [];
     let guestApps = result.tracklet_guest_apps_v1 || [];
 
-    guestApps = [finalizedApp, ...guestApps];
-    if (!savedToCloud) {
-      pending = [finalizedApp, ...pending];
+    if (existingAppId) {
+      guestApps = guestApps.map(app => app.id === existingAppId ? finalizedApp : app);
+      pending = pending.map(app => app.id === existingAppId ? finalizedApp : app);
+    } else {
+      guestApps = [finalizedApp, ...guestApps];
+      if (!savedToCloud) {
+        pending = [finalizedApp, ...pending];
+      }
     }
 
     chrome.storage.local.set({
@@ -197,6 +224,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     chrome.storage.local.set({
       tracklet_user_session: user,
       tracklet_firebase_config: config
+    }, () => {
+      sendResponse({ success: true });
+    });
+    return true;
+  }
+
+  if (message.action === 'SYNC_APPS_INDEX') {
+    chrome.storage.local.set({
+      tracklet_apps_index: message.payload || []
     }, () => {
       sendResponse({ success: true });
     });

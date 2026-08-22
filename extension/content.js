@@ -242,7 +242,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   return true;
 });
 
-// 2. Listen for auth session and config sync from Tracklet web app window
+// 2. Listen for auth session and applications index sync from Tracklet web app window
 window.addEventListener('message', (event) => {
   if (!event.data || typeof event.data !== 'object') return;
 
@@ -250,6 +250,15 @@ window.addEventListener('message', (event) => {
     try {
       chrome.runtime.sendMessage({
         action: 'SYNC_USER_SESSION',
+        payload: event.data.payload
+      });
+    } catch {
+      // Extension context invalidated or reloaded
+    }
+  } else if (event.data.type === 'TRACKLET_APPS_INDEX_SYNC') {
+    try {
+      chrome.runtime.sendMessage({
+        action: 'SYNC_APPS_INDEX',
         payload: event.data.payload
       });
     } catch {

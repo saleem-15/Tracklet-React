@@ -169,3 +169,68 @@ export function syncPendingAppsFromStorage(onAdd: (app: Application) => void) {
     console.warn('Failed to sync pending extension apps:', e);
   }
 }
+
+/**
+ * Normalizes a job URL by removing tracking parameters, www, and trailing slashes
+ */
+export function normalizeJobUrl(url: string): string {
+  if (!url) return '';
+  try {
+    const u = new URL(url);
+    const pathname = u.pathname.replace(/\/+$/, '');
+    const trackingParams = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'refid', 'trackingid', 'position', 'pagenum', 'trk', 'ref', 'source'];
+    Array.from(u.searchParams.keys()).forEach((key) => {
+      if (trackingParams.includes(key.toLowerCase())) {
+        u.searchParams.delete(key);
+      }
+    });
+    return `${u.hostname.replace(/^www\./, '')}${pathname}${u.search ? u.search : ''}`.toLowerCase();
+  } catch {
+    return url.trim().toLowerCase().replace(/\/+$/, '');
+  }
+}
+
+/**
+ * Syncs the current list of saved applications to the extension for instant duplicate detection
+ */
+export function syncApplicationsToExtension(applications: Application[]): void {
+  const index = applications.map((a) => ({
+    id: a.id,
+    jobLink: a.jobLink || '',
+    company: a.company,
+    role: a.role,
+    status: a.status,
+    platform: a.platform,
+    notes: a.notes || '',
+  }));
+
+  // 1. Post to window for content script
+  try {
+    window.postMessage({
+      type: 'TRACKLET_APPS_INDEX_SYNC',
+      payload: index,
+    }, '*');
+  } catch {
+    // ignore
+  }
+
+  // 2. BroadcastChannel
+  try {
+    const channel = new BroadcastChannel(BROADCAST_CHANNEL_NAME);
+    channel.postMessage({
+      type: 'TRACKLET_APPS_INDEX_SYNC',
+      payload: index,
+    });
+    channel.close();
+  } catch {
+    // ignore
+  }
+
+  // 3. Direct chrome.storage if accessible
+  if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+    chrome.storage.local.set({
+      tracklet_apps_index: index,
+    });
+  }
+}
+

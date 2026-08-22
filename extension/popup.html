@@ -14,188 +14,210 @@
         <img src="icons/logo.svg" alt="Tracklet Logo" class="brand-logo-img">
         <div class="brand-info">
           <span class="brand-title">Tracklet</span>
-          <span class="brand-subtitle">Job Application Clipper</span>
         </div>
       </div>
-      <!-- Clean Non-interactive Status Badge -->
-      <span class="platform-status-badge" id="header-platform-badge">LinkedIn</span>
-    </div>
-
-    <!-- Active Connected Account Badge -->
-    <div class="user-account-badge" id="user-account-badge">
-      <span class="user-account-dot" id="user-account-dot"></span>
-      <span class="user-account-email" id="user-account-email">Guest Mode (Local)</span>
-    </div>
-
-    <!-- Autofill Signal Banner -->
-    <div class="autofill-signal" id="autofill-signal" style="display: none;">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
-      <span>Auto-filled from page</span>
-    </div>
-
-    <!-- Duplicate Warning Banner -->
-    <div class="duplicate-banner" id="duplicate-banner">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
-      <span>Already in Tracklet! Saving will update this entry.</span>
-    </div>
-
-    <!-- Clean Direct Form Layout -->
-    <div class="form-layout">
-      <!-- Company Name -->
-      <div class="form-group">
-        <label for="company">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="16" height="20" x="4" y="2" rx="2" ry="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M12 6h.01"/><path d="M12 10h.01"/><path d="M16 10h.01"/><path d="M16 14h.01"/><path d="M8 10h.01"/><path d="M8 14h.01"/></svg>
-          <span>Company Name</span>
-          <span class="required-star">*</span>
-        </label>
-        <div class="input-wrapper" style="gap: 8px;">
-          <div class="company-avatar-box" id="company-avatar">?</div>
-          <input type="text" id="company" placeholder="e.g. Google, Stripe, Linear" required autocomplete="off">
-        </div>
+      <!-- Compact Header Sync Status Pill -->
+      <div class="header-status-chip" id="user-account-badge" title="Guest Mode (Local Only)">
+        <span class="user-account-dot" id="user-account-dot"></span>
+        <span class="user-account-label" id="user-account-email">Local Mode</span>
       </div>
+    </div>
 
-      <!-- Job Role -->
-      <div class="form-group">
-        <label for="role">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
-          <span>Job Role / Title</span>
-          <span class="required-star">*</span>
-        </label>
-        <div class="input-wrapper">
-          <input type="text" id="role" placeholder="e.g. Senior Frontend Engineer" required autocomplete="off">
-        </div>
-      </div>
-
-      <!-- Platform & Date Applied Row -->
-      <div class="form-row">
-        <!-- Single Authoritative Platform Selector -->
+    <!-- Main Application Form View -->
+    <div id="main-form-view">
+      <!-- Direct Form Layout -->
+      <div class="form-layout">
+        <!-- Company Name -->
         <div class="form-group">
-          <label>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
-            <span>Platform</span>
+          <label for="company">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="16" height="20" x="4" y="2" rx="2" ry="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M12 6h.01"/><path d="M12 10h.01"/><path d="M16 10h.01"/><path d="M16 14h.01"/><path d="M8 10h.01"/><path d="M8 14h.01"/></svg>
+            <span>Company Name</span>
+            <span class="required-star">*</span>
           </label>
-          <div class="custom-select-container" id="platform-select-container">
-            <button type="button" class="custom-select-trigger" id="platform-trigger">
-              <span class="custom-select-value" id="platform-value-text">LinkedIn</span>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
-            </button>
-            <div class="custom-select-dropdown" id="platform-dropdown">
-              <div class="custom-select-option selected" data-value="LinkedIn">LinkedIn</div>
-              <div class="custom-select-option" data-value="Indeed">Indeed</div>
-              <div class="custom-select-option" data-value="Lever">Lever</div>
-              <div class="custom-select-option" data-value="Greenhouse">Greenhouse</div>
-              <div class="custom-select-option" data-value="Otta">Otta</div>
-              <div class="custom-select-option" data-value="Wellfound">Wellfound</div>
-              <div class="custom-select-option" data-value="Company Site">Company Site</div>
-              <div class="custom-select-option" data-value="Referral">Referral</div>
-              <div class="custom-select-option" data-value="Other">Other (Custom)</div>
-            </div>
+          <div class="input-wrapper" style="gap: 8px;">
+            <div class="company-avatar-box" id="company-avatar">?</div>
+            <input type="text" id="company" placeholder="e.g. Google, Stripe, Linear" required autocomplete="off">
           </div>
-          <!-- Custom Platform Text Input (shows when 'Other' or custom selected) -->
-          <input type="text" id="custom-platform-input" class="custom-platform-input" placeholder="Type custom platform name..." style="display: none; margin-top: 6px;">
         </div>
 
-        <!-- Date Applied -->
+        <!-- Job Role -->
         <div class="form-group">
-          <label for="dateApplied">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg>
-            <span>Date Applied</span>
+          <label for="role">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+            <span>Job Role / Title</span>
+            <span class="required-star">*</span>
           </label>
           <div class="input-wrapper">
-            <input type="date" id="dateApplied" required>
+            <input type="text" id="role" placeholder="e.g. Senior Frontend Engineer" required autocomplete="off">
           </div>
         </div>
-      </div>
 
-      <!-- Stage Selector Component matching StageSelectorDropdown.tsx -->
-      <div class="form-group">
-        <label>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-          <span>Pipeline Stage</span>
-        </label>
-        <div class="stage-selector-container" id="stage-selector-container">
-          <button type="button" class="stage-trigger-btn" id="stage-trigger-btn">
-            <div class="stage-trigger-left">
-              <span class="stage-dot" id="stage-dot" style="background-color: var(--stage-applied-dot);"></span>
-              <span id="stage-label-text">Applied</span>
-            </div>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
-          </button>
-          <div class="stage-dropdown-menu" id="stage-dropdown-menu">
-            <div class="stage-dropdown-header">Advance Stage</div>
-            <div class="stage-option-item" data-stage="Saved" style="color: var(--stage-saved-text);">
-              <div style="display:flex; align-items:center; gap:8px;">
-                <span class="stage-dot" style="background-color: var(--stage-saved-dot);"></span>
-                <span>Saved</span>
+        <!-- Platform & Date Applied Row -->
+        <div class="form-row">
+          <!-- Single Authoritative Platform Selector -->
+          <div class="form-group">
+            <label>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+              <span>Platform</span>
+            </label>
+            <div class="custom-select-container" id="platform-select-container">
+              <button type="button" class="custom-select-trigger" id="platform-trigger">
+                <span class="custom-select-value" id="platform-value-text">LinkedIn</span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
+              </button>
+              <div class="custom-select-dropdown" id="platform-dropdown">
+                <div class="custom-select-option selected" data-value="LinkedIn">LinkedIn</div>
+                <div class="custom-select-option" data-value="Indeed">Indeed</div>
+                <div class="custom-select-option" data-value="Lever">Lever</div>
+                <div class="custom-select-option" data-value="Greenhouse">Greenhouse</div>
+                <div class="custom-select-option" data-value="Otta">Otta</div>
+                <div class="custom-select-option" data-value="Wellfound">Wellfound</div>
+                <div class="custom-select-option" data-value="Company Site">Company Site</div>
+                <div class="custom-select-option" data-value="Referral">Referral</div>
+                <div class="custom-select-option" data-value="Other">Other (Custom)</div>
               </div>
             </div>
-            <div class="stage-option-item selected" data-stage="Applied" style="color: var(--stage-applied-text);">
-              <div style="display:flex; align-items:center; gap:8px;">
-                <span class="stage-dot" style="background-color: var(--stage-applied-dot);"></span>
-                <span>Applied</span>
-              </div>
-            </div>
-            <div class="stage-option-item" data-stage="Screening" style="color: var(--stage-screening-text);">
-              <div style="display:flex; align-items:center; gap:8px;">
-                <span class="stage-dot" style="background-color: var(--stage-screening-dot);"></span>
-                <span>Screening</span>
-              </div>
-            </div>
-            <div class="stage-option-item" data-stage="Interview" style="color: var(--stage-interview-text);">
-              <div style="display:flex; align-items:center; gap:8px;">
-                <span class="stage-dot" style="background-color: var(--stage-interview-dot);"></span>
-                <span>Interview</span>
-              </div>
-            </div>
-            <div class="stage-option-item" data-stage="Offer" style="color: var(--stage-offer-text);">
-              <div style="display:flex; align-items:center; gap:8px;">
-                <span class="stage-dot" style="background-color: var(--stage-offer-dot);"></span>
-                <span>Offer</span>
-              </div>
-            </div>
-            <div class="stage-option-item" data-stage="Rejected" style="color: var(--stage-rejected-text);">
-              <div style="display:flex; align-items:center; gap:8px;">
-                <span class="stage-dot" style="background-color: var(--stage-rejected-dot);"></span>
-                <span>Rejected</span>
-              </div>
-            </div>
-            <div class="stage-option-item" data-stage="Archived" style="color: var(--stage-archived-text);">
-              <div style="display:flex; align-items:center; gap:8px;">
-                <span class="stage-dot" style="background-color: var(--stage-archived-dot);"></span>
-                <span>Archived</span>
-              </div>
+            <!-- Custom Platform Text Input (shows when 'Other' or custom selected) -->
+            <input type="text" id="custom-platform-input" class="custom-platform-input" placeholder="Type custom platform name..." style="display: none; margin-top: 6px;">
+          </div>
+
+          <!-- Date Applied -->
+          <div class="form-group">
+            <label for="dateApplied">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg>
+              <span>Date Applied</span>
+            </label>
+            <div class="input-wrapper">
+              <input type="date" id="dateApplied" required>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- Job URL -->
-      <div class="form-group">
-        <label for="jobLink">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-          <span>Job URL</span>
-        </label>
-        <div class="input-wrapper">
-          <input type="text" id="jobLink" placeholder="https://..." readonly>
+        <!-- Stage Selector Component matching StageSelectorDropdown.tsx -->
+        <div class="form-group">
+          <label>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            <span>Pipeline Stage</span>
+          </label>
+          <div class="stage-selector-container" id="stage-selector-container">
+            <button type="button" class="stage-trigger-btn" id="stage-trigger-btn">
+              <div class="stage-trigger-left">
+                <span class="stage-dot" id="stage-dot" style="background-color: var(--stage-applied-dot);"></span>
+                <span id="stage-label-text">Applied</span>
+              </div>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
+            </button>
+            <div class="stage-dropdown-menu" id="stage-dropdown-menu">
+              <div class="stage-dropdown-header">Advance Stage</div>
+              <div class="stage-option-item" data-stage="Saved" style="color: var(--stage-saved-text);">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span class="stage-dot" style="background-color: var(--stage-saved-dot);"></span>
+                  <span>Saved</span>
+                </div>
+              </div>
+              <div class="stage-option-item selected" data-stage="Applied" style="color: var(--stage-applied-text);">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span class="stage-dot" style="background-color: var(--stage-applied-dot);"></span>
+                  <span>Applied</span>
+                </div>
+              </div>
+              <div class="stage-option-item" data-stage="Screening" style="color: var(--stage-screening-text);">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span class="stage-dot" style="background-color: var(--stage-screening-dot);"></span>
+                  <span>Screening</span>
+                </div>
+              </div>
+              <div class="stage-option-item" data-stage="Interview" style="color: var(--stage-interview-text);">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span class="stage-dot" style="background-color: var(--stage-interview-dot);"></span>
+                  <span>Interview</span>
+                </div>
+              </div>
+              <div class="stage-option-item" data-stage="Offer" style="color: var(--stage-offer-text);">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span class="stage-dot" style="background-color: var(--stage-offer-dot);"></span>
+                  <span>Offer</span>
+                </div>
+              </div>
+              <div class="stage-option-item" data-stage="Rejected" style="color: var(--stage-rejected-text);">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span class="stage-dot" style="background-color: var(--stage-rejected-dot);"></span>
+                  <span>Rejected</span>
+                </div>
+              </div>
+              <div class="stage-option-item" data-stage="Archived" style="color: var(--stage-archived-text);">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span class="stage-dot" style="background-color: var(--stage-archived-dot);"></span>
+                  <span>Archived</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Job URL -->
+        <div class="form-group">
+          <label for="jobLink">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+            <span>Job URL</span>
+          </label>
+          <div class="input-wrapper">
+            <input type="text" id="jobLink" placeholder="https://..." autocomplete="off">
+          </div>
+        </div>
+
+        <!-- Notes / Highlights -->
+        <div class="form-group">
+          <label for="notes">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            <span>Notes & Job Description</span>
+          </label>
+          <textarea id="notes" placeholder="Paste requirements, compensation, or recruiter notes..."></textarea>
         </div>
       </div>
 
-      <!-- Notes / Highlights -->
-      <div class="form-group">
-        <label for="notes">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-          <span>Notes & Job Description</span>
-        </label>
-        <textarea id="notes" placeholder="Paste requirements, compensation, or recruiter notes..."></textarea>
-      </div>
+      <!-- Primary Save Action Button -->
+      <button type="button" class="btn-primary" id="save-btn" style="margin-top: 8px;">
+        <span>Save Application</span>
+      </button>
     </div>
 
-    <!-- Primary Save Action Button -->
-    <button type="button" class="btn-primary" id="save-btn">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
-      <span>Save Application</span>
-      <span class="kbd-badge">↵ Enter</span>
-    </button>
+    <!-- Already Saved View (Detect, Inform & Route) -->
+    <div class="already-saved-view" id="already-saved-view" style="display: none;">
+      <div class="already-saved-card">
+        <div class="already-saved-icon-badge">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>
+        </div>
+        <div class="already-saved-header">
+          <span class="already-saved-badge">Already Tracked</span>
+          <h2 class="already-saved-company" id="saved-company-name">Google</h2>
+          <p class="already-saved-role" id="saved-role-title">Senior Frontend Engineer</p>
+        </div>
+
+        <div class="already-saved-meta-row">
+          <div class="already-saved-stage-pill" id="saved-stage-pill">
+            <span class="stage-dot" id="saved-stage-dot"></span>
+            <span id="saved-stage-text">Applied</span>
+          </div>
+          <div class="already-saved-date" id="saved-date-wrap">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg>
+            <span id="saved-date-text">Applied today</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Primary Action: Open in Workspace -->
+      <button type="button" class="btn-primary" id="open-existing-btn">
+        <span>Open in Tracklet Workspace</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+      </button>
+
+      <!-- Secondary Action: Save as Separate Entry -->
+      <div class="save-new-prompt">
+        <span>Applying for a different role?</span>
+        <button type="button" class="btn-text-link" id="save-as-new-btn">Save as separate application</button>
+      </div>
+    </div>
   </div>
 
   <!-- Success View -->

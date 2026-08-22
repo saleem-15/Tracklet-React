@@ -100,7 +100,7 @@ export function readUrlState(): UrlState {
 
   return {
     filter,
-    selectedAppId: params.get(QP.APP) ?? null,
+    selectedAppId: params.get(QP.APP) ?? params.get('appId') ?? null,
     isAddModalOpen: params.has(QP.NEW),
   };
 }
