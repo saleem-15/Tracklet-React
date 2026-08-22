@@ -126,10 +126,13 @@ export function normalizeCSVDate(raw: string): string {
     return clean;
   }
 
-  // Handle standard JS Date parsing
+  // Handle standard JS Date parsing safely without UTC offset shift
   const parsed = new Date(clean);
   if (!isNaN(parsed.getTime())) {
-    return parsed.toISOString().slice(0, 10);
+    const year = parsed.getFullYear();
+    const month = String(parsed.getMonth() + 1).padStart(2, '0');
+    const day = String(parsed.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 
   return new Date().toISOString().slice(0, 10);

@@ -20,9 +20,20 @@ export function exportApplicationsToCSV(
     'Notes',
   ];
 
+  /**
+   * Escapes values for CSV format and neutralizes CSV / Formula Injection (CWE-1236).
+   * Prepends a single quote if the field begins with =, +, -, @, \t, \r, or % so
+   * spreadsheet programs treat it as plain text instead of executing a formula.
+   */
   const escapeCSV = (value: string | number | undefined | null) => {
     if (value === undefined || value === null) return '""';
-    const str = String(value);
+    let str = String(value);
+
+    // If string begins with spreadsheet formula operators, prepend single quote
+    if (/^[=+\-@\t\r%]/.test(str)) {
+      str = `'${str}`;
+    }
+
     const escaped = str.replace(/"/g, '""');
     return `"${escaped}"`;
   };

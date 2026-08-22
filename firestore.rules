@@ -11,13 +11,34 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
+    function isValidStatus(status) {
+      return status in ['Saved', 'Applied', 'Screening', 'Interview', 'Offer', 'Rejected', 'Archived'];
+    }
+
+    function isValidApplication(data) {
+      return (data.company is string && data.company.size() > 0 && data.company.size() <= 200)
+        && (data.role is string && data.role.size() > 0 && data.role.size() <= 200)
+        && (data.status is string && isValidStatus(data.status))
+        && (data.platform is string && data.platform.size() > 0 && data.platform.size() <= 100)
+        && (data.dateApplied is string && data.dateApplied.size() > 0 && data.dateApplied.size() <= 40)
+        && (!('userId' in data) || data.userId == null || (data.userId is string && data.userId == request.auth.uid))
+        && (!('notes' in data) || (data.notes is string && data.notes.size() <= 20000))
+        && (!('jobLink' in data) || (data.jobLink is string && data.jobLink.size() <= 3000))
+        && (!('companyDomain' in data) || (data.companyDomain is string && data.companyDomain.size() <= 200))
+        && (!('contactEmail' in data) || (data.contactEmail is string && data.contactEmail.size() <= 200))
+        && (!('contacts' in data) || (data.contacts is list && data.contacts.size() <= 50))
+        && (!('tasks' in data) || (data.tasks is list && data.tasks.size() <= 100))
+        && (!('emails' in data) || (data.emails is list && data.emails.size() <= 100))
+        && (!('history' in data) || (data.history is list && data.history.size() <= 100));
+    }
+
     // User document & User Applications Sub-collection
     match /users/{userId} {
       allow read, write: if isOwner(userId);
 
       match /applications/{applicationId} {
         allow read, delete: if isOwner(userId);
-        allow create, update: if isOwner(userId) && (request.resource.data.userId == null || request.resource.data.userId == request.auth.uid);
+        allow create, update: if isOwner(userId) && isValidApplication(request.resource.data);
       }
     }
 
