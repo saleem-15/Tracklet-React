@@ -4,6 +4,7 @@ import {
   autoDetectFieldMapping,
   normalizeCSVStatus,
   normalizeCSVPlatform,
+  normalizeCSVWorkLocation,
   normalizeCSVDate,
 } from '../../src/lib/importCsv';
 
@@ -70,6 +71,43 @@ describe('importCsv', () => {
       expect(normalizeCSVPlatform('Lever.co')).toBe('Lever');
       expect(normalizeCSVPlatform('Referred by Friend')).toBe('Referral');
       expect(normalizeCSVPlatform('Unknown Site')).toBe('Other');
+    });
+  });
+
+  describe('normalizeCSVWorkLocation', () => {
+    it('normalizes valid remote workplace values', () => {
+      expect(normalizeCSVWorkLocation('Remote')).toBe('Remote');
+      expect(normalizeCSVWorkLocation('fully remote')).toBe('Remote');
+      expect(normalizeCSVWorkLocation('100% remote')).toBe('Remote');
+      expect(normalizeCSVWorkLocation('WFH')).toBe('Remote');
+      expect(normalizeCSVWorkLocation('Work From Home')).toBe('Remote');
+      expect(normalizeCSVWorkLocation('home office')).toBe('Remote');
+      expect(normalizeCSVWorkLocation('anywhere')).toBe('Remote');
+    });
+
+    it('rejects negated remote phrases and returns undefined', () => {
+      expect(normalizeCSVWorkLocation('not remote')).toBeUndefined();
+      expect(normalizeCSVWorkLocation('no longer remote')).toBeUndefined();
+      expect(normalizeCSVWorkLocation('Not Remote')).toBeUndefined();
+      expect(normalizeCSVWorkLocation('No longer remote')).toBeUndefined();
+      expect(normalizeCSVWorkLocation('not-remote')).toBeUndefined();
+      expect(normalizeCSVWorkLocation('non-remote')).toBeUndefined();
+    });
+
+    it('normalizes hybrid and onsite workplace values', () => {
+      expect(normalizeCSVWorkLocation('Hybrid')).toBe('Hybrid');
+      expect(normalizeCSVWorkLocation('Hybrid Remote')).toBe('Hybrid');
+      expect(normalizeCSVWorkLocation('Partially Remote')).toBe('Hybrid');
+      expect(normalizeCSVWorkLocation('Mostly Remote')).toBe('Hybrid');
+      expect(normalizeCSVWorkLocation('Onsite')).toBe('Onsite');
+      expect(normalizeCSVWorkLocation('in-office')).toBe('Onsite');
+      expect(normalizeCSVWorkLocation('In Person')).toBe('Onsite');
+    });
+
+    it('returns undefined for empty or unrecognized values', () => {
+      expect(normalizeCSVWorkLocation('')).toBeUndefined();
+      expect(normalizeCSVWorkLocation('   ')).toBeUndefined();
+      expect(normalizeCSVWorkLocation('Random Workplace')).toBeUndefined();
     });
   });
 

@@ -132,13 +132,15 @@ export function normalizeCSVWorkLocation(raw: string): WorkLocation | undefined 
 
   if (clean.startsWith('hybrid')) return 'Hybrid';
   if ((clean.startsWith('part') || clean.startsWith('most')) && clean.endsWith('remote')) return 'Hybrid';
+  const isNegatedRemote = clean.includes('notremote') || clean.includes('nolongerremote') || clean.includes('nonremote');
   if (
-    clean === 'remote' ||
-    clean === 'wfh' ||
-    clean === 'anywhere' ||
-    clean.endsWith('remote') ||
-    clean.includes('workfromhome') ||
-    clean.includes('homeoffice')
+    !isNegatedRemote &&
+    (clean === 'remote' ||
+      clean === 'wfh' ||
+      clean === 'anywhere' ||
+      clean.endsWith('remote') ||
+      clean.includes('workfromhome') ||
+      clean.includes('homeoffice'))
   ) {
     return 'Remote';
   }
