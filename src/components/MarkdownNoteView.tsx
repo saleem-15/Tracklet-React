@@ -27,71 +27,141 @@ export const MarkdownNoteView: React.FC<MarkdownNoteViewProps> = ({
   }
 
   const lines = content.split(/\r?\n/);
+  const blocks: React.ReactNode[] = [];
+  let inCodeBlock = false;
+  let codeBuffer: string[] = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
+    // Fenced Code Block delimiter: ```
+    if (line.trim().startsWith('```')) {
+      if (inCodeBlock) {
+        // Close code block
+        const codeText = codeBuffer.join('\n');
+        blocks.push(
+          <pre
+            key={`code-block-${i}`}
+            className="my-2.5 p-3 bg-slate-900 text-slate-100 rounded-xl font-mono text-[11px] leading-relaxed overflow-x-auto border border-slate-800 selection:bg-blue-500/40"
+          >
+            <code>{codeText}</code>
+          </pre>
+        );
+        codeBuffer = [];
+        inCodeBlock = false;
+      } else {
+        // Open code block
+        inCodeBlock = true;
+        codeBuffer = [];
+      }
+      continue;
+    }
+
+    if (inCodeBlock) {
+      codeBuffer.push(line);
+      continue;
+    }
+
+    // Empty line
+    if (!line.trim()) {
+      blocks.push(<div key={`empty-${i}`} className="h-2" />);
+      continue;
+    }
+
+    // Headings: H1, H2, H3
+    if (line.startsWith('### ')) {
+      blocks.push(
+        <h4
+          key={`h3-${i}`}
+          className="font-bold text-slate-900 text-xs font-mono uppercase tracking-wide mt-3 mb-1 text-blue-700"
+        >
+          {renderInlineFormatting(line.slice(4))}
+        </h4>
+      );
+      continue;
+    }
+    if (line.startsWith('## ')) {
+      blocks.push(
+        <h3
+          key={`h2-${i}`}
+          className="font-bold text-slate-900 text-sm font-sans tracking-tight mt-3 mb-1"
+        >
+          {renderInlineFormatting(line.slice(3))}
+        </h3>
+      );
+      continue;
+    }
+    if (line.startsWith('# ')) {
+      blocks.push(
+        <h2
+          key={`h1-${i}`}
+          className="font-bold text-slate-900 text-base font-sans tracking-tight mt-3.5 mb-1.5 border-b border-slate-200/80 pb-1"
+        >
+          {renderInlineFormatting(line.slice(2))}
+        </h2>
+      );
+      continue;
+    }
+
+    // Numbered List: 1. 2. 3.
+    const numberedMatch = line.match(/^(\d+)\.\s+(.*)$/);
+    if (numberedMatch) {
+      const num = numberedMatch[1];
+      const itemText = numberedMatch[2];
+      blocks.push(
+        <div key={`num-${i}`} className="flex items-start gap-2 pl-1 py-0.5">
+          <span className="font-mono text-slate-500 font-semibold min-w-[16px] text-right select-none">
+            {num}.
+          </span>
+          <span className="text-slate-800 flex-1">
+            {renderInlineFormatting(itemText)}
+          </span>
+        </div>
+      );
+      continue;
+    }
+
+    // Bullet List: - or *
+    const bulletMatch = line.match(/^[-*]\s+(.*)$/);
+    if (bulletMatch) {
+      blocks.push(
+        <div key={`bullet-${i}`} className="flex items-start gap-2 pl-1 py-0.5">
+          <span className="text-blue-500 font-bold leading-none mt-1 select-none">
+            •
+          </span>
+          <span className="text-slate-800 flex-1">
+            {renderInlineFormatting(bulletMatch[1])}
+          </span>
+        </div>
+      );
+      continue;
+    }
+
+    // Standard Paragraph line
+    blocks.push(
+      <p key={`p-${i}`} className="text-slate-800 leading-relaxed">
+        {renderInlineFormatting(line)}
+      </p>
+    );
+  }
+
+  // Handle unclosed code block at end of content
+  if (inCodeBlock && codeBuffer.length > 0) {
+    blocks.push(
+      <pre
+        key="code-block-unclosed"
+        className="my-2.5 p-3 bg-slate-900 text-slate-100 rounded-xl font-mono text-[11px] leading-relaxed overflow-x-auto border border-slate-800 selection:bg-blue-500/40"
+      >
+        <code>{codeBuffer.join('\n')}</code>
+      </pre>
+    );
+  }
 
   return (
-    <div className={`space-y-1.5 text-xs text-slate-800 font-sans leading-relaxed break-words ${className}`}>
-      {lines.map((rawLine, idx) => {
-        const line = rawLine;
-
-        // Empty line
-        if (!line.trim()) {
-          return <div key={idx} className="h-2" />;
-        }
-
-        // Headings: H1, H2, H3
-        if (line.startsWith('### ')) {
-          return (
-            <h4 key={idx} className="font-bold text-slate-900 text-xs font-mono uppercase tracking-wide mt-3 mb-1 text-blue-700">
-              {renderInlineFormatting(line.slice(4))}
-            </h4>
-          );
-        }
-        if (line.startsWith('## ')) {
-          return (
-            <h3 key={idx} className="font-bold text-slate-900 text-sm font-sans tracking-tight mt-3 mb-1">
-              {renderInlineFormatting(line.slice(3))}
-            </h3>
-          );
-        }
-        if (line.startsWith('# ')) {
-          return (
-            <h2 key={idx} className="font-bold text-slate-900 text-base font-sans tracking-tight mt-3.5 mb-1.5 border-b border-slate-200/80 pb-1">
-              {renderInlineFormatting(line.slice(2))}
-            </h2>
-          );
-        }
-
-        // Numbered List: 1. 2. 3.
-        const numberedMatch = line.match(/^(\d+)\.\s+(.*)$/);
-        if (numberedMatch) {
-          const num = numberedMatch[1];
-          const itemText = numberedMatch[2];
-          return (
-            <div key={idx} className="flex items-start gap-2 pl-1 py-0.5">
-              <span className="font-mono text-slate-500 font-semibold min-w-[16px] text-right select-none">{num}.</span>
-              <span className="text-slate-800 flex-1">{renderInlineFormatting(itemText)}</span>
-            </div>
-          );
-        }
-
-        // Bullet List: - or *
-        const bulletMatch = line.match(/^[-*]\s+(.*)$/);
-        if (bulletMatch) {
-          return (
-            <div key={idx} className="flex items-start gap-2 pl-1 py-0.5">
-              <span className="text-blue-500 font-bold leading-none mt-1 select-none">•</span>
-              <span className="text-slate-800 flex-1">{renderInlineFormatting(bulletMatch[1])}</span>
-            </div>
-          );
-        }
-
-        // Standard Paragraph line
-        return (
-          <p key={idx} className="text-slate-800 leading-relaxed">
-            {renderInlineFormatting(line)}
-          </p>
-        );
-      })}
+    <div
+      className={`space-y-1.5 text-xs text-slate-800 font-sans leading-relaxed break-words ${className}`}
+    >
+      {blocks}
     </div>
   );
 };

@@ -64,6 +64,38 @@ describe('markdownEditorUtils', () => {
 
       expect(result.newText).toBe('Line 1\n- List item');
     });
+
+    it('inserts fenced code block with placeholder when no text is highlighted', () => {
+      const text = 'Notes:';
+      const result = applyFormattingToText(
+        text,
+        6,
+        6,
+        '```\n',
+        '\n```',
+        'code here',
+        true
+      );
+
+      expect(result.newText).toBe('Notes:\n```\ncode here\n```');
+      expect(result.selectionStart).toBe('Notes:\n```\n'.length);
+      expect(result.selectionEnd).toBe('Notes:\n```\ncode here'.length);
+    });
+
+    it('wraps highlighted multiline text in fenced code block', () => {
+      const text = 'const x = 1;\nconsole.log(x);';
+      const result = applyFormattingToText(
+        text,
+        0,
+        text.length,
+        '```\n',
+        '\n```',
+        'code here',
+        true
+      );
+
+      expect(result.newText).toBe('```\nconst x = 1;\nconsole.log(x);\n```');
+    });
   });
 
   describe('handleListContinuationOnEnter', () => {

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useRef, useEffect, useCallback } from 'react';
 import {
   applyFormattingToText,
   handleListContinuationOnEnter,
@@ -6,43 +6,31 @@ import {
 
 export interface UseMarkdownEditorOptions {
   notes: string;
-  hasUnsavedNotes: boolean;
   onNotesChange: (val: string) => void;
-  onSaveNotes: () => void;
 }
 
 /**
- * Custom React hook encapsulating state, cursor positioning,
- * toolbar actions, and keyboard shortcuts for the markdown notes editor.
+ * Custom React hook managing textarea auto-grow height, cursor math,
+ * formatting insertion (bold, italic, headings, lists, links, code blocks),
+ * and keyboard shortcuts for the always-editable notes surface.
  */
 export function useMarkdownEditor({
   notes,
-  hasUnsavedNotes,
   onNotesChange,
-  onSaveNotes,
 }: UseMarkdownEditorOptions) {
-  const [isEditing, setIsEditing] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
-  // Focus textarea immediately when entering edit mode
-  useEffect(() => {
-    if (isEditing && textareaRef.current) {
-      textareaRef.current.focus();
-      const len = textareaRef.current.value.length;
-      textareaRef.current.setSelectionRange(len, len);
-    }
-  }, [isEditing]);
-
-  const startEdit = useCallback(() => {
-    setIsEditing(true);
+  // Auto-grow textarea height to fit content without nested scrollbars
+  const adjustHeight = useCallback(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${Math.max(200, el.scrollHeight)}px`;
   }, []);
 
-  const saveAndClose = useCallback(() => {
-    if (hasUnsavedNotes) {
-      onSaveNotes();
-    }
-    setIsEditing(false);
-  }, [hasUnsavedNotes, onSaveNotes]);
+  useEffect(() => {
+    adjustHeight();
+  }, [notes, adjustHeight]);
 
   const applyFormat = useCallback(
     (
@@ -51,79 +39,70 @@ export function useMarkdownEditor({
       placeholder: string = 'text',
       isBlock: boolean = false
     ) => {
-      if (!isEditing) {
-        setIsEditing(true);
-      }
+      const textarea = textareaRef.current;
+      if (!textarea) return;
 
-      setTimeout(() => {
-        const textarea = textareaRef.current;
-        if (!textarea) return;
+      const result = applyFormattingToText(
+        notes,
+        textarea.selectionStart,
+        textarea.selectionEnd,
+        prefix,
+        suffix,
+        placeholder,
+        isBlock
+      );
 
-        const result = applyFormattingToText(
-          notes,
-          textarea.selectionStart,
-          textarea.selectionEnd,
-          prefix,
-          suffix,
-          placeholder,
-          isBlock
-        );
+      onNotesChange(result.newText);
 
-        onNotesChange(result.newText);
-
-        setTimeout(() => {
-          if (textareaRef.current) {
-            textareaRef.current.focus();
-            textareaRef.current.setSelectionRange(
-              result.selectionStart,
-              result.selectionEnd
-            );
-          }
-        }, 0);
-      }, 0);
+      // Restore focus and precise caret selection
+      requestAnimationFrame(() => {
+        if (textareaRef.current) {
+          textareaRef.current.focus();
+          textareaRef.current.setSelectionRange(
+            result.selectionStart,
+            result.selectionEnd
+          );
+          adjustHeight();
+        }
+      });
     },
-    [isEditing, notes, onNotesChange]
+    [adjustHeight, notes, onNotesChange]
   );
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-      // Save & close: Ctrl+Enter or Cmd+Enter
-      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+      const isCmdOrCtrl = e.metaKey || e.ctrlKey;
+
+      // Code Block: Ctrl+Shift+K or Cmd+Shift+K
+      if (isCmdOrCtrl && e.shiftKey && (e.key === 'k' || e.key === 'K')) {
         e.preventDefault();
-        saveAndClose();
+        applyFormat('```\n', '\n```', 'code here', true);
         return;
       }
 
       // Bold: Ctrl+B or Cmd+B
-      if ((e.metaKey || e.ctrlKey) && (e.key === 'b' || e.key === 'B')) {
+      if (isCmdOrCtrl && !e.shiftKey && (e.key === 'b' || e.key === 'B')) {
         e.preventDefault();
         applyFormat('**', '**', 'bold text');
         return;
       }
 
       // Italic: Ctrl+I or Cmd+I
-      if ((e.metaKey || e.ctrlKey) && (e.key === 'i' || e.key === 'I')) {
+      if (isCmdOrCtrl && !e.shiftKey && (e.key === 'i' || e.key === 'I')) {
         e.preventDefault();
         applyFormat('*', '*', 'italic text');
         return;
       }
 
       // Link: Ctrl+K or Cmd+K
-      if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
+      if (isCmdOrCtrl && !e.shiftKey && (e.key === 'k' || e.key === 'K')) {
         e.preventDefault();
         applyFormat('[', '](https://url.com)', 'link label');
         return;
       }
 
-      // Escape: Exit edit mode
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        saveAndClose();
-        return;
-      }
-
-      // Auto-continue lists on Enter
-      if (e.key === 'Enter' && !e.shiftKey && !e.metaKey && !e.ctrlKey) {
+      // Auto-continue numbered/bullet lists on Enter
+      if (e.key === 'Enter' && !e.shiftKey && !isCmdOrCtrl) {
         const textarea = textareaRef.current;
         if (!textarea) return;
 
@@ -135,27 +114,26 @@ export function useMarkdownEditor({
         if (result.handled) {
           e.preventDefault();
           onNotesChange(result.newText);
-          setTimeout(() => {
+          requestAnimationFrame(() => {
             if (textareaRef.current) {
               textareaRef.current.focus();
               textareaRef.current.setSelectionRange(
                 result.newCursorPos,
                 result.newCursorPos
               );
+              adjustHeight();
             }
-          }, 0);
+          });
         }
       }
     },
-    [applyFormat, notes, onNotesChange, saveAndClose]
+    [adjustHeight, applyFormat, notes, onNotesChange]
   );
 
   return {
-    isEditing,
     textareaRef,
-    startEdit,
-    saveAndClose,
     applyFormat,
     handleKeyDown,
+    adjustHeight,
   };
 }
