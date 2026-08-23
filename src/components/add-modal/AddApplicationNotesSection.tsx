@@ -1,5 +1,6 @@
 import React from 'react';
 import { FileText } from 'lucide-react';
+import { NoteLinksBar } from '../detail/NoteLinksBar';
 
 export interface AddApplicationNotesSectionProps {
   notes: string;
@@ -17,12 +18,13 @@ export const AddApplicationNotesSection: React.FC<AddApplicationNotesSectionProp
         Notes
       </h3>
       <textarea
-        rows={4}
+        rows={6}
         value={notes}
         onChange={(e) => onNotesChange(e.target.value)}
-        placeholder="Referral info, salary target, interview notes..."
+        placeholder="Referral info, salary target, interview notes, links (e.g. https://... or [docs](url))..."
         className="w-full bg-white text-slate-900 placeholder-slate-500 p-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 focus:bg-white font-mono text-xs leading-relaxed resize-y shadow-2xs transition-all"
       />
+      <NoteLinksBar notes={notes} />
     </div>
   );
 };

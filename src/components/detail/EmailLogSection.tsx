@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Mail, Plus } from 'lucide-react';
 import { EmailLog } from '../../types';
+import { LinkifiedText } from '../LinkifiedText';
 
 export interface EmailLogSectionProps {
   emails?: EmailLog[];
@@ -150,7 +151,7 @@ export const EmailLogSection: React.FC<EmailLogSectionProps> = ({
               </div>
               {email.snippet && (
                 <p className="text-[11px] text-slate-500 bg-slate-50 border border-slate-200/60 rounded-lg p-2 mt-2 italic leading-relaxed">
-                  &ldquo;{email.snippet}&rdquo;
+                  &ldquo;<LinkifiedText text={email.snippet} />&rdquo;
                 </p>
               )}
             </div>

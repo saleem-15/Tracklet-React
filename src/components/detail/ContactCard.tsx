@@ -3,6 +3,7 @@ import { Pencil, Linkedin, Phone, Check, Copy } from 'lucide-react';
 import { Contact } from '../../types';
 import { getInitials } from '../../lib/constants';
 import { IconButton, DeleteIconButton, EmailIconButton } from '../IconButton';
+import { LinkifiedText } from '../LinkifiedText';
 
 export interface ContactCardProps {
   contact: Contact;
@@ -93,7 +94,7 @@ export const ContactCard: React.FC<ContactCardProps> = ({
           )}
           {contact.notes && (
             <p className="text-[11px] text-slate-600 bg-slate-50 border border-slate-200/60 rounded-lg px-2.5 py-2 leading-relaxed">
-              {contact.notes}
+              <LinkifiedText text={contact.notes} />
             </p>
           )}
         </div>
