@@ -24,6 +24,12 @@ This skill defines the rules and best practices for creating clean, atomic, and 
    - Check `git status` carefully before staging.
    - Never stage `.env`, local credentials, build outputs (`dist/`, `build/`), or temporary logs.
 
+4. **Trunk-Based Branching & PR Lifecycle**:
+   - Always branch directly from `main` (`feat/*`, `fix/*`, `refactor/*`, `docs/*`).
+   - Keep feature branches short-lived (< 1–2 days) and scoped to one specific task.
+   - On GitHub, merge PRs to `main` using **Squash and Merge**.
+   - Delete the feature branch immediately after merging to keep repository history clean and linear.
+
 ---
 
 ## 2. Commit Message Format
