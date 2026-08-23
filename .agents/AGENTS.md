@@ -71,7 +71,12 @@ src/
 3. **Zero Browser Dialogs**: NEVER use native `window.alert()`, `window.confirm()`, or `window.prompt()`. Use custom in-app modal dialogs (e.g. `UnsavedChangesPrompt`) for pre-action gates, or lightweight Snackbars with `Undo` callbacks for immediate reversible actions.
 
 ### E. Git & Commits Policy
-- **No Unprompted Commits**: NEVER run `git commit` or commit changes unless the user **explicitly asks/commands** you to do so in the prompt. Always leave modified files uncommitted in the working tree for the user to review.
+1. **Trunk-Based Workflow**:
+   - Always branch directly from `main` (`feat/*`, `fix/*`, `refactor/*`, `docs/*`).
+   - Keep feature branches short-lived (< 1–2 days) and focused on a single capability.
+   - Merge into `main` via GitHub PR using **Squash and Merge**.
+   - Delete feature branches immediately after merging.
+2. **No Unprompted Commits**: NEVER run `git commit` or commit changes unless the user **explicitly asks/commands** you to do so in the prompt. Always leave modified files uncommitted in the working tree for the user to review.
 
 ---
 
