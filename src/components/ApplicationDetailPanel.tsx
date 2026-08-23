@@ -304,6 +304,9 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={app ? `Application Details - ${app.company}` : 'Application Details'}
       className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 md:p-6 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200 overflow-y-auto"
       onClick={handleRequestClose}
     >

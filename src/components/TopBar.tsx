@@ -86,21 +86,53 @@ export const TopBar: React.FC<TopBarProps> = ({
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Focus search bar on Cmd+K or Ctrl+K or /
+      // Focus search bar on Cmd+K or Ctrl+K (only when not inside an editable element)
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        const activeEl = document.activeElement as HTMLElement | null;
+        const isEditable =
+          activeEl?.tagName === 'INPUT' ||
+          activeEl?.tagName === 'TEXTAREA' ||
+          activeEl?.isContentEditable ||
+          activeEl?.getAttribute('contenteditable') === 'true' ||
+          activeEl?.closest('[contenteditable="true"]') !== null;
+
+        if (!isEditable) {
+          e.preventDefault();
+          searchInputRef.current?.focus();
+        }
+        return;
+      }
+
+      // Check if user is typing in any editable element (input, textarea, or contentEditable)
+      const activeEl = document.activeElement as HTMLElement | null;
+      const isEditable =
+        activeEl?.tagName === 'INPUT' ||
+        activeEl?.tagName === 'TEXTAREA' ||
+        activeEl?.isContentEditable ||
+        activeEl?.getAttribute('contenteditable') === 'true' ||
+        activeEl?.closest('[contenteditable="true"]') !== null;
+
+      // Check if any modal or dialog is currently open in the application
+      const hasOpenModal =
+        document.querySelector('[role="dialog"]') !== null ||
+        document.querySelector('.fixed.inset-0.z-50') !== null ||
+        document.querySelector('[aria-modal="true"]') !== null;
+
+      if (isEditable || hasOpenModal) {
+        return;
+      }
+
+      if (e.key === '/') {
         e.preventDefault();
         searchInputRef.current?.focus();
       } else if (
-        (e.key === '/' || e.key.toLowerCase() === 'n') &&
-        document.activeElement?.tagName !== 'INPUT' &&
-        document.activeElement?.tagName !== 'TEXTAREA'
+        e.key.toLowerCase() === 'n' &&
+        !e.metaKey &&
+        !e.ctrlKey &&
+        !e.altKey
       ) {
         e.preventDefault();
-        if (e.key.toLowerCase() === 'n') {
-          onOpenAddModal();
-        } else {
-          searchInputRef.current?.focus();
-        }
+        onOpenAddModal();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
