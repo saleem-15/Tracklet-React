@@ -8,6 +8,12 @@ export interface LinkifiedTextProps {
   linkClassName?: string;
   showIcon?: boolean;
   stopClickPropagation?: boolean;
+  /**
+   * When true, links are styled normally but do NOT open on plain click —
+   * only Ctrl/Cmd+Click opens them in a new tab. Plain clicks fall through
+   * (e.g., to open the surrounding card).
+   */
+  requireCtrlClick?: boolean;
 }
 
 /**
@@ -20,6 +26,7 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({
   linkClassName = '',
   showIcon = false,
   stopClickPropagation = true,
+  requireCtrlClick = false,
 }) => {
   if (!text) return null;
 
@@ -35,12 +42,24 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({
               href={token.url}
               target="_blank"
               rel="noopener noreferrer"
+              draggable={false}
               onClick={(e) => {
-                if (stopClickPropagation) {
-                  e.stopPropagation();
+                const opensNow =
+                  !requireCtrlClick || e.ctrlKey || e.metaKey;
+                if (!opensNow) {
+                  // Stay on the page; let the event bubble to the host surface
+                  e.preventDefault();
+                  if (stopClickPropagation) e.stopPropagation();
+                  return;
                 }
+                // Default action opens target="_blank"; suppress host handling
+                if (stopClickPropagation) e.stopPropagation();
               }}
-              title={token.url}
+              title={
+                requireCtrlClick
+                  ? `${token.url} (Ctrl+Click to open)`
+                  : token.url
+              }
               className={`text-blue-600 hover:text-blue-700 underline underline-offset-2 font-medium transition-colors break-all inline-flex items-center gap-0.5 cursor-pointer ${linkClassName}`}
             >
               <span>{token.label || token.value}</span>
