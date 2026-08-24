@@ -1,0 +1,73 @@
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import { createRoot, type Root } from 'react-dom/client';
+import { act } from 'react';
+import { RichTextEditor } from '../../src/components/editor/RichTextEditor';
+import { NOTE_TEMPLATES } from '../../src/lib/noteTemplates';
+import { compareCanonical } from '../../src/lib/richTextMarkdownUtils';
+
+let host: HTMLDivElement | null = null;
+let root: Root | null = null;
+
+function mount(props: Partial<React.ComponentProps<typeof RichTextEditor>>) {
+  host = document.createElement('div');
+  document.body.appendChild(host);
+  root = createRoot(host);
+  const onChange = props.onChange ?? vi.fn();
+  const value = props.value ?? '';
+  act(() => {
+    root!.render(
+      <RichTextEditor value={value} onChange={onChange} {...props} />
+    );
+  });
+  return { getHtml: () => host!.innerHTML };
+}
+
+afterEach(() => {
+  act(() => root?.unmount());
+  host?.remove();
+  host = null;
+  root = null;
+});
+
+describe('RichTextEditor mount (contracts §1)', () => {
+  it('renders an editable surface with placeholder when empty', () => {
+    const { getHtml } = mount({ value: '' });
+    expect(getHtml()).toContain('role="textbox"');
+    expect(getHtml()).toContain('Start writing');
+  });
+
+  it('shows starter template pills only while empty', () => {
+    const empty = mount({ value: '', templates: NOTE_TEMPLATES });
+    expect(empty.getHtml()).toContain('Recruiter Screen');
+
+    const filled = mount({ value: '## Existing notes', templates: NOTE_TEMPLATES });
+    expect(filled.getHtml()).not.toContain('Recruiter Screen');
+  });
+
+  it('replaces DOM for external value changes (template insert path)', () => {
+    const { getHtml } = mount({ value: '' });
+    // Simulate host persisting a template skeleton -> new value prop
+    act(() => {
+      root!.render(
+        <RichTextEditor
+          value={NOTE_TEMPLATES[0].skeleton}
+          onChange={vi.fn()}
+          templates={NOTE_TEMPLATES}
+        />
+      );
+    });
+    expect(getHtml()).toContain('Role Info');
+    expect(getHtml()).toContain('data-task="true"');
+  });
+
+  it('treats canonical equivalents as equal (no-op sync contract G1)', () => {
+    expect(compareCanonical('# T\n\n\n\nBody', '# T\n\nBody')).toBe(true);
+    expect(compareCanonical('- a\n- b', '## different')).toBe(false);
+  });
+
+  it('exposes multiline textbox semantics', () => {
+    const { getHtml } = mount({ ariaLabel: 'Application Notes' });
+    expect(getHtml()).toContain('aria-label="Application Notes"');
+    expect(getHtml()).toContain('aria-multiline="true"');
+  });
+});
