@@ -44,6 +44,10 @@ export interface SlashMenuState {
 export interface LinkDialogState {
   open: boolean;
   url: string;
+  /** True when invoked on an existing link (offers Update/Remove). */
+  editingExisting: boolean;
+  /** Viewport anchor for the floating popover. */
+  rect: { anchorTop: number; anchorBottom: number; left: number } | null;
 }
 
 const EMPTY_SLASH: SlashMenuState = {
@@ -75,6 +79,8 @@ export function useRichTextEditor({ value, onChange }: UseRichTextEditorOptions)
   const [linkDialog, setLinkDialog] = useState<LinkDialogState>({
     open: false,
     url: '',
+    editingExisting: false,
+    rect: null,
   });
 
   /* ---------------- value sync (caret-safe) ---------------- */
@@ -260,12 +266,32 @@ export function useRichTextEditor({ value, onChange }: UseRichTextEditorOptions)
   function openLinkDialog() {
     const el = editorRef.current;
     if (!el) return;
-    el.focus();
+
     const sel = window.getSelection();
     linkedAnchorRef.current = null;
     let prefilled = 'https://';
+
+    // Anchor rect captured BEFORE focus moves, so the popover can attach
+    // to the selection/caret that requested it.
+    let rect: { anchorTop: number; anchorBottom: number; left: number } | null = null;
     if (sel && sel.rangeCount > 0) {
-      savedRangeRef.current = sel.getRangeAt(0).cloneRange();
+      const liveRange = sel.getRangeAt(0);
+      savedRangeRef.current = liveRange.cloneRange();
+
+      const rects = liveRange.getClientRects();
+      const r =
+        rects[rects.length - 1] ??
+        (liveRange.getBoundingClientRect() as DOMRect | undefined);
+      if (!r || (r.top === 0 && r.left === 0 && r.height === 0)) {
+        const info = getCaretLineInfo();
+        const fb = (info.block ?? el).getBoundingClientRect();
+        rect = { anchorTop: fb.top, anchorBottom: fb.bottom, left: fb.left };
+      } else {
+        rect = { anchorTop: r.top, anchorBottom: r.bottom, left: r.left };
+      }
+
+      el.focus();
+
       const node =
         sel.anchorNode?.nodeType === Node.ELEMENT_NODE
           ? (sel.anchorNode as HTMLElement)
@@ -275,12 +301,25 @@ export function useRichTextEditor({ value, onChange }: UseRichTextEditorOptions)
         linkedAnchorRef.current = anchor as HTMLAnchorElement;
         prefilled = anchor.getAttribute('href') || prefilled;
       }
+    } else {
+      el.focus();
     }
-    setLinkDialog({ open: true, url: prefilled });
+
+    setLinkDialog({
+      open: true,
+      url: prefilled,
+      editingExisting: linkedAnchorRef.current !== null,
+      rect:
+        rect ??
+        (() => {
+          const fb = el.getBoundingClientRect();
+          return { anchorTop: fb.top, anchorBottom: fb.bottom, left: fb.left };
+        })(),
+    });
   }
 
   const closeLinkDialog = useCallback(() => {
-    setLinkDialog({ open: false, url: '' });
+    setLinkDialog({ open: false, url: '', editingExisting: false, rect: null });
     savedRangeRef.current = null;
     linkedAnchorRef.current = null;
   }, []);

@@ -110,15 +110,23 @@ function applySelection(range: Range): void {
 /** Places the caret at a character offset within container. */
 export function placeCaretAtOffset(container: HTMLElement, offset: number): void {
   const point = locateCharOffset(container, Math.max(0, offset));
-  if (!point) return;
-  const range = document.createRange();
-  try {
-    range.setStart(point.node, Math.max(0, Math.min(point.offset, point.node.length)));
-    range.collapse(true);
-    applySelection(range);
-  } catch {
-    /* ignore */
+  if (point) {
+    const range = document.createRange();
+    try {
+      range.setStart(point.node, Math.max(0, Math.min(point.offset, point.node.length)));
+      range.collapse(true);
+      applySelection(range);
+      return;
+    } catch {
+      /* fall through to container fallback */
+    }
   }
+  // No text nodes (e.g., <br>-only or empty block): park the caret at
+  // the start of the container itself.
+  const fallback = document.createRange();
+  fallback.selectNodeContents(container);
+  fallback.collapse(true);
+  applySelection(fallback);
 }
 
 export function placeCaretAtStart(el: HTMLElement): void {
