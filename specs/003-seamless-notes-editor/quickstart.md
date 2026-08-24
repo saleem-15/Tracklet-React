@@ -1,0 +1,88 @@
+# Quickstart: Seamless Notes Editor Validation
+
+**Feature**: 003-seamless-notes-editor | **Date**: 2026-08-24
+Proves the spec's success criteria end-to-end. Implementation details live in [plan.md](./plan.md) and [contracts/editor-contracts.md](./contracts/editor-contracts.md).
+
+## Prerequisites
+
+- Node + dependencies installed (`npm install`)
+- `.env` Firebase credentials configured (existing app behavior)
+- Baseline: `npm run lint` and `npm test` pass before manual scenarios
+
+## Automated checks
+
+```powershell
+npm run lint        # tsc --noEmit gate
+npm test            # Vitest unit suite, includes:
+                    #  - round-trip idempotency cases (SC-002)
+                    #  - checkbox/quote parse+serialize both directions (FR-010/011)
+                    #  - draft lifecycle & stale guard (FR-016–FR-019)
+                    #  - template skeleton validity (FR-012)
+```
+
+## Manual validation scenarios
+
+### S1 — Uninterrupted typing through auto-save (SC-001, SC-009)
+
+1. `npm run dev` → open an application with existing notes.
+2. Click into notes; type continuously for >60 s without pausing past the 3 s debounce.
+3. **Expect**: "Saving…" appears mid-typing at least once; caret never moves on its own; no scroll jump; no flicker of content.
+4. Pause typing → **Expect**: status flows Saving… → Saved → fades to idle.
+5. Type a long paste (~8–10K chars) then keep typing → keystrokes feel instant.
+
+### S2 — Zero drift on reopen (SC-002)
+
+1. Note exact rendered layout/spacing after S1; close panel.
+2. Reopen the same application.
+3. **Expect**: identical content & spacing; Firestore `notes` value byte-stable across repeated open/close cycles (verify via console/network if desired).
+
+### S3 — Slash menu (FR-006/007, SC-003)
+
+1. On empty line type `/` → menu opens near caret listing ≥: Heading 1/2/3, Bullet, Numbered, To-do, Quote, Code block, Link.
+2. Type `he` → list filters to headings. ↑/↓ navigate; Enter applies → line becomes that heading.
+3. Esc dismisses. Type `/x` then Backspace to empty query → menu closes leaving `/`.
+4. Type `/` then Space immediately → literal "/ " stays in text.
+5. Mid-word "/" does **not** open the menu.
+
+### S4 — Selection bubble (FR-008, FR-023)
+
+1. Select a word → bubble appears above selection with all registry actions.
+2. Apply Bold via bubble → text bolds in place, bubble dismisses.
+3. Select text inside an existing link → invoke Link → dialog pre-fills URL; Remove unlinks cleanly.
+
+### S5 — Checklists (FR-010, FR-021, SC-004)
+
+1. Via slash menu insert To-do; add three items; check one by clicking its box.
+2. Close panel → reopen → **Expect**: checked state persisted.
+3. Focus a checkbox with keyboard → Space toggles it.
+4. Press Enter at end of a checked item → new unchecked item appears beneath.
+5. Export CSV/JSON → task syntax present as plain `- [ ]` / `- [x]`.
+
+### S6 — Quotes/callouts (FR-011)
+
+1. Type `> Red flag: recruiter ghosted` → renders as accent-bordered callout in editor.
+2. Confirm read-only renderer path (unit-covered) matches styling source.
+
+### S7 — Templates (FR-012, SC-005)
+
+1. Open application with empty notes → three pills visible (📋 💻 💰).
+2. Click Recruiter Screen → structured skeleton fills note; pills vanish; autosave persists it.
+3. Undo (Ctrl+Z) returns to empty state. Any direct typing also dismisses pills.
+
+### S8 — Crash recovery (FR-016–019, SC-008)
+
+1. Type text and, within the 3 s debounce window, kill the tab (`Ctrl+W`) or simulate crash.
+2. Reopen app → same record → **Expect**: inline chip "Restored unsaved draft"; text recovered (<1 s).
+3. Dismiss chip. Repeat crash but wait for "Saved" first → reopen → **no** chip (draft cleared).
+4. Stale guard: with DevTools, hand-set localStorage draft `savedAt` older than doc update → reopen → durable version wins silently.
+
+### S9 — Parity & regression (SC-007, FR-001/009)
+
+1. Add Application modal → notes area supports slash menu, bubble, checkboxes, shortcuts identically to detail panel.
+2. Detail panel shows **no toolbar** anywhere.
+3. Ctrl+B / Ctrl+I / Ctrl+K (link) / Ctrl+Shift+K (code), smart URL paste, Ctrl+Click links all still work.
+4. Global "/" still focuses top-bar search when focus is outside editor/modals.
+
+## Pass criteria
+
+All automated suites green + S1–S9 expectations observed. Record deviations as tasks/issues referencing the failing scenario ID.
