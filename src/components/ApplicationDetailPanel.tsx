@@ -12,6 +12,7 @@ import { StatusHistoryTimeline } from './detail/StatusHistoryTimeline';
 import { UnsavedChangesPrompt } from './detail/UnsavedChangesPrompt';
 import { ApplicationNotesSection } from './detail/ApplicationNotesSection';
 import { ApplicationQuickLinks } from './detail/ApplicationQuickLinks';
+import { resolveDraftOnOpen, clearNoteDraft } from '../lib/noteDrafts';
 
 export interface ApplicationDetailPanelProps {
   app: Application | null;
@@ -41,6 +42,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
   const [showSavedToast, setShowSavedToast] = useState(false);
   const [isEditingInfo, setIsEditingInfo] = useState(false);
   const [showUnsavedPrompt, setShowUnsavedPrompt] = useState(false);
+  const [draftNoticeVisible, setDraftNoticeVisible] = useState(false);
 
   // Refs for tracking debounced auto-save state and flush on close
   const saveTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -49,19 +51,33 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
   const appIdRef = React.useRef<string | undefined>(app?.id);
   appIdRef.current = app?.id;
 
+  // Resync editor state ONLY when the target record changes (FR-003) —
+  // never as a side-effect of our own saves echoing back through app.notes.
   useEffect(() => {
     if (!app) return;
     if (saveTimerRef.current) {
       clearTimeout(saveTimerRef.current);
       saveTimerRef.current = null;
     }
-    setNotes(app.notes || '');
-    latestNotesRef.current = app.notes || '';
+
+    // Crash-recovery decision (FR-018/019): restore fresher device drafts
+    const resolution = resolveDraftOnOpen(app.id, app.notes || '', app.updatedAt);
+    let initialNotes = app.notes || '';
+    let restored = false;
+    if ('restore' in resolution && resolution.restore) {
+      initialNotes = resolution.restore.markdown;
+      restored = true;
+    }
+    setDraftNoticeVisible(restored);
+
+    setNotes(initialNotes);
+    latestNotesRef.current = initialNotes;
     lastSavedNotesRef.current = app.notes || '';
-    setHasUnsavedNotes(false);
-    setSaveStatus('idle');
+    const dirtyOnLoad = initialNotes !== lastSavedNotesRef.current;
+    setHasUnsavedNotes(dirtyOnLoad);
+    setSaveStatus(dirtyOnLoad ? 'unsaved' : 'idle');
     setIsEditingInfo(false);
-  }, [app?.id, app?.notes]);
+  }, [app?.id]);
 
   // Clean up timer on unmount
   useEffect(() => {
@@ -94,6 +110,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
         lastSavedNotesRef.current = notesToSave;
         setHasUnsavedNotes(false);
         setSaveStatus('saved');
+        clearNoteDraft(currentAppId);
         setShowSavedToast(true);
         setTimeout(() => setShowSavedToast(false), 2500);
         setTimeout(() => {
@@ -157,10 +174,15 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
       saveTimerRef.current = null;
     }
     if (latestNotesRef.current !== lastSavedNotesRef.current && app?.id) {
-      onUpdateApp(app.id, {
+      const flushingAppId = app.id;
+      onUpdateApp(flushingAppId, {
         notes: latestNotesRef.current.trim(),
         updatedAt: new Date().toISOString(),
-      });
+      })
+        .then(() => clearNoteDraft(flushingAppId))
+        .catch(() => {
+          // Keep the draft on failure so the next open can recover it
+        });
       lastSavedNotesRef.current = latestNotesRef.current;
     }
 
@@ -361,6 +383,12 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
                 notes={notes}
                 onNotesChange={handleNotesChange}
                 saveStatus={saveStatus}
+                appId={app.id}
+                draftNoticeVisible={draftNoticeVisible}
+                onDismissDraftNotice={() => {
+                  clearNoteDraft(app.id);
+                  setDraftNoticeVisible(false);
+                }}
               />
             </div>
 

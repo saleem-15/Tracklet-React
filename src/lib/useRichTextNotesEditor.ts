@@ -9,15 +9,18 @@ export interface UseRichTextNotesEditorOptions {
   onNotesChange: (val: string) => void;
 }
 
+export type HeadingLevel = 'h2' | 'h3' | 'h4';
+
 /**
  * Custom React hook powering the unified live-rendered WYSIWYG Markdown editor.
  * Features:
  * - Direct in-place editing in contentEditable surface (rendered typography, zero raw syntax).
  * - Caret stability: avoids resetting innerHTML while user is actively typing.
- * - Toolbar actions (Bold, Italic, Heading, Bullet List, Numbered List, Link, Code Block).
+ * - Toolbar actions (Bold, Italic, Headings H1/H2/H3, Bullet List, Numbered List, Link, Code Block).
  * - Keyboard shortcuts (Ctrl+B, Ctrl+I, Ctrl+K, Ctrl+Shift+K).
  * - Smart URL paste: pasting a URL over highlighted text converts it into a link.
  * - Markdown triggers: typing `# `, `## `, `### `, `- `, `* `, `1. ` at start of line auto-morphs into styled block.
+ * - Natural bold/italic escaping via ArrowRight and clean new paragraph creation on Enter.
  * - Ctrl+Click on links inside the editor opens them in a new tab.
  */
 export function useRichTextNotesEditor({
@@ -51,6 +54,23 @@ export function useRichTextNotesEditor({
     }
   }, [notes]);
 
+  // Helper to ensure editor is focused and has a valid selection range
+  const ensureEditorSelection = useCallback(() => {
+    const el = editorRef.current;
+    if (!el) return false;
+
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0 || !el.contains(sel.anchorNode)) {
+      el.focus();
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      range.collapse(false);
+      sel?.removeAllRanges();
+      sel?.addRange(range);
+    }
+    return true;
+  }, []);
+
   // Triggered whenever the DOM content changes inside contentEditable
   const handleInput = useCallback(() => {
     const el = editorRef.current;
@@ -63,25 +83,22 @@ export function useRichTextNotesEditor({
 
   // Toolbar action: Bold
   const formatBold = useCallback(() => {
-    if (!editorRef.current) return;
-    editorRef.current.focus();
+    if (!ensureEditorSelection()) return;
     document.execCommand('bold', false);
     handleInput();
-  }, [handleInput]);
+  }, [ensureEditorSelection, handleInput]);
 
   // Toolbar action: Italic
   const formatItalic = useCallback(() => {
-    if (!editorRef.current) return;
-    editorRef.current.focus();
+    if (!ensureEditorSelection()) return;
     document.execCommand('italic', false);
     handleInput();
-  }, [handleInput]);
+  }, [ensureEditorSelection, handleInput]);
 
-  // Toolbar action: Heading
-  const formatHeading = useCallback((level: 'h3' | 'h4' = 'h3') => {
-    if (!editorRef.current) return;
-    editorRef.current.focus();
-    // Toggle heading or paragraph
+  // Toolbar action: Heading (H1/H2/H3)
+  const formatHeading = useCallback((level: HeadingLevel = 'h2') => {
+    if (!ensureEditorSelection()) return;
+
     const selection = window.getSelection();
     let currentTag = '';
     if (selection && selection.anchorNode) {
@@ -92,34 +109,31 @@ export function useRichTextNotesEditor({
       currentTag = parentEl?.tagName.toLowerCase() || '';
     }
 
-    if (currentTag === level || currentTag === 'h2' || currentTag === 'h3' || currentTag === 'h4') {
+    if (currentTag === level) {
       document.execCommand('formatBlock', false, '<p>');
     } else {
       document.execCommand('formatBlock', false, `<${level}>`);
     }
     handleInput();
-  }, [handleInput]);
+  }, [ensureEditorSelection, handleInput]);
 
   // Toolbar action: Bullet List
   const formatBulletList = useCallback(() => {
-    if (!editorRef.current) return;
-    editorRef.current.focus();
+    if (!ensureEditorSelection()) return;
     document.execCommand('insertUnorderedList', false);
     handleInput();
-  }, [handleInput]);
+  }, [ensureEditorSelection, handleInput]);
 
   // Toolbar action: Numbered List
   const formatNumberedList = useCallback(() => {
-    if (!editorRef.current) return;
-    editorRef.current.focus();
+    if (!ensureEditorSelection()) return;
     document.execCommand('insertOrderedList', false);
     handleInput();
-  }, [handleInput]);
+  }, [ensureEditorSelection, handleInput]);
 
   // Toolbar action: Code Block
   const formatCodeBlock = useCallback(() => {
-    if (!editorRef.current) return;
-    editorRef.current.focus();
+    if (!ensureEditorSelection()) return;
 
     const selection = window.getSelection();
     if (selection && selection.rangeCount > 0) {
@@ -152,17 +166,18 @@ export function useRichTextNotesEditor({
       }
       handleInput();
     }
-  }, [handleInput]);
+  }, [ensureEditorSelection, handleInput]);
 
   // Link dialog openers and submitters
   const openLinkDialog = useCallback(() => {
+    ensureEditorSelection();
     const selection = window.getSelection();
     if (selection && selection.rangeCount > 0) {
       savedSelectionRangeRef.current = selection.getRangeAt(0).cloneRange();
     }
     setLinkUrlInput('https://');
     setIsLinkModalOpen(true);
-  }, []);
+  }, [ensureEditorSelection]);
 
   const closeLinkDialog = useCallback(() => {
     setIsLinkModalOpen(false);
@@ -259,7 +274,64 @@ export function useRichTextNotesEditor({
         return;
       }
 
-      // Markdown shorthand triggers on Space (# -> H3, - / * -> Bullet List, 1. -> Numbered List)
+      // Enter key handler inside headings to cleanly break into a normal paragraph
+      if (e.key === 'Enter' && !e.shiftKey && !isCmdOrCtrl) {
+        const selection = window.getSelection();
+        if (selection && selection.isCollapsed && selection.rangeCount > 0) {
+          const anchor = selection.anchorNode;
+          const headingParent = anchor?.nodeType === Node.ELEMENT_NODE
+            ? (anchor as HTMLElement).closest('h1, h2, h3, h4, h5, h6')
+            : anchor?.parentElement?.closest('h1, h2, h3, h4, h5, h6');
+
+          if (headingParent && editorRef.current?.contains(headingParent)) {
+            e.preventDefault();
+            const p = document.createElement('p');
+            p.className = 'text-slate-800 text-xs leading-relaxed my-1';
+            p.innerHTML = '<br>';
+            headingParent.insertAdjacentElement('afterend', p);
+
+            const range = document.createRange();
+            range.setStart(p, 0);
+            range.collapse(true);
+            selection.removeAllRanges();
+            selection.addRange(range);
+            handleInput();
+            return;
+          }
+        }
+      }
+
+      // ArrowRight escape from inline formatting (strong, em, code)
+      if (e.key === 'ArrowRight' && !e.shiftKey && !isCmdOrCtrl) {
+        const selection = window.getSelection();
+        if (selection && selection.isCollapsed && selection.rangeCount > 0) {
+          const node = selection.anchorNode;
+          const formatEl = node?.parentElement?.closest('strong, b, em, i, code, a');
+          if (formatEl && editorRef.current?.contains(formatEl)) {
+            const range = selection.getRangeAt(0);
+            const endRange = document.createRange();
+            endRange.selectNodeContents(formatEl);
+            endRange.collapse(false);
+
+            if (range.compareBoundaryPoints(Range.END_TO_END, endRange) === 0) {
+              e.preventDefault();
+              let nextNode = formatEl.nextSibling;
+              if (!nextNode || nextNode.nodeType !== Node.TEXT_NODE) {
+                nextNode = document.createTextNode('\u200B');
+                formatEl.parentNode?.insertBefore(nextNode, formatEl.nextSibling);
+              }
+              const newRange = document.createRange();
+              newRange.setStart(nextNode, nextNode.nodeValue ? 1 : 0);
+              newRange.collapse(true);
+              selection.removeAllRanges();
+              selection.addRange(newRange);
+              return;
+            }
+          }
+        }
+      }
+
+      // Markdown shorthand triggers on Space (# -> H1, ## -> H2, ### -> H3, - / * -> Bullet List, 1. -> Numbered List)
       if (e.key === ' ') {
         const selection = window.getSelection();
         if (selection && selection.isCollapsed && selection.anchorNode) {
@@ -269,10 +341,26 @@ export function useRichTextNotesEditor({
             const offset = selection.anchorOffset;
             const textBeforeCaret = textContent.slice(0, offset);
 
-            if (textBeforeCaret === '###' || textBeforeCaret === '##' || textBeforeCaret === '#') {
+            if (textBeforeCaret === '#') {
+              e.preventDefault();
+              textNode.nodeValue = textContent.slice(offset);
+              document.execCommand('formatBlock', false, '<h2>');
+              handleInput();
+              return;
+            }
+
+            if (textBeforeCaret === '##') {
               e.preventDefault();
               textNode.nodeValue = textContent.slice(offset);
               document.execCommand('formatBlock', false, '<h3>');
+              handleInput();
+              return;
+            }
+
+            if (textBeforeCaret === '###') {
+              e.preventDefault();
+              textNode.nodeValue = textContent.slice(offset);
+              document.execCommand('formatBlock', false, '<h4>');
               handleInput();
               return;
             }
