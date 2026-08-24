@@ -83,6 +83,24 @@ npm test            # Vitest unit suite, includes:
 3. Ctrl+B / Ctrl+I / Ctrl+K (link) / Ctrl+Shift+K (code), smart URL paste, Ctrl+Click links all still work.
 4. Global "/" still focuses top-bar search when focus is outside editor/modals.
 
+### S10 — Slash-command matrix (post-refactor regression, deterministic transforms)
+
+For each command **h1, h2, h3, bullet, numbered, todo, quote, code**, apply it in all four contexts and verify:
+
+| Context | Expectation |
+|---|---|
+| Fresh empty line (just pressed Enter) | Command applies; caret stays on that line; typing continues inside the new block |
+| Continuation line (2nd line of a soft-wrapped paragraph) | Only that line is transformed; the preceding line is untouched; no merge |
+| Non-empty line with text | Text is preserved inside the new block format |
+| Inside an existing list/quote | Transformation applies relative to that item/quote; sibling items survive |
+
+Plus:
+- Applying the same block command twice toggles back to a paragraph (headings, quote, lists).
+- Bullet applied directly under a bullet list merges into it (never nests two `<ul>`s).
+- To-do on a line containing inline bold/link keeps the formatting.
+- Undo after each transform returns the previous state or at minimum never corrupts content.
+- Auto-save firing mid-menu never resets the menu or caret.
+
 ## Pass criteria
 
 All automated suites green + S1–S9 expectations observed. Record deviations as tasks/issues referencing the failing scenario ID.

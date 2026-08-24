@@ -1,4 +1,4 @@
-# Tasks: Seamless Notes Editor
+﻿# Tasks: Seamless Notes Editor
 
 **Input**: Design documents from `/specs/003-seamless-notes-editor/`
 
@@ -240,3 +240,14 @@ Task T009 "failing draft-store tests"          # then T010
 | US5 | 2 | T028–T029 |
 | Polish | 4 | T030–T033 |
 | **Total** | **33** | |
+
+---
+
+## Phase 9: Editor Correctness Refactor (post-implement, stakeholder-reported bugs)
+
+**Purpose**: Eliminate caret jumps and dead slash commands; styling consistency pass.
+
+- [x] T034 [P] Add editorDom.ts helpers (nested block detection, char-offset ranges, caret snapshot/restore, list split) with unit suite in tests/unit/editorDom.test.ts
+- [x] T035 Replace execCommand block transforms with deterministic transformBlockAtCaret engine in src/components/editor/editorActions.tsx (list split/merge, quote unwrap toggle, styleWithCSS guard)
+- [x] T036 Harden src/lib/useRichTextEditor.ts: offset-correct atomic strip+settle (lastIndexOf newline fix), caret-preserving full-replace sync, Enter-exit-empty-list, multi-line paste normalization, slash-menu rect fallback
+- [x] T037 Single-source BLOCK_STYLES in src/lib/richTextMarkdownUtils.ts (card-tuned heading scale, uniform list gutters, spacer-driven rhythm) + transform regression tests in tests/unit/editorTransforms.test.tsx + quickstart S10 matrix

@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import {
   Bold,
   Italic,
@@ -12,7 +12,19 @@ import {
   Code2,
   Link2,
 } from 'lucide-react';
-import { isInsideCodeFence } from '../../lib/richTextMarkdownUtils';
+import {
+  BLOCK_STYLES,
+  isInsideCodeFence,
+} from '../../lib/richTextMarkdownUtils';
+import {
+  findCaretBlock,
+  selectionInside,
+  focusEditor,
+  placeCaretAtEnd,
+  isEmptyBlock,
+  ensurePlaceable,
+  prepareListExtraction,
+} from '../../lib/editorDom';
 
 export type EditorActionId =
   | 'bold'
@@ -49,77 +61,157 @@ export interface FormattingAction {
 }
 
 /* ------------------------------------------------------------------ */
-/* DOM helpers                                                         */
+/* Deterministic block transformation engine                           */
 /* ------------------------------------------------------------------ */
 
-export function ensureSelection(editor: HTMLElement): Selection | null {
-  const sel = window.getSelection();
-  if (!sel) return null;
-  if (sel.rangeCount === 0 || !editor.contains(sel.anchorNode)) {
-    editor.focus();
-    const range = document.createRange();
-    range.selectNodeContents(editor);
-    range.collapse(false);
-    sel.removeAllRanges();
-    sel.addRange(range);
+/** Forces semantic tags (<b>/<i>) instead of inline CSS spans. */
+function forceSemanticFormatting(): void {
+  try {
+    document.execCommand('styleWithCSS', false, 'false');
+  } catch {
+    /* unsupported â€” Chromium default is already off */
   }
-  return sel;
 }
 
-function currentBlockTag(editor: HTMLElement): string {
-  const sel = window.getSelection();
-  if (!sel || !sel.anchorNode) return '';
-  const node =
-    sel.anchorNode.nodeType === Node.ELEMENT_NODE
-      ? (sel.anchorNode as HTMLElement)
-      : sel.anchorNode.parentElement;
-  if (!node || !editor.contains(node)) return '';
-  let cur: HTMLElement | null = node;
-  while (cur && cur !== editor) {
-    const t = cur.tagName.toLowerCase();
-    if (['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'li', 'blockquote'].includes(t)) {
-      return t;
-    }
-    cur = cur.parentElement;
-  }
-  return '';
+function makeElement(tag: string, className?: string): HTMLElement {
+  const el = document.createElement(tag);
+  if (className) el.className = className;
+  return el;
 }
 
-function formatBlockToggle(
+/** Moves children of source into target (in order) and removes source. */
+function absorb(source: HTMLElement, target: HTMLElement): void {
+  while (source.firstChild) target.appendChild(source.firstChild);
+  source.remove();
+}
+
+/**
+ * Replaces `current` with `newEl`, correctly extracting from lists
+ * (splitting trailing siblings into a cloned tail) and coalescing with
+ * adjacent same-type lists. Then places the caret in `caretEl`.
+ */
+function swapBlock(
   editor: HTMLElement,
-  target: string,
-  toggleOffTag?: string
+  current: HTMLElement,
+  newEl: HTMLElement,
+  caretEl: HTMLElement
 ): void {
-  ensureSelection(editor);
-  const current = currentBlockTag(editor);
-  if (toggleOffTag && current === toggleOffTag) {
-    document.execCommand('formatBlock', false, '<p>');
-  } else {
-    document.execCommand('formatBlock', false, `<${target}>`);
-  }
-}
+  const isListItem =
+    current.tagName === 'LI' &&
+    !!current.parentElement &&
+    current.parentElement !== editor;
 
-/** Direct child of the editor that contains the caret (the "line" block). */
-function getCaretBlock(editor: HTMLElement): HTMLElement | null {
-  const sel = window.getSelection();
-  if (!sel || sel.rangeCount === 0) return null;
-  let node: Node | null = sel.getRangeAt(0).startContainer;
-  while (node && editor.contains(node)) {
-    if (node.nodeType === Node.ELEMENT_NODE && (node as HTMLElement).parentElement === editor) {
-      return node as HTMLElement;
+  if (isListItem) {
+    const split = prepareListExtraction(current);
+    split.detach();
+
+    const prev = split.insertAfter.previousElementSibling as HTMLElement | null;
+    if (
+      prev &&
+      prev.tagName === newEl.tagName &&
+      prev.className === newEl.className
+    ) {
+      // Merge into the preceding list of the same kind
+      while (newEl.firstChild) prev.appendChild(newEl.firstChild);
+      newEl.remove();
+      placeCaretAtEnd(caretEl);
+      return;
     }
-    node = node.parentNode;
+    split.insertAfter.insertAdjacentElement('afterend', newEl);
+
+    const next = newEl.nextElementSibling as HTMLElement | null;
+    if (
+      next &&
+      next.tagName === newEl.tagName &&
+      next.className === newEl.className
+    ) {
+      absorb(next, newEl);
+    }
+    placeCaretAtEnd(caretEl);
+    return;
   }
-  return null;
+
+  current.replaceWith(newEl);
+
+  // Coalesce with an adjacent list of the same kind (bullet -> bullet etc.)
+  const prev = newEl.previousElementSibling as HTMLElement | null;
+  if (prev && prev.tagName === newEl.tagName && prev.className === newEl.className) {
+    absorb(newEl, prev);
+    placeCaretAtEnd(caretEl);
+    return;
+  }
+  const next = newEl.nextElementSibling as HTMLElement | null;
+  if (next && next.tagName === newEl.tagName && next.className === newEl.className) {
+    absorb(next, newEl);
+  }
+  placeCaretAtEnd(caretEl);
 }
 
-const TASK_LIST_CLASSES = 'task-list list-none pl-1 space-y-0.5 my-1 text-slate-800 text-xs';
-const TASK_ITEM_CLASSES = 'task-item flex items-start gap-2 py-0.5';
-const CODE_PRE_CLASSES = 'my-2.5 p-3 bg-slate-900 text-slate-100 rounded-xl font-mono text-[11px] leading-relaxed overflow-x-auto border border-slate-800 selection:bg-blue-500/40';
+interface TransformOptions {
+  /** Builds the replacement element; receives inner HTML of current block. */
+  build: (innerHtml: string, current: HTMLElement) => HTMLElement;
+  /** Element inside the replacement that should receive the caret. */
+  caretSelector?: string;
+  /** Resolve a different source element than the caret block (e.g., parent quote). */
+  resolveSource?: (current: HTMLElement, editor: HTMLElement) => HTMLElement | null;
+}
 
-function makeTaskItem(text: string, checked: boolean): HTMLLIElement {
-  const li = document.createElement('li');
-  li.className = TASK_ITEM_CLASSES + (checked ? ' task-checked' : '');
+/**
+ * Deterministic block transformation at the caret: no execCommand, no
+ * browser heuristics â€” identical DOM outcome every time, caret guaranteed
+ * inside the freshly created block.
+ */
+function transformBlockAtCaret(
+  editor: HTMLElement,
+  options: TransformOptions
+): void {
+  const sel = selectionInside(editor);
+  if (!sel) return;
+
+  const current = findCaretBlock(editor, sel.startContainer);
+  if (!current) return;
+
+  const source = options.resolveSource
+    ? options.resolveSource(current, editor)
+    : current;
+  if (!source || !editor.contains(source)) return;
+
+  const newEl = options.build(source.innerHTML, source);
+
+  // Empty content still needs a placeable caret line
+  if (isEmptyBlock(newEl)) ensurePlaceable(newEl);
+
+  const caretHost =
+    (options.caretSelector ? newEl.querySelector(options.caretSelector) : null) ??
+    newEl;
+
+  swapBlock(editor, source, newEl, caretHost as HTMLElement);
+  focusEditor(editor);
+}
+
+/* ------------------------------------------------------------------ */
+/* Shared builders                                                     */
+/* ------------------------------------------------------------------ */
+
+function paragraphFrom(innerHtml: string): HTMLElement {
+  const p = makeElement('p', BLOCK_STYLES.paragraph);
+  p.innerHTML = innerHtml || '<br>';
+  return p;
+}
+
+function listItemHtmlOf(listTag: 'ul' | 'ol'): HTMLElement {
+  const cls =
+    listTag === 'ul' ? BLOCK_STYLES.bulletList : BLOCK_STYLES.numberedList;
+  const list = makeElement(listTag, `${cls} text-slate-800 text-xs`);
+  const li = makeElement('li', 'leading-relaxed');
+  li.innerHTML = '<br>';
+  list.appendChild(li);
+  return list;
+}
+
+function makeTaskItemEl(innerHtml: string, checked: boolean): HTMLElement {
+  const list = makeElement('ul', `${BLOCK_STYLES.taskList} text-slate-800 text-xs`);
+  const li = makeElement('li', `${BLOCK_STYLES.taskItem}${checked ? ' task-checked' : ''}`);
   li.dataset.task = 'true';
   li.dataset.checked = checked ? 'true' : 'false';
 
@@ -128,96 +220,15 @@ function makeTaskItem(text: string, checked: boolean): HTMLLIElement {
   input.checked = checked;
   input.setAttribute('data-task-checkbox', 'true');
   input.setAttribute('aria-label', 'Toggle task item');
-  input.className = 'mt-0.5 w-3 h-3 accent-blue-600 cursor-pointer shrink-0';
+  input.className = BLOCK_STYLES.checkbox;
 
-  const span = document.createElement('span');
-  span.className = 'flex-1 task-text' + (checked ? ' line-through text-slate-400' : '');
-  span.textContent = text;
+  const span = makeElement('span', 'flex-1 task-text');
+  span.innerHTML = innerHtml || '<br>';
 
   li.appendChild(input);
   li.appendChild(span);
-  return li;
-}
-
-function placeCaretAtEnd(el: HTMLElement): void {
-  const sel = window.getSelection();
-  if (!sel) return;
-  const range = document.createRange();
-  range.selectNodeContents(el);
-  range.collapse(false);
-  sel.removeAllRanges();
-  sel.addRange(range);
-}
-
-function convertLineToTask(editor: HTMLElement): void {
-  const sel = ensureSelection(editor);
-  if (!sel || sel.rangeCount === 0) return;
-
-  // Already a task item? Convert back to a plain paragraph.
-  let node: Node | null = sel.getRangeAt(0).startContainer;
-  while (node && editor.contains(node)) {
-    if (node.nodeType === Node.ELEMENT_NODE) {
-      const el = node as HTMLElement;
-      if (el.dataset?.task === 'true') {
-        const p = document.createElement('p');
-        p.className = 'text-slate-800 text-xs leading-relaxed my-1';
-        p.textContent = el.querySelector('.task-text')?.textContent || '';
-        el.parentElement?.parentElement?.replaceChild(
-          p,
-          el.parentElement?.tagName === 'UL' && (el.parentElement as HTMLElement).children.length === 1
-            ? el.parentElement
-            : el
-        );
-        placeCaretAtEnd(p);
-        return;
-      }
-    }
-    node = node.parentNode;
-  }
-
-  // Plain line -> task item
-  let block = getCaretBlock(editor);
-  if (!block) {
-    document.execCommand('formatBlock', false, '<p>');
-    block = getCaretBlock(editor);
-  }
-  if (!block) return;
-
-  const text = block.textContent || '';
-  const li = makeTaskItem(text, false);
-
-  if (block.tagName === 'LI' && block.parentElement) {
-    block.parentElement.replaceChild(li, block);
-  } else {
-    const ul = document.createElement('ul');
-    ul.className = TASK_LIST_CLASSES;
-    ul.appendChild(li);
-    block.replaceWith(ul);
-  }
-  placeCaretAtEnd(li.querySelector('.task-text') as HTMLElement);
-}
-
-function insertCodeBlock(editor: HTMLElement): void {
-  const sel = ensureSelection(editor);
-  if (!sel || sel.rangeCount === 0) return;
-  const range = sel.getRangeAt(0);
-  const selectedText = range.toString();
-
-  const pre = document.createElement('pre');
-  pre.className = CODE_PRE_CLASSES;
-  const code = document.createElement('code');
-  code.textContent = selectedText || '// Code snippet here';
-  pre.appendChild(code);
-
-  if (selectedText) {
-    range.deleteContents();
-    range.insertNode(pre);
-  } else {
-    const p = document.createElement('p');
-    p.innerHTML = '<br>';
-    range.insertNode(p);
-    range.insertNode(pre);
-  }
+  list.appendChild(li);
+  return list;
 }
 
 /* ------------------------------------------------------------------ */
@@ -234,7 +245,8 @@ export const EDITOR_ACTIONS: readonly FormattingAction[] = [
     scope: 'inline',
     appliesTo: () => true,
     apply: ({ editor }) => {
-      ensureSelection(editor);
+      focusEditor(editor);
+      forceSemanticFormatting();
       document.execCommand('bold', false);
     },
   },
@@ -247,7 +259,8 @@ export const EDITOR_ACTIONS: readonly FormattingAction[] = [
     scope: 'inline',
     appliesTo: () => true,
     apply: ({ editor }) => {
-      ensureSelection(editor);
+      focusEditor(editor);
+      forceSemanticFormatting();
       document.execCommand('italic', false);
     },
   },
@@ -258,7 +271,17 @@ export const EDITOR_ACTIONS: readonly FormattingAction[] = [
     keywords: ['title', 'header', '#'],
     scope: 'block',
     appliesTo: () => true,
-    apply: ({ editor }) => formatBlockToggle(editor, 'h2', 'h2'),
+    apply: ({ editor }) =>
+      transformBlockAtCaret(editor, {
+        build: (html, current) =>
+          current.tagName === 'H2'
+            ? paragraphFrom(html)
+            : (() => {
+                const h = makeElement('h2', BLOCK_STYLES.h1);
+                h.innerHTML = html || '<br>';
+                return h;
+              })(),
+      }),
   },
   {
     id: 'h2',
@@ -267,7 +290,17 @@ export const EDITOR_ACTIONS: readonly FormattingAction[] = [
     keywords: ['subtitle', 'section', '##'],
     scope: 'block',
     appliesTo: () => true,
-    apply: ({ editor }) => formatBlockToggle(editor, 'h3', 'h3'),
+    apply: ({ editor }) =>
+      transformBlockAtCaret(editor, {
+        build: (html, current) =>
+          current.tagName === 'H3'
+            ? paragraphFrom(html)
+            : (() => {
+                const h = makeElement('h3', BLOCK_STYLES.h2);
+                h.innerHTML = html || '<br>';
+                return h;
+              })(),
+      }),
   },
   {
     id: 'h3',
@@ -276,7 +309,17 @@ export const EDITOR_ACTIONS: readonly FormattingAction[] = [
     keywords: ['subheading', '###'],
     scope: 'block',
     appliesTo: () => true,
-    apply: ({ editor }) => formatBlockToggle(editor, 'h4', 'h4'),
+    apply: ({ editor }) =>
+      transformBlockAtCaret(editor, {
+        build: (html, current) =>
+          current.tagName === 'H4'
+            ? paragraphFrom(html)
+            : (() => {
+                const h = makeElement('h4', BLOCK_STYLES.h3);
+                h.innerHTML = html || '<br>';
+                return h;
+              })(),
+      }),
   },
   {
     id: 'bullet',
@@ -285,10 +328,19 @@ export const EDITOR_ACTIONS: readonly FormattingAction[] = [
     keywords: ['unordered', 'ul', '-'],
     scope: 'block',
     appliesTo: () => true,
-    apply: ({ editor }) => {
-      ensureSelection(editor);
-      document.execCommand('insertUnorderedList', false);
-    },
+    apply: ({ editor }) =>
+      transformBlockAtCaret(editor, {
+        build: (html, current) => {
+          const inPlainUl =
+            current.parentElement?.tagName === 'UL' &&
+            !current.parentElement.classList.contains('task-list');
+          if (inPlainUl) return paragraphFrom(html);
+          const list = listItemHtmlOf('ul');
+          (list.firstElementChild as HTMLElement).innerHTML = html || '<br>';
+          return list;
+        },
+        caretSelector: 'li',
+      }),
   },
   {
     id: 'numbered',
@@ -297,38 +349,77 @@ export const EDITOR_ACTIONS: readonly FormattingAction[] = [
     keywords: ['ordered', 'ol', 'steps', '1.'],
     scope: 'block',
     appliesTo: () => true,
-    apply: ({ editor }) => {
-      ensureSelection(editor);
-      document.execCommand('insertOrderedList', false);
-    },
+    apply: ({ editor }) =>
+      transformBlockAtCaret(editor, {
+        build: (html, current) => {
+          if (current.parentElement?.tagName === 'OL') return paragraphFrom(html);
+          const list = listItemHtmlOf('ol');
+          (list.firstElementChild as HTMLElement).innerHTML = html || '<br>';
+          return list;
+        },
+        caretSelector: 'li',
+      }),
   },
   {
     id: 'todo',
     label: 'To-do Item',
     icon: ListTodo,
-    keywords: ['task', 'checkbox', 'checklist', '- []'],
+    keywords: ['task', 'checkbox', 'checklist'],
     scope: 'block',
-    appliesTo: ({ editor }) => !isInsideCodeFence(window.getSelection()?.anchorNode ?? editor),
-    apply: ({ editor }) => convertLineToTask(editor),
+    appliesTo: ({ editor }) =>
+      !isInsideCodeFence(window.getSelection()?.anchorNode ?? editor),
+    apply: ({ editor }) =>
+      transformBlockAtCaret(editor, {
+        build: (html, current) => {
+          if (current.dataset.task === 'true') return paragraphFrom(html);
+          return makeTaskItemEl(html, false);
+        },
+        caretSelector: '.task-text',
+      }),
   },
   {
     id: 'quote',
     label: 'Quote',
     icon: Quote,
-    keywords: ['callout', 'blockquote', '>'],
+    keywords: ['callout', 'blockquote'],
     scope: 'block',
     appliesTo: () => true,
-    apply: ({ editor }) => formatBlockToggle(editor, 'blockquote', 'blockquote'),
+    apply: ({ editor }) =>
+      transformBlockAtCaret(editor, {
+        // Inside a quote (source resolved to it below): unwrap to paragraph.
+        build: (html, source) => {
+          if (source.tagName === 'BLOCKQUOTE') return paragraphFrom(html);
+          const bq = makeElement('blockquote', BLOCK_STYLES.quote);
+          bq.innerHTML = html || '<br>';
+          return bq;
+        },
+        // Toggle OFF: unwrap the WHOLE surrounding quote into one paragraph
+        resolveSource: (current) => current.closest('blockquote'),
+      }),
   },
   {
     id: 'code',
     label: 'Code Block',
     icon: Code2,
-    keywords: ['snippet', 'pre', '```'],
+    keywords: ['snippet', 'pre'],
     shortcut: 'Ctrl+Shift+K',
     scope: 'selection',
-    appliesTo: ({ editor }) => !isInsideCodeFence(window.getSelection()?.anchorNode ?? editor),
-    apply: ({ editor }) => insertCodeBlock(editor),
+    appliesTo: ({ editor }) =>
+      !isInsideCodeFence(window.getSelection()?.anchorNode ?? editor),
+    apply: ({ editor }) => {
+      const sel = window.getSelection();
+      const selectedText = sel ? sel.toString() : '';
+
+      transformBlockAtCaret(editor, {
+        build: (html) => {
+          const pre = makeElement('pre', BLOCK_STYLES.codeBlock);
+          const code = makeElement('code');
+          code.textContent = selectedText || html.replace(/<br\s*\/?>/gi, '\n') || '// Code snippet here';
+          pre.appendChild(code);
+          return pre;
+        },
+      });
+    },
   },
   {
     id: 'link',

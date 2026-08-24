@@ -23,15 +23,15 @@ describe('richTextMarkdownUtils', () => {
       expect(markdownToHtml('   ')).toBe('<p><br></p>');
     });
 
-    it('converts headings correctly with prominent Notion-scale hierarchy', () => {
+    it('converts headings correctly with card-tuned hierarchy', () => {
       const md = '# Title\n## Subtitle\n### Section';
       const html = markdownToHtml(md);
 
-      expect(html).toContain('<h2 class="font-bold text-slate-900 text-lg sm:text-xl');
+      expect(html).toContain('<h2 class="font-bold text-slate-900 text-sm');
       expect(html).toContain('Title');
-      expect(html).toContain('<h3 class="font-bold text-slate-900 text-base');
+      expect(html).toContain('<h3 class="font-bold text-slate-900 text-[13px]');
       expect(html).toContain('Subtitle');
-      expect(html).toContain('<h4 class="font-semibold text-blue-700 text-sm');
+      expect(html).toContain('<h4 class="font-semibold text-blue-700 text-xs');
       expect(html).toContain('Section');
     });
 
@@ -49,12 +49,12 @@ describe('richTextMarkdownUtils', () => {
       const md = '- Bullet 1\n- Bullet 2\n\n1. Step 1\n2. Step 2';
       const html = markdownToHtml(md);
 
-      expect(html).toContain('<ul class="list-disc pl-5');
+      expect(html).toContain('<ul class="list-disc pl-4');
       expect(html).toContain('<li class="leading-relaxed">Bullet 1</li>');
       expect(html).toContain('<li class="leading-relaxed">Bullet 2</li>');
       expect(html).toContain('</ul>');
 
-      expect(html).toContain('<ol class="list-decimal pl-5');
+      expect(html).toContain('<ol class="list-decimal pl-4');
       expect(html).toContain('<li class="leading-relaxed">Step 1</li>');
       expect(html).toContain('<li class="leading-relaxed">Step 2</li>');
       expect(html).toContain('</ol>');
@@ -73,7 +73,7 @@ describe('richTextMarkdownUtils', () => {
       const md = '```\nconst x = 42;\nconsole.log(x);\n```';
       const html = markdownToHtml(md);
 
-      expect(html).toContain('<pre class="my-2.5 p-3 bg-slate-900 text-slate-100');
+      expect(html).toContain('<pre class="my-2 p-3 bg-slate-900 text-slate-100');
       expect(html).toContain('<code>const x = 42;\nconsole.log(x);</code>');
     });
   });

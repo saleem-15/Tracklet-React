@@ -59,6 +59,28 @@ export function parseInlineMarkdownToHtml(line: string): string {
 }
 
 /**
+ * Single source of truth for block styling across renderer AND editor
+ * transforms. Sizes are tuned for card-width surfaces so WYSIWYG output
+ * never looks oversized, and vertical rhythm comes exclusively from
+ * explicit spacer paragraphs (mirroring stored "\n\n" one-to-one).
+ */
+export const BLOCK_STYLES = {
+  h1: 'font-bold text-slate-900 text-sm font-sans tracking-tight mt-3 mb-1 border-b border-slate-200/80 pb-0.5',
+  h2: 'font-bold text-slate-900 text-[13px] font-sans tracking-tight mt-2.5 mb-1',
+  h3: 'font-semibold text-blue-700 text-xs font-sans tracking-wide mt-2 mb-0.5',
+  paragraph: 'leading-relaxed',
+  bulletList: 'list-disc pl-4 space-y-0.5 my-1',
+  numberedList: 'list-decimal pl-4 space-y-0.5 my-1',
+  taskList: 'list-none pl-4 space-y-0.5 my-1',
+  taskItem: 'task-item flex items-start gap-1.5 py-0.5',
+  checkbox: 'mt-0.5 w-3 h-3 accent-blue-600 cursor-pointer shrink-0',
+  quote:
+    'border-l-4 border-blue-400 bg-blue-50/60 rounded-r-lg pl-3 pr-2 py-1.5 my-2 text-slate-700',
+  codeBlock:
+    'my-2 p-3 bg-slate-900 text-slate-100 rounded-xl font-mono text-[11px] leading-relaxed overflow-x-auto border border-slate-800 selection:bg-blue-500/40',
+} as const;
+
+/**
  * Converts a standard Markdown string to rich HTML suitable for contentEditable rendering.
  *
  * Options:
@@ -98,9 +120,7 @@ export function markdownToHtml(
       const inner = quoteBuffer
         .map((l) => parseInlineMarkdownToHtml(l))
         .join('<br>');
-      htmlParts.push(
-        `<blockquote class="border-l-4 border-blue-400 bg-blue-50/60 rounded-r-lg pl-3 pr-2 py-1.5 my-2 text-slate-700">${inner}</blockquote>`
-      );
+      htmlParts.push(`<blockquote class="${BLOCK_STYLES.quote}">${inner}</blockquote>`);
     }
     quoteBuffer = null;
   };
@@ -116,7 +136,7 @@ export function markdownToHtml(
         // Close code block
         const codeContent = codeBuffer.map(escapeHtml).join('\n');
         htmlParts.push(
-          `<pre class="my-2.5 p-3 bg-slate-900 text-slate-100 rounded-xl font-mono text-[11px] leading-relaxed overflow-x-auto border border-slate-800 selection:bg-blue-500/40"><code>${codeContent}</code></pre>`
+          `<pre class="${BLOCK_STYLES.codeBlock}"><code>${codeContent}</code></pre>`
         );
         codeBuffer = [];
         inCodeBlock = false;
@@ -133,11 +153,11 @@ export function markdownToHtml(
       continue;
     }
 
-    // Blank / Empty line
+    // Blank / Empty line -> explicit spacer (drives vertical rhythm 1:1 with stored \n\n)
     if (!line.trim()) {
       flushQuote();
       closeOpenLists();
-      htmlParts.push('<p><br></p>');
+      htmlParts.push('<p class="h-1.5" data-spacer="true"></p>');
       continue;
     }
 
@@ -159,14 +179,14 @@ export function markdownToHtml(
         inOl = false;
       }
       if (!inUl) {
-        htmlParts.push('<ul class="task-list list-none pl-1 space-y-0.5 my-1 text-slate-800 text-xs">');
+        htmlParts.push(`<ul class="${BLOCK_STYLES.taskList} text-slate-800 text-xs">`);
         inUl = true;
       }
       const checked = taskMatch[1].toLowerCase() === 'x';
       const content = parseInlineMarkdownToHtml(taskMatch[2]);
       htmlParts.push(
-        `<li class="task-item flex items-start gap-2 py-0.5${checked ? ' task-checked' : ''}" data-task="true" data-checked="${checked}">` +
-          `<input type="checkbox"${checked ? ' checked' : ''}${readOnly ? ' disabled' : ''} data-task-checkbox="true" aria-label="Toggle task item" class="mt-0.5 w-3 h-3 accent-blue-600 cursor-pointer shrink-0" />` +
+        `<li class="${BLOCK_STYLES.taskItem}${checked ? ' task-checked' : ''}" data-task="true" data-checked="${checked}">` +
+          `<input type="checkbox"${checked ? ' checked' : ''}${readOnly ? ' disabled' : ''} data-task-checkbox="true" aria-label="Toggle task item" class="${BLOCK_STYLES.checkbox}" />` +
           `<span class="flex-1 task-text${checked ? ' line-through text-slate-400' : ''}">${content}</span>` +
           `</li>`
       );
@@ -177,27 +197,21 @@ export function markdownToHtml(
     if (line.startsWith('### ')) {
       closeOpenLists();
       const content = parseInlineMarkdownToHtml(line.slice(4));
-      htmlParts.push(
-        `<h4 class="font-semibold text-blue-700 text-sm font-sans tracking-wide mt-2.5 mb-1">${content}</h4>`
-      );
+      htmlParts.push(`<h4 class="${BLOCK_STYLES.h3}">${content}</h4>`);
       continue;
     }
 
     if (line.startsWith('## ')) {
       closeOpenLists();
       const content = parseInlineMarkdownToHtml(line.slice(3));
-      htmlParts.push(
-        `<h3 class="font-bold text-slate-900 text-base font-sans tracking-tight mt-3 mb-1">${content}</h3>`
-      );
+      htmlParts.push(`<h3 class="${BLOCK_STYLES.h2}">${content}</h3>`);
       continue;
     }
 
     if (line.startsWith('# ')) {
       closeOpenLists();
       const content = parseInlineMarkdownToHtml(line.slice(2));
-      htmlParts.push(
-        `<h2 class="font-bold text-slate-900 text-lg sm:text-xl font-sans tracking-tight mt-4 mb-1.5 border-b border-slate-200/80 pb-1">${content}</h2>`
-      );
+      htmlParts.push(`<h2 class="${BLOCK_STYLES.h1}">${content}</h2>`);
       continue;
     }
 
@@ -209,7 +223,7 @@ export function markdownToHtml(
         inUl = false;
       }
       if (!inOl) {
-        htmlParts.push('<ol class="list-decimal pl-5 space-y-0.5 my-1 text-slate-800 text-xs">');
+        htmlParts.push(`<ol class="${BLOCK_STYLES.numberedList} text-slate-800 text-xs">`);
         inOl = true;
       }
       const itemContent = parseInlineMarkdownToHtml(numberedMatch[2]);
@@ -225,7 +239,7 @@ export function markdownToHtml(
         inOl = false;
       }
       if (!inUl) {
-        htmlParts.push('<ul class="list-disc pl-5 space-y-0.5 my-1 text-slate-800 text-xs">');
+        htmlParts.push(`<ul class="${BLOCK_STYLES.bulletList} text-slate-800 text-xs">`);
         inUl = true;
       }
       const itemContent = parseInlineMarkdownToHtml(bulletMatch[1]);
@@ -233,10 +247,10 @@ export function markdownToHtml(
       continue;
     }
 
-    // Standard Paragraph
+    // Standard Paragraph (no self-margin — rhythm comes from spacers)
     closeOpenLists();
     const paraContent = parseInlineMarkdownToHtml(line);
-    htmlParts.push(`<p class="text-slate-800 text-xs leading-relaxed my-1">${paraContent}</p>`);
+    htmlParts.push(`<p class="${BLOCK_STYLES.paragraph}">${paraContent}</p>`);
   }
 
   flushQuote();
@@ -245,7 +259,7 @@ export function markdownToHtml(
   if (inCodeBlock && codeBuffer.length > 0) {
     const codeContent = codeBuffer.map(escapeHtml).join('\n');
     htmlParts.push(
-      `<pre class="my-2.5 p-3 bg-slate-900 text-slate-100 rounded-xl font-mono text-[11px] leading-relaxed overflow-x-auto border border-slate-800 selection:bg-blue-500/40"><code>${codeContent}</code></pre>`
+      `<pre class="${BLOCK_STYLES.codeBlock}"><code>${codeContent}</code></pre>`
     );
   }
 

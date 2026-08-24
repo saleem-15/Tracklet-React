@@ -6,7 +6,21 @@ import {
   isInsideCodeFence,
   toggleTaskItem,
   spawnNextTaskItem,
+  BLOCK_STYLES,
 } from './richTextMarkdownUtils';
+import {
+  findCaretBlock,
+  selectionInside,
+  focusEditor,
+  charOffsetToRange,
+  placeCaretAtOffset,
+  placeCaretAtStart,
+  snapshotCaret,
+  restoreCaret,
+  isEmptyBlock,
+  ensurePlaceable,
+  prepareListExtraction,
+} from './editorDom';
 import {
   filterActions,
   getActionById,
@@ -75,11 +89,15 @@ export function useRichTextEditor({ value, onChange }: UseRichTextEditorOptions)
       return;
     }
 
-    // External replacement: record switch, draft restore, template insert
+    // External replacement: record switch, draft restore, template insert.
+    // Caret + scroll are preserved across the rewrite (clamped) so even a
+    // drift-forced replacement never throws the cursor to the document start.
+    const snap = snapshotCaret(el);
     suppressChangeRef.current = true;
     el.innerHTML = markdownToHtml(value || '');
     lastMarkdownRef.current = value;
     suppressChangeRef.current = false;
+    restoreCaret(el, snap);
     setSlash(EMPTY_SLASH);
   }, [value]);
 
@@ -90,23 +108,13 @@ export function useRichTextEditor({ value, onChange }: UseRichTextEditorOptions)
     textBefore: string;
   } => {
     const el = editorRef.current;
-    const sel = window.getSelection();
-    if (!el || !sel || sel.rangeCount === 0 || !el.contains(sel.anchorNode)) {
-      return { block: null, textBefore: '' };
-    }
-    const range = sel.getRangeAt(0);
-    let node: Node | null = range.startContainer;
-    let block: HTMLElement | null = null;
-    while (node && el.contains(node)) {
-      if (
-        node.nodeType === Node.ELEMENT_NODE &&
-        (node as HTMLElement).parentElement === el
-      ) {
-        block = node as HTMLElement;
-        break;
-      }
-      node = node.parentNode;
-    }
+    if (!el) return { block: null, textBefore: '' };
+    const range = selectionInside(el);
+    if (!range) return { block: null, textBefore: '' };
+
+    // Nested-aware: inside <ul><li>, <blockquote><p>, task spans etc. this
+    // returns the actual line-level block (li / p), never a whole container.
+    const block = findCaretBlock(el, range.startContainer);
     if (!block) return { block: null, textBefore: '' };
 
     const pre = document.createRange();
@@ -119,20 +127,33 @@ export function useRichTextEditor({ value, onChange }: UseRichTextEditorOptions)
     return { block, textBefore: pre.toString() };
   }, []);
 
+  /** Viewport position for the slash menu, with zero-rect fallbacks. */
+  const caretViewportPos = useCallback((): { top: number; left: number } | null => {
+    const el = editorRef.current;
+    if (!el) return null;
+    const range = selectionInside(el);
+    if (!range) return null;
+
+    let r: DOMRect | undefined =
+      range.getClientRects()[range.getClientRects().length - 1] ??
+      (range.getBoundingClientRect() as DOMRect);
+
+    if (!r || (r.top === 0 && r.left === 0 && r.height === 0)) {
+      const info = getCaretLineInfo();
+      const fallback = info.block
+        ? info.block.getBoundingClientRect()
+        : el.getBoundingClientRect();
+      r = fallback as DOMRect;
+    }
+    return { top: r.bottom + 4, left: r.left };
+  }, [getCaretLineInfo]);
+
   const updateSlashFromCaret = useCallback(() => {
     const el = editorRef.current;
     if (!el) return;
     const sel = window.getSelection();
     const anchorNode = sel?.anchorNode ?? el;
     const { textBefore } = getCaretLineInfo();
-
-    let rect: { top: number; left: number } | null = null;
-    if (sel && sel.rangeCount > 0 && !sel.isCollapsed) {
-      const r = sel.getRangeAt(0).getBoundingClientRect();
-      rect = { top: r.bottom + 4, left: r.left };
-    }
-    const caretRect =
-      sel && sel.rangeCount > 0 ? sel.getRangeAt(0).getBoundingClientRect() : null;
 
     const line = textBefore.split('\n').pop() ?? '';
     const match = /^\/(\S*)$/.exec(line);
@@ -142,64 +163,61 @@ export function useRichTextEditor({ value, onChange }: UseRichTextEditorOptions)
       return;
     }
 
-    const pos = caretRect
-      ? { top: caretRect.bottom + 4, left: caretRect.left }
-      : rect;
-    const items = filterActions(match[1]);
     setSlash({
       open: true,
       query: match[1],
-      rect: pos,
-      items,
+      rect: caretViewportPos(),
+      items: filterActions(match[1]),
       selectedIndex: 0,
     });
-  }, [getCaretLineInfo]);
+  }, [getCaretLineInfo, caretViewportPos]);
 
   const closeSlashMenu = useCallback(() => setSlash(EMPTY_SLASH), []);
 
-  /** Deletes the "/query" literal before applying a slash action. */
-  const stripSlashLiteral = useCallback(() => {
+  /**
+   * Atomically deletes the "/query" literal and settles the caret INSIDE
+   * the affected block so the subsequent action always has a valid target.
+   *
+   * Offset correctness: the query starts at `lastIndexOf('\n') + 1` within
+   * the block — subtracting the line length was wrong on continuation lines
+   * and ate the preceding line break (the "cursor jumps to previous line"
+   * bug). Empty blocks are seeded with <br> so Chromium's formatBlock-class
+   * operations can't merge the line into its predecessor.
+   */
+  const stripSlashLiteral = useCallback((): HTMLElement | null => {
     const el = editorRef.current;
-    const sel = window.getSelection();
-    if (!el || !sel || sel.rangeCount === 0) return;
+    if (!el) return null;
+    focusEditor(el);
     const info = getCaretLineInfo();
-    if (!info.block) return;
+    if (!info.block) return null;
+
     const line = info.textBefore.split('\n').pop() ?? '';
     const match = /^\/(\S*)$/.exec(line);
-    if (!match) return;
+    if (!match) return info.block;
 
     const endOffset = info.textBefore.length;
-    const startOffset = endOffset - line.length; // position of '/'
-    const walkerBlock = info.block;
-    const range = document.createRange();
-    range.selectNodeContents(walkerBlock);
+    const startOffset =
+      info.textBefore.lastIndexOf('\n') + 1; // start of the current line
 
-    // Walk text nodes to char offsets
-    const walker = document.createTreeWalker(walkerBlock, NodeFilter.SHOW_TEXT);
-    let pos = 0;
-    let startNode: Text | null = null;
-    let startOff = 0;
-    let endNode: Text | null = null;
-    let endOff = 0;
-    while (walker.nextNode()) {
-      const t = walker.currentNode as Text;
-      const len = t.nodeValue?.length ?? 0;
-      if (!startNode && pos + len >= startOffset) {
-        startNode = t;
-        startOff = startOffset - pos;
-      }
-      if (!endNode && pos + len >= endOffset) {
-        endNode = t;
-        endOff = endOffset - pos;
-        break;
-      }
-      pos += len;
-    }
-    if (startNode && endNode) {
-      range.setStart(startNode, Math.max(0, startOff));
-      range.setEnd(endNode, Math.max(0, endOff));
+    const range = charOffsetToRange(info.block, startOffset, endOffset);
+    if (range) {
       range.deleteContents();
     }
+
+    // Trim any leading whitespace the query left behind
+    if (info.block.firstChild?.nodeType === Node.TEXT_NODE) {
+      const t = info.block.firstChild as Text;
+      t.nodeValue = (t.nodeValue ?? '').replace(/^\s+/, '');
+      if (!t.nodeValue) t.remove();
+    }
+
+    if (isEmptyBlock(info.block)) {
+      ensurePlaceable(info.block);
+      placeCaretAtOffset(info.block, 0);
+    } else {
+      placeCaretAtOffset(info.block, Math.min(startOffset, (info.block.textContent ?? '').length));
+    }
+    return info.block;
   }, [getCaretLineInfo]);
 
   /* ---------------- change pipeline ---------------- */
@@ -337,6 +355,21 @@ export function useRichTextEditor({ value, onChange }: UseRichTextEditorOptions)
         e.preventDefault();
         document.execCommand('createLink', false, pastedText.trim());
         handleInput();
+        return;
+      }
+
+      // Multi-line plain text: normalize into proper blocks up front so the
+      // DOM matches what serialization would produce (prevents reflow drift
+      // on the next save/reload cycle).
+      if (!isUrl && pastedText.includes('\n')) {
+        e.preventDefault();
+        try {
+          const html = markdownToHtml(pastedText);
+          document.execCommand('insertHTML', false, html);
+        } catch {
+          document.execCommand('insertText', false, pastedText);
+        }
+        handleInput();
       }
     },
     [handleInput]
@@ -431,7 +464,7 @@ export function useRichTextEditor({ value, onChange }: UseRichTextEditorOptions)
         return;
       }
 
-      /* --- Enter at end of a task item spawns the next one (FR-010) --- */
+      /* --- Enter in a task item: exit when empty, else spawn next (FR-010) --- */
       if (e.key === 'Enter' && !e.shiftKey && !isCmdOrCtrl) {
         const selection = window.getSelection();
         if (selection && selection.isCollapsed && selection.rangeCount > 0) {
@@ -441,22 +474,67 @@ export function useRichTextEditor({ value, onChange }: UseRichTextEditorOptions)
               ? (anchor as HTMLElement).closest('li.task-item')
               : anchor?.parentElement?.closest('li.task-item');
           if (taskLi && el.contains(taskLi)) {
+            const textEl = taskLi.querySelector('.task-text') ?? taskLi;
+
+            // Empty to-do: exit the list into a normal paragraph (Notion-style)
+            if ((textEl.textContent ?? '').trim() === '') {
+              e.preventDefault();
+              const p = document.createElement('p');
+              p.className = BLOCK_STYLES.paragraph;
+              p.innerHTML = '<br>';
+              const split = prepareListExtraction(taskLi as HTMLElement);
+              split.detach();
+              split.insertAfter.insertAdjacentElement('afterend', p);
+              placeCaretAtStart(p);
+              handleInput();
+              return;
+            }
+
             const caretRange = selection.getRangeAt(0);
             const endProbe = document.createRange();
-            endProbe.selectNodeContents(taskLi.querySelector('.task-text') ?? taskLi);
+            endProbe.selectNodeContents(textEl);
             endProbe.collapse(false);
             if (caretRange.compareBoundaryPoints(Range.END_TO_END, endProbe) >= 0) {
               e.preventDefault();
               const next = spawnNextTaskItem(taskLi as HTMLElement);
               const focusSpan = next.querySelector('.task-text') ?? next;
-              const newRange = document.createRange();
-              newRange.selectNodeContents(focusSpan);
-              newRange.collapse(true);
-              selection.removeAllRanges();
-              selection.addRange(newRange);
+              placeCaretAtStart(focusSpan as HTMLElement);
               handleInput();
               return;
             }
+          }
+        }
+      }
+
+      /* --- Enter on an empty plain list item exits the list --- */
+      if (e.key === 'Enter' && !e.shiftKey && !isCmdOrCtrl) {
+        const selection = window.getSelection();
+        if (selection && selection.isCollapsed && selection.rangeCount > 0) {
+          const anchor = selection.anchorNode;
+          const li =
+            anchor?.nodeType === Node.ELEMENT_NODE
+              ? (anchor as HTMLElement).closest('li')
+              : anchor?.parentElement?.closest('li');
+          if (
+            li &&
+            el.contains(li) &&
+            li.dataset.task !== 'true' &&
+            (li.textContent ?? '').trim() === ''
+          ) {
+            e.preventDefault();
+            const p = document.createElement('p');
+            p.className = BLOCK_STYLES.paragraph;
+            p.innerHTML = '<br>';
+            if (li.parentElement && li.parentElement !== el) {
+              const split = prepareListExtraction(li as HTMLElement);
+              split.detach();
+              split.insertAfter.insertAdjacentElement('afterend', p);
+            } else {
+              li.replaceWith(p);
+            }
+            placeCaretAtStart(p);
+            handleInput();
+            return;
           }
         }
       }
@@ -474,7 +552,7 @@ export function useRichTextEditor({ value, onChange }: UseRichTextEditorOptions)
           if (headingParent && el.contains(headingParent)) {
             e.preventDefault();
             const p = document.createElement('p');
-            p.className = 'text-slate-800 text-xs leading-relaxed my-1';
+            p.className = BLOCK_STYLES.paragraph;
             p.innerHTML = '<br>';
             headingParent.insertAdjacentElement('afterend', p);
 
