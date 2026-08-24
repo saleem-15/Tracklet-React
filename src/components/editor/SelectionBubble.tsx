@@ -88,11 +88,11 @@ const SelectionBubble: React.FC<SelectionBubbleProps> = ({
     <div
       role="toolbar"
       aria-label="Format selection"
-      className="fixed z-[60] -translate-x-1/2 flex items-center gap-0.5 bg-slate-900 text-white rounded-lg shadow-xl px-1 py-0.5 animate-in fade-in zoom-in-95 duration-100"
+      className="fixed z-[70] -translate-x-1/2 flex items-center gap-1 bg-slate-900 text-white rounded-xl shadow-2xl p-1 animate-in fade-in zoom-in-95 duration-100"
       style={{ top: position.top, left: position.left }}
     >
       {applicable.length === 0 ? (
-        <span className="px-2 py-1 text-[10px] font-mono text-slate-400 select-none">
+        <span className="px-2.5 py-1 text-[11px] font-mono text-slate-400 select-none">
           No actions
         </span>
       ) : (
@@ -107,9 +107,9 @@ const SelectionBubble: React.FC<SelectionBubbleProps> = ({
               // preventDefault keeps the browser selection alive through mousedown
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => onApply(action)}
-              className="p-1.5 hover:bg-slate-700 rounded-md cursor-pointer transition-colors"
+              className="flex items-center justify-center w-8 h-8 hover:bg-slate-700 active:bg-slate-600 rounded-lg cursor-pointer transition-colors"
             >
-              <Icon className="w-3.5 h-3.5" />
+              <Icon className="w-4 h-4" />
             </button>
           );
         })

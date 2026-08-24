@@ -251,3 +251,14 @@ Task T009 "failing draft-store tests"          # then T010
 - [x] T035 Replace execCommand block transforms with deterministic transformBlockAtCaret engine in src/components/editor/editorActions.tsx (list split/merge, quote unwrap toggle, styleWithCSS guard)
 - [x] T036 Harden src/lib/useRichTextEditor.ts: offset-correct atomic strip+settle (lastIndexOf newline fix), caret-preserving full-replace sync, Enter-exit-empty-list, multi-line paste normalization, slash-menu rect fallback
 - [x] T037 Single-source BLOCK_STYLES in src/lib/richTextMarkdownUtils.ts (card-tuned heading scale, uniform list gutters, spacer-driven rhythm) + transform regression tests in tests/unit/editorTransforms.test.tsx + quickstart S10 matrix
+
+---
+
+## Phase 10: Popover UX, Callout/Divider, Visual Polish (stakeholder round 2)
+
+- [x] T038 Replace inline link bar with floating LinkPopover anchored to the selection (insert/update/remove, viewport flip, outside-press + Escape close) in src/components/editor/LinkPopover.tsx + RichTextEditor.tsx + hook rect capture
+- [x] T039 Size pass: SelectionBubble 32px hit areas / w-4 icons / rounded-xl; SlashMenu w-56 rows py-2 text-[13px] with keyboard footer hints
+- [x] T040 Restore heading hierarchy (H1 18px no-border, H2 16px, H3 14px) via BLOCK_STYLES single source
+- [x] T041 Callout: rename Quote action label, verify empty-line apply (resolveSource null-fallback fix), regression test
+- [x] T042 Checkbox done-state visibility: w-4 h-4 boxes, property<->attribute sync in toggleTaskItem, class dedupe into BLOCK_STYLES
+- [x] T043 Divider block: --- <-> <hr> serialization both directions + Divider action (hr + trailing paragraph, list-safe) + hint pill (focused+empty) + S11 quickstart scenarios + tests (utils/transforms/linkPopover)

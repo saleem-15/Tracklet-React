@@ -128,4 +128,36 @@ describe('deterministic block transformations (bug-fix regression)', () => {
       expect(ids).toContain(required);
     }
   });
+
+  it('labels Quote action as Callout for discoverability', () => {
+    expect(getActionById('quote')!.label).toBe('Callout');
+    expect(getActionById('divider')!.label).toBe('Divider');
+  });
+
+  it('callout applies on a fresh empty line (regression: dead command)', () => {
+    const ed = setupEditor('<p><br></p>');
+    placeCaretAtOffset(ed.querySelector('p')!, 0);
+
+    apply('quote', ed);
+
+    const bq = ed.querySelector('blockquote');
+    expect(bq).not.toBeNull();
+    expect(bq!.classList.contains('border-l-4')).toBe(true);
+    const sel = document.getSelection()!;
+    expect(sel.anchorNode && bq!.contains(sel.anchorNode)).toBe(true);
+  });
+
+  it('divider inserts an hr followed by a paragraph holding the caret', () => {
+    const ed = setupEditor('<p>section one</p>');
+    placeCaretAtOffset(ed.querySelector('p')!, 2);
+
+    apply('divider', ed);
+
+    const hr = ed.querySelector('hr');
+    expect(hr).not.toBeNull();
+    const pAfter = hr!.nextElementSibling;
+    expect(pAfter?.tagName).toBe('P');
+    const sel = document.getSelection()!;
+    expect(pAfter!.contains(sel.anchorNode)).toBe(true);
+  });
 });

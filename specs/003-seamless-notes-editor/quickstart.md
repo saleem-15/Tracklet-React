@@ -101,6 +101,17 @@ Plus:
 - Undo after each transform returns the previous state or at minimum never corrupts content.
 - Auto-save firing mid-menu never resets the menu or caret.
 
+### S11 — Popovers, callout, dividers, discoverability (post-refactor round 2)
+
+1. **Link via popover**: select text → bubble → Link (or Ctrl+K) → floating dark popover opens at the selection; Apply wraps it; popover closes on outside press, Escape, or X.
+2. **Link edit/remove**: Ctrl+K inside an existing link → popover pre-fills URL with a Remove button; Remove unwraps the link.
+3. **Callout**: slash → "Callout" applies the blue left-bar block on fresh empty AND non-empty lines; applying again unwraps.
+4. **Divider**: slash → "Divider" inserts `---` rule and moves caret to a new paragraph after it; persists across reopen as `---`.
+5. **No phantom heading rule**: H1 shows bold 18px with no underline/divider below; hierarchy reads 18/16/14.
+6. **Checkbox done state**: checked boxes are visibly filled blue at 16px; text struck through.
+7. **Hint pill**: focused + empty notes show "Press [/] for commands" bottom-right; fades once typing starts.
+8. **Sizes**: selection bubble buttons ~32px with 16px icons; slash menu rows comfortably sized with footer hints (↑↓ / ↵ / esc).
+
 ## Pass criteria
 
 All automated suites green + S1–S9 expectations observed. Record deviations as tasks/issues referencing the failing scenario ID.

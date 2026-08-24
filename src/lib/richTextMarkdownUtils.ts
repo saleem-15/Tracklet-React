@@ -65,20 +65,24 @@ export function parseInlineMarkdownToHtml(line: string): string {
  * explicit spacer paragraphs (mirroring stored "\n\n" one-to-one).
  */
 export const BLOCK_STYLES = {
-  h1: 'font-bold text-slate-900 text-sm font-sans tracking-tight mt-3 mb-1 border-b border-slate-200/80 pb-0.5',
-  h2: 'font-bold text-slate-900 text-[13px] font-sans tracking-tight mt-2.5 mb-1',
-  h3: 'font-semibold text-blue-700 text-xs font-sans tracking-wide mt-2 mb-0.5',
+  h1: 'font-bold text-slate-900 text-lg font-sans tracking-tight mt-3 mb-1',
+  h2: 'font-bold text-slate-900 text-base font-sans tracking-tight mt-2.5 mb-1',
+  h3: 'font-semibold text-blue-700 text-sm font-sans tracking-wide mt-2 mb-0.5',
   paragraph: 'leading-relaxed',
   bulletList: 'list-disc pl-4 space-y-0.5 my-1',
   numberedList: 'list-decimal pl-4 space-y-0.5 my-1',
   taskList: 'list-none pl-4 space-y-0.5 my-1',
   taskItem: 'task-item flex items-start gap-1.5 py-0.5',
-  checkbox: 'mt-0.5 w-3 h-3 accent-blue-600 cursor-pointer shrink-0',
+  checkbox: 'mt-1 w-4 h-4 accent-blue-600 cursor-pointer shrink-0 rounded',
   quote:
     'border-l-4 border-blue-400 bg-blue-50/60 rounded-r-lg pl-3 pr-2 py-1.5 my-2 text-slate-700',
   codeBlock:
     'my-2 p-3 bg-slate-900 text-slate-100 rounded-xl font-mono text-[11px] leading-relaxed overflow-x-auto border border-slate-800 selection:bg-blue-500/40',
+  hr: 'my-3 border-slate-200',
 } as const;
+
+/** Thematic break (divider) syntax: --- / *** / ___ */
+const HR_LINE_REGEX = /^\s*(-{3,}|\*{3,}|_{3,})\s*$/;
 
 /**
  * Converts a standard Markdown string to rich HTML suitable for contentEditable rendering.
@@ -158,6 +162,14 @@ export function markdownToHtml(
       flushQuote();
       closeOpenLists();
       htmlParts.push('<p class="h-1.5" data-spacer="true"></p>');
+      continue;
+    }
+
+    // Divider / thematic break: --- , *** , ___
+    if (HR_LINE_REGEX.test(line)) {
+      flushQuote();
+      closeOpenLists();
+      htmlParts.push(`<hr class="${BLOCK_STYLES.hr}" />`);
       continue;
     }
 
@@ -402,6 +414,9 @@ export function domNodeToMarkdown(node: Node): string {
     case 'br': {
       return '\n';
     }
+    case 'hr': {
+      return '---';
+    }
     default: {
       return getChildrenMarkdown();
     }
@@ -483,7 +498,12 @@ export function toggleTaskItem(itemEl: HTMLElement): void {
   const nowChecked = itemEl.dataset.checked !== 'true';
   itemEl.dataset.checked = nowChecked ? 'true' : 'false';
   const input = itemEl.querySelector<HTMLInputElement>('input[data-task-checkbox]');
-  if (input) input.checked = nowChecked;
+  if (input) {
+    input.checked = nowChecked;
+    // Mirror the attribute so styling/serialization can never desync
+    if (nowChecked) input.setAttribute('checked', '');
+    else input.removeAttribute('checked');
+  }
   const text = itemEl.querySelector<HTMLElement>('.task-text');
   if (text) text.classList.toggle('line-through', nowChecked);
   if (text) text.classList.toggle('text-slate-400', nowChecked);
@@ -501,7 +521,7 @@ export function spawnNextTaskItem(itemEl: HTMLElement): HTMLElement {
 
 function makeTaskItemElement(text: string, checked: boolean): HTMLElement {
   const li = document.createElement('li');
-  li.className = 'task-item flex items-start gap-2 py-0.5';
+  li.className = BLOCK_STYLES.taskItem;
   li.dataset.task = 'true';
   li.dataset.checked = checked ? 'true' : 'false';
 
@@ -510,7 +530,7 @@ function makeTaskItemElement(text: string, checked: boolean): HTMLElement {
   input.checked = checked;
   input.setAttribute('data-task-checkbox', 'true');
   input.setAttribute('aria-label', 'Toggle task item');
-  input.className = 'mt-0.5 w-3 h-3 accent-blue-600 cursor-pointer shrink-0';
+  input.className = BLOCK_STYLES.checkbox;
 
   const span = document.createElement('span');
   span.className = 'flex-1 task-text';

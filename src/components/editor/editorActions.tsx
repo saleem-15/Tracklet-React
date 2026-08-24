@@ -11,6 +11,7 @@ import {
   Quote,
   Code2,
   Link2,
+  Minus,
 } from 'lucide-react';
 import {
   BLOCK_STYLES,
@@ -21,6 +22,7 @@ import {
   selectionInside,
   focusEditor,
   placeCaretAtEnd,
+  placeCaretAtStart,
   isEmptyBlock,
   ensurePlaceable,
   prepareListExtraction,
@@ -36,6 +38,7 @@ export type EditorActionId =
   | 'numbered'
   | 'todo'
   | 'quote'
+  | 'divider'
   | 'code'
   | 'link';
 
@@ -171,10 +174,11 @@ function transformBlockAtCaret(
   const current = findCaretBlock(editor, sel.startContainer);
   if (!current) return;
 
-  const source = options.resolveSource
-    ? options.resolveSource(current, editor)
-    : current;
-  if (!source || !editor.contains(source)) return;
+  // resolveSource may redirect (e.g., whole parent quote) or return null
+  // meaning "operate on the caret block as-is".
+  const source =
+    (options.resolveSource && options.resolveSource(current, editor)) || current;
+  if (!editor.contains(source)) return;
 
   const newEl = options.build(source.innerHTML, source);
 
@@ -379,9 +383,9 @@ export const EDITOR_ACTIONS: readonly FormattingAction[] = [
   },
   {
     id: 'quote',
-    label: 'Quote',
+    label: 'Callout',
     icon: Quote,
-    keywords: ['callout', 'blockquote'],
+    keywords: ['callout', 'blockquote', 'quote', '>'],
     scope: 'block',
     appliesTo: () => true,
     apply: ({ editor }) =>
@@ -396,6 +400,39 @@ export const EDITOR_ACTIONS: readonly FormattingAction[] = [
         // Toggle OFF: unwrap the WHOLE surrounding quote into one paragraph
         resolveSource: (current) => current.closest('blockquote'),
       }),
+  },
+  {
+    id: 'divider',
+    label: 'Divider',
+    icon: Minus,
+    keywords: ['separator', 'horizontal rule', 'line', 'hr', '---'],
+    scope: 'block',
+    appliesTo: () => true,
+    apply: ({ editor }) => {
+      const sel = selectionInside(editor);
+      if (!sel) return;
+      const current = findCaretBlock(editor, sel.startContainer);
+      if (!current || current.tagName === 'HR') return;
+
+      const hr = makeElement('hr', BLOCK_STYLES.hr);
+      const p = makeElement('p', BLOCK_STYLES.paragraph);
+      p.innerHTML = '<br>';
+
+      if (
+        current.tagName === 'LI' &&
+        current.parentElement &&
+        current.parentElement !== editor
+      ) {
+        const split = prepareListExtraction(current);
+        split.detach();
+        split.insertAfter.insertAdjacentElement('afterend', hr);
+      } else {
+        current.replaceWith(hr);
+      }
+      hr.insertAdjacentElement('afterend', p);
+      placeCaretAtStart(p);
+      focusEditor(editor);
+    },
   },
   {
     id: 'code',

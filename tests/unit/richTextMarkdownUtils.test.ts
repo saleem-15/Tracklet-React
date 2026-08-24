@@ -27,12 +27,23 @@ describe('richTextMarkdownUtils', () => {
       const md = '# Title\n## Subtitle\n### Section';
       const html = markdownToHtml(md);
 
-      expect(html).toContain('<h2 class="font-bold text-slate-900 text-sm');
+      expect(html).toContain('<h2 class="font-bold text-slate-900 text-lg');
+      expect(html).not.toContain('border-b'); // no phantom divider under headings
       expect(html).toContain('Title');
-      expect(html).toContain('<h3 class="font-bold text-slate-900 text-[13px]');
+      expect(html).toContain('<h3 class="font-bold text-slate-900 text-base');
       expect(html).toContain('Subtitle');
-      expect(html).toContain('<h4 class="font-semibold text-blue-700 text-xs');
+      expect(html).toContain('<h4 class="font-semibold text-blue-700 text-sm');
       expect(html).toContain('Section');
+    });
+
+    it('renders dividers as thematic breaks and round-trips them', () => {
+      const md = 'above\n\n---\n\nbelow';
+      const html = markdownToHtml(md);
+      expect(html).toContain('<hr class="my-3 border-slate-200" />');
+
+      const once = htmlToMarkdown(markdownToHtml(md));
+      expect(once).toBe(md);
+      expect(htmlToMarkdown(markdownToHtml(once))).toBe(md);
     });
 
     it('converts inline bold, italic, and code', () => {
