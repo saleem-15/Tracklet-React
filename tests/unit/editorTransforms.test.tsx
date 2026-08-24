@@ -2,7 +2,7 @@ import { describe, it, expect, afterEach } from 'vitest';
 import { createRoot, type Root } from 'react-dom/client';
 import { act } from 'react';
 import { EDITOR_ACTIONS, getActionById } from '../../src/components/editor/editorActions';
-import { placeCaretAtOffset } from '../../src/lib/editorDom';
+import { placeCaretAtOffset, exitCalloutOnEnter } from '../../src/lib/editorDom';
 
 let host: HTMLDivElement | null = null;
 let root: Root | null = null;
@@ -159,5 +159,81 @@ describe('deterministic block transformations (bug-fix regression)', () => {
     expect(pAfter?.tagName).toBe('P');
     const sel = document.getSelection()!;
     expect(pAfter!.contains(sel.anchorNode)).toBe(true);
+  });
+
+  describe('Enter inside a callout exits (no stacked quotes)', () => {
+    it('caret at end of line: quote keeps text, new empty p follows', () => {
+      const ed = setupEditor(
+        '<blockquote class="q">red flag</blockquote><p class="x">after</p>'
+      );
+      placeCaretAtOffset(ed.querySelector('blockquote')!, 8); // end of "red flag"
+
+      const handled = exitCalloutOnEnter(ed);
+      expect(handled).toBe(true);
+
+      const bq = ed.querySelector('blockquote')!;
+      expect(bq.textContent).toBe('red flag'); // stays quoted
+      expect(bq.contains(document.getSelection()!.anchorNode)).toBe(false);
+      const p = bq.nextElementSibling!;
+      expect(p.tagName).toBe('P');
+      expect(p.classList.contains('leading-relaxed')).toBe(true); // normal paragraph
+      expect(p.contains(document.getSelection()!.anchorNode)).toBe(true);
+      expect(p.nextElementSibling?.textContent).toContain('after');
+    });
+
+    it('caret mid-line splits: pre-text stays quoted, remainder moves out', () => {
+      const ed = setupEditor('<blockquote>re|d flag</blockquote>'.replace('|', ''));
+      // place caret between "re" and "d flag"
+      const bqText = ed.querySelector('blockquote')!.firstChild as Text;
+      const range = document.createRange();
+      range.setStart(bqText, 2);
+      range.collapse(true);
+      const sel = document.getSelection()!;
+      sel.removeAllRanges();
+      sel.addRange(range);
+
+      exitCalloutOnEnter(ed);
+
+      expect(ed.querySelector('blockquote')!.textContent).toBe('re');
+      expect(ed.querySelector('p')!.textContent).toBe('d flag');
+    });
+
+    it('multi-line quote: caret on second line exits with that line only', () => {
+      const ed = setupEditor('<blockquote>a<br>b</blockquote>');
+      const bq = ed.querySelector('blockquote')!;
+      const bNode = bq.lastChild!; // text node "b" after the <br>
+      const range = document.createRange();
+      range.setStart(bNode, 0);
+      range.collapse(true);
+      const sel = document.getSelection()!;
+      sel.removeAllRanges();
+      sel.addRange(range);
+
+      exitCalloutOnEnter(ed);
+
+      expect(ed.querySelector('blockquote')!.textContent).toBe('a');
+      expect(ed.querySelector('p')!.textContent).toBe('b');
+    });
+
+    it('exiting an emptied quote removes the shell entirely', () => {
+      const ed = setupEditor('<blockquote></blockquote>');
+      const bq = ed.querySelector('blockquote')!;
+      const range = document.createRange();
+      range.selectNodeContents(bq);
+      range.collapse(true);
+      const sel = document.getSelection()!;
+      sel.removeAllRanges();
+      sel.addRange(range);
+
+      expect(exitCalloutOnEnter(ed)).toBe(true);
+      expect(ed.querySelector('blockquote')).toBeNull();
+      expect(ed.querySelector('p')).not.toBeNull();
+    });
+
+    it('returns false when caret is outside any quote', () => {
+      const ed = setupEditor('<p>plain</p>');
+      placeCaretAtOffset(ed.querySelector('p')!, 1);
+      expect(exitCalloutOnEnter(ed)).toBe(false);
+    });
   });
 });

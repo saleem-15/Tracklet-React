@@ -1,5 +1,4 @@
-/**
- * Deterministic DOM utilities for the WYSIWYG editor.
+﻿/** Deterministic DOM utilities for the WYSIWYG editor.
  *
  * Everything that used to rely on execCommand quirks for block
  * transformations goes through here so behavior is identical on every
@@ -7,6 +6,8 @@
  * quotes), convert character offsets to Ranges and back, and place the
  * caret explicitly instead of hoping the browser guessed right.
  */
+
+import { BLOCK_STYLES } from './richTextMarkdownUtils';
 
 /** Line-level blocks the editor recognizes. */
 export const LINE_BLOCK_SELECTOR = 'p, h1, h2, h3, h4, h5, h6, li, blockquote';
@@ -16,7 +17,7 @@ const isElement = (n: Node | null): n is HTMLElement =>
 
 /**
  * Nearest line-level block containing `node`, scoped to `root`.
- * Inside `<ul><li><span>text` this returns the LI (not the UL) —
+ * Inside `<ul><li><span>text` this returns the LI (not the UL) â€”
  * the previous implementation returned the whole list here.
  */
 export function findCaretBlock(root: HTMLElement, node: Node): HTMLElement | null {
@@ -195,6 +196,77 @@ export function restoreCaret(root: HTMLElement, snap: CaretSnapshot | null): voi
 export function isEmptyBlock(block: HTMLElement): boolean {
   if (block.querySelector('img')) return false;
   return (block.textContent ?? '').trim().length === 0;
+}
+
+/**
+ * Enter-inside-a-callout: exits the quote into a normal paragraph BELOW it,
+ * carrying any post-caret text along (Notion-style). Content before the
+ * caret stays quoted. Returns true when the event was handled.
+ */
+export function exitCalloutOnEnter(editor: HTMLElement): boolean {
+  const sel = window.getSelection();
+  if (!sel || sel.rangeCount === 0) return false;
+  const range = sel.getRangeAt(0);
+  if (!editor.contains(range.startContainer)) return false;
+
+  let bq: HTMLElement | null = null;
+  let node: Node | null = range.startContainer;
+  while (node && editor.contains(node)) {
+    if (isElement(node) && (node as HTMLElement).tagName === 'BLOCKQUOTE') {
+      bq = node as HTMLElement;
+      break;
+    }
+    if (node === editor) break;
+    node = node.parentNode;
+  }
+  if (!bq) return false;
+
+  const p = document.createElement('p');
+  p.className = BLOCK_STYLES.paragraph;
+
+  const insertRef: ChildNode | null = bq.nextSibling;
+  const insertParent: HTMLElement = bq.parentElement ?? editor;
+
+  if (bq.hasChildNodes()) {
+    // Everything from the caret to the end of the quote travels to the new p
+    const tail = document.createRange();
+    tail.setStart(range.startContainer, range.startOffset);
+    try {
+      tail.setEndAfter(bq.lastChild!);
+    } catch {
+      /* degenerate quote â€” fall through with empty tail */
+    }
+    const frag = tail.extractContents();
+
+    // Drop the line-breaks that separated the caret line from later lines
+    while (
+      frag.firstChild &&
+      isElement(frag.firstChild) &&
+      (frag.firstChild as HTMLElement).tagName === 'BR'
+    ) {
+      frag.removeChild(frag.firstChild);
+    }
+
+    if (frag.hasChildNodes()) p.appendChild(frag);
+    else p.innerHTML = '<br>';
+
+    // Tidy trailing separators left behind in the quote
+    while (
+      bq.lastChild &&
+      isElement(bq.lastChild) &&
+      (bq.lastChild as HTMLElement).tagName === 'BR'
+    ) {
+      bq.removeChild(bq.lastChild);
+    }
+    if (isEmptyBlock(bq)) bq.remove();
+  } else {
+    bq.remove();
+  }
+
+  insertParent.insertBefore(p, insertRef);
+  placeCaretAtStart(p);
+  focusEditor(editor);
+  return true;
 }
 
 /** Guarantees a collapsed caret can live in the block (<br> seed). */

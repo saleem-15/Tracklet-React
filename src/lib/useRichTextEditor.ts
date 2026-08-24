@@ -20,6 +20,7 @@ import {
   isEmptyBlock,
   ensurePlaceable,
   prepareListExtraction,
+  exitCalloutOnEnter,
 } from './editorDom';
 import {
   filterActions,
@@ -575,6 +576,15 @@ export function useRichTextEditor({ value, onChange }: UseRichTextEditorOptions)
             handleInput();
             return;
           }
+        }
+      }
+
+      /* --- Enter inside a callout exits to a normal paragraph --- */
+      if (e.key === 'Enter' && !e.shiftKey && !isCmdOrCtrl) {
+        if (exitCalloutOnEnter(el)) {
+          e.preventDefault();
+          handleInput();
+          return;
         }
       }
 

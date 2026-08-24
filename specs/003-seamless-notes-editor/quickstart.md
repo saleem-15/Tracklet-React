@@ -105,7 +105,7 @@ Plus:
 
 1. **Link via popover**: select text → bubble → Link (or Ctrl+K) → floating dark popover opens at the selection; Apply wraps it; popover closes on outside press, Escape, or X.
 2. **Link edit/remove**: Ctrl+K inside an existing link → popover pre-fills URL with a Remove button; Remove unwraps the link.
-3. **Callout**: slash → "Callout" applies the blue left-bar block on fresh empty AND non-empty lines; applying again unwraps.
+3. **Callout**: slash → "Callout" applies the blue left-bar block on fresh empty AND non-empty lines; applying again unwraps. **Enter inside a callout exits to a normal paragraph below (never stacks another callout); Shift+Enter adds a line within the same callout.**
 4. **Divider**: slash → "Divider" inserts `---` rule and moves caret to a new paragraph after it; persists across reopen as `---`.
 5. **No phantom heading rule**: H1 shows bold 18px with no underline/divider below; hierarchy reads 18/16/14.
 6. **Checkbox done state**: checked boxes are visibly filled blue at 16px; text struck through.
