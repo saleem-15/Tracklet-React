@@ -60,12 +60,19 @@ export function parseInlineMarkdownToHtml(line: string): string {
 
 /**
  * Converts a standard Markdown string to rich HTML suitable for contentEditable rendering.
+ *
+ * Options:
+ * - readOnly: renders interactive elements (checkboxes) inert for read-only contexts.
  */
-export function markdownToHtml(markdown: string): string {
+export function markdownToHtml(
+  markdown: string,
+  options?: { readOnly?: boolean }
+): string {
   if (!markdown || !markdown.trim()) {
     return '<p><br></p>';
   }
 
+  const readOnly = options?.readOnly ?? false;
   const lines = markdown.split(/\r?\n/);
   const htmlParts: string[] = [];
 
@@ -73,6 +80,7 @@ export function markdownToHtml(markdown: string): string {
   let codeBuffer: string[] = [];
   let inUl = false;
   let inOl = false;
+  let quoteBuffer: string[] | null = null;
 
   const closeOpenLists = () => {
     if (inUl) {
@@ -85,11 +93,24 @@ export function markdownToHtml(markdown: string): string {
     }
   };
 
+  const flushQuote = () => {
+    if (quoteBuffer && quoteBuffer.length > 0) {
+      const inner = quoteBuffer
+        .map((l) => parseInlineMarkdownToHtml(l))
+        .join('<br>');
+      htmlParts.push(
+        `<blockquote class="border-l-4 border-blue-400 bg-blue-50/60 rounded-r-lg pl-3 pr-2 py-1.5 my-2 text-slate-700">${inner}</blockquote>`
+      );
+    }
+    quoteBuffer = null;
+  };
+
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
 
     // Fenced Code Block delimiter: ```
     if (line.trim().startsWith('```')) {
+      flushQuote();
       closeOpenLists();
       if (inCodeBlock) {
         // Close code block
@@ -114,8 +135,41 @@ export function markdownToHtml(markdown: string): string {
 
     // Blank / Empty line
     if (!line.trim()) {
+      flushQuote();
       closeOpenLists();
       htmlParts.push('<p><br></p>');
+      continue;
+    }
+
+    // Quote/callout: group consecutive "> " lines into one blockquote
+    const quoteMatch = line.match(/^>\s?(.*)$/);
+    if (quoteMatch) {
+      closeOpenLists();
+      quoteBuffer = quoteBuffer || [];
+      quoteBuffer.push(quoteMatch[1]);
+      continue;
+    }
+    flushQuote();
+
+    // Task list item: - [ ] / - [x]
+    const taskMatch = line.match(/^[-*]\s+\[([ xX])\]\s+(.*)$/);
+    if (taskMatch) {
+      if (inOl) {
+        htmlParts.push('</ol>');
+        inOl = false;
+      }
+      if (!inUl) {
+        htmlParts.push('<ul class="task-list list-none pl-1 space-y-0.5 my-1 text-slate-800 text-xs">');
+        inUl = true;
+      }
+      const checked = taskMatch[1].toLowerCase() === 'x';
+      const content = parseInlineMarkdownToHtml(taskMatch[2]);
+      htmlParts.push(
+        `<li class="task-item flex items-start gap-2 py-0.5${checked ? ' task-checked' : ''}" data-task="true" data-checked="${checked}">` +
+          `<input type="checkbox"${checked ? ' checked' : ''}${readOnly ? ' disabled' : ''} data-task-checkbox="true" aria-label="Toggle task item" class="mt-0.5 w-3 h-3 accent-blue-600 cursor-pointer shrink-0" />` +
+          `<span class="flex-1 task-text${checked ? ' line-through text-slate-400' : ''}">${content}</span>` +
+          `</li>`
+      );
       continue;
     }
 
@@ -124,7 +178,7 @@ export function markdownToHtml(markdown: string): string {
       closeOpenLists();
       const content = parseInlineMarkdownToHtml(line.slice(4));
       htmlParts.push(
-        `<h4 class="font-bold text-blue-700 text-xs font-mono uppercase tracking-wide mt-3 mb-1">${content}</h4>`
+        `<h4 class="font-semibold text-blue-700 text-sm font-sans tracking-wide mt-2.5 mb-1">${content}</h4>`
       );
       continue;
     }
@@ -133,7 +187,7 @@ export function markdownToHtml(markdown: string): string {
       closeOpenLists();
       const content = parseInlineMarkdownToHtml(line.slice(3));
       htmlParts.push(
-        `<h3 class="font-bold text-slate-900 text-sm font-sans tracking-tight mt-3 mb-1">${content}</h3>`
+        `<h3 class="font-bold text-slate-900 text-base font-sans tracking-tight mt-3 mb-1">${content}</h3>`
       );
       continue;
     }
@@ -142,7 +196,7 @@ export function markdownToHtml(markdown: string): string {
       closeOpenLists();
       const content = parseInlineMarkdownToHtml(line.slice(2));
       htmlParts.push(
-        `<h2 class="font-bold text-slate-900 text-base font-sans tracking-tight mt-3.5 mb-1.5 border-b border-slate-200/80 pb-1">${content}</h2>`
+        `<h2 class="font-bold text-slate-900 text-lg sm:text-xl font-sans tracking-tight mt-4 mb-1.5 border-b border-slate-200/80 pb-1">${content}</h2>`
       );
       continue;
     }
@@ -185,6 +239,7 @@ export function markdownToHtml(markdown: string): string {
     htmlParts.push(`<p class="text-slate-800 text-xs leading-relaxed my-1">${paraContent}</p>`);
   }
 
+  flushQuote();
   closeOpenLists();
 
   if (inCodeBlock && codeBuffer.length > 0) {
@@ -198,7 +253,10 @@ export function markdownToHtml(markdown: string): string {
 }
 
 /**
- * Traverses a DOM node recursively and serializes it back into clean Markdown.
+ * Traverses a DOM node recursively and serializes it into Markdown.
+ * Block nodes return their content WITHOUT surrounding newlines —
+ * block separation is handled exclusively by `serializeContainer`
+ * (single source of truth for the "\n\n between blocks" law).
  */
 export function domNodeToMarkdown(node: Node): string {
   // Text node
@@ -222,23 +280,20 @@ export function domNodeToMarkdown(node: Node): string {
   };
 
   switch (tag) {
-    case 'h1': {
-      const text = getChildrenMarkdown().trim();
-      return text ? `# ${text}\n\n` : '';
-    }
+    case 'h1':
     case 'h2': {
       const text = getChildrenMarkdown().trim();
-      return text ? `## ${text}\n\n` : '';
+      return text ? `# ${text}` : '';
     }
     case 'h3': {
       const text = getChildrenMarkdown().trim();
-      return text ? `## ${text}\n\n` : '';
+      return text ? `## ${text}` : '';
     }
     case 'h4':
     case 'h5':
     case 'h6': {
       const text = getChildrenMarkdown().trim();
-      return text ? `### ${text}\n\n` : '';
+      return text ? `### ${text}` : '';
     }
     case 'strong':
     case 'b': {
@@ -249,6 +304,10 @@ export function domNodeToMarkdown(node: Node): string {
     case 'i': {
       const text = getChildrenMarkdown();
       return text ? `*${text}*` : '';
+    }
+    case 'input': {
+      // Checkbox markers are represented by their parent task li, not inline
+      return '';
     }
     case 'code': {
       // If parent is pre, the pre handler manages it
@@ -261,7 +320,17 @@ export function domNodeToMarkdown(node: Node): string {
     case 'pre': {
       const codeEl = el.querySelector('code');
       const text = (codeEl ? codeEl.textContent : el.textContent) || '';
-      return `\n\`\`\`\n${text.trim()}\n\`\`\`\n\n`;
+      return `\`\`\`\n${text.trim()}\n\`\`\``;
+    }
+    case 'blockquote': {
+      const inner = getChildrenMarkdown()
+        .replace(/\n{2,}/g, '\n')
+        .split('\n')
+        .map((l) => l.trim())
+        .filter(Boolean)
+        .map((l) => `> ${l}`)
+        .join('\n');
+      return inner;
     }
     case 'a': {
       const href = el.getAttribute('href') || '';
@@ -270,45 +339,51 @@ export function domNodeToMarkdown(node: Node): string {
       if (!text || text === href) return href;
       return `[${text}](${href})`;
     }
+    case 'li': {
+      // Task items carry their own marker
+      if (el.dataset.task === 'true') {
+        const checked = el.dataset.checked === 'true';
+        const textEl = el.querySelector('.task-text');
+        const raw = textEl
+          ? Array.from(textEl.childNodes)
+              .map((c) => domNodeToMarkdown(c))
+              .join('')
+          : el.textContent || '';
+        return `- [${checked ? 'x' : ' '}] ${raw.trim()}`;
+      }
+      return getChildrenMarkdown().replace(/\n{2,}/g, '\n').trim();
+    }
     case 'ul': {
-      let ulContent = '';
-      const listItems = Array.from(el.children).filter(
+      const items = Array.from(el.children).filter(
         (c) => c.tagName.toLowerCase() === 'li'
       );
-      for (const li of listItems) {
-        let liText = '';
-        for (let i = 0; i < li.childNodes.length; i++) {
-          liText += domNodeToMarkdown(li.childNodes[i]);
-        }
-        ulContent += `- ${liText.trim()}\n`;
-      }
-      return `${ulContent}\n`;
+      return items
+        .map((li) => {
+          const t = domNodeToMarkdown(li).replace(/\n{2,}/g, '\n').trim();
+          return t.startsWith('- [') ? t : `- ${t}`;
+        })
+        .filter(Boolean)
+        .join('\n');
     }
     case 'ol': {
-      let olContent = '';
-      const listItems = Array.from(el.children).filter(
+      const items = Array.from(el.children).filter(
         (c) => c.tagName.toLowerCase() === 'li'
       );
-      for (let i = 0; i < listItems.length; i++) {
-        const li = listItems[i];
-        let liText = '';
-        for (let j = 0; j < li.childNodes.length; j++) {
-          liText += domNodeToMarkdown(li.childNodes[j]);
-        }
-        olContent += `${i + 1}. ${liText.trim()}\n`;
-      }
-      return `${olContent}\n`;
-    }
-    case 'li': {
-      return getChildrenMarkdown();
+      return items
+        .map((li, idx) => {
+          const t = domNodeToMarkdown(li).replace(/\n{2,}/g, '\n').trim();
+          return `${idx + 1}. ${t}`;
+        })
+        .filter(Boolean)
+        .join('\n');
     }
     case 'p':
     case 'div': {
       const inner = getChildrenMarkdown();
-      if (!inner || inner === '\n' || el.innerHTML === '<br>') {
-        return '\n';
+      if (!inner.trim() || el.innerHTML === '<br>' || el.innerHTML === '<br/>') {
+        return '';
       }
-      return `${inner}\n\n`;
+      return inner.trim();
     }
     case 'br': {
       return '\n';
@@ -320,7 +395,31 @@ export function domNodeToMarkdown(node: Node): string {
 }
 
 /**
- * Converts rich HTML (or an HTML element / string) back into clean Markdown.
+ * Serializes a container element's children as canonical Markdown blocks
+ * separated by exactly one blank line ("\\n\\n"). This is the single place
+ * where block separation is decided, guaranteeing round-trip stability.
+ */
+function serializeContainer(root: HTMLElement): string {
+  // A bare list passed as the root is itself one block
+  const rootTag = root.tagName.toLowerCase();
+  if (rootTag === 'ul' || rootTag === 'ol' || rootTag === 'pre' || rootTag === 'blockquote') {
+    const only = domNodeToMarkdown(root).replace(/\n{3,}/g, '\n\n').trim();
+    return only;
+  }
+  const blocks: string[] = [];
+  for (let i = 0; i < root.childNodes.length; i++) {
+    const raw = domNodeToMarkdown(root.childNodes[i]);
+    const cleaned = raw.replace(/\n{3,}/g, '\n\n').trim();
+    if (cleaned) blocks.push(cleaned);
+  }
+  return blocks.join('\n\n');
+}
+
+/**
+ * Converts rich HTML (or an HTML element / string) back into clean,
+ * canonical Markdown: one blank line between blocks, collapsed excess
+ * newlines, trimmed outer whitespace. Idempotent by construction —
+ * canonicalize(canonicalize(x)) === canonicalize(x).
  */
 export function htmlToMarkdown(htmlOrNode: string | HTMLElement): string {
   if (!htmlOrNode) return '';
@@ -340,13 +439,89 @@ export function htmlToMarkdown(htmlOrNode: string | HTMLElement): string {
     rootNode = htmlOrNode;
   }
 
-  let markdown = domNodeToMarkdown(rootNode);
-
-  // Normalize duplicate newlines (3+ newlines to double newline) and trim outer margins
-  markdown = markdown
+  const markdown = serializeContainer(rootNode)
     .replace(/\r\n/g, '\n')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 
   return markdown;
+}
+
+/**
+ * True when `node` sits inside a fenced code block (`pre`), where inline
+ * formatting actions and interactive checkboxes must not apply.
+ */
+export function isInsideCodeFence(node: Node): boolean {
+  if (!node) return false;
+  const el =
+    node.nodeType === Node.ELEMENT_NODE
+      ? (node as HTMLElement)
+      : node.parentElement;
+  return !!el && !!el.closest('pre');
+}
+
+/**
+ * Flips a task item's checked state (data attribute + visual strike-through).
+ * Mutates ONLY the target item — siblings untouched. Caller re-serializes.
+ */
+export function toggleTaskItem(itemEl: HTMLElement): void {
+  if (itemEl.dataset.task !== 'true') return;
+  const nowChecked = itemEl.dataset.checked !== 'true';
+  itemEl.dataset.checked = nowChecked ? 'true' : 'false';
+  const input = itemEl.querySelector<HTMLInputElement>('input[data-task-checkbox]');
+  if (input) input.checked = nowChecked;
+  const text = itemEl.querySelector<HTMLElement>('.task-text');
+  if (text) text.classList.toggle('line-through', nowChecked);
+  if (text) text.classList.toggle('text-slate-400', nowChecked);
+}
+
+/**
+ * Creates the next unchecked task item after `itemEl` (Enter-at-end
+ * continuation, FR-010 extension). Returns the new item.
+ */
+export function spawnNextTaskItem(itemEl: HTMLElement): HTMLElement {
+  const next = makeTaskItemElement('', false);
+  itemEl.parentElement?.insertBefore(next, itemEl.nextSibling);
+  return next;
+}
+
+function makeTaskItemElement(text: string, checked: boolean): HTMLElement {
+  const li = document.createElement('li');
+  li.className = 'task-item flex items-start gap-2 py-0.5';
+  li.dataset.task = 'true';
+  li.dataset.checked = checked ? 'true' : 'false';
+
+  const input = document.createElement('input');
+  input.type = 'checkbox';
+  input.checked = checked;
+  input.setAttribute('data-task-checkbox', 'true');
+  input.setAttribute('aria-label', 'Toggle task item');
+  input.className = 'mt-0.5 w-3 h-3 accent-blue-600 cursor-pointer shrink-0';
+
+  const span = document.createElement('span');
+  span.className = 'flex-1 task-text';
+  span.textContent = text;
+
+  li.appendChild(input);
+  li.appendChild(span);
+  return li;
+}
+
+/**
+ * Canonical form of a Markdown string: what the note looks like after one
+ * render → serialize cycle. Stored/saved notes converge to this form.
+ */
+export function canonicalizeMarkdown(markdown: string): string {
+  if (!markdown || !markdown.trim()) return '';
+  return htmlToMarkdown(markdownToHtml(markdown));
+}
+
+/**
+ * Equality under canonicalization: true when two Markdown strings render
+ * identically. Used by the editor sync layer to skip no-op DOM writes
+ * (caret preservation) and by save-compare logic to avoid phantom diffs.
+ */
+export function compareCanonical(a: string, b: string): boolean {
+  if (a === b) return true;
+  return canonicalizeMarkdown(a) === canonicalizeMarkdown(b);
 }
