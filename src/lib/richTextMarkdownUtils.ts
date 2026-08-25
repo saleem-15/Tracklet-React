@@ -38,7 +38,7 @@ export function parseInlineMarkdownToHtml(line: string): string {
       // Bold: **text**
       escaped = escaped.replace(
         /\*\*([^*]+)\*\*/g,
-        '<strong class="font-bold text-slate-900">$1</strong>'
+        '<strong class="font-semibold text-slate-800">$1</strong>'
       );
 
       // Italic: *text* (single asterisk)
@@ -67,7 +67,7 @@ export function parseInlineMarkdownToHtml(line: string): string {
 export const BLOCK_STYLES = {
   h1: 'font-bold text-slate-900 text-lg font-sans tracking-tight mt-3 mb-1',
   h2: 'font-bold text-slate-900 text-base font-sans tracking-tight mt-2.5 mb-1',
-  h3: 'font-semibold text-blue-700 text-sm font-sans tracking-wide mt-2 mb-0.5',
+  h3: 'font-semibold text-slate-900 text-sm font-sans tracking-wide mt-2 mb-0.5',
   paragraph: 'leading-relaxed',
   bulletList: 'list-disc pl-4 space-y-0.5 my-1',
   numberedList: 'list-decimal pl-4 space-y-0.5 my-1',
@@ -75,7 +75,7 @@ export const BLOCK_STYLES = {
   taskItem: 'task-item flex items-start gap-1.5 py-0.5',
   checkbox: 'mt-1 w-4 h-4 accent-blue-600 cursor-pointer shrink-0 rounded',
   quote:
-    'border-l-4 border-blue-400 bg-blue-50/60 rounded-r-lg pl-3 pr-2 py-1.5 my-2 text-slate-700',
+    'border-l-4 border-blue-400 bg-blue-50/60 rounded-lg pl-3 pr-2 py-1.5 my-2 text-slate-700',
   codeBlock:
     'my-2 p-3 bg-slate-900 text-slate-100 rounded-xl font-mono text-[11px] leading-relaxed overflow-x-auto border border-slate-800 selection:bg-blue-500/40',
   hr: 'my-3 border-slate-200',

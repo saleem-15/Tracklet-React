@@ -23,7 +23,7 @@ describe('richTextMarkdownUtils', () => {
       expect(markdownToHtml('   ')).toBe('<p><br></p>');
     });
 
-    it('converts headings correctly with card-tuned hierarchy', () => {
+    it('converts headings correctly with card-tuned hierarchy (ordinary colors)', () => {
       const md = '# Title\n## Subtitle\n### Section';
       const html = markdownToHtml(md);
 
@@ -32,7 +32,8 @@ describe('richTextMarkdownUtils', () => {
       expect(html).toContain('Title');
       expect(html).toContain('<h3 class="font-bold text-slate-900 text-base');
       expect(html).toContain('Subtitle');
-      expect(html).toContain('<h4 class="font-semibold text-blue-700 text-sm');
+      expect(html).toContain('<h4 class="font-semibold text-slate-900 text-sm'); // H3: ordinary, not blue
+      expect(html).not.toContain('text-blue-700'); // headings never blue
       expect(html).toContain('Section');
     });
 
@@ -50,7 +51,7 @@ describe('richTextMarkdownUtils', () => {
       const md = 'This is **bold**, this is *italic*, and `code snippet`.';
       const html = markdownToHtml(md);
 
-      expect(html).toContain('<strong class="font-bold text-slate-900">bold</strong>');
+      expect(html).toContain('<strong class="font-semibold text-slate-800">bold</strong>'); // ordinary body color
       expect(html).toContain('<em class="italic text-slate-700">italic</em>');
       expect(html).toContain('<code class="font-mono text-[11px] bg-slate-100 text-slate-800');
       expect(html).toContain('code snippet</code>');

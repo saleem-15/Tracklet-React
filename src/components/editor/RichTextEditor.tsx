@@ -7,6 +7,7 @@ import SlashMenu from './SlashMenu';
 import SelectionBubble from './SelectionBubble';
 import TemplatePills from './TemplatePills';
 import LinkPopover from './LinkPopover';
+import LinkHoverTooltip from './LinkHoverTooltip';
 import type { NoteTemplate, NoteTemplateId } from '../../lib/noteTemplates';
 
 export interface RichTextEditorProps {
@@ -153,6 +154,9 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
 
         {/* Floating selection bubble */}
         <SelectionBubble editorRef={editorRef} actions={EDITOR_ACTIONS} onApply={handleBubbleApply} />
+
+        {/* Hover preview for linked text */}
+        <LinkHoverTooltip editorRef={editorRef} />
 
         {/* Floating link insert / edit / remove popover */}
         <LinkPopover

@@ -1,19 +1,22 @@
-import React from 'react';
+import React, { useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { computeMenuPosition } from '../../lib/editorDom';
 import type { FormattingAction } from './editorActions';
 
 export interface SlashMenuProps {
   open: boolean;
   items: FormattingAction[];
   selectedIndex: number;
-  rect: { top: number; left: number } | null;
+  rect: { anchorTop: number; anchorBottom: number; left: number } | null;
   onSelect: (action: FormattingAction) => void;
   onHover: (index: number) => void;
 }
 
 /**
- * Linear-style "/" command menu. Presentational: positioning + item list.
- * Keyboard interaction lives in the editor hook (combobox owner);
- * this component carries the listbox semantics for assistive tech (FR-020).
+ * Linear-style "/" command menu. Presentational; positioning is computed
+ * via the shared smart-placement helper (flips above the caret near the
+ * end of the notes, clamps to viewport edges). Keyboard interaction lives
+ * in the editor hook (combobox owner); this component carries listbox
+ * semantics for assistive tech (FR-020).
  */
 const SlashMenu: React.FC<SlashMenuProps> = ({
   open,
@@ -23,15 +26,34 @@ const SlashMenu: React.FC<SlashMenuProps> = ({
   onSelect,
   onHover,
 }) => {
-  if (!open || items.length === 0) return null;
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const [measuredHeight, setMeasuredHeight] = useState(240);
+
+  // Measure real height so flip decisions are exact, not estimated
+  useLayoutEffect(() => {
+    if (open && rootRef.current) {
+      setMeasuredHeight(rootRef.current.offsetHeight || 240);
+    }
+  }, [open, items.length]);
+
+  const pos = useMemo(
+    () =>
+      open && rect
+        ? computeMenuPosition(rect, measuredHeight, { menuWidth: 224 })
+        : null,
+    [open, rect, measuredHeight]
+  );
+
+  if (!open || items.length === 0 || !pos) return null;
 
   return (
     <div
+      ref={rootRef}
       role="listbox"
       aria-label="Formatting commands"
       aria-activedescendant={`slash-option-${items[selectedIndex]?.id ?? ''}`}
       className="fixed z-[60] w-56 max-h-72 overflow-y-auto bg-white border border-slate-200 rounded-xl shadow-xl py-1.5 animate-in fade-in zoom-in-95 duration-100"
-      style={{ top: rect?.top ?? 0, left: rect?.left ?? 0 }}
+      style={{ top: pos.top, left: pos.left }}
     >
       {items.map((action, index) => {
         const Icon = action.icon;
@@ -61,14 +83,6 @@ const SlashMenu: React.FC<SlashMenuProps> = ({
           </button>
         );
       })}
-      <div
-        aria-hidden="true"
-        className="mt-1 px-3 py-2 border-t border-slate-100 flex items-center justify-between text-[10px] font-mono text-slate-400 select-none"
-      >
-        <span>↑↓ navigate</span>
-        <span>↵ apply</span>
-        <span>esc close</span>
-      </div>
     </div>
   );
 };

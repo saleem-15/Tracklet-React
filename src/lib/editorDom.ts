@@ -1,4 +1,42 @@
-﻿/** Deterministic DOM utilities for the WYSIWYG editor.
+﻿export interface AnchorRect {
+  anchorTop: number;
+  anchorBottom: number;
+  left: number;
+}
+
+/**
+ * Smart popover placement: prefers below the caret, flips above when the
+ * menu would overflow the viewport bottom, and clamps to both viewport
+ * edges. Pure — fully unit-testable.
+ */
+export function computeMenuPosition(
+  rect: AnchorRect,
+  menuHeight: number,
+  opts?: {
+    viewportHeight?: number;
+    viewportWidth?: number;
+    menuWidth?: number;
+    gap?: number;
+  }
+): { top: number; left: number; flipAbove: boolean } {
+  const vh = opts?.viewportHeight ?? window.innerHeight;
+  const vw = opts?.viewportWidth ?? window.innerWidth;
+  const menuWidth = opts?.menuWidth ?? 224; // w-56
+  const gap = opts?.gap ?? 6;
+
+  const belowTop = rect.anchorBottom + gap;
+  const fitsBelow = belowTop + menuHeight <= vh - 8;
+
+  const top = fitsBelow
+    ? belowTop
+    : Math.max(8, rect.anchorTop - menuHeight - gap);
+
+  const left = Math.max(8, Math.min(rect.left, vw - menuWidth - 8));
+
+  return { top, left, flipAbove: !fitsBelow };
+}
+
+/** Deterministic DOM utilities for the WYSIWYG editor.
  *
  * Everything that used to rely on execCommand quirks for block
  * transformations goes through here so behavior is identical on every

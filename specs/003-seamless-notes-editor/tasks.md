@@ -262,3 +262,13 @@ Task T009 "failing draft-store tests"          # then T010
 - [x] T041 Callout: rename Quote action label, verify empty-line apply (resolveSource null-fallback fix), regression test
 - [x] T042 Checkbox done-state visibility: w-4 h-4 boxes, property<->attribute sync in toggleTaskItem, class dedupe into BLOCK_STYLES
 - [x] T043 Divider block: --- <-> <hr> serialization both directions + Divider action (hr + trailing paragraph, list-safe) + hint pill (focused+empty) + S11 quickstart scenarios + tests (utils/transforms/linkPopover)
+
+---
+
+## Phase 11: Visual Refinements & Smart Placement (stakeholder round 3)
+
+- [x] T044 Callout corners fully rounded (rounded-r -> rounded-lg in BLOCK_STYLES.quote)
+- [x] T045 Link hover preview pill (URL + Ctrl+Click hint) via new LinkHoverTooltip component mounted on the editor surface
+- [x] T046 Ordinary text colors: H3 style text-blue-700 -> text-slate-900; strong/b normalized to font-semibold text-slate-800
+- [x] T047 Remove slash-menu footer hints and its divider line entirely
+- [x] T048 Smart menu placement: computeMenuPosition helper (below-caret preference, viewport-bottom flip, edge clamps) with measured height in SlashMenu; unit suite in editorDom tests

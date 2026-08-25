@@ -37,7 +37,7 @@ export interface UseRichTextEditorOptions {
 export interface SlashMenuState {
   open: boolean;
   query: string;
-  rect: { top: number; left: number } | null;
+  rect: { anchorTop: number; anchorBottom: number; left: number } | null;
   items: FormattingAction[];
   selectedIndex: number;
 }
@@ -134,8 +134,12 @@ export function useRichTextEditor({ value, onChange }: UseRichTextEditorOptions)
     return { block, textBefore: pre.toString() };
   }, []);
 
-  /** Viewport position for the slash menu, with zero-rect fallbacks. */
-  const caretViewportPos = useCallback((): { top: number; left: number } | null => {
+  /** Viewport anchor for the slash menu, with zero-rect fallbacks. */
+  const caretViewportPos = useCallback((): {
+    anchorTop: number;
+    anchorBottom: number;
+    left: number;
+  } | null => {
     const el = editorRef.current;
     if (!el) return null;
     const range = selectionInside(el);
@@ -143,7 +147,7 @@ export function useRichTextEditor({ value, onChange }: UseRichTextEditorOptions)
 
     let r: DOMRect | undefined =
       range.getClientRects()[range.getClientRects().length - 1] ??
-      (range.getBoundingClientRect() as DOMRect);
+      (range.getBoundingClientRect() as DOMRect | undefined);
 
     if (!r || (r.top === 0 && r.left === 0 && r.height === 0)) {
       const info = getCaretLineInfo();
@@ -152,7 +156,7 @@ export function useRichTextEditor({ value, onChange }: UseRichTextEditorOptions)
         : el.getBoundingClientRect();
       r = fallback as DOMRect;
     }
-    return { top: r.bottom + 4, left: r.left };
+    return { anchorTop: r.top, anchorBottom: r.bottom, left: r.left };
   }, [getCaretLineInfo]);
 
   const updateSlashFromCaret = useCallback(() => {

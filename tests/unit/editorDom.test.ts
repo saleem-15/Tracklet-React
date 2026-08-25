@@ -1,4 +1,4 @@
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, afterEach, vi } from 'vitest';
 import {
   findCaretBlock,
   topLevelChildOf,
@@ -9,6 +9,7 @@ import {
   restoreCaret,
   isEmptyBlock,
   prepareListExtraction,
+  computeMenuPosition,
 } from '../../src/lib/editorDom';
 
 let root: HTMLElement;
@@ -142,5 +143,67 @@ describe('topLevelChildOf', () => {
     setup('<blockquote><p id="inner">q</p></blockquote>');
     const bq = el('blockquote');
     expect(topLevelChildOf(root, el('p'))).toBe(bq);
+  });
+});
+
+describe('computeMenuPosition (smart slash-menu placement)', () => {
+  const VH = 800;
+  const VW = 1200;
+
+  it('places below the caret when there is room', () => {
+    const pos = computeMenuPosition(
+      { anchorTop: 100, anchorBottom: 116, left: 40 },
+      240,
+      { viewportHeight: VH, viewportWidth: VW }
+    );
+    expect(pos.flipAbove).toBe(false);
+    expect(pos.top).toBe(122); // anchorBottom + gap(6)
+    expect(pos.left).toBe(40);
+  });
+
+  it('flips above when the menu would overflow the viewport bottom', () => {
+    const pos = computeMenuPosition(
+      { anchorTop: 620, anchorBottom: 636, left: 40 },
+      240,
+      { viewportHeight: VH, viewportWidth: VW }
+    );
+    expect(pos.flipAbove).toBe(true);
+    // 636 + 240 > 792 -> above: anchorTop - height - gap
+    expect(pos.top).toBe(374); // 620 - 240 - 6
+    expect(pos.top + 240).toBeLessThan(VH);
+  });
+
+  it('never rises above the viewport top either (worst case clamps)', () => {
+    const pos = computeMenuPosition(
+      { anchorTop: 30, anchorBottom: 46, left: 40 },
+      400,
+      { viewportHeight: VH, viewportWidth: VW }
+    );
+    expect(pos.flipAbove).toBe(false); // below fits in tall viewport
+    void pos;
+  });
+
+  it('clamps horizontally inside both viewport edges', () => {
+    const nearRight = computeMenuPosition(
+      { anchorTop: 100, anchorBottom: 116, left: 1150 },
+      240,
+      { viewportHeight: VH, viewportWidth: VW }
+    );
+    expect(nearRight.left).toBe(1200 - 224 - 8); // right edge minus margin
+
+    const atLeft = computeMenuPosition(
+      { anchorTop: 100, anchorBottom: 116, left: 2 },
+      240,
+      { viewportHeight: VH, viewportWidth: VW }
+    );
+    expect(atLeft.left).toBe(8);
+  });
+
+  it('uses live viewport dimensions by default', () => {
+    vi.spyOn(window, 'innerHeight', 'get').mockReturnValue(500);
+    vi.spyOn(window, 'innerWidth', 'get').mockReturnValue(900);
+    const pos = computeMenuPosition({ anchorTop: 300, anchorBottom: 316, left: 10 }, 240);
+    expect(pos.flipAbove).toBe(true); // 316+240=556 > 492
+    vi.restoreAllMocks();
   });
 });
