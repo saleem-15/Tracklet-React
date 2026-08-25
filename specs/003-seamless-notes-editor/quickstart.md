@@ -1,4 +1,4 @@
-# Quickstart: Seamless Notes Editor Validation
+﻿# Quickstart: Seamless Notes Editor Validation
 
 **Feature**: 003-seamless-notes-editor | **Date**: 2026-08-24
 Proves the spec's success criteria end-to-end. Implementation details live in [plan.md](./plan.md) and [contracts/editor-contracts.md](./contracts/editor-contracts.md).
@@ -98,6 +98,8 @@ Plus:
 - Applying the same block command twice toggles back to a paragraph (headings, quote, lists).
 - Bullet applied directly under a bullet list merges into it (never nests two `<ul>`s).
 - To-do on a line containing inline bold/link keeps the formatting.
+- Enter mid-to-do splits the line: remainder becomes the new unchecked item (bullet-list parity).
+- Slash dialog no longer lists Bold/Italic (still Ctrl+B/I and on the selection bubble).
 - Undo after each transform returns the previous state or at minimum never corrupts content.
 - Auto-save firing mid-menu never resets the menu or caret.
 

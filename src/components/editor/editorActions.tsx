@@ -61,6 +61,11 @@ export interface FormattingAction {
   scope: 'block' | 'inline' | 'selection';
   appliesTo: (ctx: EditorActionContext) => boolean;
   apply: (ctx: EditorActionContext) => void;
+  /**
+   * When false, the action stays available via shortcuts and the selection
+   * bubble but is hidden from the "/" command dialog.
+   */
+  inSlashMenu?: boolean;
 }
 
 /* ------------------------------------------------------------------ */
@@ -247,6 +252,7 @@ export const EDITOR_ACTIONS: readonly FormattingAction[] = [
     keywords: ['strong', 'emphasis', 'b'],
     shortcut: 'Ctrl+B',
     scope: 'inline',
+    inSlashMenu: false,
     appliesTo: () => true,
     apply: ({ editor }) => {
       focusEditor(editor);
@@ -261,6 +267,7 @@ export const EDITOR_ACTIONS: readonly FormattingAction[] = [
     keywords: ['em', 'emphasis', 'i'],
     shortcut: 'Ctrl+I',
     scope: 'inline',
+    inSlashMenu: false,
     appliesTo: () => true,
     apply: ({ editor }) => {
       focusEditor(editor);
@@ -484,4 +491,13 @@ export function filterActions(query: string): FormattingAction[] {
       a.id.toLowerCase().includes(q) ||
       a.keywords.some((k) => k.toLowerCase().includes(q))
   );
+}
+
+/**
+ * Actions offered by the "/" dialog: filtered + menu-visibility aware.
+ * Bold/Italic stay reachable via shortcuts and the selection bubble but
+ * are intentionally absent from the menu.
+ */
+export function menuActions(query: string): FormattingAction[] {
+  return filterActions(query).filter((a) => a.inSlashMenu !== false);
 }

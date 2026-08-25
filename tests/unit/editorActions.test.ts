@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   EDITOR_ACTIONS,
   filterActions,
+  menuActions,
   getActionById,
   type EditorActionId,
 } from '../../src/components/editor/editorActions';
@@ -71,5 +72,21 @@ describe('filterActions (FR-006)', () => {
 
   it('returns empty array for garbage queries', () => {
     expect(filterActions('zzzznotfound')).toEqual([]);
+  });
+
+  it('menuActions hides Bold/Italic while keeping them in the registry', () => {
+    const ids = menuActions('').map((a) => a.id);
+    expect(ids).not.toContain('bold');
+    expect(ids).not.toContain('italic');
+    // FR-007 minimum set remains
+    for (const required of ['h1','h2','h3','bullet','numbered','todo','quote','code','link'] as const) {
+      expect(ids).toContain(required);
+    }
+    // Registry itself is untouched — shortcuts/bubble still work
+    expect(EDITOR_ACTIONS.map((a) => a.id)).toContain('bold');
+    expect(EDITOR_ACTIONS.map((a) => a.id)).toContain('italic');
+
+    // Querying never resurrects them into the menu
+    expect(menuActions('b').map((a) => a.id)).not.toContain('bold');
   });
 });

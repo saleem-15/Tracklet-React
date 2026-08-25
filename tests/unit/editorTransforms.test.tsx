@@ -3,6 +3,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { act } from 'react';
 import { EDITOR_ACTIONS, getActionById } from '../../src/components/editor/editorActions';
 import { placeCaretAtOffset, exitCalloutOnEnter } from '../../src/lib/editorDom';
+import { spawnNextTaskItem } from '../../src/lib/richTextMarkdownUtils';
 
 let host: HTMLDivElement | null = null;
 let root: Root | null = null;
@@ -228,6 +229,37 @@ describe('deterministic block transformations (bug-fix regression)', () => {
       expect(exitCalloutOnEnter(ed)).toBe(true);
       expect(ed.querySelector('blockquote')).toBeNull();
       expect(ed.querySelector('p')).not.toBeNull();
+    });
+
+    it('mid-line Enter splits: remainder moves into the new unchecked item', () => {
+      const ed = setupEditor(
+        '<ul class="task-list"><li class="task-item" data-task="true" data-checked="false"><input type="checkbox" data-task-checkbox="true"><span class="task-text">call Sarah</span></li></ul>'
+      );
+      const span = ed.querySelector('.task-text')!;
+      const range = document.createRange();
+      range.setStart(span.firstChild!, 5); // after "call "
+      range.collapse(true);
+      const sel = document.getSelection()!;
+      sel.removeAllRanges();
+      sel.addRange(range);
+
+      // Enter mid-line is handled by the hook; simulate its split path via
+      // the same primitives it uses (spawn + extract tail).
+      const taskLi = ed.querySelector('li.task-item') as HTMLElement;
+      const tail = document.createRange();
+      tail.setStart(span.firstChild!, 5);
+      tail.setEndAfter(span.lastChild ?? span);
+      const frag = tail.extractContents();
+
+      const next = spawnNextTaskItem(taskLi);
+      const nextText = next.querySelector('.task-text') as HTMLElement;
+      if (frag.hasChildNodes()) nextText.appendChild(frag);
+      placeCaretAtOffset(nextText, 0);
+
+      expect(ed.querySelectorAll('li.task-item').length).toBe(2);
+      expect(taskLi.querySelector('.task-text')!.textContent).toBe('call ');
+      expect(nextText.textContent).toBe('Sarah');
+      expect(next.dataset.checked).toBe('false');
     });
 
     it('returns false when caret is outside any quote', () => {

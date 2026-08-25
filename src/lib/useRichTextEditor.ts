@@ -24,7 +24,7 @@ import {
   sanitizePastedHtml,
 } from './editorDom';
 import {
-  filterActions,
+  menuActions,
   getActionById,
   type EditorActionId,
   type FormattingAction,
@@ -179,7 +179,7 @@ export function useRichTextEditor({ value, onChange }: UseRichTextEditorOptions)
       open: true,
       query: match[1],
       rect: caretViewportPos(),
-      items: filterActions(match[1]),
+      items: menuActions(match[1]),
       selectedIndex: 0,
     });
   }, [getCaretLineInfo, caretViewportPos]);
@@ -546,7 +546,7 @@ export function useRichTextEditor({ value, onChange }: UseRichTextEditorOptions)
         return;
       }
 
-      /* --- Enter in a task item: exit when empty, else spawn next (FR-010) --- */
+      /* --- Enter in a task item: exit when empty, split/spawn otherwise (FR-010) --- */
       if (e.key === 'Enter' && !e.shiftKey && !isCmdOrCtrl) {
         const selection = window.getSelection();
         if (selection && selection.isCollapsed && selection.rangeCount > 0) {
@@ -572,18 +572,35 @@ export function useRichTextEditor({ value, onChange }: UseRichTextEditorOptions)
               return;
             }
 
+            e.preventDefault();
+
             const caretRange = selection.getRangeAt(0);
             const endProbe = document.createRange();
             endProbe.selectNodeContents(textEl);
             endProbe.collapse(false);
-            if (caretRange.compareBoundaryPoints(Range.END_TO_END, endProbe) >= 0) {
-              e.preventDefault();
-              const next = spawnNextTaskItem(taskLi as HTMLElement);
-              const focusSpan = next.querySelector('.task-text') ?? next;
-              placeCaretAtStart(focusSpan as HTMLElement);
-              handleInput();
-              return;
+            const atEnd =
+              caretRange.compareBoundaryPoints(Range.END_TO_END, endProbe) >= 0;
+
+            // Spawn the next unchecked item (always — like bullet lists)
+            const next = spawnNextTaskItem(taskLi as HTMLElement);
+            const nextText = (next.querySelector('.task-text') ?? next) as HTMLElement;
+
+            if (!atEnd) {
+              // Mid-line: carry the remainder into the new item
+              const tail = document.createRange();
+              tail.setStart(caretRange.startContainer, caretRange.startOffset);
+              try {
+                tail.setEndAfter(textEl.lastChild ?? textEl);
+              } catch {
+                /* single-node edge — empty tail is fine */
+              }
+              const frag = tail.extractContents();
+              if (frag.hasChildNodes()) nextText.appendChild(frag);
             }
+
+            placeCaretAtStart(nextText);
+            handleInput();
+            return;
           }
         }
       }

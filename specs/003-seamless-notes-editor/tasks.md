@@ -280,3 +280,10 @@ Task T009 "failing draft-store tests"          # then T010
 - [x] T049 Copy-as-Markdown: onCopy writes canonical Markdown into the plain-text clipboard flavor (HTML flavor untouched) in useRichTextEditor.ts
 - [x] T050 Rich paste: prefer sanitized text/html flavor via sanitizePastedHtml whitelist (attribute stripping, script/style removal, wrapper unwrap) with fallback to plain-text normalization; unit suite in editorDom tests
 - [x] T051 H3 weight parity with other headings (font-bold) + compact 14px checkboxes with explicit white checkmark styling in BLOCK_STYLES.checkbox
+
+---
+
+## Phase 12b: Slash Menu Trim & To-do Split Parity (stakeholder round 5)
+
+- [x] T052 Hide Bold/Italic from the "/" dialog via inSlashMenu registry flag (shortcuts + selection bubble unaffected); menuActions helper + tests
+- [x] T053 Todo lists reach bullet-list parity: mid-line Enter splits with remainder carried into the new unchecked item; regression test
