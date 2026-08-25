@@ -272,3 +272,11 @@ Task T009 "failing draft-store tests"          # then T010
 - [x] T046 Ordinary text colors: H3 style text-blue-700 -> text-slate-900; strong/b normalized to font-semibold text-slate-800
 - [x] T047 Remove slash-menu footer hints and its divider line entirely
 - [x] T048 Smart menu placement: computeMenuPosition helper (below-caret preference, viewport-bottom flip, edge clamps) with measured height in SlashMenu; unit suite in editorDom tests
+
+---
+
+## Phase 12: Copy Fidelity & Micro-Polish (stakeholder round 4)
+
+- [x] T049 Copy-as-Markdown: onCopy writes canonical Markdown into the plain-text clipboard flavor (HTML flavor untouched) in useRichTextEditor.ts
+- [x] T050 Rich paste: prefer sanitized text/html flavor via sanitizePastedHtml whitelist (attribute stripping, script/style removal, wrapper unwrap) with fallback to plain-text normalization; unit suite in editorDom tests
+- [x] T051 H3 weight parity with other headings (font-bold) + compact 14px checkboxes with explicit white checkmark styling in BLOCK_STYLES.checkbox

@@ -67,13 +67,14 @@ export function parseInlineMarkdownToHtml(line: string): string {
 export const BLOCK_STYLES = {
   h1: 'font-bold text-slate-900 text-lg font-sans tracking-tight mt-3 mb-1',
   h2: 'font-bold text-slate-900 text-base font-sans tracking-tight mt-2.5 mb-1',
-  h3: 'font-semibold text-slate-900 text-sm font-sans tracking-wide mt-2 mb-0.5',
+  h3: 'font-bold text-slate-900 text-sm font-sans tracking-wide mt-2 mb-0.5',
   paragraph: 'leading-relaxed',
   bulletList: 'list-disc pl-4 space-y-0.5 my-1',
   numberedList: 'list-decimal pl-4 space-y-0.5 my-1',
   taskList: 'list-none pl-4 space-y-0.5 my-1',
   taskItem: 'task-item flex items-start gap-1.5 py-0.5',
-  checkbox: 'mt-1 w-4 h-4 accent-blue-600 cursor-pointer shrink-0 rounded',
+  checkbox:
+    "mt-0.5 w-3.5 h-3.5 shrink-0 rounded-[4px] border border-slate-300 bg-white cursor-pointer appearance-none checked:bg-blue-600 checked:border-blue-600 relative after:absolute after:inset-0 after:flex after:items-center after:justify-center after:text-white after:text-[10px] after:leading-none after:content-['✓']",
   quote:
     'border-l-4 border-blue-400 bg-blue-50/60 rounded-lg pl-3 pr-2 py-1.5 my-2 text-slate-700',
   codeBlock:

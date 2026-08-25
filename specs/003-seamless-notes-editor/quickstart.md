@@ -108,11 +108,12 @@ Plus:
 3. **Link hover preview**: hovering linked text shows a dark pill above it with the URL + "Ctrl+Click to open" (purely informational, never blocks editing).
 4. **Callout**: slash → "Callout" applies the blue left-bar block on fresh empty AND non-empty lines; applying again unwraps. **Enter inside a callout exits to a normal paragraph below (never stacks another callout); Shift+Enter adds a line within the same callout.** Callout corners are rounded on all sides.
 5. **Divider**: slash → "Divider" inserts `---` rule and moves caret to a new paragraph after it; persists across reopen as `---`.
-6. **No phantom heading rule**: H1 shows bold 18px with no underline/divider below; hierarchy reads 18/16/14 — all ordinary slate color (no blue headings).
-7. **Checkbox done state**: checked boxes are visibly filled blue at 16px; text struck through. Bold renders in the same body color (weight only, never tinted).
+6. **No phantom heading rule**: H1 shows bold 18px with no underline/divider below; hierarchy reads 18/16/14 — all ordinary slate color (no blue headings). H3 is **bold like the other headings**.
+7. **Checkbox done state**: compact 14px boxes with a visible white ✓ on blue when checked; text struck through. Bold renders in the same body color (weight only, never tinted).
 8. **Hint pill**: focused + empty notes show "Press [/] for commands" bottom-right; fades once typing starts.
 9. **Sizes**: selection bubble buttons ~32px with 16px icons; slash menu rows comfortably sized.
 10. **Smart placement**: with the caret near the end of a long notes section, "/" opens the menu **above** the caret instead of clipping off-screen.
+11. **Copy fidelity**: copying a selection into a plain-text target yields Markdown (`## Heading`, `- [ ] task`, `**bold**`); pasting rich content from other apps preserves headings/lists/bold via sanitized HTML; multi-line plain-text paste still normalizes into blocks.
 
 ## Pass criteria
 

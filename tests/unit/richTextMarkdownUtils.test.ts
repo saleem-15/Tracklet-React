@@ -32,7 +32,7 @@ describe('richTextMarkdownUtils', () => {
       expect(html).toContain('Title');
       expect(html).toContain('<h3 class="font-bold text-slate-900 text-base');
       expect(html).toContain('Subtitle');
-      expect(html).toContain('<h4 class="font-semibold text-slate-900 text-sm'); // H3: ordinary, not blue
+      expect(html).toContain('<h4 class="font-bold text-slate-900 text-sm'); // H3: same weight as other headings
       expect(html).not.toContain('text-blue-700'); // headings never blue
       expect(html).toContain('Section');
     });

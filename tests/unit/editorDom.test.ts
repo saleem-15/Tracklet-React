@@ -10,6 +10,7 @@ import {
   isEmptyBlock,
   prepareListExtraction,
   computeMenuPosition,
+  sanitizePastedHtml,
 } from '../../src/lib/editorDom';
 
 let root: HTMLElement;
@@ -143,6 +144,67 @@ describe('topLevelChildOf', () => {
     setup('<blockquote><p id="inner">q</p></blockquote>');
     const bq = el('blockquote');
     expect(topLevelChildOf(root, el('p'))).toBe(bq);
+  });
+});
+
+describe('sanitizePastedHtml (copy/paste fidelity)', () => {
+  it('keeps semantic formatting and drops junk attributes', () => {
+    const dirty =
+      '<div style="font-family:x"><p class="gd">Hello <b class="x1">world</b></p>' +
+      '<span><em>kept</em></span></div>';
+    const clean = sanitizePastedHtml(dirty);
+    expect(clean).toContain('<b>world</b>');
+    expect(clean).toContain('<em>kept</em>');
+  });
+
+  it('preserves structure: headings, lists, bold survive', () => {
+    const dirty =
+      '<div><h2 dir="ltr">Title</h2><ul style="x"><li><b>one</b></li><li>two</li></ul></div>';
+    const clean = sanitizePastedHtml(dirty);
+    expect(clean).toContain('<h2>Title</h2>');
+    expect(clean).toContain('<ul>');
+    expect(clean).toContain('<li><b>one</b></li>');
+    expect(clean).toContain('<li>two</li>');
+    expect(clean).not.toContain('style=');
+    expect(clean).not.toContain('dir=');
+  });
+
+  it('keeps safe anchor hrefs, strips everything else', () => {
+    const clean = sanitizePastedHtml(
+      '<a href="https://x.co" target="_blank" rel="x" onclick="evil()">link</a>'
+    );
+    expect(clean).toContain('href="https://x.co"');
+    expect(clean).not.toContain('onclick');
+    expect(clean).not.toContain('_blank');
+  });
+
+  it('removes script/style entirely instead of exposing their content', () => {
+    const clean = sanitizePastedHtml(
+      '<script>alert(1)</script><style>.a{}</style><p>safe</p>'
+    );
+    expect(clean).toContain('safe');
+    expect(clean).not.toContain('alert');
+    expect(clean).not.toContain('.a{}');
+  });
+
+  it('unwraps unknown wrappers while keeping cleaned children', () => {
+    const clean = sanitizePastedHtml(
+      '<font face="Arial"><p>inside</p></font>'
+    );
+    expect(clean).toContain('<p>inside</p>');
+    expect(clean).not.toContain('font');
+  });
+
+  it('sanitized output round-trips through the markdown serializer', async () => {
+    const { htmlToMarkdown } = await import('../../src/lib/richTextMarkdownUtils');
+    const clean = sanitizePastedHtml(
+      '<div><h3>Plan</h3><ul><li><strong>a</strong></li><li>b</li></ul></div>'
+    );
+    // Sanitizer unwraps the outer container; top-level blocks remain
+    expect(clean.startsWith('<h3>')).toBe(true);
+    // <h3> maps to "## " per our inverted heading convention
+    const md = htmlToMarkdown(clean);
+    expect(md).toBe('## Plan\n\n- **a**\n- b');
   });
 });
 

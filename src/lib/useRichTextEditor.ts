@@ -21,6 +21,7 @@ import {
   ensurePlaceable,
   prepareListExtraction,
   exitCalloutOnEnter,
+  sanitizePastedHtml,
 } from './editorDom';
 import {
   filterActions,
@@ -381,7 +382,29 @@ export function useRichTextEditor({ value, onChange }: UseRichTextEditorOptions)
     [closeLinkDialog, emitChange]
   );
 
-  /* ---------------- paste ---------------- */
+  /* ---------------- copy & paste ---------------- */
+
+  /**
+   * Copy OUT as Markdown: the plain-text clipboard flavor carries the
+   * canonical Markdown of the selection (structure preserved when pasting
+   * into plain-text targets), while the browser's native HTML flavor is
+   * left untouched for rich targets.
+   */
+  const handleCopy = useCallback(
+    (e: React.ClipboardEvent<HTMLDivElement>) => {
+      const sel = window.getSelection();
+      if (!sel || sel.isCollapsed || sel.rangeCount === 0) return;
+      const fragment = sel.getRangeAt(0).cloneContents();
+      const tmp = document.createElement('div');
+      tmp.appendChild(fragment);
+      const markdown = htmlToMarkdown(tmp);
+      if (markdown) {
+        e.clipboardData.setData('text/plain', markdown);
+      }
+      // No preventDefault — the HTML flavor is still produced natively.
+    },
+    []
+  );
 
   const handlePaste = useCallback(
     (e: React.ClipboardEvent<HTMLDivElement>) => {
@@ -402,10 +425,25 @@ export function useRichTextEditor({ value, onChange }: UseRichTextEditorOptions)
         return;
       }
 
+      // Rich paste: honor the HTML flavor (sanitized) so formatting from
+      // other apps survives instead of collapsing to plain text.
+      const htmlFlavor = e.clipboardData.getData('text/html');
+      if (htmlFlavor) {
+        e.preventDefault();
+        try {
+          const clean = sanitizePastedHtml(htmlFlavor);
+          document.execCommand('insertHTML', false, clean || pastedText);
+          handleInput();
+          return;
+        } catch {
+          /* fall through to plain-text normalization */
+        }
+      }
+
       // Multi-line plain text: normalize into proper blocks up front so the
       // DOM matches what serialization would produce (prevents reflow drift
       // on the next save/reload cycle).
-      if (!isUrl && pastedText.includes('\n')) {
+      if (pastedText.includes('\n')) {
         e.preventDefault();
         try {
           const html = markdownToHtml(pastedText);
@@ -738,6 +776,7 @@ export function useRichTextEditor({ value, onChange }: UseRichTextEditorOptions)
     handleKeyDown,
     handlePaste,
     handleClick,
+    handleCopy,
     slash,
     setSlashSelectedIndex: (i: number) => setSlash((p) => ({ ...p, selectedIndex: i })),
     applySlashAction: (id: EditorActionId) => {

@@ -321,6 +321,65 @@ export interface ListSplit {
   detach(): void;
 }
 
+/** Tags allowed to survive pasted HTML; everything else is unwrapped. */
+const PASTE_ALLOWED = new Set([
+  'P','H1','H2','H3','H4','H5','H6','UL','OL','LI','STRONG','B','EM','I',
+  'U','S','CODE','PRE','BLOCKQUOTE','A','BR','HR','DIV','SPAN','INPUT','TABLE','THEAD','TBODY','TR','TD','TH',
+]);
+
+/** Tags dropped entirely (never unwrap — would expose their content). */
+const PASTE_REMOVE = new Set(['SCRIPT', 'STYLE', 'NOSCRIPT', 'META', 'LINK', 'TITLE']);
+
+function cleanPastedElement(el: Element): void {
+  Array.from(el.children).forEach(cleanPastedElement);
+
+  // Strip all attributes except safe anchors/checkbox state
+  Array.from(el.attributes).forEach((attr) => {
+    const keep =
+      (el.tagName === 'A' && attr.name === 'href') ||
+      (el.tagName === 'INPUT' &&
+        ['checked', 'type'].includes(attr.name));
+    if (!keep) el.removeAttribute(attr.name);
+  });
+
+  if (PASTE_REMOVE.has(el.tagName)) {
+    el.remove();
+    return;
+  }
+  if (!PASTE_ALLOWED.has(el.tagName)) {
+    // Unwrap: keep the (already cleaned) children, drop the junk wrapper
+    const frag = document.createDocumentFragment();
+    while (el.firstChild) frag.appendChild(el.firstChild);
+    el.replaceWith(frag);
+  }
+}
+
+/**
+ * Normalizes foreign pasted HTML (Google Docs, Notion, email clients) into
+ * the tag whitelist our serializer understands. Preserves semantic
+ * formatting so copied structure survives the paste.
+ */
+export function sanitizePastedHtml(html: string): string {
+  const container = document.createElement('div');
+  container.innerHTML = html;
+  Array.from(container.children).forEach(cleanPastedElement);
+
+  // Unwrap redundant single container wrappers (Google Docs pastes are
+  // wrapped in style-carrying <div>s) so top-level blocks serialize cleanly.
+  while (
+    container.children.length === 1 &&
+    ['DIV', 'SPAN', 'FONT'].includes(container.firstElementChild!.tagName)
+  ) {
+    const only = container.firstElementChild!;
+    if (only.tagName === 'DIV' && only.querySelector('input[type="checkbox"]')) break;
+    const frag = document.createDocumentFragment();
+    while (only.firstChild) frag.appendChild(only.firstChild);
+    container.replaceChildren(frag);
+  }
+
+  return container.innerHTML;
+}
+
 /**
  * Prepares extraction of an LI from its list: splits sibling items into a
  * cloned tail list so order survives replacing just one item.

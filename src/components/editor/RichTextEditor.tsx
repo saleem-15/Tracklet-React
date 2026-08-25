@@ -46,6 +46,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
     handleKeyDown,
     handlePaste,
     handleClick,
+    handleCopy,
     slash,
     setSlashSelectedIndex,
     applySlashAction,
@@ -117,6 +118,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
           onInput={handleInput}
           onKeyDown={handleKeyDown}
           onPaste={handlePaste}
+          onCopy={handleCopy}
           onClick={handleClick}
           onFocus={() => setEditorFocused(true)}
           onBlur={() => setEditorFocused(false)}
