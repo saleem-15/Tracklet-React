@@ -287,3 +287,12 @@ Task T009 "failing draft-store tests"          # then T010
 
 - [x] T052 Hide Bold/Italic from the "/" dialog via inSlashMenu registry flag (shortcuts + selection bubble unaffected); menuActions helper + tests
 - [x] T053 Todo lists reach bullet-list parity: mid-line Enter splits with remainder carried into the new unchecked item; regression test
+
+---
+
+## Phase 13: Checklist Caret, Native Checkboxes, Slash-on-Empty, Resizable Notes (stakeholder round 6)
+
+- [x] T054 Caret correctness: builders strip seed <br> via blockInnerHtml(); swapBlock places caret at START of empty hosts (phantom-line fix); todo span no longer seeds br
+- [x] T055 Checkbox done state: revert to native rendering (accent-blue-600, no appearance-none pseudo hack that cannot render on inputs); test guards
+- [x] T056 Slash-on-empty root cause: sync effect skipped DOM seeding for empty docs leaving zero child blocks; now seeds <p><br></p>; plus optimistic "/" keydown open independent of input-event ordering; pipeline regression test in mount suite
+- [x] T057 Resizable notes: resizable prop + bottom-edge drag handle (clamp minRows..80vh, double-click reset) wired into ApplicationNotesSection

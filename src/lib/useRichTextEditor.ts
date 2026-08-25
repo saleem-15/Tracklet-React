@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback, useState } from 'react';
+﻿import { useRef, useEffect, useCallback, useState } from 'react';
 import {
   markdownToHtml,
   htmlToMarkdown,
@@ -65,7 +65,7 @@ const EMPTY_SLASH: SlashMenuState = {
  *
  * Sync discipline (research R2):
  * 1. Full DOM replacement happens ONLY when the incoming value differs
- *    canonically from the serialized editor content — never on echo-backs
+ *    canonically from the serialized editor content â€” never on echo-backs
  *    of our own changes.
  * 2. While the user types, the DOM is authoritative and never rewritten,
  *    so caret/selection/scroll survive auto-save cycles untouched.
@@ -94,6 +94,11 @@ export function useRichTextEditor({ value, onChange }: UseRichTextEditorOptions)
     if (compareCanonical(htmlToMarkdown(el), value)) {
       // No-op: DOM already represents this Markdown (typing echo / save round-trip)
       lastMarkdownRef.current = value;
+      // Seed a caret-able line for EMPTY documents — otherwise the surface
+      // has no block child and the slash pipeline has nothing to anchor to.
+      if (!el.firstElementChild && !(el.textContent ?? '').length) {
+        el.innerHTML = '<p><br></p>';
+      }
       return;
     }
 
@@ -191,7 +196,7 @@ export function useRichTextEditor({ value, onChange }: UseRichTextEditorOptions)
    * the affected block so the subsequent action always has a valid target.
    *
    * Offset correctness: the query starts at `lastIndexOf('\n') + 1` within
-   * the block — subtracting the line length was wrong on continuation lines
+   * the block â€” subtracting the line length was wrong on continuation lines
    * and ate the preceding line break (the "cursor jumps to previous line"
    * bug). Empty blocks are seeded with <br> so Chromium's formatBlock-class
    * operations can't merge the line into its predecessor.
@@ -401,7 +406,7 @@ export function useRichTextEditor({ value, onChange }: UseRichTextEditorOptions)
       if (markdown) {
         e.clipboardData.setData('text/plain', markdown);
       }
-      // No preventDefault — the HTML flavor is still produced natively.
+      // No preventDefault â€” the HTML flavor is still produced natively.
     },
     []
   );
@@ -464,6 +469,36 @@ export function useRichTextEditor({ value, onChange }: UseRichTextEditorOptions)
       const isCmdOrCtrl = e.metaKey || e.ctrlKey;
       const el = editorRef.current;
 
+      /* --- Optimistic "/" open (works even on fresh empty lines) --- */
+      if (
+        e.key === '/' &&
+        !isCmdOrCtrl &&
+        !e.altKey &&
+        !slash.open &&
+        el
+      ) {
+        const info = getCaretLineInfo();
+        if (info.block) {
+          const line = info.textBefore.split('\n').pop() ?? '';
+          if (line === '' || /^\/\S*$/.test(line)) {
+            // Insert the slash deterministically, then open immediately â€”
+            // independent of input-event ordering on empty blocks.
+            e.preventDefault();
+            focusEditor(el);
+            document.execCommand('insertText', false, '/');
+            setSlash({
+              open: true,
+              query: '',
+              rect: caretViewportPos(),
+              items: menuActions(''),
+              selectedIndex: 0,
+            });
+            handleInput();
+            return;
+          }
+        }
+      }
+
       /* --- Slash menu navigation (US2 surface) --- */
       if (slash.open) {
         if (e.key === 'ArrowDown') {
@@ -500,7 +535,7 @@ export function useRichTextEditor({ value, onChange }: UseRichTextEditorOptions)
           return;
         }
         if (e.key === ' ') {
-          // Commit literal "/" text and dismiss — no preventDefault
+          // Commit literal "/" text and dismiss â€” no preventDefault
           closeSlashMenu();
           return;
         }
@@ -581,7 +616,7 @@ export function useRichTextEditor({ value, onChange }: UseRichTextEditorOptions)
             const atEnd =
               caretRange.compareBoundaryPoints(Range.END_TO_END, endProbe) >= 0;
 
-            // Spawn the next unchecked item (always — like bullet lists)
+            // Spawn the next unchecked item (always â€” like bullet lists)
             const next = spawnNextTaskItem(taskLi as HTMLElement);
             const nextText = (next.querySelector('.task-text') ?? next) as HTMLElement;
 
@@ -592,7 +627,7 @@ export function useRichTextEditor({ value, onChange }: UseRichTextEditorOptions)
               try {
                 tail.setEndAfter(textEl.lastChild ?? textEl);
               } catch {
-                /* single-node edge — empty tail is fine */
+                /* single-node edge â€” empty tail is fine */
               }
               const frag = tail.extractContents();
               if (frag.hasChildNodes()) nextText.appendChild(frag);
@@ -754,7 +789,7 @@ export function useRichTextEditor({ value, onChange }: UseRichTextEditorOptions)
         }
       }
     },
-    [slash, applySlashSelection, closeSlashMenu, applyAction, handleInput]
+    [slash, applySlashSelection, closeSlashMenu, applyAction, handleInput, getCaretLineInfo, caretViewportPos]
   );
 
   /* ---------------- click (Ctrl+Click links) ---------------- */

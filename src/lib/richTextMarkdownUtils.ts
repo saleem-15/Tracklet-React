@@ -74,7 +74,7 @@ export const BLOCK_STYLES = {
   taskList: 'list-none pl-4 space-y-0.5 my-1',
   taskItem: 'task-item flex items-start gap-1.5 py-0.5',
   checkbox:
-    "mt-0.5 w-3.5 h-3.5 shrink-0 rounded-[4px] border border-slate-300 bg-white cursor-pointer appearance-none checked:bg-blue-600 checked:border-blue-600 relative after:absolute after:inset-0 after:flex after:items-center after:justify-center after:text-white after:text-[10px] after:leading-none after:content-['✓']",
+    'mt-0.5 w-3.5 h-3.5 shrink-0 rounded border border-slate-300 cursor-pointer accent-blue-600',
   quote:
     'border-l-4 border-blue-400 bg-blue-50/60 rounded-lg pl-3 pr-2 py-1.5 my-2 text-slate-700',
   codeBlock:

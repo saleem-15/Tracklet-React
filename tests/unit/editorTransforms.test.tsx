@@ -76,6 +76,35 @@ describe('deterministic block transformations (bug-fix regression)', () => {
     expect(document.getSelection()!.anchorNode && li.contains(document.getSelection()!.anchorNode)).toBe(true);
   });
 
+  it('todo on a FRESH EMPTY line: no phantom <br>, caret inside span, typing lands in item', () => {
+    const ed = setupEditor('<p><br></p>');
+    placeCaretAtOffset(ed.querySelector('p')!, 0);
+
+    apply('todo', ed);
+
+    const span = ed.querySelector('.task-text') as HTMLElement;
+    expect(span.innerHTML).not.toContain('<br'); // seed br stripped
+    expect((span.textContent ?? '').length).toBe(0);
+
+    // Caret must sit INSIDE the span (container-start fallback)
+    const sel = document.getSelection()!;
+    expect(span.contains(sel.anchorNode)).toBe(true);
+
+    // Simulate typing the first character
+    span.insertBefore(document.createTextNode('A'), null);
+    expect(ed.querySelector('.task-text')!.textContent).toBe('A');
+  });
+
+  it('checkbox uses native rendering (no appearance-none) so the checkmark shows', async () => {
+    const { markdownToHtml } = await import('../../src/lib/richTextMarkdownUtils');
+    const html = markdownToHtml('- [ ] x');
+    expect(html).toContain('accent-blue-600');
+    expect(html).not.toContain('appearance-none');
+
+    const checked = markdownToHtml('- [x] done');
+    expect(checked).toContain('checked');
+  });
+
   it('bullet after an existing bullet list merges instead of nesting lists', () => {
     const ed = setupEditor(
       '<ul class="list-disc pl-4 space-y-0.5 my-1 text-slate-800 text-xs"><li>first</li></ul><p>second</p>'

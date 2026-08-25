@@ -91,6 +91,7 @@ export const ApplicationNotesSection: React.FC<ApplicationNotesSectionProps> = (
           onChange={onNotesChange}
           ariaLabel="Application Notes"
           minRows={10}
+          resizable
           placeholder="Add notes, interview prep, salary details, contacts, code snippets... Type / for commands"
           templates={NOTE_TEMPLATES}
         />

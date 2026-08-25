@@ -87,6 +87,14 @@ function makeElement(tag: string, className?: string): HTMLElement {
   return el;
 }
 
+/**
+ * Strips leading/trailing <br> seeds from a settled block's innerHTML so
+ * they never leak into newly built targets (the phantom-line caret bug).
+ */
+function blockInnerHtml(innerHtml: string): string {
+  return innerHtml.replace(/^(<br\s*\/?>)+|(<br\s*\/?>)+\s*$/gi, '').trim();
+}
+
 /** Moves children of source into target (in order) and removes source. */
 function absorb(source: HTMLElement, target: HTMLElement): void {
   while (source.firstChild) target.appendChild(source.firstChild);
@@ -122,7 +130,7 @@ function swapBlock(
       // Merge into the preceding list of the same kind
       while (newEl.firstChild) prev.appendChild(newEl.firstChild);
       newEl.remove();
-      placeCaretAtEnd(caretEl);
+      placeCaretInHost(caretEl);
       return;
     }
     split.insertAfter.insertAdjacentElement('afterend', newEl);
@@ -135,7 +143,7 @@ function swapBlock(
     ) {
       absorb(next, newEl);
     }
-    placeCaretAtEnd(caretEl);
+    placeCaretInHost(caretEl);
     return;
   }
 
@@ -145,14 +153,25 @@ function swapBlock(
   const prev = newEl.previousElementSibling as HTMLElement | null;
   if (prev && prev.tagName === newEl.tagName && prev.className === newEl.className) {
     absorb(newEl, prev);
-    placeCaretAtEnd(caretEl);
+    placeCaretInHost(caretEl);
     return;
   }
   const next = newEl.nextElementSibling as HTMLElement | null;
   if (next && next.tagName === newEl.tagName && next.className === newEl.className) {
     absorb(next, newEl);
   }
-  placeCaretAtEnd(caretEl);
+  placeCaretInHost(caretEl);
+}
+
+
+/**
+ * Caret placement after a deterministic swap: empty hosts (no text, e.g.
+ * a fresh to-do span) get START placement so typing lands inside the item;
+ * populated hosts get END placement. Fixes the phantom-line caret bug.
+ */
+function placeCaretInHost(caretEl: HTMLElement): void {
+  if ((caretEl.textContent ?? '').trim() === '') placeCaretAtStart(caretEl);
+  else placeCaretAtEnd(caretEl);
 }
 
 interface TransformOptions {
@@ -185,7 +204,7 @@ function transformBlockAtCaret(
     (options.resolveSource && options.resolveSource(current, editor)) || current;
   if (!editor.contains(source)) return;
 
-  const newEl = options.build(source.innerHTML, source);
+  const newEl = options.build(blockInnerHtml(source.innerHTML), source);
 
   // Empty content still needs a placeable caret line
   if (isEmptyBlock(newEl)) ensurePlaceable(newEl);
@@ -232,7 +251,9 @@ function makeTaskItemEl(innerHtml: string, checked: boolean): HTMLElement {
   input.className = BLOCK_STYLES.checkbox;
 
   const span = makeElement('span', 'flex-1 task-text');
-  span.innerHTML = innerHtml || '<br>';
+  // No <br> seed here — an empty span lets the caret fall back to
+  // container-start placement (the phantom-line bug fix).
+  span.innerHTML = innerHtml;
 
   li.appendChild(input);
   li.appendChild(span);

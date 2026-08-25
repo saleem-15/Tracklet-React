@@ -70,4 +70,44 @@ describe('RichTextEditor mount (contracts §1)', () => {
     expect(getHtml()).toContain('aria-label="Application Notes"');
     expect(getHtml()).toContain('aria-multiline="true"');
   });
+
+  it('shows a resize handle only when resizable', () => {
+    const plain = mount({});
+    expect(plain.getHtml()).not.toContain('data-resize-handle');
+
+    const sized = mount({ resizable: true });
+    expect(sized.getHtml()).toContain('data-resize-handle');
+  });
+
+  it('slash dialog opens when "/" is typed into an EMPTY surface (regression)', () => {
+    const onChange = vi.fn();
+    const mounted = mount({ value: '', onChange });
+
+    const editable = host!.querySelector('[role="textbox"]') as HTMLElement;
+    act(() => {
+      editable.focus();
+      // Caret inside the empty paragraph
+      const p = editable.querySelector('p') ?? editable;
+      const range = document.createRange();
+      range.selectNodeContents(p);
+      range.collapse(true);
+      document.getSelection()!.removeAllRanges();
+      document.getSelection()!.addRange(range);
+    });
+
+    // Insert "/" + fire the input event (full pipeline, no keydown shortcut)
+    act(() => {
+      const p = editable.querySelector('p')!;
+      p.innerHTML = '/';
+      const range = document.createRange();
+      range.selectNodeContents(p);
+      range.collapse(false);
+      document.getSelection()!.removeAllRanges();
+      document.getSelection()!.addRange(range);
+      editable.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+
+    expect(host!.querySelector('[role="listbox"]')).not.toBeNull();
+    expect(host!.querySelectorAll('[role="option"]').length).toBeGreaterThan(0);
+  });
 });

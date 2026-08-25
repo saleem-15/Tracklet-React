@@ -22,6 +22,8 @@ export interface RichTextEditorProps {
   templates?: readonly NoteTemplate[] | null;
   /** Called when a template pill is picked — host decides how to persist. */
   onTemplateSelect?: (id: NoteTemplateId, skeleton: string) => void;
+  /** Shows a drag handle on the bottom edge for manual height control. */
+  resizable?: boolean;
 }
 
 const isEmptyMarkdown = (md: string): boolean => !canonicalizeMarkdown(md);
@@ -39,6 +41,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
   minRows = 8,
   templates = null,
   onTemplateSelect,
+  resizable = false,
 }) => {
   const {
     editorRef,
@@ -60,7 +63,51 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
 
   const wrapperRef = useRefBridge();
   const [editorFocused, setEditorFocused] = useState(false);
+  const [userHeight, setUserHeight] = useState<number | null>(null);
   const isEmpty = isEmptyMarkdown(value);
+
+  // Drag-to-resize (bottom edge). Double-click resets to auto height.
+  React.useEffect(() => {
+    if (!resizable) return;
+    const handle = wrapperRef.current?.querySelector('[data-resize-handle]');
+    if (!handle || !editorRef.current) return;
+
+    let startY = 0;
+    let startH = 0;
+    const minH = Math.max(4, minRows) * 20 + 28;
+    const maxH = () => Math.max(minH + 60, window.innerHeight * 0.8);
+
+    const onMove = (ev: MouseEvent) => {
+      const next = Math.min(maxH(), Math.max(minH, startH + (ev.clientY - startY)));
+      setUserHeight(Math.round(next));
+    };
+    const onUp = () => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      document.body.style.userSelect = '';
+    };
+    const onDown = (ev: MouseEvent) => {
+      ev.preventDefault();
+      startY = ev.clientY;
+      startH =
+        userHeight ??
+        editorRef.current!.getBoundingClientRect().height;
+      document.body.style.userSelect = 'none';
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    };
+    const onReset = (ev: MouseEvent) => {
+      if (ev.detail >= 2) setUserHeight(null); // double-click
+    };
+
+    handle.addEventListener('mousedown', onDown);
+    handle.addEventListener('dblclick', onReset);
+    return () => {
+      handle.removeEventListener('mousedown', onDown);
+      handle.removeEventListener('dblclick', onReset);
+      onUp();
+    };
+  }, [resizable, userHeight, minRows, wrapperRef, editorRef]);
 
   // Click-outside closes the slash menu
   useEffectWrapper(slash.open, wrapperRef.current, closeSlashMenu);
@@ -122,12 +169,23 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
           onClick={handleClick}
           onFocus={() => setEditorFocused(true)}
           onBlur={() => setEditorFocused(false)}
-          style={{ minHeight }}
+          style={{ minHeight: userHeight ? `${userHeight}px` : minHeight }}
           className="w-full p-3.5 bg-white text-slate-800 focus:outline-none font-sans text-xs leading-relaxed border-none block"
           role="textbox"
           aria-multiline="true"
           aria-label={ariaLabel}
         />
+
+        {/* Manual resize handle */}
+        {resizable && (
+          <div
+            data-resize-handle
+            title="Drag to resize · double-click to reset"
+            className="absolute bottom-0 left-0 right-0 h-2 cursor-ns-resize group/h flex items-center justify-center opacity-60 hover:opacity-100 transition-opacity"
+          >
+            <span className="h-0.5 w-10 rounded-full bg-slate-200 group-hover/h:bg-slate-400" />
+          </div>
+        )}
 
         {/* Discoverability hint: press / for commands (focused + empty) */}
         <div

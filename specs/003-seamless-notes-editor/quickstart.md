@@ -114,7 +114,11 @@ Plus:
 7. **Checkbox done state**: compact 14px boxes with a visible white ✓ on blue when checked; text struck through. Bold renders in the same body color (weight only, never tinted).
 8. **Hint pill**: focused + empty notes show "Press [/] for commands" bottom-right; fades once typing starts.
 9. **Sizes**: selection bubble buttons ~32px with 16px icons; slash menu rows comfortably sized.
-10. **Smart placement**: with the caret near the end of a long notes section, "/" opens the menu **above** the caret instead of clipping off-screen.
+10\. **Smart placement**: with the caret near the end of a long notes section, \/\ opens the menu **above** the caret instead of clipping off-screen.
+13\. **Slash on empty notes**: opening an application with empty notes and typing \/\ immediately opens the command menu.
+14\. **Checklist caret**: creating a to-do from a fresh line places the caret inside the item — first keystroke lands in the task, no phantom second line.
+15\. **Checkbox done state**: compact 14px native boxes show a clear checkmark when checked.
+16\. **Resizable notes**: dragging the bottom-edge handle resizes the notes card (double-click resets).
 11. **Copy fidelity**: copying a selection into a plain-text target yields Markdown (`## Heading`, `- [ ] task`, `**bold**`); pasting rich content from other apps preserves headings/lists/bold via sanitized HTML; multi-line plain-text paste still normalizes into blocks.
 
 ## Pass criteria
