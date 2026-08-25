@@ -101,7 +101,9 @@ Plus:
 - Enter mid-to-do splits the line: remainder becomes the new unchecked item (bullet-list parity).
 - Slash dialog no longer lists Bold/Italic (still Ctrl+B/I and on the selection bubble).
 - Undo after each transform returns the previous state or at minimum never corrupts content.
-- Auto-save firing mid-menu never resets the menu or caret.
+- Auto-save firing mid-menu never resets the menu or-caret.
+- Typing / inside a fenced code block NEVER opens the command menu (fence guard on both paths).
+- Space-shorthands (# / ## / ### / - / 1. + Space) produce identical DOM as the equivalent slash command.
 
 ### S11 — Popovers, callout, dividers, discoverability (post-refactor round 2)
 

@@ -2,8 +2,8 @@ import { describe, it, expect, afterEach } from 'vitest';
 import { createRoot, type Root } from 'react-dom/client';
 import { act } from 'react';
 import { EDITOR_ACTIONS, getActionById } from '../../src/components/editor/editorActions';
-import { placeCaretAtOffset, exitCalloutOnEnter } from '../../src/lib/editorDom';
-import { spawnNextTaskItem } from '../../src/lib/richTextMarkdownUtils';
+import { placeCaretAtOffset, exitCalloutOnEnter } from '../../src/lib/editor/editorDom';
+import { spawnNextTaskItem } from '../../src/lib/editor/richTextMarkdownUtils';
 
 let host: HTMLDivElement | null = null;
 let root: Root | null = null;
@@ -96,7 +96,7 @@ describe('deterministic block transformations (bug-fix regression)', () => {
   });
 
   it('checkbox uses native rendering (no appearance-none) so the checkmark shows', async () => {
-    const { markdownToHtml } = await import('../../src/lib/richTextMarkdownUtils');
+    const { markdownToHtml } = await import('../../src/lib/editor/richTextMarkdownUtils');
     const html = markdownToHtml('- [ ] x');
     expect(html).toContain('accent-blue-600');
     expect(html).not.toContain('appearance-none');

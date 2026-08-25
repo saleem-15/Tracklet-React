@@ -1,7 +1,7 @@
 import React from 'react';
 import { FileText, Check, Loader2, Undo2, X } from 'lucide-react';
 import { RichTextEditor } from '../editor';
-import { NOTE_TEMPLATES } from '../../lib/noteTemplates';
+import { NOTE_TEMPLATES } from '../../lib/editor/noteTemplates';
 
 export interface ApplicationNotesSectionProps {
   notes: string;

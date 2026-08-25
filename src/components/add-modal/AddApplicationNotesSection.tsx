@@ -2,7 +2,7 @@ import React from 'react';
 import { FileText } from 'lucide-react';
 import { NoteLinksBar } from '../detail/NoteLinksBar';
 import { RichTextEditor } from '../editor';
-import { NOTE_TEMPLATES } from '../../lib/noteTemplates';
+import { NOTE_TEMPLATES } from '../../lib/editor/noteTemplates';
 
 export interface AddApplicationNotesSectionProps {
   notes: string;

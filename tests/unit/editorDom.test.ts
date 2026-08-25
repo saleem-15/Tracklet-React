@@ -11,7 +11,7 @@ import {
   prepareListExtraction,
   computeMenuPosition,
   sanitizePastedHtml,
-} from '../../src/lib/editorDom';
+} from '../../src/lib/editor/editorDom';
 
 let root: HTMLElement;
 
@@ -196,7 +196,7 @@ describe('sanitizePastedHtml (copy/paste fidelity)', () => {
   });
 
   it('sanitized output round-trips through the markdown serializer', async () => {
-    const { htmlToMarkdown } = await import('../../src/lib/richTextMarkdownUtils');
+    const { htmlToMarkdown } = await import('../../src/lib/editor/richTextMarkdownUtils');
     const clean = sanitizePastedHtml(
       '<div><h3>Plan</h3><ul><li><strong>a</strong></li><li>b</li></ul></div>'
     );

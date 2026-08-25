@@ -4,7 +4,7 @@ import {
   clearNoteDraft,
   readNoteDraft,
   resolveDraftOnOpen,
-} from '../../src/lib/noteDrafts';
+} from '../../src/lib/editor/noteDrafts';
 
 const APP = 'app-123';
 

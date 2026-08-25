@@ -1,5 +1,5 @@
 import React from 'react';
-import type { NoteTemplate } from '../../lib/noteTemplates';
+import type { NoteTemplate } from '../../lib/editor/noteTemplates';
 
 export interface TemplatePillsProps {
   templates: NoteTemplate[];

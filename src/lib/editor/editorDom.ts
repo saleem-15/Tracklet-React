@@ -1,4 +1,4 @@
-﻿export interface AnchorRect {
+export interface AnchorRect {
   anchorTop: number;
   anchorBottom: number;
   left: number;

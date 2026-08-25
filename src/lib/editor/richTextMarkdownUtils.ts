@@ -1,4 +1,8 @@
-import { tokenizeTextWithLinks } from './linkUtils';
+import { tokenizeTextWithLinks } from '../linkUtils';
+
+/** Shared anchor styling for inserted links (serializer + hook). */
+export const LINK_CLASS =
+  'text-blue-600 hover:text-blue-700 underline underline-offset-2 font-medium cursor-pointer';
 
 /**
  * Escapes special HTML characters in plain text to prevent injection.
@@ -29,7 +33,7 @@ export function parseInlineMarkdownToHtml(line: string): string {
         const label = token.label
           ? escapeHtml(token.label)
           : escapeHtml(token.value);
-        return `<a href="${escapedUrl}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-700 underline underline-offset-2 font-medium cursor-pointer">${label}</a>`;
+        return `<a href="${escapedUrl}" target="_blank" rel="noopener noreferrer" class="${LINK_CLASS}">${label}</a>`;
       }
 
       // 2. Format inline bold (**text**), italic (*text*), and code (`code`)
@@ -260,7 +264,7 @@ export function markdownToHtml(
       continue;
     }
 
-    // Standard Paragraph (no self-margin — rhythm comes from spacers)
+    // Standard Paragraph (no self-margin â€” rhythm comes from spacers)
     closeOpenLists();
     const paraContent = parseInlineMarkdownToHtml(line);
     htmlParts.push(`<p class="${BLOCK_STYLES.paragraph}">${paraContent}</p>`);
@@ -281,7 +285,7 @@ export function markdownToHtml(
 
 /**
  * Traverses a DOM node recursively and serializes it into Markdown.
- * Block nodes return their content WITHOUT surrounding newlines —
+ * Block nodes return their content WITHOUT surrounding newlines â€”
  * block separation is handled exclusively by `serializeContainer`
  * (single source of truth for the "\n\n between blocks" law).
  */
@@ -448,7 +452,7 @@ function serializeContainer(root: HTMLElement): string {
 /**
  * Converts rich HTML (or an HTML element / string) back into clean,
  * canonical Markdown: one blank line between blocks, collapsed excess
- * newlines, trimmed outer whitespace. Idempotent by construction —
+ * newlines, trimmed outer whitespace. Idempotent by construction â€”
  * canonicalize(canonicalize(x)) === canonicalize(x).
  */
 export function htmlToMarkdown(htmlOrNode: string | HTMLElement): string {
@@ -492,7 +496,7 @@ export function isInsideCodeFence(node: Node): boolean {
 
 /**
  * Flips a task item's checked state (data attribute + visual strike-through).
- * Mutates ONLY the target item — siblings untouched. Caller re-serializes.
+ * Mutates ONLY the target item â€” siblings untouched. Caller re-serializes.
  */
 export function toggleTaskItem(itemEl: HTMLElement): void {
   if (itemEl.dataset.task !== 'true') return;
@@ -544,7 +548,7 @@ function makeTaskItemElement(text: string, checked: boolean): HTMLElement {
 
 /**
  * Canonical form of a Markdown string: what the note looks like after one
- * render → serialize cycle. Stored/saved notes converge to this form.
+ * render â†’ serialize cycle. Stored/saved notes converge to this form.
  */
 export function canonicalizeMarkdown(markdown: string): string {
   if (!markdown || !markdown.trim()) return '';

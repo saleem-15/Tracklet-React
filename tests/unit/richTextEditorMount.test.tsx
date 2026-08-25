@@ -2,8 +2,8 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { createRoot, type Root } from 'react-dom/client';
 import { act } from 'react';
 import { RichTextEditor } from '../../src/components/editor/RichTextEditor';
-import { NOTE_TEMPLATES } from '../../src/lib/noteTemplates';
-import { compareCanonical } from '../../src/lib/richTextMarkdownUtils';
+import { NOTE_TEMPLATES } from '../../src/lib/editor/noteTemplates';
+import { compareCanonical } from '../../src/lib/editor/richTextMarkdownUtils';
 
 let host: HTMLDivElement | null = null;
 let root: Root | null = null;

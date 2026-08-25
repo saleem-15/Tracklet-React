@@ -12,7 +12,7 @@ import { StatusHistoryTimeline } from './detail/StatusHistoryTimeline';
 import { UnsavedChangesPrompt } from './detail/UnsavedChangesPrompt';
 import { ApplicationNotesSection } from './detail/ApplicationNotesSection';
 import { ApplicationQuickLinks } from './detail/ApplicationQuickLinks';
-import { resolveDraftOnOpen, clearNoteDraft } from '../lib/noteDrafts';
+import { resolveDraftOnOpen, clearNoteDraft } from '../lib/editor/noteDrafts';
 
 export interface ApplicationDetailPanelProps {
   app: Application | null;

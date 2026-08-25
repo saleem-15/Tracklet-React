@@ -2,11 +2,11 @@ import { describe, it, expect } from 'vitest';
 import {
   NOTE_TEMPLATES,
   getTemplateById,
-} from '../../src/lib/noteTemplates';
+} from '../../src/lib/editor/noteTemplates';
 import {
   markdownToHtml,
   htmlToMarkdown,
-} from '../../src/lib/richTextMarkdownUtils';
+} from '../../src/lib/editor/richTextMarkdownUtils';
 
 describe('noteTemplates (FR-012 / spec Appendix A)', () => {
   it('offers exactly the three starter templates', () => {

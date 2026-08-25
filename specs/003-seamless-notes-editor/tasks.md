@@ -296,3 +296,14 @@ Task T009 "failing draft-store tests"          # then T010
 - [x] T055 Checkbox done state: revert to native rendering (accent-blue-600, no appearance-none pseudo hack that cannot render on inputs); test guards
 - [x] T056 Slash-on-empty root cause: sync effect skipped DOM seeding for empty docs leaving zero child blocks; now seeds <p><br></p>; plus optimistic "/" keydown open independent of input-event ordering; pipeline regression test in mount suite
 - [x] T057 Resizable notes: resizable prop + bottom-edge drag handle (clamp minRows..80vh, double-click reset) wired into ApplicationNotesSection
+
+---
+
+## Phase 14: Architecture Refactor — lib/editor Module Split (deep-review round)
+
+- [x] T058 Purge dead legacy: useMarkdownEditor.ts, markdownEditorUtils.ts (+12 stale tests)
+- [x] T059 Net-lift safety suite first: editorHookWiring.test.tsx drives real hook handlers (copy/paste flavors, shortcuts, slash nav, enter strategies, empty-doc seeding) — 14 tests written against pre-refactor behavior
+- [x] T060 Restructure to src/lib/editor/: useValueSync / useSlashMenu / useLinkPopover / useClipboard hooks; editorBlocks.ts engine extracted out of tsx; editorActions slimmed to pure registry; orchestrator <300 ln with memoized API
+- [x] T061 Fold-in fix A: fence guard on optimistic "/" keydown (parity with input path)
+- [x] T062 Fold-in fix B: space-shorthands routed through deterministic transform engine (last execCommand formatBlock/insert* block sites removed)
+- [x] T063 Dedups: LINK_CLASS single source, caretViewportRect shared, memoized return API; byte-level f->r corruption sweep repaired across 14 files (root cause: non-UTF8 PowerShell read/write cycles)

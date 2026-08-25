@@ -1,5 +1,5 @@
 import React, { useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { computeMenuPosition } from '../../lib/editorDom';
+import { computeMenuPosition } from '../../lib/editor/editorDom';
 import type { FormattingAction } from './editorActions';
 
 export interface SlashMenuProps {

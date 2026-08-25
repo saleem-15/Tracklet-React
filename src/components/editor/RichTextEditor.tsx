@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react';
-import { canonicalizeMarkdown } from '../../lib/richTextMarkdownUtils';
-import { useRichTextEditor } from '../../lib/useRichTextEditor';
+import { canonicalizeMarkdown } from '../../lib/editor/richTextMarkdownUtils';
+import { useRichTextEditor } from '../../lib/editor/useRichTextEditor';
 import { EDITOR_ACTIONS } from './editorActions';
 import type { FormattingAction } from './editorActions';
 import SlashMenu from './SlashMenu';
@@ -8,7 +8,7 @@ import SelectionBubble from './SelectionBubble';
 import TemplatePills from './TemplatePills';
 import LinkPopover from './LinkPopover';
 import LinkHoverTooltip from './LinkHoverTooltip';
-import type { NoteTemplate, NoteTemplateId } from '../../lib/noteTemplates';
+import type { NoteTemplate, NoteTemplateId } from '../../lib/editor/noteTemplates';
 
 export interface RichTextEditorProps {
   /** Markdown source of truth. */

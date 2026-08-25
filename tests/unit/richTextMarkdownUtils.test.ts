@@ -6,7 +6,7 @@ import {
   canonicalizeMarkdown,
   compareCanonical,
   isInsideCodeFence,
-} from '../../src/lib/richTextMarkdownUtils';
+} from '../../src/lib/editor/richTextMarkdownUtils';
 
 describe('richTextMarkdownUtils', () => {
   describe('escapeHtml', () => {
@@ -252,7 +252,7 @@ describe('richTextMarkdownUtils', () => {
     });
 
     it('toggleTaskItem flips state and strike-through without touching siblings', async () => {
-      const { toggleTaskItem } = await import('../../src/lib/richTextMarkdownUtils');
+      const { toggleTaskItem } = await import('../../src/lib/editor/richTextMarkdownUtils');
       document.body.innerHTML =
         '<ul>' +
         '<li class="task-item" data-task="true" data-checked="false"><input type="checkbox" data-task-checkbox="true"><span class="task-text">one</span></li>' +
@@ -272,7 +272,7 @@ describe('richTextMarkdownUtils', () => {
     });
 
     it('spawnNextTaskItem appends an unchecked sibling and returns it', async () => {
-      const { spawnNextTaskItem } = await import('../../src/lib/richTextMarkdownUtils');
+      const { spawnNextTaskItem } = await import('../../src/lib/editor/richTextMarkdownUtils');
       document.body.innerHTML =
         '<ul><li class="task-item" data-task="true" data-checked="true"><input type="checkbox" checked data-task-checkbox="true"><span class="task-text">done</span></li></ul>';
       const li = document.querySelector('li.task-item') as HTMLElement;
