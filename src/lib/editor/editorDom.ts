@@ -199,18 +199,27 @@ export function snapshotCaret(root: HTMLElement): CaretSnapshot | null {
   const range = selectionInside(root);
   const docText = root.textContent ?? '';
   if (!range) return { offset: docText.length, scrollTop: root.scrollTop };
-  // Document-wide offset: walk all text nodes before the caret container
-  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-  let pos = 0;
-  while (walker.nextNode()) {
-    const t = walker.currentNode as Text;
-    if (t === range.startContainer) {
-      pos += range.startOffset;
-      break;
+
+  try {
+    const preRange = document.createRange();
+    preRange.setStart(root, 0);
+    preRange.setEnd(range.startContainer, range.startOffset);
+    const offset = preRange.toString().length;
+    return { offset, scrollTop: root.scrollTop };
+  } catch {
+    // Fallback: document-wide walker
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    let pos = 0;
+    while (walker.nextNode()) {
+      const t = walker.currentNode as Text;
+      if (t === range.startContainer) {
+        pos += range.startOffset;
+        break;
+      }
+      pos += t.nodeValue?.length ?? 0;
     }
-    pos += t.nodeValue?.length ?? 0;
+    return { offset: pos, scrollTop: root.scrollTop };
   }
-  return { offset: pos, scrollTop: root.scrollTop };
 }
 
 export function restoreCaret(root: HTMLElement, snap: CaretSnapshot | null): void {
@@ -272,7 +281,7 @@ export function exitCalloutOnEnter(editor: HTMLElement): boolean {
     try {
       tail.setEndAfter(bq.lastChild!);
     } catch {
-      /* degenerate quote â€” fall through with empty tail */
+      /* degenerate quote — fall through with empty tail */
     }
     const frag = tail.extractContents();
 
@@ -317,8 +326,10 @@ export function ensurePlaceable(block: HTMLElement): void {
 export interface ListSplit {
   /** Element to insert the replacement after (the list itself when li is last). */
   insertAfter: HTMLElement;
-  /** Removes the li from its list, cleaning up empty shells. Returns nothing. */
+  /** Removes the li from its list, cleaning up empty shells. */
   detach(): void;
+  /** Replaces the extracted li with the replacement element atomically without disconnecting. */
+  replaceWith(replacement: HTMLElement): void;
 }
 
 /** Tags allowed to survive pasted HTML; everything else is unwrapped. */
@@ -330,8 +341,25 @@ const PASTE_ALLOWED = new Set([
 /** Tags dropped entirely (never unwrap — would expose their content). */
 const PASTE_REMOVE = new Set(['SCRIPT', 'STYLE', 'NOSCRIPT', 'META', 'LINK', 'TITLE']);
 
+function isAllowedUrl(href: string): boolean {
+  const trimmed = href.trim().toLowerCase();
+  return (
+    trimmed.startsWith('http://') ||
+    trimmed.startsWith('https://') ||
+    trimmed.startsWith('mailto:') ||
+    trimmed.startsWith('tel:')
+  );
+}
+
 function cleanPastedElement(el: Element): void {
   Array.from(el.children).forEach(cleanPastedElement);
+
+  if (el.tagName === 'A') {
+    const href = el.getAttribute('href') || '';
+    if (!isAllowedUrl(href)) {
+      el.removeAttribute('href');
+    }
+  }
 
   // Strip all attributes except safe anchors/checkbox state
   Array.from(el.attributes).forEach((attr) => {
@@ -346,7 +374,7 @@ function cleanPastedElement(el: Element): void {
     el.remove();
     return;
   }
-  if (!PASTE_ALLOWED.has(el.tagName)) {
+  if (!PASTE_ALLOWED.has(el.tagName) || (el.tagName === 'A' && !el.hasAttribute('href'))) {
     // Unwrap: keep the (already cleaned) children, drop the junk wrapper
     const frag = document.createDocumentFragment();
     while (el.firstChild) frag.appendChild(el.firstChild);
@@ -400,6 +428,19 @@ export function prepareListExtraction(li: HTMLElement): ListSplit {
       }
       list.removeChild(li);
       if (list.children.length === 0) list.remove();
+    },
+    replaceWith(replacement: HTMLElement) {
+      if (after.length > 0) {
+        const tail = list.cloneNode(false) as HTMLElement;
+        after.forEach((c) => tail.appendChild(c));
+        list.insertAdjacentElement('afterend', tail);
+      }
+      list.removeChild(li);
+      if (list.children.length === 0) {
+        list.replaceWith(replacement);
+      } else {
+        list.insertAdjacentElement('afterend', replacement);
+      }
     },
   };
 }

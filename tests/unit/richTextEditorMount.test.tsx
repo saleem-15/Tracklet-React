@@ -9,17 +9,25 @@ let host: HTMLDivElement | null = null;
 let root: Root | null = null;
 
 function mount(props: Partial<React.ComponentProps<typeof RichTextEditor>>) {
-  host = document.createElement('div');
-  document.body.appendChild(host);
-  root = createRoot(host);
+  if (root) {
+    act(() => root?.unmount());
+    host?.remove();
+    root = null;
+    host = null;
+  }
+  const currentHost = document.createElement('div');
+  document.body.appendChild(currentHost);
+  const currentRoot = createRoot(currentHost);
+  host = currentHost;
+  root = currentRoot;
   const onChange = props.onChange ?? vi.fn();
   const value = props.value ?? '';
   act(() => {
-    root!.render(
+    currentRoot.render(
       <RichTextEditor value={value} onChange={onChange} {...props} />
     );
   });
-  return { getHtml: () => host!.innerHTML };
+  return { getHtml: () => currentHost.innerHTML };
 }
 
 afterEach(() => {

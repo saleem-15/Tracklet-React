@@ -86,7 +86,7 @@ export const TopBar: React.FC<TopBarProps> = ({
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Focus search bar on Cmd+K or Ctrl+K (only when not inside an editable element)
+      // Focus search bar on Cmd+K or Ctrl+K (only when not inside an editable element or open modal)
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         const activeEl = document.activeElement as HTMLElement | null;
         const isEditable =
@@ -96,7 +96,12 @@ export const TopBar: React.FC<TopBarProps> = ({
           activeEl?.getAttribute('contenteditable') === 'true' ||
           activeEl?.closest('[contenteditable="true"]') !== null;
 
-        if (!isEditable) {
+        const hasOpenModal =
+          document.querySelector('[role="dialog"]') !== null ||
+          document.querySelector('.fixed.inset-0.z-50') !== null ||
+          document.querySelector('[aria-modal="true"]') !== null;
+
+        if (!isEditable && !hasOpenModal) {
           e.preventDefault();
           searchInputRef.current?.focus();
         }

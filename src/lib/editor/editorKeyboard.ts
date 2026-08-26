@@ -77,8 +77,7 @@ export function executeEnterStrategy(
       p.className = BLOCK_STYLES.paragraph;
       p.innerHTML = '<br>';
       const split = prepareListExtraction(li);
-      split.detach();
-      split.insertAfter.insertAdjacentElement('afterend', p);
+      split.replaceWith(p);
       placeCaretAtStart(p);
       return;
     }
@@ -131,8 +130,7 @@ export function executeEnterStrategy(
       p.innerHTML = '<br>';
       if (li.parentElement && li.parentElement !== editor) {
         const split = prepareListExtraction(li);
-        split.detach();
-        split.insertAfter.insertAdjacentElement('afterend', p);
+        split.replaceWith(p);
       } else {
         li.replaceWith(p);
       }
@@ -231,7 +229,7 @@ function exitCalloutInline(editor: HTMLElement, selection: Selection): void {
 /** ArrowRight at the end of bold/italic/code/link steps out of the tag. */
 export function escapeInlineFormattingRight(editor: HTMLElement): boolean {
   const sel = window.getSelection();
-  if (!sel || sel.isCollapsed || sel.rangeCount === 0) return false;
+  if (!sel || !sel.isCollapsed || sel.rangeCount === 0) return false;
   const range = sel.getRangeAt(0);
   const formatEl = closest(range.startContainer, 'strong, b, em, i, code, a');
   if (!formatEl || !editor.contains(formatEl)) return false;
@@ -242,12 +240,14 @@ export function escapeInlineFormattingRight(editor: HTMLElement): boolean {
   if (range.compareBoundaryPoints(Range.END_TO_END, endRange) !== 0) return false;
 
   let nextNode = formatEl.nextSibling;
+  let offset = 0;
   if (!nextNode || nextNode.nodeType !== Node.TEXT_NODE) {
     nextNode = document.createTextNode('\u200B');
     formatEl.parentNode?.insertBefore(nextNode, formatEl.nextSibling);
+    offset = 1;
   }
   const newRange = document.createRange();
-  newRange.setStart(nextNode, nextNode.nodeValue ? 1 : 0);
+  newRange.setStart(nextNode, offset);
   newRange.collapse(true);
   sel.removeAllRanges();
   sel.addRange(newRange);

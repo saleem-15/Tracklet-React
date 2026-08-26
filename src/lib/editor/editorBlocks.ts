@@ -80,18 +80,19 @@ export function swapBlock(
     current.parentElement !== editor;
 
   if (isListItem) {
-    const split = prepareListExtraction(current);
-    split.detach();
-
-    const prev = split.insertAfter.previousElementSibling as HTMLElement | null;
+    const list = current.parentElement!;
+    const prev = list.previousElementSibling as HTMLElement | null;
     if (prev && prev.tagName === newEl.tagName && prev.className === newEl.className) {
       // Merge into the preceding list of the same kind
       while (newEl.firstChild) prev.appendChild(newEl.firstChild);
-      newEl.remove();
+      const split = prepareListExtraction(current);
+      split.detach();
       placeCaretInHost(caretEl);
       return;
     }
-    split.insertAfter.insertAdjacentElement('afterend', newEl);
+
+    const split = prepareListExtraction(current);
+    split.replaceWith(newEl);
 
     const next = newEl.nextElementSibling as HTMLElement | null;
     if (next && next.tagName === newEl.tagName && next.className === newEl.className) {
@@ -129,11 +130,12 @@ export function makeTaskItemEl(innerHtml: string, checked: boolean): HTMLElement
   li.dataset.task = 'true';
   li.dataset.checked = checked ? 'true' : 'false';
 
+  const textLabel = innerHtml.replace(/<[^>]*>/g, '').trim() || 'Toggle task item';
   const input = document.createElement('input');
   input.type = 'checkbox';
   input.checked = checked;
   input.setAttribute('data-task-checkbox', 'true');
-  input.setAttribute('aria-label', 'Toggle task item');
+  input.setAttribute('aria-label', textLabel);
   input.className = BLOCK_STYLES.checkbox;
 
   const span = makeElement('span', 'flex-1 task-text');
@@ -172,7 +174,12 @@ export function transformBlockAtCaret(
     (options.resolveSource && options.resolveSource(current, editor)) || current;
   if (!editor.contains(source)) return;
 
-  const newEl = options.build(blockInnerHtml(source.innerHTML), source);
+  const rawHtml =
+    source.classList.contains('task-item') && source.querySelector('.task-text')
+      ? source.querySelector('.task-text')!.innerHTML
+      : source.innerHTML;
+
+  const newEl = options.build(blockInnerHtml(rawHtml), source);
 
   // Empty content still needs a placeable caret line
   if (isEmptyBlock(newEl)) ensurePlaceable(newEl);

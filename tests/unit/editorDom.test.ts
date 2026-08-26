@@ -239,10 +239,10 @@ describe('computeMenuPosition (smart slash-menu placement)', () => {
     const pos = computeMenuPosition(
       { anchorTop: 30, anchorBottom: 46, left: 40 },
       400,
-      { viewportHeight: VH, viewportWidth: VW }
+      { viewportHeight: 300, viewportWidth: VW }
     );
-    expect(pos.flipAbove).toBe(false); // below fits in tall viewport
-    void pos;
+    expect(pos.flipAbove).toBe(true);
+    expect(pos.top).toBe(8); // clamped to viewport top min
   });
 
   it('clamps horizontally inside both viewport edges', () => {

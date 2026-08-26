@@ -98,4 +98,14 @@ describe('noteDrafts recovery store (FR-016–FR-019)', () => {
     const result = resolveDraftOnOpen(APP, 'notes', '2026-08-24T10:00:00Z');
     expect('discard' in result ? result.discard : null).toBe('none');
   });
+
+  it('discards draft as stale when timestamps are invalid or NaN', () => {
+    localStorage.setItem(
+      'tracklet_note_draft_app-123',
+      JSON.stringify({ markdown: 'some text', savedAt: 'invalid-date' })
+    );
+    const result = resolveDraftOnOpen(APP, 'other notes', '2026-08-24T10:00:00Z');
+    expect(result).toEqual({ discard: 'stale' });
+    expect(readNoteDraft(APP)).toBeNull();
+  });
 });

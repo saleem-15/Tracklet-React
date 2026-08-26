@@ -93,7 +93,7 @@ export function resolveDraftOnOpen(
 
   const draftTime = Date.parse(draft.savedAt);
   const durableTime = Date.parse(updatedAtIso);
-  if (!Number.isNaN(draftTime) && !Number.isNaN(durableTime) && draftTime <= durableTime) {
+  if (Number.isNaN(draftTime) || Number.isNaN(durableTime) || draftTime <= durableTime) {
     clearNoteDraft(appId);
     return { discard: 'stale' };
   }

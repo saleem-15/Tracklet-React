@@ -134,24 +134,30 @@ export function markdownToHtml(
     quoteBuffer = null;
   };
 
+  let currentCodeLang = '';
+
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
 
     // Fenced Code Block delimiter: ```
-    if (line.trim().startsWith('```')) {
+    const codeFenceMatch = line.trim().match(/^```([a-zA-Z0-9_-]*)/);
+    if (codeFenceMatch) {
       flushQuote();
       closeOpenLists();
       if (inCodeBlock) {
         // Close code block
         const codeContent = codeBuffer.map(escapeHtml).join('\n');
+        const langAttr = currentCodeLang ? ` data-language="${escapeHtml(currentCodeLang)}"` : '';
         htmlParts.push(
-          `<pre class="${BLOCK_STYLES.codeBlock}"><code>${codeContent}</code></pre>`
+          `<pre class="${BLOCK_STYLES.codeBlock}"${langAttr}><code>${codeContent}</code></pre>`
         );
         codeBuffer = [];
+        currentCodeLang = '';
         inCodeBlock = false;
       } else {
         // Open code block
         inCodeBlock = true;
+        currentCodeLang = codeFenceMatch[1] || '';
         codeBuffer = [];
       }
       continue;
@@ -201,9 +207,10 @@ export function markdownToHtml(
       }
       const checked = taskMatch[1].toLowerCase() === 'x';
       const content = parseInlineMarkdownToHtml(taskMatch[2]);
+      const taskLabel = taskMatch[2].replace(/<[^>]*>/g, '').trim() || 'Toggle task item';
       htmlParts.push(
         `<li class="${BLOCK_STYLES.taskItem}${checked ? ' task-checked' : ''}" data-task="true" data-checked="${checked}">` +
-          `<input type="checkbox"${checked ? ' checked' : ''}${readOnly ? ' disabled' : ''} data-task-checkbox="true" aria-label="Toggle task item" class="${BLOCK_STYLES.checkbox}" />` +
+          `<input type="checkbox"${checked ? ' checked' : ''}${readOnly ? ' disabled' : ''} data-task-checkbox="true" aria-label="${escapeHtml(taskLabel)}" class="${BLOCK_STYLES.checkbox}" />` +
           `<span class="flex-1 task-text${checked ? ' line-through text-slate-400' : ''}">${content}</span>` +
           `</li>`
       );
@@ -264,7 +271,7 @@ export function markdownToHtml(
       continue;
     }
 
-    // Standard Paragraph (no self-margin â€” rhythm comes from spacers)
+    // Standard Paragraph (no self-margin — rhythm comes from spacers)
     closeOpenLists();
     const paraContent = parseInlineMarkdownToHtml(line);
     htmlParts.push(`<p class="${BLOCK_STYLES.paragraph}">${paraContent}</p>`);
@@ -273,10 +280,11 @@ export function markdownToHtml(
   flushQuote();
   closeOpenLists();
 
-  if (inCodeBlock && codeBuffer.length > 0) {
+  if (inCodeBlock) {
     const codeContent = codeBuffer.map(escapeHtml).join('\n');
+    const langAttr = currentCodeLang ? ` data-language="${escapeHtml(currentCodeLang)}"` : '';
     htmlParts.push(
-      `<pre class="${BLOCK_STYLES.codeBlock}"><code>${codeContent}</code></pre>`
+      `<pre class="${BLOCK_STYLES.codeBlock}"${langAttr}><code>${codeContent}</code></pre>`
     );
   }
 
@@ -285,7 +293,7 @@ export function markdownToHtml(
 
 /**
  * Traverses a DOM node recursively and serializes it into Markdown.
- * Block nodes return their content WITHOUT surrounding newlines â€”
+ * Block nodes return their content WITHOUT surrounding newlines —
  * block separation is handled exclusively by `serializeContainer`
  * (single source of truth for the "\n\n between blocks" law).
  */
@@ -351,7 +359,8 @@ export function domNodeToMarkdown(node: Node): string {
     case 'pre': {
       const codeEl = el.querySelector('code');
       const text = (codeEl ? codeEl.textContent : el.textContent) || '';
-      return `\`\`\`\n${text.trim()}\n\`\`\``;
+      const lang = el.dataset.language || el.getAttribute('data-language') || '';
+      return `\`\`\`${lang}\n${text.trim()}\n\`\`\``;
     }
     case 'blockquote': {
       const inner = getChildrenMarkdown()
@@ -534,7 +543,7 @@ function makeTaskItemElement(text: string, checked: boolean): HTMLElement {
   input.type = 'checkbox';
   input.checked = checked;
   input.setAttribute('data-task-checkbox', 'true');
-  input.setAttribute('aria-label', 'Toggle task item');
+  input.setAttribute('aria-label', text.trim() || 'Toggle task item');
   input.className = BLOCK_STYLES.checkbox;
 
   const span = document.createElement('span');

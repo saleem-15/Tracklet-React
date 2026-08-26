@@ -49,11 +49,13 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
   const latestNotesRef = React.useRef<string>(app?.notes || '');
   const lastSavedNotesRef = React.useRef<string>(app?.notes || '');
   const appIdRef = React.useRef<string | undefined>(app?.id);
-  appIdRef.current = app?.id;
+  const inFlightSaveRef = React.useRef<Promise<void> | null>(null);
+  const saveSeqRef = React.useRef(0);
 
   // Resync editor state ONLY when the target record changes (FR-003) —
   // never as a side-effect of our own saves echoing back through app.notes.
   useEffect(() => {
+    appIdRef.current = app?.id;
     if (!app) return;
     if (saveTimerRef.current) {
       clearTimeout(saveTimerRef.current);
@@ -100,28 +102,40 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
         return;
       }
 
+      const seq = ++saveSeqRef.current;
       setSaveStatus('saving');
       setIsSavingNotes(true);
-      try {
-        await onUpdateApp(currentAppId, {
-          notes: notesToSave.trim(),
-          updatedAt: new Date().toISOString(),
-        });
-        lastSavedNotesRef.current = notesToSave;
-        setHasUnsavedNotes(false);
-        setSaveStatus('saved');
-        clearNoteDraft(currentAppId);
-        setShowSavedToast(true);
-        setTimeout(() => setShowSavedToast(false), 2500);
-        setTimeout(() => {
-          setSaveStatus((prev) => (prev === 'saved' ? 'idle' : prev));
-        }, 3000);
-      } catch (err) {
-        console.error('Failed to auto-save notes:', err);
-        setSaveStatus('unsaved');
-      } finally {
-        setIsSavingNotes(false);
-      }
+      const savePromise = (async () => {
+        try {
+          await onUpdateApp(currentAppId, {
+            notes: notesToSave.trim(),
+            updatedAt: new Date().toISOString(),
+          });
+          if (seq === saveSeqRef.current) {
+            lastSavedNotesRef.current = notesToSave;
+            setHasUnsavedNotes(false);
+            setSaveStatus('saved');
+            clearNoteDraft(currentAppId);
+            setShowSavedToast(true);
+            setTimeout(() => setShowSavedToast(false), 2500);
+            setTimeout(() => {
+              setSaveStatus((prev) => (prev === 'saved' ? 'idle' : prev));
+            }, 3000);
+          }
+        } catch (err) {
+          console.error('Failed to auto-save notes:', err);
+          if (seq === saveSeqRef.current) {
+            setSaveStatus('unsaved');
+          }
+        } finally {
+          if (seq === saveSeqRef.current) {
+            setIsSavingNotes(false);
+            inFlightSaveRef.current = null;
+          }
+        }
+      })();
+      inFlightSaveRef.current = savePromise;
+      await savePromise;
     },
     [onUpdateApp]
   );
@@ -161,7 +175,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
     await performSaveNotes(latestNotesRef.current);
   }, [performSaveNotes]);
 
-  const handleRequestClose = React.useCallback(() => {
+  const handleRequestClose = React.useCallback(async () => {
     // If editing top metadata, prompt before discarding
     if (isEditingInfo) {
       setShowUnsavedPrompt(true);
@@ -173,21 +187,31 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
       clearTimeout(saveTimerRef.current);
       saveTimerRef.current = null;
     }
-    if (latestNotesRef.current !== lastSavedNotesRef.current && app?.id) {
-      const flushingAppId = app.id;
-      onUpdateApp(flushingAppId, {
-        notes: latestNotesRef.current.trim(),
-        updatedAt: new Date().toISOString(),
-      })
-        .then(() => clearNoteDraft(flushingAppId))
-        .catch(() => {
-          // Keep the draft on failure so the next open can recover it
+
+    if (inFlightSaveRef.current) {
+      try {
+        await inFlightSaveRef.current;
+      } catch {
+        /* ignore in-flight error during close flush */
+      }
+    }
+
+    if (latestNotesRef.current !== lastSavedNotesRef.current && appIdRef.current) {
+      const flushingAppId = appIdRef.current;
+      try {
+        await onUpdateApp(flushingAppId, {
+          notes: latestNotesRef.current.trim(),
+          updatedAt: new Date().toISOString(),
         });
-      lastSavedNotesRef.current = latestNotesRef.current;
+        clearNoteDraft(flushingAppId);
+        lastSavedNotesRef.current = latestNotesRef.current;
+      } catch {
+        // Keep the draft on failure so the next open can recover it
+      }
     }
 
     onClose();
-  }, [isEditingInfo, app?.id, onClose, onUpdateApp]);
+  }, [isEditingInfo, onClose, onUpdateApp]);
 
   useEffect(() => {
     if (!app) return;
@@ -425,7 +449,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
         <ApplicationDetailFooter
           onDelete={handleDelete}
           onSave={handleSaveNotes}
-          hasUnsavedChanges={hasUnsavedNotes || isEditingInfo}
+          hasUnsavedChanges={hasUnsavedNotes}
           isSaving={isSavingNotes}
           showSavedToast={showSavedToast}
         />

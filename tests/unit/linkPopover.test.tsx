@@ -82,13 +82,17 @@ describe('LinkPopover (floating link UX)', () => {
     let keyHandler: ((e: Event) => void) | null = null;
     const addSpy = vi.spyOn(document, 'addEventListener').mockImplementation(
       ((type: string, handler: EventListenerOrEventListenerObject) => {
-        if (type === 'keydown') keyHandler = handler as (e: Event) => void;
+        if (type === 'keydown' && typeof handler === 'function') {
+          keyHandler = handler as (e: Event) => void;
+        }
       }) as typeof document.addEventListener
     );
     const props = mount();
     expect(keyHandler).not.toBeNull();
 
-    act(() => keyHandler!(new KeyboardEvent('keydown', { key: 'Escape' })));
+    act(() => {
+      if (keyHandler) keyHandler(new KeyboardEvent('keydown', { key: 'Escape' }));
+    });
     expect(props.onClose).toHaveBeenCalledTimes(1);
 
     addSpy.mockRestore();

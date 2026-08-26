@@ -297,4 +297,45 @@ describe('deterministic block transformations (bug-fix regression)', () => {
       expect(exitCalloutOnEnter(ed)).toBe(false);
     });
   });
+
+  describe('security and fidelity serialization regressions', () => {
+    it('sanitizes unsafe javascript links while preserving safe links and input checkboxes', async () => {
+      const { sanitizePastedHtml } = await import('../../src/lib/editor/editorDom');
+      const untrusted =
+        '<p><a href="javascript:alert(1)">Click me</a> and <a href="https://example.com">Safe</a> and <input type="checkbox" checked /></p>';
+      const clean = sanitizePastedHtml(untrusted);
+      expect(clean).not.toContain('javascript:');
+      expect(clean).toContain('https://example.com');
+      expect(clean).toContain('Click me');
+      expect(clean).toContain('type="checkbox"');
+    });
+
+    it('preserves code block language tags through round-trip markdown conversion', async () => {
+      const { markdownToHtml, htmlToMarkdown } = await import(
+        '../../src/lib/editor/richTextMarkdownUtils'
+      );
+      const original = '```typescript\nconst x: number = 42;\n```';
+      const html = markdownToHtml(original);
+      expect(html).toContain('data-language="typescript"');
+
+      const tmp = document.createElement('div');
+      tmp.innerHTML = html;
+      const roundTrip = htmlToMarkdown(tmp);
+      expect(roundTrip).toBe(original);
+    });
+
+    it('transforms task item into heading without preserving checkbox input element in heading', () => {
+      const ed = setupEditor(
+        '<ul class="task-list"><li class="task-item" data-task="true" data-checked="false"><input type="checkbox" data-task-checkbox="true"><span class="task-text">Architecture Plan</span></li></ul>'
+      );
+      const span = ed.querySelector('.task-text')!;
+      placeCaretAtOffset(span as HTMLElement, 2);
+
+      apply('h1', ed);
+      const h2 = ed.querySelector('h2')!;
+      expect(h2).not.toBeNull();
+      expect(h2.textContent).toBe('Architecture Plan');
+      expect(h2.querySelector('input')).toBeNull();
+    });
+  });
 });

@@ -48,9 +48,9 @@ export const ApplicationDetailFooter: React.FC<ApplicationDetailFooterProps> = (
             type="button"
             onClick={saveHandler}
             disabled={!isDirty || saving}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl font-semibold transition-all text-xs cursor-pointer ${
-              isDirty
-                ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm shadow-blue-500/20'
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl font-semibold transition-all text-xs ${
+              isDirty && !saving
+                ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm shadow-blue-500/20 cursor-pointer'
                 : 'bg-slate-100 text-slate-500 border border-slate-200 cursor-not-allowed'
             }`}
           >

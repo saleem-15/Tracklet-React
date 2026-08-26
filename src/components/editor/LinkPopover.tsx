@@ -7,7 +7,7 @@ export interface LinkPopoverProps {
   editingExisting: boolean;
   rect: { anchorTop: number; anchorBottom: number; left: number } | null;
   onUrlChange: (url: string) => void;
-  onApply: () => void;
+  onApply: (explicitUrl?: string) => void;
   onClose: () => void;
 }
 
@@ -74,7 +74,12 @@ export const LinkPopover: React.FC<LinkPopoverProps> = ({
     return () => document.removeEventListener('keydown', onKey);
   }, [open, onClose]);
 
-  if (!open || !pos) return null;
+  if (!open || !pos || !rect) return null;
+
+  const handleRemove = () => {
+    onUrlChange('');
+    onApply('');
+  };
 
   return (
     <div
@@ -85,7 +90,7 @@ export const LinkPopover: React.FC<LinkPopoverProps> = ({
       style={{
         top: flipAbove ? undefined : pos.top,
         bottom: flipAbove
-          ? window.innerHeight - rect!.anchorTop + 6
+          ? window.innerHeight - rect.anchorTop + 6
           : undefined,
         left: pos.left,
         width: `min(${POPOVER_MAX_WIDTH}px, calc(100vw - 16px))`,
@@ -114,7 +119,7 @@ export const LinkPopover: React.FC<LinkPopoverProps> = ({
           title="Remove link"
           aria-label="Remove link"
           onMouseDown={(e) => e.preventDefault()}
-          onClick={() => onApplyWithClear()}
+          onClick={handleRemove}
           className="px-2 py-1 text-[11px] font-medium text-rose-300 hover:text-rose-200 hover:bg-slate-700 rounded-lg cursor-pointer transition-colors shrink-0"
         >
           Remove
@@ -123,7 +128,7 @@ export const LinkPopover: React.FC<LinkPopoverProps> = ({
       <button
         type="button"
         onMouseDown={(e) => e.preventDefault()}
-        onClick={onApply}
+        onClick={() => onApply()}
         className="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs rounded-lg transition-colors cursor-pointer shrink-0"
       >
         Apply
@@ -139,13 +144,6 @@ export const LinkPopover: React.FC<LinkPopoverProps> = ({
       </button>
     </div>
   );
-
-  function onApplyWithClear() {
-    // Removing: clear the URL field then apply — applyLink treats empty as unwrap
-    onUrlChange('');
-    // Let React flush state before apply reads it
-    requestAnimationFrame(onApply);
-  }
 };
 
 export default LinkPopover;

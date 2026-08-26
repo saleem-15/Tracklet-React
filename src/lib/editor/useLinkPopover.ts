@@ -22,6 +22,20 @@ const EMPTY_LINK: LinkDialogState = {
  * Floating link popover state: anchor-rect capture (before focus moves),
  * insert vs update/remove flows, and canonical change emission.
  */
+function isSafeLinkUrl(url: string): boolean {
+  const trimmed = url.trim().toLowerCase();
+  return (
+    trimmed.startsWith('http://') ||
+    trimmed.startsWith('https://') ||
+    trimmed.startsWith('mailto:') ||
+    trimmed.startsWith('tel:')
+  );
+}
+
+function escapeHtml(str: string): string {
+  return str.replace(/[&<>"']/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m] || m));
+}
+
 export function useLinkPopover(
   editorRef: RefObject<HTMLDivElement | null>,
   emitChange: () => void
@@ -86,7 +100,7 @@ export function useLinkPopover(
       // Update/remove path for an existing link
       if (linkedAnchorRef.current) {
         const anchor = linkedAnchorRef.current;
-        if (!cleanUrl || cleanUrl === 'https://' || cleanUrl === 'http://') {
+        if (!cleanUrl || cleanUrl === 'https://' || cleanUrl === 'http://' || !isSafeLinkUrl(cleanUrl)) {
           const parent = anchor.parentNode;
           if (parent) {
             while (anchor.firstChild) parent.insertBefore(anchor.firstChild, anchor);
@@ -108,14 +122,15 @@ export function useLinkPopover(
         selection?.addRange(savedRangeRef.current);
       }
 
-      if (cleanUrl && cleanUrl !== 'https://' && cleanUrl !== 'http://') {
+      if (cleanUrl && isSafeLinkUrl(cleanUrl)) {
         const selection = window.getSelection();
         const selectedText = selection ? selection.toString() : '';
         if (!selectedText) {
+          const safeEscaped = escapeHtml(cleanUrl);
           document.execCommand(
             'insertHTML',
             false,
-            `<a href="${cleanUrl}" target="_blank" rel="noopener noreferrer" class="${LINK_CLASS}">${cleanUrl}</a>&nbsp;`
+            `<a href="${safeEscaped}" target="_blank" rel="noopener noreferrer" class="${LINK_CLASS}">${safeEscaped}</a>&nbsp;`
           );
         } else {
           document.execCommand('createLink', false, cleanUrl);
@@ -132,6 +147,7 @@ export function useLinkPopover(
     openLinkDialog,
     closeLinkDialog,
     setLinkUrl: (url: string) => setLinkDialog((p) => ({ ...p, url })),
-    applyLinkFromDialog: () => applyLink(linkDialog.url),
+    applyLinkFromDialog: (overrideUrl?: string) =>
+      applyLink(overrideUrl !== undefined ? overrideUrl : linkDialog.url),
   };
 }

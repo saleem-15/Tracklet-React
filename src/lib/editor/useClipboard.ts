@@ -28,8 +28,9 @@ export function useClipboard(
       const markdown = htmlToMarkdown(tmp);
       if (markdown) {
         e.clipboardData.setData('text/plain', markdown);
+        e.clipboardData.setData('text/html', tmp.innerHTML);
+        e.preventDefault();
       }
-      // No preventDefault — the HTML flavor is still produced natively.
     },
     [editorRef]
   );
@@ -59,12 +60,17 @@ export function useClipboard(
         e.preventDefault();
         try {
           const clean = sanitizePastedHtml(htmlFlavor);
-          document.execCommand('insertHTML', false, clean || pastedText);
-          onMutate();
-          return;
+          if (clean) {
+            document.execCommand('insertHTML', false, clean);
+            onMutate();
+            return;
+          }
         } catch {
           /* fall through to plain-text normalization */
         }
+        document.execCommand('insertText', false, pastedText);
+        onMutate();
+        return;
       }
 
       // Multi-line plain text: normalize into proper blocks up front.

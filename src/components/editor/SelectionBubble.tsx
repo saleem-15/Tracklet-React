@@ -72,11 +72,16 @@ const SelectionBubble: React.FC<SelectionBubbleProps> = ({
       });
     };
 
+    const onScroll = () => setPosition(null);
+    const onResize = () => setPosition(null);
+
     document.addEventListener('selectionchange', evaluate);
-    window.addEventListener('scroll', () => setPosition(null), { passive: true });
-    window.addEventListener('resize', () => setPosition(null));
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onResize);
     return () => {
       document.removeEventListener('selectionchange', evaluate);
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onResize);
       if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps

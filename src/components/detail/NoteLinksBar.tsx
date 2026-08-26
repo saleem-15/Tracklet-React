@@ -14,7 +14,7 @@ export const NoteLinksBar: React.FC<NoteLinksBarProps> = ({
   notes,
   className = '',
 }) => {
-  const links = extractLinks(notes);
+  const links = React.useMemo(() => extractLinks(notes), [notes]);
 
   if (links.length === 0) return null;
 

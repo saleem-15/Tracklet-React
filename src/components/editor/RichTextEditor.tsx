@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useRef } from 'react';
 import { canonicalizeMarkdown } from '../../lib/editor/richTextMarkdownUtils';
 import { useRichTextEditor } from '../../lib/editor/useRichTextEditor';
 import { EDITOR_ACTIONS } from './editorActions';
@@ -64,6 +64,8 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
   const wrapperRef = useRefBridge();
   const [editorFocused, setEditorFocused] = useState(false);
   const [userHeight, setUserHeight] = useState<number | null>(null);
+  const userHeightRef = useRef<number | null>(userHeight);
+  userHeightRef.current = userHeight;
   const isEmpty = isEmptyMarkdown(value);
 
   // Drag-to-resize (bottom edge). Double-click resets to auto height.
@@ -90,7 +92,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
       ev.preventDefault();
       startY = ev.clientY;
       startH =
-        userHeight ??
+        userHeightRef.current ??
         editorRef.current!.getBoundingClientRect().height;
       document.body.style.userSelect = 'none';
       document.addEventListener('mousemove', onMove);
@@ -107,7 +109,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
       handle.removeEventListener('dblclick', onReset);
       onUp();
     };
-  }, [resizable, userHeight, minRows, wrapperRef, editorRef]);
+  }, [resizable, minRows, wrapperRef, editorRef]);
 
   // Click-outside closes the slash menu
   useEffectWrapper(slash.open, wrapperRef.current, closeSlashMenu);
