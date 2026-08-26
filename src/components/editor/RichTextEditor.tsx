@@ -162,6 +162,8 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
         )}
         <div
           ref={editorRef}
+          data-editor="true"
+          data-rich-text-editor="true"
           contentEditable
           suppressContentEditableWarning
           onInput={handleInput}

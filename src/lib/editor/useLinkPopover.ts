@@ -108,6 +108,9 @@ export function useLinkPopover(
           }
         } else {
           anchor.setAttribute('href', cleanUrl);
+          anchor.className = LINK_CLASS;
+          anchor.setAttribute('target', '_blank');
+          anchor.setAttribute('rel', 'noopener noreferrer');
         }
         linkedAnchorRef.current = null;
         savedRangeRef.current = null;
@@ -134,6 +137,12 @@ export function useLinkPopover(
           );
         } else {
           document.execCommand('createLink', false, cleanUrl);
+          const anchors = el.querySelectorAll<HTMLAnchorElement>(`a[href="${cleanUrl}"]`);
+          anchors.forEach((a) => {
+            if (!a.className) a.className = LINK_CLASS;
+            if (!a.getAttribute('target')) a.setAttribute('target', '_blank');
+            if (!a.getAttribute('rel')) a.setAttribute('rel', 'noopener noreferrer');
+          });
         }
         emitChange();
       }

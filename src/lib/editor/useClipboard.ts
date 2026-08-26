@@ -1,5 +1,5 @@
 import { useCallback, type RefObject } from 'react';
-import { markdownToHtml, htmlToMarkdown } from './richTextMarkdownUtils';
+import { markdownToHtml, htmlToMarkdown, LINK_CLASS } from './richTextMarkdownUtils';
 import { sanitizePastedHtml } from './editorDom';
 
 export interface ClipboardHandlers {
@@ -49,7 +49,17 @@ export function useClipboard(
 
       if (isUrl && hasSelection) {
         e.preventDefault();
-        document.execCommand('createLink', false, pastedText.trim());
+        const cleanUrl = pastedText.trim();
+        document.execCommand('createLink', false, cleanUrl);
+        const el = editorRef.current;
+        if (el) {
+          const anchors = el.querySelectorAll<HTMLAnchorElement>(`a[href="${cleanUrl}"]`);
+          anchors.forEach((a) => {
+            if (!a.className) a.className = LINK_CLASS;
+            if (!a.getAttribute('target')) a.setAttribute('target', '_blank');
+            if (!a.getAttribute('rel')) a.setAttribute('rel', 'noopener noreferrer');
+          });
+        }
         onMutate();
         return;
       }
