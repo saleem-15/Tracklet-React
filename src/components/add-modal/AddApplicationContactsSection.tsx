@@ -3,6 +3,7 @@ import { Users, Plus, Linkedin, Phone } from 'lucide-react';
 import { Contact } from '../../types';
 import { CONTACT_AVATAR_COLORS, getInitials } from '../../lib/constants';
 import { DeleteIconButton } from '../IconButton';
+import { LinkifiedText } from '../LinkifiedText';
 
 export interface AddApplicationContactsSectionProps {
   contacts: Contact[];
@@ -102,7 +103,7 @@ export const AddApplicationContactsSection: React.FC<AddApplicationContactsSecti
                     )}
                     {c.notes && (
                       <p className="text-[11px] text-slate-600 bg-slate-50 border border-slate-200/60 rounded px-2 py-1 leading-relaxed italic">
-                        {c.notes}
+                        <LinkifiedText text={c.notes} />
                       </p>
                     )}
                   </div>

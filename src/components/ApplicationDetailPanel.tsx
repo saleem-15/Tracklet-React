@@ -12,6 +12,7 @@ import { StatusHistoryTimeline } from './detail/StatusHistoryTimeline';
 import { UnsavedChangesPrompt } from './detail/UnsavedChangesPrompt';
 import { ApplicationNotesSection } from './detail/ApplicationNotesSection';
 import { ApplicationQuickLinks } from './detail/ApplicationQuickLinks';
+import { resolveDraftOnOpen, clearNoteDraft } from '../lib/editor/noteDrafts';
 
 export interface ApplicationDetailPanelProps {
   app: Application | null;
@@ -35,25 +36,182 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
   onShowToast,
 }) => {
   const [notes, setNotes] = useState(app?.notes || '');
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'unsaved' | 'saving' | 'saved'>('idle');
   const [isSavingNotes, setIsSavingNotes] = useState(false);
   const [hasUnsavedNotes, setHasUnsavedNotes] = useState(false);
   const [showSavedToast, setShowSavedToast] = useState(false);
   const [isEditingInfo, setIsEditingInfo] = useState(false);
   const [showUnsavedPrompt, setShowUnsavedPrompt] = useState(false);
+  const [draftNoticeVisible, setDraftNoticeVisible] = useState(false);
 
+  // Refs for tracking debounced auto-save state and flush on close
+  const saveTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const latestNotesRef = React.useRef<string>(app?.notes || '');
+  const lastSavedNotesRef = React.useRef<string>(app?.notes || '');
+  const appIdRef = React.useRef<string | undefined>(app?.id);
+  const inFlightSaveRef = React.useRef<Promise<void> | null>(null);
+  const saveSeqRef = React.useRef(0);
+
+  // Resync editor state ONLY when the target record changes (FR-003) —
+  // never as a side-effect of our own saves echoing back through app.notes.
   useEffect(() => {
+    appIdRef.current = app?.id;
     if (!app) return;
-    setNotes(app.notes || '');
-    setHasUnsavedNotes(false);
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = null;
+    }
+
+    // Crash-recovery decision (FR-018/019): restore fresher device drafts
+    const resolution = resolveDraftOnOpen(app.id, app.notes || '', app.updatedAt);
+    let initialNotes = app.notes || '';
+    let restored = false;
+    if ('restore' in resolution && resolution.restore) {
+      initialNotes = resolution.restore.markdown;
+      restored = true;
+    }
+    setDraftNoticeVisible(restored);
+
+    setNotes(initialNotes);
+    latestNotesRef.current = initialNotes;
+    lastSavedNotesRef.current = app.notes || '';
+    const dirtyOnLoad = initialNotes !== lastSavedNotesRef.current;
+    setHasUnsavedNotes(dirtyOnLoad);
+    setSaveStatus(dirtyOnLoad ? 'unsaved' : 'idle');
     setIsEditingInfo(false);
-  }, [app?.id, app?.notes]);
+  }, [app?.id]);
+
+  // Clean up timer on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimerRef.current) {
+        clearTimeout(saveTimerRef.current);
+      }
+    };
+  }, []);
 
   const isDirty = hasUnsavedNotes || isEditingInfo;
 
-  const handleRequestClose = () => {
-    if (isDirty) setShowUnsavedPrompt(true);
-    else onClose();
-  };
+  const performSaveNotes = React.useCallback(
+    async (notesToSave: string) => {
+      const currentAppId = appIdRef.current;
+      if (!currentAppId) return;
+      if (notesToSave === lastSavedNotesRef.current) {
+        setHasUnsavedNotes(false);
+        setSaveStatus('idle');
+        return;
+      }
+
+      const seq = ++saveSeqRef.current;
+      setSaveStatus('saving');
+      setIsSavingNotes(true);
+      const savePromise = (async () => {
+        try {
+          await onUpdateApp(currentAppId, {
+            notes: notesToSave.trim(),
+            updatedAt: new Date().toISOString(),
+          });
+          if (seq === saveSeqRef.current) {
+            lastSavedNotesRef.current = notesToSave;
+            setHasUnsavedNotes(false);
+            setSaveStatus('saved');
+            clearNoteDraft(currentAppId);
+            setShowSavedToast(true);
+            setTimeout(() => setShowSavedToast(false), 2500);
+            setTimeout(() => {
+              setSaveStatus((prev) => (prev === 'saved' ? 'idle' : prev));
+            }, 3000);
+          }
+        } catch (err) {
+          console.error('Failed to auto-save notes:', err);
+          if (seq === saveSeqRef.current) {
+            setSaveStatus('unsaved');
+          }
+        } finally {
+          if (seq === saveSeqRef.current) {
+            setIsSavingNotes(false);
+            inFlightSaveRef.current = null;
+          }
+        }
+      })();
+      inFlightSaveRef.current = savePromise;
+      await savePromise;
+    },
+    [onUpdateApp]
+  );
+
+  const handleNotesChange = React.useCallback(
+    (val: string) => {
+      setNotes(val);
+      latestNotesRef.current = val;
+      const isDifferent = val !== lastSavedNotesRef.current;
+      setHasUnsavedNotes(isDifferent);
+
+      if (isDifferent) {
+        setSaveStatus('unsaved');
+        if (saveTimerRef.current) {
+          clearTimeout(saveTimerRef.current);
+        }
+        // 3000ms debounce to protect Firebase quota while ensuring safe background saves
+        saveTimerRef.current = setTimeout(() => {
+          performSaveNotes(latestNotesRef.current);
+        }, 3000);
+      } else {
+        setSaveStatus('idle');
+        if (saveTimerRef.current) {
+          clearTimeout(saveTimerRef.current);
+          saveTimerRef.current = null;
+        }
+      }
+    },
+    [performSaveNotes]
+  );
+
+  const handleSaveNotes = React.useCallback(async () => {
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = null;
+    }
+    await performSaveNotes(latestNotesRef.current);
+  }, [performSaveNotes]);
+
+  const handleRequestClose = React.useCallback(async () => {
+    // If editing top metadata, prompt before discarding
+    if (isEditingInfo) {
+      setShowUnsavedPrompt(true);
+      return;
+    }
+
+    // Immediately flush any pending debounced notes to Firestore on modal close
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = null;
+    }
+
+    if (inFlightSaveRef.current) {
+      try {
+        await inFlightSaveRef.current;
+      } catch {
+        /* ignore in-flight error during close flush */
+      }
+    }
+
+    if (latestNotesRef.current !== lastSavedNotesRef.current && appIdRef.current) {
+      const flushingAppId = appIdRef.current;
+      try {
+        await onUpdateApp(flushingAppId, {
+          notes: latestNotesRef.current.trim(),
+          updatedAt: new Date().toISOString(),
+        });
+        clearNoteDraft(flushingAppId);
+        lastSavedNotesRef.current = latestNotesRef.current;
+      } catch {
+        // Keep the draft on failure so the next open can recover it
+      }
+    }
+
+    onClose();
+  }, [isEditingInfo, onClose, onUpdateApp]);
 
   useEffect(() => {
     if (!app) return;
@@ -65,7 +223,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
     };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [app, showUnsavedPrompt, isDirty]);
+  }, [app, showUnsavedPrompt, handleRequestClose]);
 
   if (!app) return null;
 
@@ -87,22 +245,6 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
     setShowSavedToast(true);
     setTimeout(() => setShowSavedToast(false), 2000);
     onShowToast?.('success', 'Application updated');
-  };
-
-  const handleNotesChange = (val: string) => {
-    setNotes(val);
-    setHasUnsavedNotes(val !== (app?.notes || ''));
-  };
-
-  const handleSaveNotes = async () => {
-    if (!app) return;
-    setIsSavingNotes(true);
-    await onUpdateApp(app.id, { notes: notes.trim(), updatedAt: new Date().toISOString() });
-    setIsSavingNotes(false);
-    setHasUnsavedNotes(false);
-    setShowSavedToast(true);
-    setTimeout(() => setShowSavedToast(false), 2000);
-    onShowToast?.('success', 'Notes saved');
   };
 
   const handleDelete = async () => {
@@ -208,6 +350,9 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={app ? `Application Details - ${app.company}` : 'Application Details'}
       className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 md:p-6 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200 overflow-y-auto"
       onClick={handleRequestClose}
     >
@@ -260,9 +405,14 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
 
               <ApplicationNotesSection
                 notes={notes}
-                hasUnsavedNotes={hasUnsavedNotes}
                 onNotesChange={handleNotesChange}
-                onSaveNotes={handleSaveNotes}
+                saveStatus={saveStatus}
+                appId={app.id}
+                draftNoticeVisible={draftNoticeVisible}
+                onDismissDraftNotice={() => {
+                  clearNoteDraft(app.id);
+                  setDraftNoticeVisible(false);
+                }}
               />
             </div>
 
@@ -298,9 +448,9 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
 
         <ApplicationDetailFooter
           onDelete={handleDelete}
-          onSaveNotes={handleSaveNotes}
-          hasUnsavedNotes={hasUnsavedNotes}
-          isSavingNotes={isSavingNotes}
+          onSave={handleSaveNotes}
+          hasUnsavedChanges={hasUnsavedNotes}
+          isSaving={isSavingNotes}
           showSavedToast={showSavedToast}
         />
       </div>
