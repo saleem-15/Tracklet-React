@@ -55,7 +55,7 @@ const isElement = (n: Node | null): n is HTMLElement =>
 
 /**
  * Nearest line-level block containing `node`, scoped to `root`.
- * Inside `<ul><li><span>text` this returns the LI (not the UL) â€”
+ * Inside `<ul><li><span>text` this returns the LI (not the UL) —
  * the previous implementation returned the whole list here.
  */
 export function findCaretBlock(root: HTMLElement, node: Node): HTMLElement | null {
@@ -100,15 +100,14 @@ export function caretCharOffset(container: HTMLElement, range: Range): number {
   return pre.toString().length;
 }
 
-interface OffsetPoint {
-  node: Text;
-  offset: number;
-}
-
-function locateCharOffset(container: HTMLElement, target: number): OffsetPoint | null {
+/** Walks text nodes in DFS order until the target character offset is reached. */
+export function locateCharOffset(
+  container: Node,
+  target: number
+): { node: Text; offset: number } | null {
   const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
   let pos = 0;
-  let last: OffsetPoint | null = null;
+  let last: { node: Text; offset: number } | null = null;
   while (walker.nextNode()) {
     const t = walker.currentNode as Text;
     const len = t.nodeValue?.length ?? 0;

@@ -1,6 +1,7 @@
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { createRoot, type Root } from 'react-dom/client';
 import { act } from 'react';
+import type React from 'react';
 import { EDITOR_ACTIONS, getActionById } from '../../src/components/editor/editorActions';
 import { placeCaretAtOffset, exitCalloutOnEnter } from '../../src/lib/editor/editorDom';
 import { spawnNextTaskItem } from '../../src/lib/editor/richTextMarkdownUtils';
@@ -336,6 +337,62 @@ describe('deterministic block transformations (bug-fix regression)', () => {
       expect(h2).not.toBeNull();
       expect(h2.textContent).toBe('Architecture Plan');
       expect(h2.querySelector('input')).toBeNull();
+    });
+
+    it('decorates newly linked selected text with LINK_CLASS, target, and rel', async () => {
+      const { LINK_CLASS } = await import('../../src/lib/editor/richTextMarkdownUtils');
+      const ed = setupEditor('<p>Visit my portfolio today</p>');
+      const p = ed.querySelector('p')!;
+      const range = document.createRange();
+      range.setStart(p.firstChild!, 6); // "my portfolio"
+      range.setEnd(p.firstChild!, 18);
+      const sel = document.getSelection()!;
+      sel.removeAllRanges();
+      sel.addRange(range);
+
+      // Simulate execCommand createLink and decoration flow
+      document.execCommand = vi.fn((cmd, _showUi, val) => {
+        if (cmd === 'createLink' && range.toString()) {
+          const a = document.createElement('a');
+          a.setAttribute('href', val as string);
+          a.appendChild(range.extractContents());
+          range.insertNode(a);
+          return true;
+        }
+        return false;
+      });
+
+      const { useLinkPopover } = await import('../../src/lib/editor/useLinkPopover');
+      const editorRef: React.RefObject<HTMLDivElement | null> = {
+        current: ed as HTMLDivElement,
+      };
+      const emitChange = vi.fn();
+
+      // Test hook invocation
+      let popoverApi: ReturnType<typeof useLinkPopover> | null = null;
+      function TestComponent() {
+        popoverApi = useLinkPopover(editorRef, emitChange);
+        return null;
+      }
+      act(() => {
+        root!.render(<TestComponent />);
+      });
+
+      act(() => {
+        popoverApi!.openLinkDialog();
+      });
+
+      act(() => {
+        popoverApi!.applyLinkFromDialog('https://example.com');
+      });
+
+      const anchor = ed.querySelector('a')!;
+      expect(anchor).not.toBeNull();
+      expect(anchor.getAttribute('href')).toBe('https://example.com');
+      expect(anchor.className).toBe(LINK_CLASS);
+      expect(anchor.getAttribute('target')).toBe('_blank');
+      expect(anchor.getAttribute('rel')).toBe('noopener noreferrer');
+      expect(anchor.textContent).toBe('my portfolio');
     });
   });
 });

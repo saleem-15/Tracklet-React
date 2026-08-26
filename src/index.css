@@ -87,3 +87,20 @@
   }
 }
 
+/* Rich Text Editor Link Typography */
+[data-editor] a,
+[data-rich-text-editor] a,
+[role="textbox"][contenteditable="true"] a {
+  color: #2563eb;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+[data-editor] a:hover,
+[data-rich-text-editor] a:hover,
+[role="textbox"][contenteditable="true"] a:hover {
+  color: #1d4ed8;
+}
+
