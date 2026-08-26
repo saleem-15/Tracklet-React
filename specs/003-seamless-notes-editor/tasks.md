@@ -1,4 +1,4 @@
-﻿# Tasks: Seamless Notes Editor
+# Tasks: Seamless Notes Editor
 
 **Input**: Design documents from `/specs/003-seamless-notes-editor/`
 
@@ -155,7 +155,7 @@ Single-project React layout per plan.md: `src/components/editor/` (new shared pr
 **Purpose**: Documentation, performance proof, end-to-end validation.
 
 - [x] T030 [P] Record architecture decision: add `docs/adr/0007-notes-editor-shared-surface-slash-menu-drafts.md` superseding toolbar aspects of `docs/adr/0006` (custom-editor-over-framework rationale from research R1, sync rules R2, draft design R7)
-- [ ] T031 (browser pass pending user) Execute full `specs/003-seamless-notes-editor/quickstart.md` scenarios S1–S9; log and fix deviations against failing scenario IDs
+- [ ] T031 (browser pass pending user) Execute full `specs/003-seamless-notes-editor/quickstart.md` scenarios S1–S11; log and fix deviations against failing scenario IDs
 - [x] T032 Performance proof for SC-009: type into an ~10K-character note in dev; if input-to-paint exceeds ~50 ms, memoize/throttle serialization in `src/lib/useRichTextEditor.ts` (e.g., rAF-batched `htmlToMarkdown`) and re-measure
 - [x] T033 Final gates: `npm run lint` && `npm test` green; stage and commit in logical groups (serializer/foundation, US1, US2, US3, US4, US5, polish)
 

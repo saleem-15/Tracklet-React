@@ -1,4 +1,4 @@
-﻿# Quickstart: Seamless Notes Editor Validation
+# Quickstart: Seamless Notes Editor Validation
 
 **Feature**: 003-seamless-notes-editor | **Date**: 2026-08-24
 Proves the spec's success criteria end-to-end. Implementation details live in [plan.md](./plan.md) and [contracts/editor-contracts.md](./contracts/editor-contracts.md).
@@ -125,4 +125,4 @@ Plus:
 
 ## Pass criteria
 
-All automated suites green + S1–S9 expectations observed. Record deviations as tasks/issues referencing the failing scenario ID.
+All automated suites green + S1–S11 expectations observed. Record deviations as tasks/issues referencing the failing scenario ID.
