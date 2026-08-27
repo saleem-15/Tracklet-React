@@ -79,8 +79,6 @@ export function useLinkPopover(
 
           rect = caretViewportRect(el, null);
 
-          el.focus();
-
           const node =
             sel.anchorNode?.nodeType === Node.ELEMENT_NODE
               ? (sel.anchorNode as HTMLElement)
@@ -91,7 +89,6 @@ export function useLinkPopover(
             prefilled = anchor.getAttribute('href') || prefilled;
           }
         } else {
-          el.focus();
           rect = caretViewportRect(el, el);
         }
       }
@@ -110,32 +107,86 @@ export function useLinkPopover(
     (url: string) => {
       const el = editorRef.current;
       if (!el) return;
-      el.focus();
       const cleanUrl = url.trim();
 
       // Update/remove path for an existing link
-      if (linkedAnchorRef.current) {
+      if (linkedAnchorRef.current && el.contains(linkedAnchorRef.current)) {
         const anchor = linkedAnchorRef.current;
         if (!cleanUrl || cleanUrl === 'https://' || cleanUrl === 'http://' || !isSafeLinkUrl(cleanUrl)) {
           const parent = anchor.parentNode;
           if (parent) {
-            while (anchor.firstChild) parent.insertBefore(anchor.firstChild, anchor);
+            let lastNode: Node | null = null;
+            while (anchor.firstChild) {
+              lastNode = anchor.firstChild;
+              parent.insertBefore(anchor.firstChild, anchor);
+            }
             parent.removeChild(anchor);
+
+            closeLinkDialog();
+            emitChange();
+
+            requestAnimationFrame(() => {
+              const currentEl = editorRef.current;
+              if (!currentEl) return;
+              currentEl.focus();
+              const sel = window.getSelection();
+              if (sel) {
+                const r = document.createRange();
+                if (lastNode && lastNode.nodeType === Node.TEXT_NODE) {
+                  r.setStart(lastNode, (lastNode as Text).length);
+                } else if (lastNode && lastNode.parentNode) {
+                  const pad = document.createTextNode('\u200B');
+                  lastNode.parentNode.insertBefore(pad, lastNode.nextSibling);
+                  r.setStart(pad, pad.length);
+                } else if (parent && parent.parentNode) {
+                  r.selectNodeContents(parent);
+                }
+                r.collapse(true);
+                sel.removeAllRanges();
+                sel.addRange(r);
+              }
+            });
+            linkedAnchorRef.current = null;
+            savedRangeRef.current = null;
+            return;
           }
         } else {
           anchor.setAttribute('href', cleanUrl);
           anchor.className = LINK_CLASS;
           anchor.setAttribute('target', '_blank');
           anchor.setAttribute('rel', 'noopener noreferrer');
+
+          closeLinkDialog();
+          emitChange();
+
+          requestAnimationFrame(() => {
+            const currentEl = editorRef.current;
+            if (!currentEl) return;
+            currentEl.focus();
+            const sel = window.getSelection();
+            if (sel) {
+              const r = document.createRange();
+              const nextSibling = anchor.nextSibling;
+              if (nextSibling && nextSibling.nodeType === Node.TEXT_NODE) {
+                r.setStart(nextSibling, 0);
+              } else {
+                const pad = document.createTextNode('\u200B');
+                anchor.parentNode?.insertBefore(pad, anchor.nextSibling);
+                r.setStart(pad, pad.length);
+              }
+              r.collapse(true);
+              sel.removeAllRanges();
+              sel.addRange(r);
+            }
+          });
+          linkedAnchorRef.current = null;
+          savedRangeRef.current = null;
+          return;
         }
-        linkedAnchorRef.current = null;
-        savedRangeRef.current = null;
-        closeLinkDialog();
-        emitChange();
-        return;
       }
 
       if (savedRangeRef.current) {
+        el.focus();
         const selection = window.getSelection();
         selection?.removeAllRanges();
         selection?.addRange(savedRangeRef.current);
@@ -160,9 +211,27 @@ export function useLinkPopover(
             if (!a.getAttribute('rel')) a.setAttribute('rel', 'noopener noreferrer');
           });
         }
+        closeLinkDialog();
         emitChange();
+
+        requestAnimationFrame(() => {
+          const currentEl = editorRef.current;
+          if (!currentEl) return;
+          currentEl.focus();
+        });
+      } else {
+        closeLinkDialog();
+        if (savedRangeRef.current) {
+          requestAnimationFrame(() => {
+            const currentEl = editorRef.current;
+            if (!currentEl || !savedRangeRef.current) return;
+            currentEl.focus();
+            const selection = window.getSelection();
+            selection?.removeAllRanges();
+            selection?.addRange(savedRangeRef.current);
+          });
+        }
       }
-      closeLinkDialog();
     },
     [closeLinkDialog, emitChange, editorRef]
   );

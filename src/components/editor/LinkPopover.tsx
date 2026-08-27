@@ -1,5 +1,5 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { Link2, X } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 
 export interface LinkPopoverProps {
   open: boolean;
@@ -11,14 +11,14 @@ export interface LinkPopoverProps {
   onClose: () => void;
 }
 
-const POPOVER_MAX_WIDTH = 340;
+const POPOVER_MAX_WIDTH = 320;
 /** Approximate rendered height — used for above/below flip decision. */
-const POPOVER_EST_HEIGHT = 46;
+const POPOVER_EST_HEIGHT = 38;
 
 /**
- * Floating link popover anchored to the selection that invoked it
- * (same visual family as the selection bubble). Closes on Escape or any
- * pointer press outside its root.
+ * Floating link popover anchored to the selection that invoked it.
+ * Auto-saves on Enter or blur/outside click (never on keystroke).
+ * Closes on Escape.
  */
 export const LinkPopover: React.FC<LinkPopoverProps> = ({
   open,
@@ -30,6 +30,7 @@ export const LinkPopover: React.FC<LinkPopoverProps> = ({
   onClose,
 }) => {
   const rootRef = useRef<HTMLDivElement | null>(null);
+  const isAppliedRef = useRef(false);
   const [flipAbove, setFlipAbove] = useState(false);
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
 
@@ -37,13 +38,14 @@ export const LinkPopover: React.FC<LinkPopoverProps> = ({
   useLayoutEffect(() => {
     if (!open || !rect) {
       setPos(null);
+      isAppliedRef.current = false;
       return;
     }
     const belowFits =
       rect.anchorBottom + POPOVER_EST_HEIGHT < window.innerHeight - 8;
     setFlipAbove(!belowFits);
     setPos({
-      top: belowFits ? rect.anchorBottom + 6 : undefined as unknown as number,
+      top: belowFits ? rect.anchorBottom + 6 : (undefined as unknown as number),
       left: Math.max(
         8,
         Math.min(rect.left, window.innerWidth - POPOVER_MAX_WIDTH - 8)
@@ -51,17 +53,26 @@ export const LinkPopover: React.FC<LinkPopoverProps> = ({
     });
   }, [open, rect]);
 
-  // Outside-press closes (pointerdown so drags starting outside count)
+  // Outside-press auto-saves and closes
   useEffect(() => {
     if (!open) return;
     const onDown = (e: PointerEvent) => {
-      if (!rootRef.current?.contains(e.target as Node)) onClose();
+      if (!rootRef.current?.contains(e.target as Node)) {
+        if (!isAppliedRef.current) {
+          const trimmed = url.trim();
+          if (trimmed && trimmed !== 'https://' && trimmed !== 'http://') {
+            onApply();
+          } else {
+            onClose();
+          }
+        }
+      }
     };
     document.addEventListener('pointerdown', onDown, true);
     return () => document.removeEventListener('pointerdown', onDown, true);
-  }, [open, onClose]);
+  }, [open, url, onApply, onClose]);
 
-  // Escape closes
+  // Escape cancels and closes without applying
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -76,7 +87,10 @@ export const LinkPopover: React.FC<LinkPopoverProps> = ({
 
   if (!open || !pos || !rect) return null;
 
-  const handleRemove = () => {
+  const handleRemove = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    isAppliedRef.current = true;
     onUrlChange('');
     onApply('');
   };
@@ -86,7 +100,7 @@ export const LinkPopover: React.FC<LinkPopoverProps> = ({
       ref={rootRef}
       role="dialog"
       aria-label={editingExisting ? 'Edit link' : 'Insert link'}
-      className="fixed z-[70] flex items-center gap-2 bg-slate-900 text-white rounded-xl shadow-2xl px-2 py-1.5 animate-in fade-in zoom-in-95 duration-100"
+      className="fixed z-[70] flex items-center gap-1.5 bg-slate-900 text-slate-100 rounded-lg shadow-xl border border-slate-700/60 px-2 py-1 text-xs animate-in fade-in zoom-in-95 duration-100"
       style={{
         top: flipAbove ? undefined : pos.top,
         bottom: flipAbove
@@ -96,7 +110,6 @@ export const LinkPopover: React.FC<LinkPopoverProps> = ({
         width: `min(${POPOVER_MAX_WIDTH}px, calc(100vw - 16px))`,
       }}
     >
-      <Link2 className="w-4 h-4 text-blue-300 shrink-0" />
       <input
         type="url"
         value={url}
@@ -105,43 +118,37 @@ export const LinkPopover: React.FC<LinkPopoverProps> = ({
           if (e.key === 'Enter') {
             e.preventDefault();
             e.stopPropagation();
+            isAppliedRef.current = true;
             onApply();
           }
         }}
         placeholder="https://..."
         aria-label="Link URL"
         autoFocus
-        className="flex-1 min-w-0 px-2.5 py-1 text-xs bg-slate-800 border border-slate-600 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-400 font-mono text-slate-100 placeholder:text-slate-500"
+        className="flex-1 min-w-0 bg-transparent border-0 focus:outline-none focus:ring-0 px-1 py-0.5 text-xs text-slate-100 font-mono placeholder:text-slate-500"
       />
       {editingExisting && (
-        <button
-          type="button"
-          title="Remove link"
-          aria-label="Remove link"
-          onMouseDown={(e) => e.preventDefault()}
-          onClick={handleRemove}
-          className="px-2 py-1 text-[11px] font-medium text-rose-300 hover:text-rose-200 hover:bg-slate-700 rounded-lg cursor-pointer transition-colors shrink-0"
-        >
-          Remove
-        </button>
+        <>
+          <div className="h-3.5 w-px bg-slate-700/80 mx-0.5 shrink-0" />
+          <button
+            type="button"
+            title="Remove link (keep text)"
+            aria-label="Remove link"
+            onPointerDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+            onClick={handleRemove}
+            className="p-1 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded transition-colors cursor-pointer shrink-0 flex items-center justify-center"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+        </>
       )}
-      <button
-        type="button"
-        onMouseDown={(e) => e.preventDefault()}
-        onClick={() => onApply()}
-        className="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs rounded-lg transition-colors cursor-pointer shrink-0"
-      >
-        Apply
-      </button>
-      <button
-        type="button"
-        onMouseDown={(e) => e.preventDefault()}
-        onClick={onClose}
-        aria-label="Cancel"
-        className="p-1 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg cursor-pointer transition-colors shrink-0"
-      >
-        <X className="w-3.5 h-3.5" />
-      </button>
     </div>
   );
 };

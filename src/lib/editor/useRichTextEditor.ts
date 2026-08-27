@@ -31,7 +31,7 @@ import {
 import {
   tryApplyInlineMarkdown,
 } from './editorInlineMarkdown';
-import { placeCaretAtEnd } from './editorDom';
+import { placeCaretAtEnd, cleanupEmptyLinks } from './editorDom';
 
 export interface UseRichTextEditorOptions {
   value: string;
@@ -44,7 +44,7 @@ export interface UseRichTextEditorOptions {
  */
 export function useRichTextEditor({ value, onChange }: UseRichTextEditorOptions) {
   const editorRef = useRef<HTMLDivElement | null>(null);
-  const lastMarkdownRef = useRef<string>(value || '');
+  const lastMarkdownRef = useRef<string | null>(null);
   const suppressChangeRef = useRef(false);
 
   /* ---------------- change pipeline ---------------- */
@@ -78,6 +78,10 @@ export function useRichTextEditor({ value, onChange }: UseRichTextEditorOptions)
     const el = editorRef.current;
     const sel = window.getSelection();
     if (el && sel) {
+      // Strip empty <a> wrappers the browser leaves behind after
+      // Delete/Backspace at link boundaries — the native contentEditable
+      // engine deletes the text content but keeps the zombie anchor tag.
+      cleanupEmptyLinks(el, sel);
       tryApplyInlineMarkdown(el, sel);
     }
     emitChange();
@@ -100,7 +104,7 @@ export function useRichTextEditor({ value, onChange }: UseRichTextEditorOptions)
     // Recreate when value changes so afterReplace captures the latest echo
     [value, setSlash]
   );
-  useValueSync(editorRef, value, syncHooks);
+  useValueSync(editorRef, value, syncHooks, lastMarkdownRef);
 
   /* ---------------- action dispatch ---------------- */
 

@@ -38,9 +38,10 @@ afterEach(() => {
 });
 
 describe('LinkPopover (floating link UX)', () => {
-  it('renders input + Apply when open, nothing when closed', () => {
+  it('renders input without Apply button when open, nothing when closed', () => {
     mount();
     expect(host!.querySelector('input')).not.toBeNull();
+    expect(host!.textContent).not.toContain('Apply');
 
     const closed = mount({ open: false });
     void closed;
@@ -49,14 +50,14 @@ describe('LinkPopover (floating link UX)', () => {
 
   it('shows the Remove button only for existing links', () => {
     mount({ editingExisting: true });
-    expect(host!.textContent).toContain('Remove');
+    expect(host!.querySelector('button[aria-label="Remove link"]')).not.toBeNull();
 
     mount({ editingExisting: false });
-    expect(host!.textContent).not.toContain('Remove');
+    expect(host!.querySelector('button[aria-label="Remove link"]')).toBeNull();
   });
 
-  it('closes on pointer press outside its root', () => {
-    const props = mount();
+  it('auto-saves on pointer press outside its root for valid URL', () => {
+    const props = mount({ url: 'https://example.com' });
     const outside = document.createElement('div');
     document.body.appendChild(outside);
     act(() => {
@@ -65,7 +66,7 @@ describe('LinkPopover (floating link UX)', () => {
       );
     });
     outside.remove();
-    expect(props.onClose).toHaveBeenCalledTimes(1);
+    expect(props.onApply).toHaveBeenCalledTimes(1);
   });
 
   it('does NOT close when pressing inside the popover', () => {
@@ -76,9 +77,10 @@ describe('LinkPopover (floating link UX)', () => {
         .dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
     });
     expect(props.onClose).not.toHaveBeenCalled();
+    expect(props.onApply).not.toHaveBeenCalled();
   });
 
-  it('Escape closes; Apply invokes callback', () => {
+  it('Escape closes without applying; Enter auto-saves and applies', () => {
     let keyHandler: ((e: Event) => void) | null = null;
     const addSpy = vi.spyOn(document, 'addEventListener').mockImplementation(
       ((type: string, handler: EventListenerOrEventListenerObject) => {
@@ -94,15 +96,16 @@ describe('LinkPopover (floating link UX)', () => {
       if (keyHandler) keyHandler(new KeyboardEvent('keydown', { key: 'Escape' }));
     });
     expect(props.onClose).toHaveBeenCalledTimes(1);
+    expect(props.onApply).not.toHaveBeenCalled();
 
     addSpy.mockRestore();
 
-    const fresh = mount({ open: true });
+    const fresh = mount({ open: true, url: 'https://github.com' });
     act(() => {
       host!
-        .querySelector('button[aria-label="Apply"], button')
-        ?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        .querySelector('input')!
+        .dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
     });
-    expect(fresh.onApply).toHaveBeenCalled();
+    expect(fresh.onApply).toHaveBeenCalledTimes(1);
   });
 });

@@ -245,6 +245,49 @@ export function isEmptyBlock(block: HTMLElement): boolean {
 }
 
 /**
+ * Removes empty `<a>` tags that the browser leaves behind after
+ * Delete/Backspace at link boundaries.  contentEditable deletes the
+ * visible text but keeps the empty anchor wrapper alive as a "zombie".
+ *
+ * We unwrap the anchor (preserving any child nodes, though typically
+ * there are none) and normalize the parent so adjacent text nodes
+ * merge.  The caret is left in the nearest sensible position.
+ */
+export function cleanupEmptyLinks(editor: HTMLElement, sel: Selection): void {
+  const anchors = editor.querySelectorAll<HTMLAnchorElement>('a');
+  if (anchors.length === 0) return;
+
+  for (const a of anchors) {
+    // Keep links that still have visible content or child elements
+    const text = (a.textContent ?? '').replace(/[\u200B\u00A0]/g, '').trim();
+    if (text.length > 0 || a.querySelector('img')) continue;
+
+    // Determine if the caret is inside this empty anchor
+    const caretInside =
+      sel.isCollapsed &&
+      sel.rangeCount > 0 &&
+      a.contains(sel.getRangeAt(0).startContainer);
+
+    const parent = a.parentNode;
+    if (!parent) continue;
+
+    // Unwrap: move any (rare) child nodes out, then remove the anchor
+    while (a.firstChild) {
+      parent.insertBefore(a.firstChild, a);
+    }
+    parent.removeChild(a);
+
+    // Normalize so adjacent text nodes merge (prevents caret fragmentation)
+    parent.normalize();
+
+    // Re-seat the caret if it was inside the removed anchor
+    if (caretInside && parent.nodeType === Node.ELEMENT_NODE) {
+      placeCaretAtEnd(parent as HTMLElement);
+    }
+  }
+}
+
+/**
  * Enter-inside-a-callout: exits the quote into a normal paragraph BELOW it,
  * carrying any post-caret text along (Notion-style). Content before the
  * caret stays quoted. Returns true when the event was handled.
