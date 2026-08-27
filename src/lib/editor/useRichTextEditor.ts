@@ -28,6 +28,9 @@ import {
   type EditorActionId,
   type FormattingAction,
 } from './editorActions';
+import {
+  tryApplyInlineMarkdown,
+} from './editorInlineMarkdown';
 import { placeCaretAtEnd } from './editorDom';
 
 export interface UseRichTextEditorOptions {
@@ -72,6 +75,11 @@ export function useRichTextEditor({ value, onChange }: UseRichTextEditorOptions)
 
   const handleInput = useCallback(() => {
     if (suppressChangeRef.current) return;
+    const el = editorRef.current;
+    const sel = window.getSelection();
+    if (el && sel) {
+      tryApplyInlineMarkdown(el, sel);
+    }
     emitChange();
     updateFromCaret();
   }, [emitChange, updateFromCaret]);

@@ -83,12 +83,24 @@ export function useClipboard(
         return;
       }
 
-      // Multi-line plain text: normalize into proper blocks up front.
-      if (pastedText.includes('\n')) {
+      // Markdown plain text (multi-line or containing inline markdown formatting like **bold**, [link](url), lists, headers, quotes)
+      const hasMarkdownSyntax =
+        pastedText.includes('\n') ||
+        /(?:^|\s)(?:#{1,6}\s|[-*]\s|\d+\.\s|>\s|\[[ xX]?\]\s|```|---|\*\*\*|___)|\*\*[^*\n]+\*\*|(?:\s|^)\*[^*\n\s]+\*(?:\s|$)|`[^`\n]+`|\[[^\]\n]+\]\(https?:\/\/[^\s)]+\)|~~[^~\n]+~~/.test(
+          pastedText
+        );
+
+      if (hasMarkdownSyntax) {
         e.preventDefault();
         try {
           const html = markdownToHtml(pastedText);
-          document.execCommand('insertHTML', false, html);
+          const cleanHtml =
+            html.startsWith('<p class="leading-relaxed">') &&
+            html.endsWith('</p>') &&
+            !pastedText.includes('\n')
+              ? html.slice('<p class="leading-relaxed">'.length, -'</p>'.length)
+              : html;
+          document.execCommand('insertHTML', false, cleanHtml);
         } catch {
           document.execCommand('insertText', false, pastedText);
         }

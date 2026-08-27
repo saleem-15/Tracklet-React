@@ -10,7 +10,9 @@ export type EnterStrategy =
   | 'task-split'
   | 'list-exit'
   | 'callout-exit'
-  | 'heading-exit';
+  | 'heading-exit'
+  | 'code-fence-create'
+  | 'divider-create';
 
 function closest(node: Node | null, selector: string): HTMLElement | null {
   const el =
@@ -22,7 +24,7 @@ function closest(node: Node | null, selector: string): HTMLElement | null {
 
 /**
  * Decides which Enter strategy applies at the current caret.
- * Order matters: task → plain list item → callout → heading → null (default).
+ * Order matters: task → plain list item → callout → heading → code fence → divider → null (default).
  */
 export function resolveEnterStrategy(
   editor: HTMLElement,
@@ -48,6 +50,17 @@ export function resolveEnterStrategy(
 
   const heading = closest(anchor, 'h1, h2, h3, h4, h5, h6');
   if (heading && editor.contains(heading)) return 'heading-exit';
+
+  // Code fence shorthand on Enter: ``` or ```js
+  const lineText = (anchor.nodeType === Node.TEXT_NODE ? anchor.nodeValue ?? '' : anchor.textContent ?? '').trim();
+  if (/^```([a-zA-Z0-9_-]*)$/.test(lineText) && !closest(anchor, 'pre')) {
+    return 'code-fence-create';
+  }
+
+  // Divider shorthand on Enter: --- or *** or ___
+  if (/^(-{3,}|\*{3,}|_{3,})$/.test(lineText) && !closest(anchor, 'pre, blockquote, ul, ol')) {
+    return 'divider-create';
+  }
 
   return null;
 }
@@ -155,6 +168,47 @@ export function executeEnterStrategy(
       placeCaretAtStart(p);
       return;
     }
+
+    case 'code-fence-create': {
+      const block = closest(selection.anchorNode, 'p, div, li') ?? editor;
+      const lineText = (selection.anchorNode?.nodeValue ?? block.textContent ?? '').trim();
+      const codeFenceMatch = lineText.match(/^```([a-zA-Z0-9_-]*)$/);
+      const lang = codeFenceMatch?.[1] || '';
+
+      const pre = document.createElement('pre');
+      pre.className = BLOCK_STYLES.codeBlock;
+      if (lang) pre.setAttribute('data-language', lang);
+      const code = document.createElement('code');
+      code.innerHTML = '<br>';
+      pre.appendChild(code);
+
+      if (block !== editor && editor.contains(block)) {
+        block.replaceWith(pre);
+      } else {
+        editor.appendChild(pre);
+      }
+      placeCaretAtStart(code);
+      return;
+    }
+
+    case 'divider-create': {
+      const block = closest(selection.anchorNode, 'p, div') ?? editor;
+      const hr = document.createElement('hr');
+      hr.className = BLOCK_STYLES.hr;
+      const p = document.createElement('p');
+      p.className = BLOCK_STYLES.paragraph;
+      p.innerHTML = '<br>';
+
+      if (block !== editor && editor.contains(block)) {
+        block.replaceWith(hr);
+        hr.insertAdjacentElement('afterend', p);
+      } else {
+        editor.appendChild(hr);
+        editor.appendChild(p);
+      }
+      placeCaretAtStart(p);
+      return;
+    }
   }
 }
 
@@ -258,10 +312,13 @@ export function escapeInlineFormattingRight(editor: HTMLElement): boolean {
   return true;
 }
 
-/** Markdown block shorthand typed just before a Space ("# ", "- ", "1. ", "[] ", "[ ] "). */
+/** Markdown block shorthand typed just before a Space ("# ", "- ", "1. ", "[] ", "[ ] ", "> ", "--- "). */
 export function shorthandFor(
   textBefore: string
-): { actionId: 'h1' | 'h2' | 'h3' | 'bullet' | 'numbered' | 'todo'; markerLen: number } | null {
+): {
+  actionId: 'h1' | 'h2' | 'h3' | 'bullet' | 'numbered' | 'todo' | 'quote' | 'divider';
+  markerLen: number;
+} | null {
   switch (textBefore) {
     case '#': return { actionId: 'h1', markerLen: 1 };
     case '##': return { actionId: 'h2', markerLen: 2 };
@@ -270,6 +327,8 @@ export function shorthandFor(
     case '1.': return { actionId: 'numbered', markerLen: 2 };
     case '[]': case '[ ]': return { actionId: 'todo', markerLen: textBefore.length };
     case '-[]': case '- [ ]': case '*[]': case '* [ ]': return { actionId: 'todo', markerLen: textBefore.length };
+    case '>': return { actionId: 'quote', markerLen: 1 };
+    case '---': case '***': case '___': return { actionId: 'divider', markerLen: textBefore.length };
     default: return null;
   }
 }
