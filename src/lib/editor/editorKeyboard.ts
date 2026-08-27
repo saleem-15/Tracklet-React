@@ -10,7 +10,9 @@ export type EnterStrategy =
   | 'task-split'
   | 'list-exit'
   | 'callout-exit'
-  | 'heading-exit';
+  | 'heading-exit'
+  | 'code-fence-create'
+  | 'divider-create';
 
 function closest(node: Node | null, selector: string): HTMLElement | null {
   const el =
@@ -22,7 +24,7 @@ function closest(node: Node | null, selector: string): HTMLElement | null {
 
 /**
  * Decides which Enter strategy applies at the current caret.
- * Order matters: task → plain list item → callout → heading → null (default).
+ * Order matters: task → plain list item → callout → heading → code fence → divider → null (default).
  */
 export function resolveEnterStrategy(
   editor: HTMLElement,
@@ -48,6 +50,29 @@ export function resolveEnterStrategy(
 
   const heading = closest(anchor, 'h1, h2, h3, h4, h5, h6');
   if (heading && editor.contains(heading)) return 'heading-exit';
+
+  // Code fence / divider shorthand on Enter
+  const block = closest(anchor, 'p, div') ?? (anchor.nodeType === Node.ELEMENT_NODE ? (anchor as HTMLElement) : anchor.parentElement);
+  const blockText = (block?.textContent ?? '').trim();
+  const lineText = (anchor.nodeType === Node.TEXT_NODE ? anchor.nodeValue ?? '' : anchor.textContent ?? '').trim();
+
+  // Code fence shorthand on Enter: ``` or ```js (block must contain only the shorthand)
+  if (
+    blockText === lineText &&
+    /^```([a-zA-Z0-9_-]*)$/.test(lineText) &&
+    !closest(anchor, 'pre')
+  ) {
+    return 'code-fence-create';
+  }
+
+  // Divider shorthand on Enter: --- or *** or ___ (block must contain only the shorthand)
+  if (
+    blockText === lineText &&
+    /^(-{3,}|\*{3,}|_{3,})$/.test(lineText) &&
+    !closest(anchor, 'pre, blockquote, ul, ol')
+  ) {
+    return 'divider-create';
+  }
 
   return null;
 }
@@ -93,12 +118,9 @@ export function executeEnterStrategy(
       const atEnd =
         caretRange.compareBoundaryPoints(Range.END_TO_END, endProbe) >= 0;
 
-      // Spawn the next unchecked item (bullet-list parity)
-      const list = document.createElement('ul');
-      list.className = BLOCK_STYLES.taskList + ' text-slate-800 text-xs';
+      // Spawn the next unchecked item
       const next = makeTaskItem();
       const nextText = next.querySelector('.task-text') as HTMLElement;
-      list.appendChild(next);
 
       if (!atEnd) {
         const tail = document.createRange();
@@ -109,15 +131,21 @@ export function executeEnterStrategy(
           /* empty tail is fine */
         }
         const frag = tail.extractContents();
-        if (frag.hasChildNodes()) nextText.appendChild(frag);
+        if (frag.hasChildNodes()) {
+          nextText.innerHTML = '';
+          nextText.appendChild(frag);
+        }
       }
 
-      // Insert right after the current li within its task list
-      const listParent = li.parentElement!;
-      if (listParent.tagName === 'UL' && listParent.classList.contains('task-list')) {
+      // Insert right after the current li within its parent list
+      const listParent = li.parentElement;
+      if (listParent && (listParent.tagName === 'UL' || listParent.tagName === 'OL')) {
         listParent.insertBefore(next, li.nextSibling);
       } else {
-        li.parentElement!.insertBefore(list, li.nextSibling);
+        const list = document.createElement('ul');
+        list.className = `${BLOCK_STYLES.taskList} text-slate-800 text-xs`;
+        list.appendChild(next);
+        li.insertAdjacentElement('afterend', list);
       }
       placeCaretAtStart(nextText);
       return;
@@ -152,6 +180,47 @@ export function executeEnterStrategy(
       placeCaretAtStart(p);
       return;
     }
+
+    case 'code-fence-create': {
+      const block = closest(selection.anchorNode, 'p, div, li') ?? editor;
+      const lineText = (selection.anchorNode?.nodeValue ?? block.textContent ?? '').trim();
+      const codeFenceMatch = lineText.match(/^```([a-zA-Z0-9_-]*)$/);
+      const lang = codeFenceMatch?.[1] || '';
+
+      const pre = document.createElement('pre');
+      pre.className = BLOCK_STYLES.codeBlock;
+      if (lang) pre.setAttribute('data-language', lang);
+      const code = document.createElement('code');
+      code.innerHTML = '<br>';
+      pre.appendChild(code);
+
+      if (block !== editor && editor.contains(block)) {
+        block.replaceWith(pre);
+      } else {
+        editor.appendChild(pre);
+      }
+      placeCaretAtStart(code);
+      return;
+    }
+
+    case 'divider-create': {
+      const block = closest(selection.anchorNode, 'p, div') ?? editor;
+      const hr = document.createElement('hr');
+      hr.className = BLOCK_STYLES.hr;
+      const p = document.createElement('p');
+      p.className = BLOCK_STYLES.paragraph;
+      p.innerHTML = '<br>';
+
+      if (block !== editor && editor.contains(block)) {
+        block.replaceWith(hr);
+        hr.insertAdjacentElement('afterend', p);
+      } else {
+        editor.appendChild(hr);
+        editor.appendChild(p);
+      }
+      placeCaretAtStart(p);
+      return;
+    }
   }
 }
 
@@ -164,11 +233,12 @@ function makeTaskItem(): HTMLElement {
   const input = document.createElement('input');
   input.type = 'checkbox';
   input.setAttribute('data-task-checkbox', 'true');
-  input.setAttribute('aria-label', 'Toggle task item');
+  input.setAttribute('aria-label', 'Toggle to-do item');
   input.className = BLOCK_STYLES.checkbox;
 
   const span = document.createElement('span');
   span.className = 'flex-1 task-text';
+  span.innerHTML = '<br>';
 
   li.appendChild(input);
   li.appendChild(span);
@@ -254,16 +324,23 @@ export function escapeInlineFormattingRight(editor: HTMLElement): boolean {
   return true;
 }
 
-/** Markdown block shorthand typed just before a Space ("# ", "- ", "1. "). */
+/** Markdown block shorthand typed just before a Space ("# ", "- ", "1. ", "[] ", "[ ] ", "> ", "--- "). */
 export function shorthandFor(
   textBefore: string
-): { actionId: 'h1' | 'h2' | 'h3' | 'bullet' | 'numbered'; markerLen: number } | null {
+): {
+  actionId: 'h1' | 'h2' | 'h3' | 'bullet' | 'numbered' | 'todo' | 'quote' | 'divider';
+  markerLen: number;
+} | null {
   switch (textBefore) {
     case '#': return { actionId: 'h1', markerLen: 1 };
     case '##': return { actionId: 'h2', markerLen: 2 };
     case '###': return { actionId: 'h3', markerLen: 3 };
     case '-': case '*': return { actionId: 'bullet', markerLen: 1 };
     case '1.': return { actionId: 'numbered', markerLen: 2 };
+    case '[]': case '[ ]': return { actionId: 'todo', markerLen: textBefore.length };
+    case '-[]': case '- [ ]': case '*[]': case '* [ ]': return { actionId: 'todo', markerLen: textBefore.length };
+    case '>': return { actionId: 'quote', markerLen: 1 };
+    case '---': case '***': case '___': return { actionId: 'divider', markerLen: textBefore.length };
     default: return null;
   }
 }

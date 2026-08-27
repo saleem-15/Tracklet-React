@@ -359,6 +359,22 @@ describe('enter strategies via wiring', () => {
     expect(lis[1].textContent).toBe('Sarah');
   });
 
+  it('Enter at the end of a to-do item spawns a flat sibling task item in the same ul without nesting uls', () => {
+    mount('- [ ] to do 1');
+    const span = api.editorRef.current!.querySelector('.task-text') as HTMLElement;
+    placeCaretAtOffset(span, span.textContent!.length);
+
+    act(() => api.handleKeyDown(fakeKey({ key: 'Enter' })));
+
+    const uls = api.editorRef.current!.querySelectorAll('ul');
+    expect(uls.length).toBe(1); // Flat list, no cascading/nested uls
+    const lis = api.editorRef.current!.querySelectorAll('li.task-item');
+    expect(lis.length).toBe(2);
+    expect(lis[0].textContent).toBe('to do 1');
+    expect(lis[1].textContent).toBe('');
+    expect(lis[1].parentElement).toBe(uls[0]);
+  });
+
   it('Enter inside a callout exits instead of stacking quotes', () => {
     mount('> flagged concern');
     const bq = api.editorRef.current!.querySelector('blockquote')!;

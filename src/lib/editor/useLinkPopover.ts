@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState, type RefObject } from 'react';
 import { caretViewportRect } from './useSlashMenu';
 import { LINK_CLASS } from './richTextMarkdownUtils';
+import { decorateAnchorsForUrl } from './editorDom';
 
 export interface LinkDialogState {
   open: boolean;
@@ -50,73 +51,143 @@ export function useLinkPopover(
     linkedAnchorRef.current = null;
   }, []);
 
-  const openLinkDialog = useCallback(() => {
-    const el = editorRef.current;
-    if (!el) return;
+  const openLinkDialog = useCallback(
+    (explicitAnchor?: HTMLAnchorElement) => {
+      const el = editorRef.current;
+      if (!el) return;
 
-    const sel = window.getSelection();
-    linkedAnchorRef.current = null;
-    let prefilled = 'https://';
+      linkedAnchorRef.current = null;
+      let prefilled = 'https://';
+      let rect: LinkDialogState['rect'] = null;
 
-    // Anchor rect captured BEFORE focus moves.
-    let rect: LinkDialogState['rect'] = null;
-    if (sel && sel.rangeCount > 0) {
-      const liveRange = sel.getRangeAt(0);
-      savedRangeRef.current = liveRange.cloneRange();
+      if (explicitAnchor && el.contains(explicitAnchor)) {
+        linkedAnchorRef.current = explicitAnchor;
+        prefilled = explicitAnchor.getAttribute('href') || prefilled;
+        const bRect = explicitAnchor.getBoundingClientRect();
+        rect = {
+          anchorTop: bRect.top,
+          anchorBottom: bRect.bottom,
+          left: bRect.left,
+        };
+        const range = document.createRange();
+        range.selectNodeContents(explicitAnchor);
+        savedRangeRef.current = range;
+      } else {
+        const sel = window.getSelection();
+        if (sel && sel.rangeCount > 0) {
+          const liveRange = sel.getRangeAt(0);
+          savedRangeRef.current = liveRange.cloneRange();
 
-      rect = caretViewportRect(el, null);
+          rect = caretViewportRect(el, null);
 
-      el.focus();
-
-      const node =
-        sel.anchorNode?.nodeType === Node.ELEMENT_NODE
-          ? (sel.anchorNode as HTMLElement)
-          : sel.anchorNode?.parentElement;
-      const anchor = node?.closest('a');
-      if (anchor && el.contains(anchor)) {
-        linkedAnchorRef.current = anchor as HTMLAnchorElement;
-        prefilled = anchor.getAttribute('href') || prefilled;
+          const node =
+            sel.anchorNode?.nodeType === Node.ELEMENT_NODE
+              ? (sel.anchorNode as HTMLElement)
+              : sel.anchorNode?.parentElement;
+          const anchor = node?.closest('a');
+          if (anchor && el.contains(anchor)) {
+            linkedAnchorRef.current = anchor as HTMLAnchorElement;
+            prefilled = anchor.getAttribute('href') || prefilled;
+          }
+        } else {
+          rect = caretViewportRect(el, el);
+        }
       }
-    } else {
-      el.focus();
-      rect = caretViewportRect(el, el);
-    }
 
-    setLinkDialog({
-      open: true,
-      url: prefilled,
-      editingExisting: linkedAnchorRef.current !== null,
-      rect,
-    });
-  }, [editorRef]);
+      setLinkDialog({
+        open: true,
+        url: prefilled,
+        editingExisting: linkedAnchorRef.current !== null,
+        rect,
+      });
+    },
+    [editorRef]
+  );
 
   const applyLink = useCallback(
     (url: string) => {
       const el = editorRef.current;
       if (!el) return;
-      el.focus();
       const cleanUrl = url.trim();
 
       // Update/remove path for an existing link
-      if (linkedAnchorRef.current) {
+      if (linkedAnchorRef.current && el.contains(linkedAnchorRef.current)) {
         const anchor = linkedAnchorRef.current;
         if (!cleanUrl || cleanUrl === 'https://' || cleanUrl === 'http://' || !isSafeLinkUrl(cleanUrl)) {
           const parent = anchor.parentNode;
           if (parent) {
-            while (anchor.firstChild) parent.insertBefore(anchor.firstChild, anchor);
+            let lastNode: Node | null = null;
+            while (anchor.firstChild) {
+              lastNode = anchor.firstChild;
+              parent.insertBefore(anchor.firstChild, anchor);
+            }
             parent.removeChild(anchor);
+
+            closeLinkDialog();
+            emitChange();
+
+            requestAnimationFrame(() => {
+              const currentEl = editorRef.current;
+              if (!currentEl) return;
+              currentEl.focus();
+              const sel = window.getSelection();
+              if (sel) {
+                const r = document.createRange();
+                if (lastNode && lastNode.nodeType === Node.TEXT_NODE) {
+                  r.setStart(lastNode, (lastNode as Text).length);
+                } else if (lastNode && lastNode.parentNode) {
+                  const pad = document.createTextNode('\u200B');
+                  lastNode.parentNode.insertBefore(pad, lastNode.nextSibling);
+                  r.setStart(pad, pad.length);
+                } else if (parent && parent.parentNode) {
+                  r.selectNodeContents(parent);
+                }
+                r.collapse(true);
+                sel.removeAllRanges();
+                sel.addRange(r);
+              }
+            });
+            linkedAnchorRef.current = null;
+            savedRangeRef.current = null;
+            return;
           }
         } else {
           anchor.setAttribute('href', cleanUrl);
+          anchor.className = LINK_CLASS;
+          anchor.setAttribute('target', '_blank');
+          anchor.setAttribute('rel', 'noopener noreferrer');
+
+          closeLinkDialog();
+          emitChange();
+
+          requestAnimationFrame(() => {
+            const currentEl = editorRef.current;
+            if (!currentEl) return;
+            currentEl.focus();
+            const sel = window.getSelection();
+            if (sel) {
+              const r = document.createRange();
+              const nextSibling = anchor.nextSibling;
+              if (nextSibling && nextSibling.nodeType === Node.TEXT_NODE) {
+                r.setStart(nextSibling, 0);
+              } else {
+                const pad = document.createTextNode('\u200B');
+                anchor.parentNode?.insertBefore(pad, anchor.nextSibling);
+                r.setStart(pad, pad.length);
+              }
+              r.collapse(true);
+              sel.removeAllRanges();
+              sel.addRange(r);
+            }
+          });
+          linkedAnchorRef.current = null;
+          savedRangeRef.current = null;
+          return;
         }
-        linkedAnchorRef.current = null;
-        savedRangeRef.current = null;
-        closeLinkDialog();
-        emitChange();
-        return;
       }
 
       if (savedRangeRef.current) {
+        el.focus();
         const selection = window.getSelection();
         selection?.removeAllRanges();
         selection?.addRange(savedRangeRef.current);
@@ -134,10 +205,29 @@ export function useLinkPopover(
           );
         } else {
           document.execCommand('createLink', false, cleanUrl);
+          decorateAnchorsForUrl(el, cleanUrl);
         }
+        closeLinkDialog();
         emitChange();
+
+        requestAnimationFrame(() => {
+          const currentEl = editorRef.current;
+          if (!currentEl) return;
+          currentEl.focus();
+        });
+      } else {
+        closeLinkDialog();
+        if (savedRangeRef.current) {
+          requestAnimationFrame(() => {
+            const currentEl = editorRef.current;
+            if (!currentEl || !savedRangeRef.current) return;
+            currentEl.focus();
+            const selection = window.getSelection();
+            selection?.removeAllRanges();
+            selection?.addRange(savedRangeRef.current);
+          });
+        }
       }
-      closeLinkDialog();
     },
     [closeLinkDialog, emitChange, editorRef]
   );

@@ -28,6 +28,10 @@ import {
   type EditorActionId,
   type FormattingAction,
 } from './editorActions';
+import {
+  tryApplyInlineMarkdown,
+} from './editorInlineMarkdown';
+import { placeCaretAtEnd, cleanupEmptyLinks } from './editorDom';
 
 export interface UseRichTextEditorOptions {
   value: string;
@@ -40,7 +44,7 @@ export interface UseRichTextEditorOptions {
  */
 export function useRichTextEditor({ value, onChange }: UseRichTextEditorOptions) {
   const editorRef = useRef<HTMLDivElement | null>(null);
-  const lastMarkdownRef = useRef<string>(value || '');
+  const lastMarkdownRef = useRef<string | null>(null);
   const suppressChangeRef = useRef(false);
 
   /* ---------------- change pipeline ---------------- */
@@ -71,6 +75,15 @@ export function useRichTextEditor({ value, onChange }: UseRichTextEditorOptions)
 
   const handleInput = useCallback(() => {
     if (suppressChangeRef.current) return;
+    const el = editorRef.current;
+    const sel = window.getSelection();
+    if (el && sel) {
+      // Strip empty <a> wrappers the browser leaves behind after
+      // Delete/Backspace at link boundaries — the native contentEditable
+      // engine deletes the text content but keeps the zombie anchor tag.
+      cleanupEmptyLinks(el, sel);
+      tryApplyInlineMarkdown(el, sel);
+    }
     emitChange();
     updateFromCaret();
   }, [emitChange, updateFromCaret]);
@@ -91,7 +104,7 @@ export function useRichTextEditor({ value, onChange }: UseRichTextEditorOptions)
     // Recreate when value changes so afterReplace captures the latest echo
     [value, setSlash]
   );
-  useValueSync(editorRef, value, syncHooks);
+  useValueSync(editorRef, value, syncHooks, lastMarkdownRef);
 
   /* ---------------- action dispatch ---------------- */
 
@@ -287,6 +300,13 @@ export function useRichTextEditor({ value, onChange }: UseRichTextEditorOptions)
           handleInput();
         }
         return;
+      }
+
+      // If user clicks on the li row outside checkbox and text span (e.g. empty line padding or gap), route caret into .task-text
+      const li = target.closest?.('li.task-item') as HTMLElement | null;
+      if (li && !target.closest('.task-text')) {
+        const textEl = li.querySelector('.task-text') as HTMLElement | null;
+        if (textEl) placeCaretAtEnd(textEl);
       }
 
       const anchor = target.closest('a');

@@ -162,6 +162,8 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
         )}
         <div
           ref={editorRef}
+          data-editor="true"
+          data-rich-text-editor="true"
           contentEditable
           suppressContentEditableWarning
           onInput={handleInput}
@@ -218,7 +220,11 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
         <SelectionBubble editorRef={editorRef} actions={EDITOR_ACTIONS} onApply={handleBubbleApply} />
 
         {/* Hover preview for linked text */}
-        <LinkHoverTooltip editorRef={editorRef} />
+        <LinkHoverTooltip
+          editorRef={editorRef}
+          onEditLink={(anchor) => openLinkDialog(anchor)}
+          disabled={linkDialog.open}
+        />
 
         {/* Floating link insert / edit / remove popover */}
         <LinkPopover

@@ -1,9 +1,16 @@
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, vi, afterEach, beforeAll } from 'vitest';
 import { createRoot, type Root } from 'react-dom/client';
 import { act } from 'react';
+import type React from 'react';
 import { EDITOR_ACTIONS, getActionById } from '../../src/components/editor/editorActions';
 import { placeCaretAtOffset, exitCalloutOnEnter } from '../../src/lib/editor/editorDom';
 import { spawnNextTaskItem } from '../../src/lib/editor/richTextMarkdownUtils';
+
+beforeAll(() => {
+  if (typeof (document as any).execCommand !== 'function') {
+    (document as any).execCommand = () => false;
+  }
+});
 
 let host: HTMLDivElement | null = null;
 let root: Root | null = null;
@@ -39,6 +46,7 @@ afterEach(() => {
   host?.remove();
   host = null;
   document.querySelectorAll('[data-editor]').forEach((n) => n.remove());
+  vi.restoreAllMocks();
 });
 
 describe('deterministic block transformations (bug-fix regression)', () => {
@@ -76,14 +84,14 @@ describe('deterministic block transformations (bug-fix regression)', () => {
     expect(document.getSelection()!.anchorNode && li.contains(document.getSelection()!.anchorNode)).toBe(true);
   });
 
-  it('todo on a FRESH EMPTY line: no phantom <br>, caret inside span, typing lands in item', () => {
+  it('todo on a FRESH EMPTY line: seeds <br> for line-box, caret inside span, typing lands in item', () => {
     const ed = setupEditor('<p><br></p>');
     placeCaretAtOffset(ed.querySelector('p')!, 0);
 
     apply('todo', ed);
 
     const span = ed.querySelector('.task-text') as HTMLElement;
-    expect(span.innerHTML).not.toContain('<br'); // seed br stripped
+    expect(span.innerHTML).toContain('<br'); // seed br creates active line-box
     expect((span.textContent ?? '').length).toBe(0);
 
     // Caret must sit INSIDE the span (container-start fallback)
@@ -95,14 +103,15 @@ describe('deterministic block transformations (bug-fix regression)', () => {
     expect(ed.querySelector('.task-text')!.textContent).toBe('A');
   });
 
-  it('checkbox uses native rendering (no appearance-none) so the checkmark shows', async () => {
+  it('checkbox includes data-task-checkbox attribute and handles checked state', async () => {
     const { markdownToHtml } = await import('../../src/lib/editor/richTextMarkdownUtils');
     const html = markdownToHtml('- [ ] x');
-    expect(html).toContain('accent-blue-600');
-    expect(html).not.toContain('appearance-none');
+    expect(html).toContain('data-task-checkbox="true"');
+    expect(html).toContain('task-item');
 
     const checked = markdownToHtml('- [x] done');
     expect(checked).toContain('checked');
+    expect(checked).toContain('task-checked');
   });
 
   it('bullet after an existing bullet list merges instead of nesting lists', () => {
@@ -336,6 +345,138 @@ describe('deterministic block transformations (bug-fix regression)', () => {
       expect(h2).not.toBeNull();
       expect(h2.textContent).toBe('Architecture Plan');
       expect(h2.querySelector('input')).toBeNull();
+    });
+
+    it('decorates newly linked selected text with LINK_CLASS, target, and rel', async () => {
+      const { LINK_CLASS } = await import('../../src/lib/editor/richTextMarkdownUtils');
+      const ed = setupEditor('<p>Visit my portfolio today</p>');
+      const p = ed.querySelector('p')!;
+      const range = document.createRange();
+      range.setStart(p.firstChild!, 6); // "my portfolio"
+      range.setEnd(p.firstChild!, 18);
+      const sel = document.getSelection()!;
+      sel.removeAllRanges();
+      sel.addRange(range);
+
+      // Simulate execCommand createLink and decoration flow
+      vi.spyOn(document, 'execCommand').mockImplementation((cmd, _showUi, val) => {
+        if (cmd === 'createLink' && range.toString()) {
+          const a = document.createElement('a');
+          a.setAttribute('href', val as string);
+          a.appendChild(range.extractContents());
+          range.insertNode(a);
+          return true;
+        }
+        return false;
+      });
+
+      const { useLinkPopover } = await import('../../src/lib/editor/useLinkPopover');
+      const editorRef: React.RefObject<HTMLDivElement | null> = {
+        current: ed as HTMLDivElement,
+      };
+      const emitChange = vi.fn();
+
+      // Test hook invocation
+      let popoverApi: ReturnType<typeof useLinkPopover> | null = null;
+      function TestComponent() {
+        popoverApi = useLinkPopover(editorRef, emitChange);
+        return null;
+      }
+      act(() => {
+        root!.render(<TestComponent />);
+      });
+
+      act(() => {
+        popoverApi!.openLinkDialog();
+      });
+
+      act(() => {
+        popoverApi!.applyLinkFromDialog('https://example.com');
+      });
+
+      const anchor = ed.querySelector('a')!;
+      expect(anchor).not.toBeNull();
+      expect(anchor.getAttribute('href')).toBe('https://example.com');
+      expect(anchor.className).toBe(LINK_CLASS);
+      expect(anchor.getAttribute('target')).toBe('_blank');
+      expect(anchor.getAttribute('rel')).toBe('noopener noreferrer');
+      expect(anchor.textContent).toBe('my portfolio');
+    });
+
+    it('parses Notion and Linear plain text markdown variants ([ ], [x], indented, empty)', async () => {
+      const { markdownToHtml, htmlToMarkdown } = await import('../../src/lib/editor/richTextMarkdownUtils');
+      
+      // Notion plain text copy without leading dashes
+      const notionHtml = markdownToHtml('[ ] Notion task 1\n[x] Notion task 2');
+      expect(notionHtml).toContain('data-task="true"');
+      expect(notionHtml).toContain('Notion task 1');
+      expect(notionHtml).toContain('Notion task 2');
+      expect(notionHtml).toContain('task-checked');
+      
+      const notionMd = htmlToMarkdown(notionHtml);
+      expect(notionMd).toBe('- [ ] Notion task 1\n- [x] Notion task 2');
+
+      // Indented task lists
+      const indentedHtml = markdownToHtml('  - [ ] Indented task');
+      expect(indentedHtml).toContain('data-task="true"');
+      expect(indentedHtml).toContain('Indented task');
+
+      // Asterisk task lists
+      const starHtml = markdownToHtml('* [ ] Star task\n* [x] Completed star');
+      expect(starHtml).toContain('data-task="true"');
+      expect(starHtml).toContain('Star task');
+
+      // Empty task item
+      const emptyHtml = markdownToHtml('- [ ]');
+      expect(emptyHtml).toContain('data-task="true"');
+      expect(emptyHtml).toContain('<br>');
+    });
+
+    it('switching between bullet lists and to-do lists maintains list structure and task attributes', async () => {
+      const { markdownToHtml, htmlToMarkdown } = await import('../../src/lib/editor/richTextMarkdownUtils');
+      const md = '- Bullet 1\n- [ ] Task 1\n- Bullet 2';
+      const html = markdownToHtml(md);
+      
+      expect(html).toContain('data-task="true"');
+      expect(html).toContain('Task 1');
+      
+      const roundTrip = htmlToMarkdown(html);
+      expect(roundTrip).toBe('- Bullet 1\n- [ ] Task 1\n- Bullet 2');
+    });
+
+    it('toggleTaskItem synchronizes task-checked class and dataset.checked', async () => {
+      const { toggleTaskItem } = await import('../../src/lib/editor/richTextMarkdownUtils');
+      const ed = setupEditor(
+        '<ul class="task-list"><li class="task-item" data-task="true" data-checked="false"><input type="checkbox" data-task-checkbox="true" /><span class="task-text">My item</span></li></ul>'
+      );
+      const li = ed.querySelector('li')!;
+      
+      toggleTaskItem(li);
+      expect(li.dataset.checked).toBe('true');
+      expect(li.classList.contains('task-checked')).toBe(true);
+      expect(li.querySelector('input')!.checked).toBe(true);
+      expect(li.querySelector('.task-text')!.classList.contains('line-through')).toBe(true);
+
+      toggleTaskItem(li);
+      expect(li.dataset.checked).toBe('false');
+      expect(li.classList.contains('task-checked')).toBe(false);
+      expect(li.querySelector('input')!.checked).toBe(false);
+      expect(li.querySelector('.task-text')!.classList.contains('line-through')).toBe(false);
+    });
+
+    it('sanitizePastedHtml normalizes foreign Notion and Linear to-do HTML into interactive task items', async () => {
+      const { sanitizePastedHtml } = await import('../../src/lib/editor/editorDom');
+      const { htmlToMarkdown } = await import('../../src/lib/editor/richTextMarkdownUtils');
+
+      // Notion style DIV task block
+      const notionForeignHtml = '<div class="notion-to-do-block"><div role="checkbox" aria-checked="true"></div><div>Fix alignment bug</div></div>';
+      const clean = sanitizePastedHtml(notionForeignHtml);
+      expect(clean).toContain('data-task="true"');
+      expect(clean).toContain('data-task-checkbox="true"');
+      expect(clean).toContain('Fix alignment bug');
+
+      const md = htmlToMarkdown(clean);
+      expect(md).toBe('- [x] Fix alignment bug');
     });
   });
 });

@@ -45,7 +45,7 @@ export function computeMenuPosition(
  * caret explicitly instead of hoping the browser guessed right.
  */
 
-import { BLOCK_STYLES } from './richTextMarkdownUtils';
+import { BLOCK_STYLES, LINK_CLASS } from './richTextMarkdownUtils';
 
 /** Line-level blocks the editor recognizes. */
 export const LINE_BLOCK_SELECTOR = 'p, h1, h2, h3, h4, h5, h6, li, blockquote';
@@ -55,7 +55,7 @@ const isElement = (n: Node | null): n is HTMLElement =>
 
 /**
  * Nearest line-level block containing `node`, scoped to `root`.
- * Inside `<ul><li><span>text` this returns the LI (not the UL) â€”
+ * Inside `<ul><li><span>text` this returns the LI (not the UL) —
  * the previous implementation returned the whole list here.
  */
 export function findCaretBlock(root: HTMLElement, node: Node): HTMLElement | null {
@@ -100,15 +100,14 @@ export function caretCharOffset(container: HTMLElement, range: Range): number {
   return pre.toString().length;
 }
 
-interface OffsetPoint {
-  node: Text;
-  offset: number;
-}
-
-function locateCharOffset(container: HTMLElement, target: number): OffsetPoint | null {
+/** Walks text nodes in DFS order until the target character offset is reached. */
+export function locateCharOffset(
+  container: Node,
+  target: number
+): { node: Text; offset: number } | null {
   const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
   let pos = 0;
-  let last: OffsetPoint | null = null;
+  let last: { node: Text; offset: number } | null = null;
   while (walker.nextNode()) {
     const t = walker.currentNode as Text;
     const len = t.nodeValue?.length ?? 0;
@@ -246,6 +245,72 @@ export function isEmptyBlock(block: HTMLElement): boolean {
 }
 
 /**
+ * Removes empty `<a>` tags that the browser leaves behind after
+ * Delete/Backspace at link boundaries.  contentEditable deletes the
+ * visible text but keeps the empty anchor wrapper alive as a "zombie".
+ *
+ * We unwrap the anchor (preserving any child nodes, though typically
+ * there are none) and normalize the parent so adjacent text nodes
+ * merge.  The caret is collapsed precisely at the unwrap point.
+ */
+export function cleanupEmptyLinks(editor: HTMLElement, sel: Selection): void {
+  const anchors = editor.querySelectorAll<HTMLAnchorElement>('a');
+  if (anchors.length === 0) return;
+
+  for (const a of anchors) {
+    // Keep links that still have visible content or child elements
+    const text = (a.textContent ?? '').replace(/[\u200B\u00A0]/g, '').trim();
+    if (text.length > 0 || a.querySelector('img')) continue;
+
+    // Determine if the caret is inside this empty anchor
+    const caretInside =
+      sel.isCollapsed &&
+      sel.rangeCount > 0 &&
+      a.contains(sel.getRangeAt(0).startContainer);
+
+    const parent = a.parentNode;
+    if (!parent) continue;
+
+    // Capture unwrap position before removing anchor
+    let caretMarker: Text | null = null;
+    if (caretInside) {
+      caretMarker = document.createTextNode('');
+      parent.insertBefore(caretMarker, a);
+    }
+
+    // Unwrap: move any (rare) child nodes out, then remove the anchor
+    while (a.firstChild) {
+      parent.insertBefore(a.firstChild, a);
+    }
+    parent.removeChild(a);
+
+    // Re-seat caret at the unwrap point if it was inside the removed anchor
+    if (caretInside && caretMarker) {
+      const range = document.createRange();
+      range.setStart(caretMarker, 0);
+      range.collapse(true);
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }
+
+    // Normalize so adjacent text nodes merge (prevents caret fragmentation)
+    parent.normalize();
+  }
+}
+
+/** Decorates newly created or existing links in an editor with our canonical styling and target/rel attributes. */
+export function decorateAnchorsForUrl(editor: HTMLElement, cleanUrl: string): void {
+  const anchors = editor.querySelectorAll<HTMLAnchorElement>('a[href]');
+  anchors.forEach((a) => {
+    if (a.getAttribute('href') === cleanUrl) {
+      if (!a.className) a.className = LINK_CLASS;
+      if (!a.getAttribute('target')) a.setAttribute('target', '_blank');
+      if (!a.getAttribute('rel')) a.setAttribute('rel', 'noopener noreferrer');
+    }
+  });
+}
+
+/**
  * Enter-inside-a-callout: exits the quote into a normal paragraph BELOW it,
  * carrying any post-caret text along (Notion-style). Content before the
  * caret stays quoted. Returns true when the event was handled.
@@ -361,12 +426,24 @@ function cleanPastedElement(el: Element): void {
     }
   }
 
-  // Strip all attributes except safe anchors/checkbox state
+  // Strip all attributes except safe anchors/checkbox state/task classes
   Array.from(el.attributes).forEach((attr) => {
+    const isTaskClass =
+      attr.name === 'class' &&
+      (el.classList.contains('task-item') ||
+        el.classList.contains('task-text') ||
+        el.classList.contains('task-list') ||
+        el.hasAttribute('data-task-checkbox') ||
+        el.classList.contains(BLOCK_STYLES.checkbox));
+
     const keep =
       (el.tagName === 'A' && attr.name === 'href') ||
       (el.tagName === 'INPUT' &&
-        ['checked', 'type'].includes(attr.name));
+        ['checked', 'type', 'data-task-checkbox', 'aria-label'].includes(attr.name)) ||
+      (el.tagName === 'LI' &&
+        ['data-task', 'data-checked'].includes(attr.name)) ||
+      (el.tagName === 'PRE' && attr.name === 'data-language') ||
+      isTaskClass;
     if (!keep) el.removeAttribute(attr.name);
   });
 
@@ -382,6 +459,92 @@ function cleanPastedElement(el: Element): void {
   }
 }
 
+function normalizeTaskStructures(root: HTMLElement): void {
+  // 1. Notion role="checkbox" or class="notion-to-do-block" conversion
+  root.querySelectorAll('[role="checkbox"], [aria-checked]').forEach((node) => {
+    const isChecked = node.getAttribute('aria-checked') === 'true' || node.classList.contains('checked');
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    if (isChecked) {
+      input.checked = true;
+      input.setAttribute('checked', '');
+    }
+    input.setAttribute('data-task-checkbox', 'true');
+    input.className = BLOCK_STYLES.checkbox;
+
+    if ((node.textContent ?? '').trim() === '' && node.children.length === 0) {
+      node.replaceWith(input);
+    } else {
+      node.insertBefore(input, node.firstChild);
+    }
+  });
+
+  // 2. Wrap stray div/p checkboxes into task li / ul
+  root.querySelectorAll('p, div').forEach((block) => {
+    const checkbox = block.querySelector<HTMLInputElement>('input[type="checkbox"]');
+    if (checkbox && block.tagName !== 'LI') {
+      const checked = checkbox.checked || checkbox.hasAttribute('checked');
+      const li = document.createElement('li');
+      li.className = `${BLOCK_STYLES.taskItem}${checked ? ' task-checked' : ''}`;
+      li.dataset.task = 'true';
+      li.dataset.checked = checked ? 'true' : 'false';
+
+      checkbox.setAttribute('data-task-checkbox', 'true');
+      checkbox.className = BLOCK_STYLES.checkbox;
+      li.appendChild(checkbox);
+
+      const span = document.createElement('span');
+      span.className = `flex-1 task-text${checked ? ' line-through text-slate-400' : ''}`;
+      while (block.firstChild) {
+        if (block.firstChild !== checkbox) span.appendChild(block.firstChild);
+        else block.removeChild(block.firstChild);
+      }
+      if (!span.hasChildNodes() || span.textContent === '') span.innerHTML = '<br>';
+      li.appendChild(span);
+
+      const ul = document.createElement('ul');
+      ul.className = `${BLOCK_STYLES.taskList} text-slate-800 text-xs`;
+      ul.appendChild(li);
+      block.replaceWith(ul);
+    }
+  });
+
+  // 3. Normalize all LIs containing checkboxes
+  root.querySelectorAll('li').forEach((li) => {
+    const checkbox = li.querySelector<HTMLInputElement>('input[type="checkbox"]');
+    if (checkbox) {
+      const checked = checkbox.checked || checkbox.hasAttribute('checked');
+      li.className = `${BLOCK_STYLES.taskItem}${checked ? ' task-checked' : ''}`;
+      li.dataset.task = 'true';
+      li.dataset.checked = checked ? 'true' : 'false';
+
+      checkbox.setAttribute('data-task-checkbox', 'true');
+      checkbox.className = BLOCK_STYLES.checkbox;
+
+      let span = li.querySelector<HTMLElement>('.task-text');
+      if (!span) {
+        span = document.createElement('span');
+        span.className = `flex-1 task-text${checked ? ' line-through text-slate-400' : ''}`;
+        const children = Array.from(li.childNodes).filter((c) => c !== checkbox);
+        children.forEach((c) => span!.appendChild(c));
+        if (!span.hasChildNodes() || (span.textContent ?? '').trim() === '') {
+          span.innerHTML = '<br>';
+        }
+        li.appendChild(span);
+      } else {
+        span.className = `flex-1 task-text${checked ? ' line-through text-slate-400' : ''}`;
+        if (!span.hasChildNodes() || (span.textContent ?? '').trim() === '') {
+          span.innerHTML = '<br>';
+        }
+      }
+
+      if (li.parentElement && li.parentElement.tagName === 'UL') {
+        li.parentElement.className = `${BLOCK_STYLES.taskList} text-slate-800 text-xs`;
+      }
+    }
+  });
+}
+
 /**
  * Normalizes foreign pasted HTML (Google Docs, Notion, email clients) into
  * the tag whitelist our serializer understands. Preserves semantic
@@ -390,6 +553,7 @@ function cleanPastedElement(el: Element): void {
 export function sanitizePastedHtml(html: string): string {
   const container = document.createElement('div');
   container.innerHTML = html;
+  normalizeTaskStructures(container);
   Array.from(container.children).forEach(cleanPastedElement);
 
   // Unwrap redundant single container wrappers (Google Docs pastes are
