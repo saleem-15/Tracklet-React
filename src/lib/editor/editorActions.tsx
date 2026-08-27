@@ -207,9 +207,9 @@ export const EDITOR_ACTIONS: readonly FormattingAction[] = [
   },
   {
     id: 'todo',
-    label: 'To-do Item',
+    label: 'To-do list',
     icon: ListTodo,
-    keywords: ['task', 'checkbox', 'checklist'],
+    keywords: ['todo', 'to-do', 'task', 'checkbox', 'checklist', 'list'],
     scope: 'block',
     appliesTo: ({ editor }) =>
       !isInsideCodeFence(window.getSelection()?.anchorNode ?? editor),

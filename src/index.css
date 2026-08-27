@@ -104,3 +104,63 @@
   color: #1d4ed8;
 }
 
+/* Tracklet Rich Text To-do List Item Layout & Caret Alignment */
+.task-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding-top: 0.125rem;
+  padding-bottom: 0.125rem;
+  min-height: 1.5rem;
+}
+
+.task-item input[data-task-checkbox] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 15px;
+  height: 15px;
+  margin-top: 2.5px;
+  border-radius: 4px;
+  border: 1.5px solid #cbd5e1;
+  background-color: #ffffff;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  box-sizing: border-box;
+}
+
+.task-item input[data-task-checkbox]:hover {
+  border-color: #3b82f6;
+  background-color: #eff6ff;
+}
+
+.task-item input[data-task-checkbox]:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+.task-item input[data-task-checkbox]:checked,
+.task-item.task-checked input[data-task-checkbox] {
+  background-color: #2563eb;
+  border-color: #2563eb;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 16 16' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M3.5 8.5L6.5 11.5L12.5 4.5'/%3E%3C/svg%3E");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 10px 10px;
+  box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2);
+}
+
+.task-item .task-text {
+  flex: 1 1 0%;
+  min-width: 0;
+  min-height: 1.25rem;
+  line-height: 1.25rem;
+  word-break: break-word;
+  outline: none;
+  transition: color 0.15s ease, opacity 0.15s ease;
+}
+
