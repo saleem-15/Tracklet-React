@@ -164,3 +164,8 @@
   transition: color 0.15s ease, opacity 0.15s ease;
 }
 
+.task-item.task-checked .task-text {
+  text-decoration: line-through;
+  color: #94a3b8;
+}
+
