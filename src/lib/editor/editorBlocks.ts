@@ -130,7 +130,7 @@ export function makeTaskItemEl(innerHtml: string, checked: boolean): HTMLElement
   li.dataset.task = 'true';
   li.dataset.checked = checked ? 'true' : 'false';
 
-  const textLabel = innerHtml.replace(/<[^>]*>/g, '').trim() || 'Toggle task item';
+  const textLabel = innerHtml.replace(/<[^>]*>/g, '').trim() || 'Toggle to-do item';
   const input = document.createElement('input');
   input.type = 'checkbox';
   input.checked = checked;
@@ -139,8 +139,8 @@ export function makeTaskItemEl(innerHtml: string, checked: boolean): HTMLElement
   input.className = BLOCK_STYLES.checkbox;
 
   const span = makeElement('span', 'flex-1 task-text');
-  // No <br> seed — an empty span lets the caret fall back to container-start.
-  span.innerHTML = innerHtml;
+  // Seed with <br> when empty to create an active line-box and prevent caret collapse before the input
+  span.innerHTML = innerHtml || '<br>';
 
   li.appendChild(input);
   li.appendChild(span);

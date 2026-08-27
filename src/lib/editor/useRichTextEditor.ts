@@ -28,6 +28,7 @@ import {
   type EditorActionId,
   type FormattingAction,
 } from './editorActions';
+import { placeCaretAtEnd } from './editorDom';
 
 export interface UseRichTextEditorOptions {
   value: string;
@@ -287,6 +288,13 @@ export function useRichTextEditor({ value, onChange }: UseRichTextEditorOptions)
           handleInput();
         }
         return;
+      }
+
+      // If user clicks on the li row outside checkbox and text span (e.g. empty line padding or gap), route caret into .task-text
+      const li = target.closest?.('li.task-item') as HTMLElement | null;
+      if (li && !target.closest('.task-text')) {
+        const textEl = li.querySelector('.task-text') as HTMLElement | null;
+        if (textEl) placeCaretAtEnd(textEl);
       }
 
       const anchor = target.closest('a');

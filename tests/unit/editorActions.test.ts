@@ -66,8 +66,15 @@ describe('filterActions (FR-006)', () => {
 
   it('matches keywords too', () => {
     expect(filterActions('checkbox').map((a) => a.id)).toContain('todo');
+    expect(filterActions('to-do').map((a) => a.id)).toContain('todo');
+    expect(filterActions('todo').map((a) => a.id)).toContain('todo');
+    expect(filterActions('task').map((a) => a.id)).toContain('todo');
     expect(filterActions('url').map((a) => a.id)).toContain('link');
     expect(filterActions('callout').map((a) => a.id)).toContain('quote');
+  });
+
+  it('verifies todo action has label "To-do list"', () => {
+    expect(getActionById('todo')?.label).toBe('To-do list');
   });
 
   it('returns empty array for garbage queries', () => {

@@ -360,12 +360,19 @@ function cleanPastedElement(el: Element): void {
     }
   }
 
-  // Strip all attributes except safe anchors/checkbox state
+  // Strip all attributes except safe anchors/checkbox state/classes
   Array.from(el.attributes).forEach((attr) => {
     const keep =
       (el.tagName === 'A' && attr.name === 'href') ||
       (el.tagName === 'INPUT' &&
-        ['checked', 'type'].includes(attr.name));
+        ['checked', 'type', 'data-task-checkbox', 'aria-label', 'class'].includes(attr.name)) ||
+      (el.tagName === 'LI' &&
+        ['data-task', 'data-checked', 'class'].includes(attr.name)) ||
+      (el.tagName === 'UL' && attr.name === 'class') ||
+      (el.tagName === 'OL' && attr.name === 'class') ||
+      (el.tagName === 'SPAN' && attr.name === 'class') ||
+      (el.tagName === 'P' && attr.name === 'class') ||
+      (el.tagName === 'PRE' && (attr.name === 'class' || attr.name === 'data-language'));
     if (!keep) el.removeAttribute(attr.name);
   });
 
@@ -381,6 +388,87 @@ function cleanPastedElement(el: Element): void {
   }
 }
 
+function normalizeTaskStructures(root: HTMLElement): void {
+  // 1. Notion role="checkbox" or class="notion-to-do-block" conversion
+  root.querySelectorAll('[role="checkbox"], [aria-checked]').forEach((node) => {
+    const isChecked = node.getAttribute('aria-checked') === 'true' || node.classList.contains('checked');
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    if (isChecked) {
+      input.checked = true;
+      input.setAttribute('checked', '');
+    }
+    input.setAttribute('data-task-checkbox', 'true');
+    input.className = BLOCK_STYLES.checkbox;
+    node.replaceWith(input);
+  });
+
+  // 2. Wrap stray div/p checkboxes into task li / ul
+  root.querySelectorAll('p, div').forEach((block) => {
+    const checkbox = block.querySelector<HTMLInputElement>('input[type="checkbox"]');
+    if (checkbox && block.tagName !== 'LI') {
+      const checked = checkbox.checked || checkbox.hasAttribute('checked');
+      const li = document.createElement('li');
+      li.className = `${BLOCK_STYLES.taskItem}${checked ? ' task-checked' : ''}`;
+      li.dataset.task = 'true';
+      li.dataset.checked = checked ? 'true' : 'false';
+
+      checkbox.setAttribute('data-task-checkbox', 'true');
+      checkbox.className = BLOCK_STYLES.checkbox;
+      li.appendChild(checkbox);
+
+      const span = document.createElement('span');
+      span.className = `flex-1 task-text${checked ? ' line-through text-slate-400' : ''}`;
+      while (block.firstChild) {
+        if (block.firstChild !== checkbox) span.appendChild(block.firstChild);
+        else block.removeChild(block.firstChild);
+      }
+      if (!span.hasChildNodes() || span.textContent === '') span.innerHTML = '<br>';
+      li.appendChild(span);
+
+      const ul = document.createElement('ul');
+      ul.className = `${BLOCK_STYLES.taskList} text-slate-800 text-xs`;
+      ul.appendChild(li);
+      block.replaceWith(ul);
+    }
+  });
+
+  // 3. Normalize all LIs containing checkboxes
+  root.querySelectorAll('li').forEach((li) => {
+    const checkbox = li.querySelector<HTMLInputElement>('input[type="checkbox"]');
+    if (checkbox) {
+      const checked = checkbox.checked || checkbox.hasAttribute('checked');
+      li.className = `${BLOCK_STYLES.taskItem}${checked ? ' task-checked' : ''}`;
+      li.dataset.task = 'true';
+      li.dataset.checked = checked ? 'true' : 'false';
+
+      checkbox.setAttribute('data-task-checkbox', 'true');
+      checkbox.className = BLOCK_STYLES.checkbox;
+
+      let span = li.querySelector<HTMLElement>('.task-text');
+      if (!span) {
+        span = document.createElement('span');
+        span.className = `flex-1 task-text${checked ? ' line-through text-slate-400' : ''}`;
+        const children = Array.from(li.childNodes).filter((c) => c !== checkbox);
+        children.forEach((c) => span!.appendChild(c));
+        if (!span.hasChildNodes() || (span.textContent ?? '').trim() === '') {
+          span.innerHTML = '<br>';
+        }
+        li.appendChild(span);
+      } else {
+        span.className = `flex-1 task-text${checked ? ' line-through text-slate-400' : ''}`;
+        if (!span.hasChildNodes() || (span.textContent ?? '').trim() === '') {
+          span.innerHTML = '<br>';
+        }
+      }
+
+      if (li.parentElement && li.parentElement.tagName === 'UL') {
+        li.parentElement.className = `${BLOCK_STYLES.taskList} text-slate-800 text-xs`;
+      }
+    }
+  });
+}
+
 /**
  * Normalizes foreign pasted HTML (Google Docs, Notion, email clients) into
  * the tag whitelist our serializer understands. Preserves semantic
@@ -389,6 +477,7 @@ function cleanPastedElement(el: Element): void {
 export function sanitizePastedHtml(html: string): string {
   const container = document.createElement('div');
   container.innerHTML = html;
+  normalizeTaskStructures(container);
   Array.from(container.children).forEach(cleanPastedElement);
 
   // Unwrap redundant single container wrappers (Google Docs pastes are

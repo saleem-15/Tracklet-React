@@ -75,10 +75,10 @@ export const BLOCK_STYLES = {
   paragraph: 'leading-relaxed',
   bulletList: 'list-disc pl-4 space-y-0.5 my-1',
   numberedList: 'list-decimal pl-4 space-y-0.5 my-1',
-  taskList: 'list-none pl-4 space-y-0.5 my-1',
-  taskItem: 'task-item flex items-start gap-1.5 py-0.5',
+  taskList: 'task-list list-none pl-4 space-y-0.5 my-1',
+  taskItem: 'task-item list-none flex items-start gap-2 py-0.5',
   checkbox:
-    'mt-0.5 w-3.5 h-3.5 shrink-0 rounded border border-slate-300 cursor-pointer accent-blue-600',
+    'w-4 h-4 shrink-0 rounded cursor-pointer',
   quote:
     'border-l-4 border-blue-400 bg-blue-50/60 rounded-lg pl-3 pr-2 py-1.5 my-2 text-slate-700',
   codeBlock:
@@ -194,8 +194,8 @@ export function markdownToHtml(
     }
     flushQuote();
 
-    // Task list item: - [ ] / - [x]
-    const taskMatch = line.match(/^[-*]\s+\[([ xX])\]\s+(.*)$/);
+    // To-do list item: - [ ] / - [x] / * [ ] / * [x] / [ ] / [x] / 1. [ ] (indented or non-indented)
+    const taskMatch = line.match(/^\s*(?:[-*]|\d+\.)?\s*\[([ xX])\](?:\s+(.*)|\s*)$/);
     if (taskMatch) {
       if (inOl) {
         htmlParts.push('</ol>');
@@ -205,9 +205,10 @@ export function markdownToHtml(
         htmlParts.push(`<ul class="${BLOCK_STYLES.taskList} text-slate-800 text-xs">`);
         inUl = true;
       }
-      const checked = taskMatch[1].toLowerCase() === 'x';
-      const content = parseInlineMarkdownToHtml(taskMatch[2]);
-      const taskLabel = taskMatch[2].replace(/<[^>]*>/g, '').trim() || 'Toggle task item';
+      const checked = (taskMatch[1] || '').toLowerCase() === 'x';
+      const rawContent = (taskMatch[2] || '').trim();
+      const content = rawContent ? parseInlineMarkdownToHtml(rawContent) : '<br>';
+      const taskLabel = rawContent.replace(/<[^>]*>/g, '').trim() || 'Toggle to-do item';
       htmlParts.push(
         `<li class="${BLOCK_STYLES.taskItem}${checked ? ' task-checked' : ''}" data-task="true" data-checked="${checked}">` +
           `<input type="checkbox"${checked ? ' checked' : ''}${readOnly ? ' disabled' : ''} data-task-checkbox="true" aria-label="${escapeHtml(taskLabel)}" class="${BLOCK_STYLES.checkbox}" />` +
@@ -381,14 +382,21 @@ export function domNodeToMarkdown(node: Node): string {
     }
     case 'li': {
       // Task items carry their own marker
-      if (el.dataset.task === 'true') {
-        const checked = el.dataset.checked === 'true';
+      const checkbox = el.querySelector<HTMLInputElement>('input[type="checkbox"], input[data-task-checkbox]');
+      const isTask = el.dataset.task === 'true' || el.classList.contains('task-item') || checkbox !== null;
+      if (isTask) {
+        const checked =
+          el.dataset.checked === 'true' ||
+          (checkbox !== null && (checkbox.checked || checkbox.hasAttribute('checked')));
         const textEl = el.querySelector('.task-text');
         const raw = textEl
           ? Array.from(textEl.childNodes)
               .map((c) => domNodeToMarkdown(c))
               .join('')
-          : el.textContent || '';
+          : Array.from(el.childNodes)
+              .filter((c) => (c as HTMLElement).tagName !== 'INPUT')
+              .map((c) => domNodeToMarkdown(c))
+              .join('');
         return `- [${checked ? 'x' : ' '}] ${raw.trim()}`;
       }
       return getChildrenMarkdown().replace(/\n{2,}/g, '\n').trim();
@@ -419,6 +427,15 @@ export function domNodeToMarkdown(node: Node): string {
     }
     case 'p':
     case 'div': {
+      const checkbox = el.querySelector<HTMLInputElement>('input[type="checkbox"], input[data-task-checkbox]');
+      if (checkbox) {
+        const checked = checkbox.checked || checkbox.hasAttribute('checked');
+        const raw = Array.from(el.childNodes)
+          .filter((c) => (c as HTMLElement).tagName !== 'INPUT')
+          .map((c) => domNodeToMarkdown(c))
+          .join('');
+        return `- [${checked ? 'x' : ' '}] ${raw.trim()}`;
+      }
       const inner = getChildrenMarkdown();
       if (!inner.trim() || el.innerHTML === '<br>' || el.innerHTML === '<br/>') {
         return '';
@@ -439,7 +456,7 @@ export function domNodeToMarkdown(node: Node): string {
 
 /**
  * Serializes a container element's children as canonical Markdown blocks
- * separated by exactly one blank line ("\\n\\n"). This is the single place
+ * separated by exactly one blank line ("\n\n"). This is the single place
  * where block separation is decided, guaranteeing round-trip stability.
  */
 function serializeContainer(root: HTMLElement): string {
@@ -461,7 +478,7 @@ function serializeContainer(root: HTMLElement): string {
 /**
  * Converts rich HTML (or an HTML element / string) back into clean,
  * canonical Markdown: one blank line between blocks, collapsed excess
- * newlines, trimmed outer whitespace. Idempotent by construction â€”
+ * newlines, trimmed outer whitespace. Idempotent by construction —
  * canonicalize(canonicalize(x)) === canonicalize(x).
  */
 export function htmlToMarkdown(htmlOrNode: string | HTMLElement): string {
@@ -505,13 +522,15 @@ export function isInsideCodeFence(node: Node): boolean {
 
 /**
  * Flips a task item's checked state (data attribute + visual strike-through).
- * Mutates ONLY the target item â€” siblings untouched. Caller re-serializes.
+ * Mutates ONLY the target item — siblings untouched. Caller re-serializes.
  */
 export function toggleTaskItem(itemEl: HTMLElement): void {
-  if (itemEl.dataset.task !== 'true') return;
+  const isTask = itemEl.dataset.task === 'true' || itemEl.classList.contains('task-item');
+  if (!isTask) return;
   const nowChecked = itemEl.dataset.checked !== 'true';
   itemEl.dataset.checked = nowChecked ? 'true' : 'false';
-  const input = itemEl.querySelector<HTMLInputElement>('input[data-task-checkbox]');
+  itemEl.classList.toggle('task-checked', nowChecked);
+  const input = itemEl.querySelector<HTMLInputElement>('input[data-task-checkbox], input[type="checkbox"]');
   if (input) {
     input.checked = nowChecked;
     // Mirror the attribute so styling/serialization can never desync
@@ -535,7 +554,7 @@ export function spawnNextTaskItem(itemEl: HTMLElement): HTMLElement {
 
 function makeTaskItemElement(text: string, checked: boolean): HTMLElement {
   const li = document.createElement('li');
-  li.className = BLOCK_STYLES.taskItem;
+  li.className = `${BLOCK_STYLES.taskItem}${checked ? ' task-checked' : ''}`;
   li.dataset.task = 'true';
   li.dataset.checked = checked ? 'true' : 'false';
 
@@ -543,12 +562,16 @@ function makeTaskItemElement(text: string, checked: boolean): HTMLElement {
   input.type = 'checkbox';
   input.checked = checked;
   input.setAttribute('data-task-checkbox', 'true');
-  input.setAttribute('aria-label', text.trim() || 'Toggle task item');
+  input.setAttribute('aria-label', text.trim() || 'Toggle to-do item');
   input.className = BLOCK_STYLES.checkbox;
 
   const span = document.createElement('span');
   span.className = 'flex-1 task-text';
-  span.textContent = text;
+  if (text) {
+    span.innerHTML = parseInlineMarkdownToHtml(text);
+  } else {
+    span.innerHTML = '<br>';
+  }
 
   li.appendChild(input);
   li.appendChild(span);

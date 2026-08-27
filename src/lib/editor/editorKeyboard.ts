@@ -93,12 +93,9 @@ export function executeEnterStrategy(
       const atEnd =
         caretRange.compareBoundaryPoints(Range.END_TO_END, endProbe) >= 0;
 
-      // Spawn the next unchecked item (bullet-list parity)
-      const list = document.createElement('ul');
-      list.className = BLOCK_STYLES.taskList + ' text-slate-800 text-xs';
+      // Spawn the next unchecked item
       const next = makeTaskItem();
       const nextText = next.querySelector('.task-text') as HTMLElement;
-      list.appendChild(next);
 
       if (!atEnd) {
         const tail = document.createRange();
@@ -109,15 +106,21 @@ export function executeEnterStrategy(
           /* empty tail is fine */
         }
         const frag = tail.extractContents();
-        if (frag.hasChildNodes()) nextText.appendChild(frag);
+        if (frag.hasChildNodes()) {
+          nextText.innerHTML = '';
+          nextText.appendChild(frag);
+        }
       }
 
-      // Insert right after the current li within its task list
-      const listParent = li.parentElement!;
-      if (listParent.tagName === 'UL' && listParent.classList.contains('task-list')) {
+      // Insert right after the current li within its parent list
+      const listParent = li.parentElement;
+      if (listParent && (listParent.tagName === 'UL' || listParent.tagName === 'OL')) {
         listParent.insertBefore(next, li.nextSibling);
       } else {
-        li.parentElement!.insertBefore(list, li.nextSibling);
+        const list = document.createElement('ul');
+        list.className = `${BLOCK_STYLES.taskList} text-slate-800 text-xs`;
+        list.appendChild(next);
+        li.insertAdjacentElement('afterend', list);
       }
       placeCaretAtStart(nextText);
       return;
@@ -164,11 +167,12 @@ function makeTaskItem(): HTMLElement {
   const input = document.createElement('input');
   input.type = 'checkbox';
   input.setAttribute('data-task-checkbox', 'true');
-  input.setAttribute('aria-label', 'Toggle task item');
+  input.setAttribute('aria-label', 'Toggle to-do item');
   input.className = BLOCK_STYLES.checkbox;
 
   const span = document.createElement('span');
   span.className = 'flex-1 task-text';
+  span.innerHTML = '<br>';
 
   li.appendChild(input);
   li.appendChild(span);
@@ -254,16 +258,18 @@ export function escapeInlineFormattingRight(editor: HTMLElement): boolean {
   return true;
 }
 
-/** Markdown block shorthand typed just before a Space ("# ", "- ", "1. "). */
+/** Markdown block shorthand typed just before a Space ("# ", "- ", "1. ", "[] ", "[ ] "). */
 export function shorthandFor(
   textBefore: string
-): { actionId: 'h1' | 'h2' | 'h3' | 'bullet' | 'numbered'; markerLen: number } | null {
+): { actionId: 'h1' | 'h2' | 'h3' | 'bullet' | 'numbered' | 'todo'; markerLen: number } | null {
   switch (textBefore) {
     case '#': return { actionId: 'h1', markerLen: 1 };
     case '##': return { actionId: 'h2', markerLen: 2 };
     case '###': return { actionId: 'h3', markerLen: 3 };
     case '-': case '*': return { actionId: 'bullet', markerLen: 1 };
     case '1.': return { actionId: 'numbered', markerLen: 2 };
+    case '[]': case '[ ]': return { actionId: 'todo', markerLen: textBefore.length };
+    case '-[]': case '- [ ]': case '*[]': case '* [ ]': return { actionId: 'todo', markerLen: textBefore.length };
     default: return null;
   }
 }
