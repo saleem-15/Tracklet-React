@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState, type RefObject } from 'react';
 import { caretViewportRect } from './useSlashMenu';
 import { LINK_CLASS } from './richTextMarkdownUtils';
+import { decorateAnchorsForUrl } from './editorDom';
 
 export interface LinkDialogState {
   open: boolean;
@@ -204,12 +205,7 @@ export function useLinkPopover(
           );
         } else {
           document.execCommand('createLink', false, cleanUrl);
-          const anchors = el.querySelectorAll<HTMLAnchorElement>(`a[href="${cleanUrl}"]`);
-          anchors.forEach((a) => {
-            if (!a.className) a.className = LINK_CLASS;
-            if (!a.getAttribute('target')) a.setAttribute('target', '_blank');
-            if (!a.getAttribute('rel')) a.setAttribute('rel', 'noopener noreferrer');
-          });
+          decorateAnchorsForUrl(el, cleanUrl);
         }
         closeLinkDialog();
         emitChange();

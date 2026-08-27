@@ -1,6 +1,6 @@
 import { useCallback, type RefObject } from 'react';
-import { markdownToHtml, htmlToMarkdown, LINK_CLASS } from './richTextMarkdownUtils';
-import { sanitizePastedHtml } from './editorDom';
+import { markdownToHtml, htmlToMarkdown } from './richTextMarkdownUtils';
+import { sanitizePastedHtml, decorateAnchorsForUrl } from './editorDom';
 
 export interface ClipboardHandlers {
   handleCopy: (e: React.ClipboardEvent<HTMLDivElement>) => void;
@@ -53,12 +53,7 @@ export function useClipboard(
         document.execCommand('createLink', false, cleanUrl);
         const el = editorRef.current;
         if (el) {
-          const anchors = el.querySelectorAll<HTMLAnchorElement>(`a[href="${cleanUrl}"]`);
-          anchors.forEach((a) => {
-            if (!a.className) a.className = LINK_CLASS;
-            if (!a.getAttribute('target')) a.setAttribute('target', '_blank');
-            if (!a.getAttribute('rel')) a.setAttribute('rel', 'noopener noreferrer');
-          });
+          decorateAnchorsForUrl(el, cleanUrl);
         }
         onMutate();
         return;

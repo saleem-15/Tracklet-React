@@ -1,4 +1,4 @@
-import { useEffect, type MutableRefObject, type RefObject } from 'react';
+import { useEffect, type RefObject } from 'react';
 import {
   compareCanonical,
   htmlToMarkdown,
@@ -30,7 +30,7 @@ export function useValueSync(
   editorRef: RefObject<HTMLDivElement | null>,
   value: string,
   hooks?: ValueSyncHooks,
-  lastEmittedRef?: MutableRefObject<string | null>
+  lastEmittedRef?: RefObject<string | null>
 ): void {
   useEffect(() => {
     const el = editorRef.current;

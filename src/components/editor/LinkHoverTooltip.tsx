@@ -111,10 +111,18 @@ const LinkHoverTooltip: React.FC<LinkHoverTooltipProps> = ({
     e.stopPropagation();
     if (!state?.url) return;
 
-    navigator.clipboard?.writeText(state.url);
-    setCopied(true);
-    if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
-    copyTimeoutRef.current = setTimeout(() => setCopied(false), 1500);
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard
+        .writeText(state.url)
+        .then(() => {
+          setCopied(true);
+          if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
+          copyTimeoutRef.current = setTimeout(() => setCopied(false), 1500);
+        })
+        .catch(() => {
+          // Clipboard write rejected or failed
+        });
+    }
   };
 
   const handleEdit = (e: React.MouseEvent) => {

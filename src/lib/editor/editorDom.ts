@@ -45,7 +45,7 @@ export function computeMenuPosition(
  * caret explicitly instead of hoping the browser guessed right.
  */
 
-import { BLOCK_STYLES } from './richTextMarkdownUtils';
+import { BLOCK_STYLES, LINK_CLASS } from './richTextMarkdownUtils';
 
 /** Line-level blocks the editor recognizes. */
 export const LINE_BLOCK_SELECTOR = 'p, h1, h2, h3, h4, h5, h6, li, blockquote';
@@ -251,7 +251,7 @@ export function isEmptyBlock(block: HTMLElement): boolean {
  *
  * We unwrap the anchor (preserving any child nodes, though typically
  * there are none) and normalize the parent so adjacent text nodes
- * merge.  The caret is left in the nearest sensible position.
+ * merge.  The caret is collapsed precisely at the unwrap point.
  */
 export function cleanupEmptyLinks(editor: HTMLElement, sel: Selection): void {
   const anchors = editor.querySelectorAll<HTMLAnchorElement>('a');
@@ -271,20 +271,43 @@ export function cleanupEmptyLinks(editor: HTMLElement, sel: Selection): void {
     const parent = a.parentNode;
     if (!parent) continue;
 
+    // Capture unwrap position before removing anchor
+    let caretMarker: Text | null = null;
+    if (caretInside) {
+      caretMarker = document.createTextNode('');
+      parent.insertBefore(caretMarker, a);
+    }
+
     // Unwrap: move any (rare) child nodes out, then remove the anchor
     while (a.firstChild) {
       parent.insertBefore(a.firstChild, a);
     }
     parent.removeChild(a);
 
+    // Re-seat caret at the unwrap point if it was inside the removed anchor
+    if (caretInside && caretMarker) {
+      const range = document.createRange();
+      range.setStart(caretMarker, 0);
+      range.collapse(true);
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }
+
     // Normalize so adjacent text nodes merge (prevents caret fragmentation)
     parent.normalize();
-
-    // Re-seat the caret if it was inside the removed anchor
-    if (caretInside && parent.nodeType === Node.ELEMENT_NODE) {
-      placeCaretAtEnd(parent as HTMLElement);
-    }
   }
+}
+
+/** Decorates newly created or existing links in an editor with our canonical styling and target/rel attributes. */
+export function decorateAnchorsForUrl(editor: HTMLElement, cleanUrl: string): void {
+  const anchors = editor.querySelectorAll<HTMLAnchorElement>('a[href]');
+  anchors.forEach((a) => {
+    if (a.getAttribute('href') === cleanUrl) {
+      if (!a.className) a.className = LINK_CLASS;
+      if (!a.getAttribute('target')) a.setAttribute('target', '_blank');
+      if (!a.getAttribute('rel')) a.setAttribute('rel', 'noopener noreferrer');
+    }
+  });
 }
 
 /**
@@ -403,19 +426,24 @@ function cleanPastedElement(el: Element): void {
     }
   }
 
-  // Strip all attributes except safe anchors/checkbox state/classes
+  // Strip all attributes except safe anchors/checkbox state/task classes
   Array.from(el.attributes).forEach((attr) => {
+    const isTaskClass =
+      attr.name === 'class' &&
+      (el.classList.contains('task-item') ||
+        el.classList.contains('task-text') ||
+        el.classList.contains('task-list') ||
+        el.hasAttribute('data-task-checkbox') ||
+        el.classList.contains(BLOCK_STYLES.checkbox));
+
     const keep =
       (el.tagName === 'A' && attr.name === 'href') ||
       (el.tagName === 'INPUT' &&
-        ['checked', 'type', 'data-task-checkbox', 'aria-label', 'class'].includes(attr.name)) ||
+        ['checked', 'type', 'data-task-checkbox', 'aria-label'].includes(attr.name)) ||
       (el.tagName === 'LI' &&
-        ['data-task', 'data-checked', 'class'].includes(attr.name)) ||
-      (el.tagName === 'UL' && attr.name === 'class') ||
-      (el.tagName === 'OL' && attr.name === 'class') ||
-      (el.tagName === 'SPAN' && attr.name === 'class') ||
-      (el.tagName === 'P' && attr.name === 'class') ||
-      (el.tagName === 'PRE' && (attr.name === 'class' || attr.name === 'data-language'));
+        ['data-task', 'data-checked'].includes(attr.name)) ||
+      (el.tagName === 'PRE' && attr.name === 'data-language') ||
+      isTaskClass;
     if (!keep) el.removeAttribute(attr.name);
   });
 
@@ -443,7 +471,12 @@ function normalizeTaskStructures(root: HTMLElement): void {
     }
     input.setAttribute('data-task-checkbox', 'true');
     input.className = BLOCK_STYLES.checkbox;
-    node.replaceWith(input);
+
+    if ((node.textContent ?? '').trim() === '' && node.children.length === 0) {
+      node.replaceWith(input);
+    } else {
+      node.insertBefore(input, node.firstChild);
+    }
   });
 
   // 2. Wrap stray div/p checkboxes into task li / ul

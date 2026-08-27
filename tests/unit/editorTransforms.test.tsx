@@ -1,10 +1,16 @@
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describe, it, expect, vi, afterEach, beforeAll } from 'vitest';
 import { createRoot, type Root } from 'react-dom/client';
 import { act } from 'react';
 import type React from 'react';
 import { EDITOR_ACTIONS, getActionById } from '../../src/components/editor/editorActions';
 import { placeCaretAtOffset, exitCalloutOnEnter } from '../../src/lib/editor/editorDom';
 import { spawnNextTaskItem } from '../../src/lib/editor/richTextMarkdownUtils';
+
+beforeAll(() => {
+  if (typeof (document as any).execCommand !== 'function') {
+    (document as any).execCommand = () => false;
+  }
+});
 
 let host: HTMLDivElement | null = null;
 let root: Root | null = null;
@@ -40,6 +46,7 @@ afterEach(() => {
   host?.remove();
   host = null;
   document.querySelectorAll('[data-editor]').forEach((n) => n.remove());
+  vi.restoreAllMocks();
 });
 
 describe('deterministic block transformations (bug-fix regression)', () => {
@@ -352,7 +359,7 @@ describe('deterministic block transformations (bug-fix regression)', () => {
       sel.addRange(range);
 
       // Simulate execCommand createLink and decoration flow
-      document.execCommand = vi.fn((cmd, _showUi, val) => {
+      vi.spyOn(document, 'execCommand').mockImplementation((cmd, _showUi, val) => {
         if (cmd === 'createLink' && range.toString()) {
           const a = document.createElement('a');
           a.setAttribute('href', val as string);

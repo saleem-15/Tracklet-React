@@ -51,14 +51,26 @@ export function resolveEnterStrategy(
   const heading = closest(anchor, 'h1, h2, h3, h4, h5, h6');
   if (heading && editor.contains(heading)) return 'heading-exit';
 
-  // Code fence shorthand on Enter: ``` or ```js
+  // Code fence / divider shorthand on Enter
+  const block = closest(anchor, 'p, div') ?? (anchor.nodeType === Node.ELEMENT_NODE ? (anchor as HTMLElement) : anchor.parentElement);
+  const blockText = (block?.textContent ?? '').trim();
   const lineText = (anchor.nodeType === Node.TEXT_NODE ? anchor.nodeValue ?? '' : anchor.textContent ?? '').trim();
-  if (/^```([a-zA-Z0-9_-]*)$/.test(lineText) && !closest(anchor, 'pre')) {
+
+  // Code fence shorthand on Enter: ``` or ```js (block must contain only the shorthand)
+  if (
+    blockText === lineText &&
+    /^```([a-zA-Z0-9_-]*)$/.test(lineText) &&
+    !closest(anchor, 'pre')
+  ) {
     return 'code-fence-create';
   }
 
-  // Divider shorthand on Enter: --- or *** or ___
-  if (/^(-{3,}|\*{3,}|_{3,})$/.test(lineText) && !closest(anchor, 'pre, blockquote, ul, ol')) {
+  // Divider shorthand on Enter: --- or *** or ___ (block must contain only the shorthand)
+  if (
+    blockText === lineText &&
+    /^(-{3,}|\*{3,}|_{3,})$/.test(lineText) &&
+    !closest(anchor, 'pre, blockquote, ul, ol')
+  ) {
     return 'divider-create';
   }
 
