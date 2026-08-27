@@ -50,45 +50,61 @@ export function useLinkPopover(
     linkedAnchorRef.current = null;
   }, []);
 
-  const openLinkDialog = useCallback(() => {
-    const el = editorRef.current;
-    if (!el) return;
+  const openLinkDialog = useCallback(
+    (explicitAnchor?: HTMLAnchorElement) => {
+      const el = editorRef.current;
+      if (!el) return;
 
-    const sel = window.getSelection();
-    linkedAnchorRef.current = null;
-    let prefilled = 'https://';
+      linkedAnchorRef.current = null;
+      let prefilled = 'https://';
+      let rect: LinkDialogState['rect'] = null;
 
-    // Anchor rect captured BEFORE focus moves.
-    let rect: LinkDialogState['rect'] = null;
-    if (sel && sel.rangeCount > 0) {
-      const liveRange = sel.getRangeAt(0);
-      savedRangeRef.current = liveRange.cloneRange();
+      if (explicitAnchor && el.contains(explicitAnchor)) {
+        linkedAnchorRef.current = explicitAnchor;
+        prefilled = explicitAnchor.getAttribute('href') || prefilled;
+        const bRect = explicitAnchor.getBoundingClientRect();
+        rect = {
+          anchorTop: bRect.top,
+          anchorBottom: bRect.bottom,
+          left: bRect.left,
+        };
+        const range = document.createRange();
+        range.selectNodeContents(explicitAnchor);
+        savedRangeRef.current = range;
+      } else {
+        const sel = window.getSelection();
+        if (sel && sel.rangeCount > 0) {
+          const liveRange = sel.getRangeAt(0);
+          savedRangeRef.current = liveRange.cloneRange();
 
-      rect = caretViewportRect(el, null);
+          rect = caretViewportRect(el, null);
 
-      el.focus();
+          el.focus();
 
-      const node =
-        sel.anchorNode?.nodeType === Node.ELEMENT_NODE
-          ? (sel.anchorNode as HTMLElement)
-          : sel.anchorNode?.parentElement;
-      const anchor = node?.closest('a');
-      if (anchor && el.contains(anchor)) {
-        linkedAnchorRef.current = anchor as HTMLAnchorElement;
-        prefilled = anchor.getAttribute('href') || prefilled;
+          const node =
+            sel.anchorNode?.nodeType === Node.ELEMENT_NODE
+              ? (sel.anchorNode as HTMLElement)
+              : sel.anchorNode?.parentElement;
+          const anchor = node?.closest('a');
+          if (anchor && el.contains(anchor)) {
+            linkedAnchorRef.current = anchor as HTMLAnchorElement;
+            prefilled = anchor.getAttribute('href') || prefilled;
+          }
+        } else {
+          el.focus();
+          rect = caretViewportRect(el, el);
+        }
       }
-    } else {
-      el.focus();
-      rect = caretViewportRect(el, el);
-    }
 
-    setLinkDialog({
-      open: true,
-      url: prefilled,
-      editingExisting: linkedAnchorRef.current !== null,
-      rect,
-    });
-  }, [editorRef]);
+      setLinkDialog({
+        open: true,
+        url: prefilled,
+        editingExisting: linkedAnchorRef.current !== null,
+        rect,
+      });
+    },
+    [editorRef]
+  );
 
   const applyLink = useCallback(
     (url: string) => {
