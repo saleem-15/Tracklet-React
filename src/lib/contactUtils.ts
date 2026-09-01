@@ -7,16 +7,24 @@ export interface ContactFollowUpInfo {
 }
 
 /**
- * Filter contacts by search query (matching name, role, or organization) and category.
+ * Filter contacts by search query (matching name, role, or organization), category, and follow-up due state.
  */
 export function filterContacts(
   contacts: Contact[],
   query: string,
-  category: ContactCategory | 'All'
+  category: ContactCategory | 'All',
+  onlyFollowUpDue: boolean = false
 ): Contact[] {
   const normalizedQuery = query.trim().toLowerCase();
 
   return contacts.filter((contact) => {
+    // Follow-up due filter (due in <= 48h or overdue within 120h)
+    if (onlyFollowUpDue) {
+      if (!contact.nextFollowUpDate) return false;
+      const hours = getContactFollowUpHoursRemaining(contact.nextFollowUpDate);
+      if (hours === null || hours > 48 || hours < -120) return false;
+    }
+
     // Category match
     if (category !== 'All' && contact.category !== category) {
       return false;

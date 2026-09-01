@@ -197,7 +197,7 @@ export const ContactDetailPanel: React.FC<ContactDetailPanelProps> = ({
                     <Mail className="w-3.5 h-3.5" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-semibold leading-none">
+                    <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500 font-semibold leading-none">
                       Email
                     </p>
                     <p className="text-xs font-mono text-slate-800 group-hover:text-blue-700 truncate mt-0.5">
@@ -217,7 +217,7 @@ export const ContactDetailPanel: React.FC<ContactDetailPanelProps> = ({
                       <Phone className="w-3.5 h-3.5" />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-semibold leading-none">
+                      <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500 font-semibold leading-none">
                         Phone
                       </p>
                       <p className="text-xs font-mono text-slate-800 group-hover:text-emerald-700 truncate mt-0.5">
@@ -246,7 +246,7 @@ export const ContactDetailPanel: React.FC<ContactDetailPanelProps> = ({
                       <Linkedin className="w-3.5 h-3.5" />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-semibold leading-none">
+                      <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500 font-semibold leading-none">
                         LinkedIn
                       </p>
                       <p className="text-xs text-slate-800 group-hover:text-blue-700 truncate mt-0.5">

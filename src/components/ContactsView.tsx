@@ -6,16 +6,20 @@ import {
   LayoutGrid, 
   List, 
   Menu,
-  X
+  X,
+  Clock,
+  Download
 } from 'lucide-react';
 import { Contact, ContactCategory, Application } from '../types';
 import { CONTACT_CATEGORIES, LOCAL_STORAGE_KEYS } from '../lib/constants';
 import { 
   filterContacts, 
   sortContacts, 
+  getContactsFollowUpDueSoon,
   ContactSortField, 
   ContactSortOrder 
 } from '../lib/contactUtils';
+import { exportContactsToCSV } from '../lib/exportCsv';
 import { ContactCardGrid } from './contacts/ContactCardGrid';
 import { ContactTable } from './contacts/ContactTable';
 import { ContactEmptyState } from './contacts/ContactEmptyState';
@@ -29,6 +33,11 @@ interface ContactsViewProps {
   onDeleteContact: (id: string) => Promise<void>;
   onSelectContact: (contactId: string) => void;
   onOpenMobileSidebar?: () => void;
+  onShowToast?: (
+    type: 'success' | 'error' | 'info' | 'warning',
+    title: string,
+    description?: string
+  ) => void;
 }
 
 export const ContactsView: React.FC<ContactsViewProps> = ({
@@ -39,9 +48,11 @@ export const ContactsView: React.FC<ContactsViewProps> = ({
   onDeleteContact,
   onSelectContact,
   onOpenMobileSidebar,
+  onShowToast,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<ContactCategory | 'All'>('All');
+  const [filterDueOnly, setFilterDueOnly] = useState(false);
   const [viewLayout, setViewLayout] = useState<'grid' | 'table'>(() => {
     try {
       const saved = localStorage.getItem(LOCAL_STORAGE_KEYS.CONTACTS_LAYOUT);
@@ -94,11 +105,16 @@ export const ContactsView: React.FC<ContactsViewProps> = ({
     }
   };
 
+  // Follow-up due count (due within 48h or overdue within 120h)
+  const dueFollowUpsCount = useMemo(() => {
+    return getContactsFollowUpDueSoon(contacts, 48).length;
+  }, [contacts]);
+
   // Filter & Sort Contacts
   const filteredAndSortedContacts = useMemo(() => {
-    const filtered = filterContacts(contacts, searchQuery, selectedCategory);
+    const filtered = filterContacts(contacts, searchQuery, selectedCategory, filterDueOnly);
     return sortContacts(filtered, sortField, sortOrder);
-  }, [contacts, searchQuery, selectedCategory, sortField, sortOrder]);
+  }, [contacts, searchQuery, selectedCategory, filterDueOnly, sortField, sortOrder]);
 
   // Category counts
   const categoryCounts = useMemo(() => {
@@ -109,7 +125,25 @@ export const ContactsView: React.FC<ContactsViewProps> = ({
     return counts;
   }, [contacts]);
 
-  const isFiltered = searchQuery.trim().length > 0 || selectedCategory !== 'All';
+  const isFiltered = searchQuery.trim().length > 0 || selectedCategory !== 'All' || filterDueOnly;
+
+  const handleExportCSV = () => {
+    if (contacts.length === 0) {
+      onShowToast?.('warning', 'No contacts to export', 'Add contacts to export a directory CSV');
+      return;
+    }
+    const contactsToExport = filteredAndSortedContacts.length > 0 ? filteredAndSortedContacts : contacts;
+    const success = exportContactsToCSV(contactsToExport);
+    if (success) {
+      onShowToast?.(
+        'success',
+        'Contacts exported',
+        `Downloaded ${contactsToExport.length} contact${contactsToExport.length === 1 ? '' : 's'} as CSV`
+      );
+    } else {
+      onShowToast?.('error', 'Export failed', 'Could not generate CSV file');
+    }
+  };
 
   return (
     <div className="flex-1 flex flex-col min-h-0 bg-slate-50 overflow-hidden">
@@ -171,6 +205,17 @@ export const ContactsView: React.FC<ContactsViewProps> = ({
               </button>
             </div>
 
+            {/* Export CSV Button */}
+            <button
+              type="button"
+              onClick={handleExportCSV}
+              title="Export contacts as CSV"
+              className="flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-slate-50 active:scale-[0.99] text-slate-700 font-semibold text-xs rounded-xl border border-slate-200 shadow-2xs transition-all cursor-pointer min-h-[36px]"
+            >
+              <Download className="w-3.5 h-3.5 text-slate-500" />
+              <span className="hidden sm:inline">Export CSV</span>
+            </button>
+
             {/* Add Contact Button */}
             <button
               type="button"
@@ -207,37 +252,79 @@ export const ContactsView: React.FC<ContactsViewProps> = ({
             )}
           </div>
 
-          {/* Category Filter Chips */}
+          {/* Category & Follow-Up Filter Chips */}
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
             <button
               type="button"
-              onClick={() => setSelectedCategory('All')}
-              className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors whitespace-nowrap cursor-pointer ${
-                selectedCategory === 'All'
-                  ? 'bg-slate-900 text-white border-slate-900 shadow-2xs font-semibold'
-                  : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+              onClick={() => {
+                setSelectedCategory('All');
+                setFilterDueOnly(false);
+              }}
+              className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-all whitespace-nowrap cursor-pointer ${
+                selectedCategory === 'All' && !filterDueOnly
+                  ? 'bg-blue-600 text-white border-blue-600 shadow-2xs font-semibold'
+                  : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:text-slate-900'
               }`}
             >
               All ({categoryCounts.All || 0})
             </button>
             {CONTACT_CATEGORIES.map((cat) => {
               const count = categoryCounts[cat] || 0;
-              const isSelected = selectedCategory === cat;
+              const isSelected = selectedCategory === cat && !filterDueOnly;
               return (
                 <button
                   key={cat}
                   type="button"
-                  onClick={() => setSelectedCategory(cat)}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors whitespace-nowrap cursor-pointer ${
+                  onClick={() => {
+                    setSelectedCategory(cat);
+                    setFilterDueOnly(false);
+                  }}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-all whitespace-nowrap cursor-pointer ${
                     isSelected
                       ? 'bg-blue-600 text-white border-blue-600 shadow-2xs font-semibold'
-                      : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                      : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:text-slate-900'
                   }`}
                 >
-                  {cat} {count > 0 && <span className="opacity-80">({count})</span>}
+                  {cat} {count > 0 && <span className="opacity-80 font-mono text-[11px]">({count})</span>}
                 </button>
               );
             })}
+
+            <div className="h-4 w-px bg-slate-200 shrink-0 mx-0.5" />
+
+            {/* Needs Follow-up Quick Filter Chip */}
+            <button
+              type="button"
+              onClick={() => setFilterDueOnly((prev) => !prev)}
+              title="Filter contacts with pending or upcoming follow-ups"
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs transition-all whitespace-nowrap cursor-pointer border ${
+                filterDueOnly
+                  ? 'bg-blue-600 text-white border-blue-600 shadow-2xs font-semibold'
+                  : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-slate-300 font-medium'
+              }`}
+            >
+              <Clock className={`w-3.5 h-3.5 ${
+                filterDueOnly
+                  ? 'text-white'
+                  : dueFollowUpsCount > 0
+                  ? 'text-amber-500'
+                  : 'text-slate-400'
+              }`} />
+              <span>Needs Follow-up</span>
+              {dueFollowUpsCount > 0 ? (
+                <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono font-bold leading-none ${
+                  filterDueOnly
+                    ? 'bg-white/20 text-white'
+                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                }`}>
+                  {dueFollowUpsCount}
+                </span>
+              ) : (
+                <span className={`font-mono text-[11px] ${filterDueOnly ? 'text-blue-200' : 'text-slate-400'}`}>
+                  (0)
+                </span>
+              )}
+            </button>
           </div>
         </div>
       </div>
@@ -251,6 +338,7 @@ export const ContactsView: React.FC<ContactsViewProps> = ({
             onResetFilter={() => {
               setSearchQuery('');
               setSelectedCategory('All');
+              setFilterDueOnly(false);
             }}
           />
         ) : viewLayout === 'grid' ? (

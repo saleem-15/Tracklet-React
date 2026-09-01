@@ -38,7 +38,7 @@ export const ApplicationDetailHeader: React.FC<ApplicationDetailHeaderProps> = (
             )}
           </p>
           {app.location && (
-            <p className="text-[11px] font-mono text-slate-400 truncate mt-0.5">{app.location}</p>
+            <p className="text-[11px] font-mono text-slate-500 truncate mt-0.5">{app.location}</p>
           )}
         </div>
       </div>

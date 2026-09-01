@@ -15,7 +15,7 @@ const TemplatePills: React.FC<TemplatePillsProps> = ({ templates, onSelect }) =>
 
   return (
     <div className="flex flex-wrap items-center gap-1.5 px-3.5 pt-2.5">
-      <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 select-none mr-0.5">
+      <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 select-none mr-0.5">
         Start with:
       </span>
       {templates.map((tpl) => (

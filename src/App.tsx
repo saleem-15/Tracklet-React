@@ -1240,6 +1240,7 @@ function TrackletAppContent() {
                 onDeleteContact={handleDeleteContact}
                 onSelectContact={(contactId) => setSelectedContactId(contactId)}
                 onOpenMobileSidebar={() => setIsMobileSidebarOpen(true)}
+                onShowToast={addToast}
               />
             )}
 
