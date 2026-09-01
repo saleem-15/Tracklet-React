@@ -11,14 +11,18 @@ import { UnsavedChangesPrompt } from './detail/UnsavedChangesPrompt';
 
 export interface AddApplicationModalProps {
   isOpen: boolean;
+  allContacts?: Contact[];
   onClose: () => void;
   onAdd: (newApp: Omit<Application, 'id' | 'userId' | 'createdAt' | 'updatedAt' | 'stageUpdatedAt'>) => Promise<void>;
+  onCreateContact?: (contactData: Omit<Contact, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => Promise<Contact>;
 }
 
 export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
   isOpen,
+  allContacts = [],
   onClose,
   onAdd,
+  onCreateContact,
 }) => {
   const todayStr = new Date().toISOString().split('T')[0];
 
@@ -110,14 +114,8 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
   if (!isOpen) return null;
 
   // Contact Handlers
-  const handleAddContact = (contactData: Omit<Contact, 'id'>) => {
-    setContacts((prev) => [
-      ...prev,
-      {
-        id: `c-${Date.now()}-${Math.random().toString(36).substring(2, 5)}`,
-        ...contactData,
-      },
-    ]);
+  const handleAddContact = (contact: Contact) => {
+    setContacts((prev) => (prev.some((c) => c.id === contact.id) ? prev : [...prev, contact]));
   };
 
   const handleRemoveContact = (id: string) => {
@@ -172,7 +170,7 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
       status,
       jobLink: formattedJobLink || undefined,
       contactEmail: primaryContactEmail,
-      contacts: contacts.length > 0 ? contacts : undefined,
+      contactIds: contacts.map((c) => c.id),
       tasks: tasks.length > 0 ? tasks : undefined,
       notes: notes.trim() || undefined,
     };
@@ -265,8 +263,10 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
 
                 <AddApplicationContactsSection
                   contacts={contacts}
+                  allContacts={allContacts}
                   onAddContact={handleAddContact}
                   onRemoveContact={handleRemoveContact}
+                  onCreateContact={onCreateContact}
                 />
               </div>
             </div>

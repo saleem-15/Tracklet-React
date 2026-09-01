@@ -16,9 +16,15 @@ import { resolveDraftOnOpen, clearNoteDraft } from '../lib/editor/noteDrafts';
 
 export interface ApplicationDetailPanelProps {
   app: Application | null;
+  allContacts?: Contact[];
   onClose: () => void;
   onUpdateApp: (id: string, updates: Partial<Application>) => Promise<void>;
   onDeleteApp: (id: string) => Promise<void>;
+  onLinkContact?: (contactId: string, appId: string) => Promise<void>;
+  onUnlinkContact?: (contactId: string, appId: string) => Promise<void>;
+  onCreateAndLinkContact?: (contactData: Omit<Contact, 'id' | 'userId' | 'createdAt' | 'updatedAt'>, appId: string) => Promise<void>;
+  onSelectContact?: (contactId: string) => void;
+  onEditContact?: (contact: Contact) => void;
   onShowToast?: (
     type: 'success' | 'error' | 'info' | 'warning',
     title: string,
@@ -30,9 +36,15 @@ export interface ApplicationDetailPanelProps {
 
 export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
   app,
+  allContacts = [],
   onClose,
   onUpdateApp,
   onDeleteApp,
+  onLinkContact,
+  onUnlinkContact,
+  onCreateAndLinkContact,
+  onSelectContact,
+  onEditContact,
   onShowToast,
 }) => {
   const [notes, setNotes] = useState(app?.notes || '');
@@ -431,9 +443,22 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
               />
 
               <ContactManagerSection
-                contacts={app.contacts}
-                onSaveContact={handleSaveContact}
-                onDeleteContact={handleDeleteContact}
+                allContacts={allContacts}
+                linkedContactIds={app.contactIds || []}
+                legacyContacts={app.contacts || []}
+                onLinkContact={async (contactId) => {
+                  if (onLinkContact) await onLinkContact(contactId, app.id);
+                }}
+                onUnlinkContact={async (contactId) => {
+                  if (onUnlinkContact) await onUnlinkContact(contactId, app.id);
+                }}
+                onCreateAndLinkContact={async (data) => {
+                  if (onCreateAndLinkContact) {
+                    await onCreateAndLinkContact(data, app.id);
+                  }
+                }}
+                onSelectContact={onSelectContact}
+                onEditContact={onEditContact}
               />
 
               <StatusHistoryTimeline

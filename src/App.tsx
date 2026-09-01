@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
   Application, 
+  Contact,
   ActiveTab, 
   FilterState, 
   SortState, 
@@ -10,6 +11,8 @@ import {
   StatusHistoryEntry
 } from './types';
 import { ApplicationRepository } from './lib/applicationRepository';
+import { ContactRepository } from './lib/contactRepository';
+import { migrateLegacyEmbeddedContacts } from './lib/contactMigration';
 import { appendStatusHistory } from './lib/historyService';
 import { exportApplicationsToCSV } from './lib/exportCsv';
 import { calculateDaysInStage } from './lib/sampleData';
@@ -18,7 +21,9 @@ import { TopBar } from './components/TopBar';
 import { AllApplicationsTable } from './components/AllApplicationsTable';
 import { ActivePipelineBoard } from './components/ActivePipelineBoard';
 import { ApplicationDetailPanel } from './components/ApplicationDetailPanel';
+import { ContactDetailPanel } from './components/ContactDetailPanel';
 import { AddApplicationModal } from './components/AddApplicationModal';
+import { ContactsView } from './components/ContactsView';
 import { StatsView } from './components/StatsView';
 import { SettingsView } from './components/SettingsView';
 import { AuthScreen } from './components/AuthScreen';
@@ -46,6 +51,7 @@ function TrackletAppContent() {
   const { user, loading: authLoading, openAuthModal, signOut } = useAuth();
 
   const [applications, setApplications] = useState<Application[]>([]);
+  const [contacts, setContacts] = useState<Contact[]>([]);
   const [activeTab, setActiveTabState] = useState<ActiveTab>(() => getTabFromPath(window.location.pathname));
   const [dataLoading, setDataLoading] = useState(true);
 
@@ -60,6 +66,7 @@ function TrackletAppContent() {
 
   // Guest Migration Modal State
   const [migrationApps, setMigrationApps] = useState<Application[]>([]);
+  const [migrationContacts, setMigrationContacts] = useState<Contact[]>([]);
   const [isMigrationModalOpen, setIsMigrationModalOpen] = useState(false);
 
   // ── Initialise all query-param–driven state from the URL on first render ──
@@ -67,6 +74,7 @@ function TrackletAppContent() {
   const [selectedAppId, setSelectedAppIdState] = useState<string | null>(
     () => _initialUrlState.selectedAppId
   );
+  const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
   const [isAddModalOpen, setIsAddModalOpenState] = useState<boolean>(
     () => _initialUrlState.isAddModalOpen
   );
@@ -157,34 +165,98 @@ function TrackletAppContent() {
     order: 'desc',
   });
 
-  // Load applications whenever user changes or email is verified
+  // Load applications and contacts whenever user changes or email is verified
   const loadData = useCallback(async () => {
     setDataLoading(true);
     try {
       if (user && user.emailVerified) {
-        const cloudApps = await ApplicationRepository.loadApplications(user.uid);
-        setApplications(cloudApps);
+        const [appsResult, contactsResult] = await Promise.allSettled([
+          ApplicationRepository.loadApplications(user.uid),
+          ContactRepository.loadContacts(user.uid),
+        ]);
+
+        let loadedApps: Application[] = [];
+        let loadedContacts: Contact[] = [];
+
+        if (appsResult.status === 'fulfilled') {
+          loadedApps = appsResult.value;
+        } else {
+          console.error('Failed to load applications from Firestore:', appsResult.reason);
+        }
+
+        if (contactsResult.status === 'fulfilled') {
+          loadedContacts = contactsResult.value;
+        } else {
+          console.warn('Failed to load contacts from Firestore (using local fallback):', contactsResult.reason);
+          loadedContacts = ContactRepository.loadGuestContacts();
+        }
+
+        // Automatic legacy embedded contact migration
+        const { migratedContacts, updatedApplications, migratedCount } = migrateLegacyEmbeddedContacts(
+          loadedApps,
+          loadedContacts
+        );
+
+        if (migratedCount > 0) {
+          loadedApps = updatedApplications;
+          loadedContacts = migratedContacts;
+          // Asynchronously persist any newly migrated standalone contacts
+          for (const newC of migratedContacts) {
+            ContactRepository.addContact(newC, user.uid).catch((err) => {
+              console.warn('Could not save migrated contact to Firestore:', err);
+            });
+          }
+        }
+
+        setApplications(loadedApps);
+        setContacts(loadedContacts);
 
         // Check for guest data migration
         try {
-          const rawGuest = localStorage.getItem(LOCAL_STORAGE_KEYS.GUEST_APPS);
-          if (rawGuest) {
-            const parsedGuest: Application[] = JSON.parse(rawGuest);
-            if (Array.isArray(parsedGuest) && parsedGuest.length > 0) {
-              setMigrationApps(parsedGuest);
-              setIsMigrationModalOpen(true);
-            }
+          const rawGuestApps = localStorage.getItem(LOCAL_STORAGE_KEYS.GUEST_APPS);
+          const rawGuestContacts = localStorage.getItem(LOCAL_STORAGE_KEYS.GUEST_CONTACTS);
+          let parsedGuestApps: Application[] = [];
+          let parsedGuestContacts: Contact[] = [];
+          if (rawGuestApps) {
+            const parsed = JSON.parse(rawGuestApps);
+            if (Array.isArray(parsed)) parsedGuestApps = parsed;
+          }
+          if (rawGuestContacts) {
+            const parsed = JSON.parse(rawGuestContacts);
+            if (Array.isArray(parsed)) parsedGuestContacts = parsed;
+          }
+
+          if (parsedGuestApps.length > 0 || parsedGuestContacts.length > 0) {
+            setMigrationApps(parsedGuestApps);
+            setMigrationContacts(parsedGuestContacts);
+            setIsMigrationModalOpen(true);
           }
         } catch {
           // Ignore parse errors
         }
       } else if (!user) {
-        const guestApps = ApplicationRepository.loadGuestApplications();
+        let guestApps = ApplicationRepository.loadGuestApplications();
+        let guestContacts = ContactRepository.loadGuestContacts();
+
+        // Run automatic legacy embedded contact migration on guest data
+        const { migratedContacts, updatedApplications, migratedCount } = migrateLegacyEmbeddedContacts(
+          guestApps,
+          guestContacts
+        );
+
+        if (migratedCount > 0) {
+          guestApps = updatedApplications;
+          guestContacts = migratedContacts;
+          ApplicationRepository.saveGuestApplications(guestApps);
+          ContactRepository.saveGuestContacts(guestContacts);
+        }
+
         setApplications(guestApps);
+        setContacts(guestContacts);
       }
     } catch (err) {
-      console.error('Error loading applications:', err);
-      addToast('error', 'Load Error', 'Could not load applications from repository.');
+      console.error('Error loading applications and contacts:', err);
+      addToast('error', 'Load Error', 'Could not load data from repository.');
     } finally {
       setDataLoading(false);
     }
@@ -316,24 +388,34 @@ function TrackletAppContent() {
 
   // Guest Migration Handlers
   const handleImportGuestApps = async () => {
-    if (!user || migrationApps.length === 0) return;
+    if (!user || (migrationApps.length === 0 && migrationContacts.length === 0)) return;
     try {
-      const imported = await ApplicationRepository.batchImport(migrationApps, user.uid);
-      setApplications((prev) => [...imported, ...prev]);
-      localStorage.removeItem(LOCAL_STORAGE_KEYS.GUEST_APPS);
+      if (migrationApps.length > 0) {
+        const imported = await ApplicationRepository.batchImport(migrationApps, user.uid);
+        setApplications((prev) => [...imported, ...prev]);
+        localStorage.removeItem(LOCAL_STORAGE_KEYS.GUEST_APPS);
+      }
+      if (migrationContacts.length > 0) {
+        const importedContacts = await ContactRepository.migrateGuestContacts(user.uid, migrationContacts);
+        setContacts((prev) => [...importedContacts, ...prev]);
+        localStorage.removeItem(LOCAL_STORAGE_KEYS.GUEST_CONTACTS);
+      }
       setIsMigrationModalOpen(false);
       setMigrationApps([]);
-      addToast('success', 'Migration Complete', `Imported ${imported.length} applications to your cloud account.`);
+      setMigrationContacts([]);
+      addToast('success', 'Migration Complete', 'Imported guest applications and contacts to your cloud account.');
     } catch (err) {
       console.error('Migration failed:', err);
-      addToast('error', 'Migration Failed', 'Could not import guest applications.');
+      addToast('error', 'Migration Failed', 'Could not import guest data.');
     }
   };
 
   const handleDiscardGuestApps = () => {
     localStorage.removeItem(LOCAL_STORAGE_KEYS.GUEST_APPS);
+    localStorage.removeItem(LOCAL_STORAGE_KEYS.GUEST_CONTACTS);
     setIsMigrationModalOpen(false);
     setMigrationApps([]);
+    setMigrationContacts([]);
     addToast('info', 'Guest Data Discarded', 'Starting with clean cloud account workspace.');
   };
 
@@ -352,6 +434,7 @@ function TrackletAppContent() {
       }
       setIsGuestMode(false);
       setSelectedAppId(null);
+      setSelectedContactId(null);
       window.history.pushState(null, '', '/login');
       addToast('info', 'Signed Out', 'Returned to authentication screen.');
     } catch (err) {
@@ -362,13 +445,281 @@ function TrackletAppContent() {
   // Reset / Load Demo Data
   const handleSeedDemoData = async () => {
     try {
-      const freshDocs = await ApplicationRepository.seedDemoData(user?.emailVerified ? user.uid : undefined);
+      const [freshDocs, freshContacts] = await Promise.all([
+        ApplicationRepository.seedDemoData(user?.emailVerified ? user.uid : undefined),
+        ContactRepository.seedDemoContacts(user?.emailVerified ? user.uid : undefined),
+      ]);
       setApplications(freshDocs);
+      setContacts(freshContacts);
       setSelectedAppId(null);
-      addToast('info', 'Sample data loaded', '10 demo applications ready.');
+      setSelectedContactId(null);
+      addToast('info', 'Sample data loaded', 'Demo applications and contacts ready.');
     } catch (err) {
       console.error('Failed to seed demo data:', err);
       addToast('error', 'Error', 'Could not load demo dataset.');
+    }
+  };
+
+  // Add Contact
+  const handleAddContact = async (
+    newContact: Omit<Contact, 'id' | 'userId' | 'createdAt' | 'updatedAt'>
+  ): Promise<Contact> => {
+    try {
+      const created = await ContactRepository.addContact(
+        newContact,
+        user?.emailVerified ? user.uid : undefined
+      );
+
+      setContacts((prev) => {
+        const next = [created, ...prev.filter((c) => c.id !== created.id)];
+        if (!user?.emailVerified) ContactRepository.saveGuestContacts(next);
+        return next;
+      });
+
+      // If contact was linked to application(s) during creation, update those applications
+      if (created.applicationIds && created.applicationIds.length > 0) {
+        setApplications((prev) => {
+          const next = prev.map((app) =>
+            created.applicationIds!.includes(app.id)
+              ? {
+                  ...app,
+                  contactIds: Array.from(new Set([...(app.contactIds || []), created.id])),
+                }
+              : app
+          );
+          if (!user?.emailVerified) ApplicationRepository.saveGuestApplications(next);
+          return next;
+        });
+
+        // Sync to Firestore if authenticated
+        if (user?.emailVerified) {
+          for (const appId of created.applicationIds) {
+            ContactRepository.linkContactToApplication(created.id, appId, user.uid).catch((e) => {
+              console.warn(`Could not sync link between contact ${created.id} and app ${appId}:`, e);
+            });
+          }
+        }
+      }
+
+      addToast('success', 'Contact Added', created.name);
+      return created;
+    } catch (err) {
+      console.error('Failed to add contact (using local fallback):', err);
+      const fallbackContact: Contact = {
+        id: `local-c-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+        userId: user?.uid || 'guest',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        ...newContact,
+        applicationIds: newContact.applicationIds || [],
+      };
+      setContacts((prev) => {
+        const next = [fallbackContact, ...prev];
+        ContactRepository.saveGuestContacts(next);
+        return next;
+      });
+      addToast('success', 'Contact Added', fallbackContact.name);
+      return fallbackContact;
+    }
+  };
+
+  // Update Contact
+  const handleUpdateContact = async (id: string, updates: Partial<Contact>) => {
+    const currentContact = contacts.find((c) => c.id === id);
+    const now = new Date().toISOString();
+    setContacts((prev) => {
+      const next = prev.map((c) => (c.id === id ? { ...c, ...updates, updatedAt: now } : c));
+      if (!user?.emailVerified) ContactRepository.saveGuestContacts(next);
+      return next;
+    });
+
+    try {
+      if (user?.emailVerified) {
+        await ContactRepository.updateContact(id, updates, user.uid);
+      }
+    } catch (err) {
+      console.error('Failed to update contact:', err);
+      if (currentContact) {
+        setContacts((prev) => {
+          const reverted = prev.map((c) => (c.id === id ? currentContact : c));
+          if (!user?.emailVerified) ContactRepository.saveGuestContacts(reverted);
+          return reverted;
+        });
+      }
+      addToast('error', 'Update Failed', 'Could not save contact changes.');
+    }
+  };
+
+  // Delete Contact (with cascade remove from applications and Undo snackbar)
+  const handleDeleteContact = async (id: string) => {
+    const targetContact = contacts.find((c) => c.id === id);
+    if (!targetContact) return;
+
+    const linkedAppIds = targetContact.applicationIds || [];
+
+    setContacts((prev) => {
+      const next = prev.filter((c) => c.id !== id);
+      if (!user?.emailVerified) ContactRepository.saveGuestContacts(next);
+      return next;
+    });
+
+    if (linkedAppIds.length > 0) {
+      setApplications((prev) => {
+        const next = prev.map((app) =>
+          linkedAppIds.includes(app.id)
+            ? { ...app, contactIds: (app.contactIds || []).filter((cId) => cId !== id) }
+            : app
+        );
+        if (!user?.emailVerified) ApplicationRepository.saveGuestApplications(next);
+        return next;
+      });
+    }
+
+    if (selectedContactId === id) setSelectedContactId(null);
+
+    try {
+      await ContactRepository.deleteContact(
+        id,
+        user?.emailVerified ? user.uid : undefined,
+        linkedAppIds
+      );
+
+      addToast('info', `Deleted ${targetContact.name}`, undefined, {
+        label: 'Undo',
+        onClick: async () => {
+          setContacts((prev) => {
+            const next = [targetContact, ...prev];
+            if (!user?.emailVerified) ContactRepository.saveGuestContacts(next);
+            return next;
+          });
+
+          if (linkedAppIds.length > 0) {
+            setApplications((prev) => {
+              const next = prev.map((app) =>
+                linkedAppIds.includes(app.id)
+                  ? { ...app, contactIds: Array.from(new Set([...(app.contactIds || []), id])) }
+                  : app
+              );
+              if (!user?.emailVerified) ApplicationRepository.saveGuestApplications(next);
+              return next;
+            });
+          }
+
+          if (user?.emailVerified) {
+            await ContactRepository.addContact(targetContact, user.uid);
+            for (const appId of linkedAppIds) {
+              await ContactRepository.linkContactToApplication(id, appId, user.uid);
+            }
+          }
+          addToast('success', `Restored ${targetContact.name}`);
+        },
+      });
+    } catch (err) {
+      console.error('Failed to delete contact:', err);
+      setContacts((prev) => {
+        const reverted = [targetContact, ...prev];
+        if (!user?.emailVerified) ContactRepository.saveGuestContacts(reverted);
+        return reverted;
+      });
+      addToast('error', 'Delete Failed', 'Could not delete contact.');
+    }
+  };
+
+  // Batch Delete Contacts
+  const handleBatchDeleteContacts = async (ids: string[]) => {
+    const deleted = contacts.filter((c) => ids.includes(c.id));
+    setContacts((prev) => {
+      const next = prev.filter((c) => !ids.includes(c.id));
+      if (!user?.emailVerified) ContactRepository.saveGuestContacts(next);
+      return next;
+    });
+
+    try {
+      await ContactRepository.batchDelete(ids, user?.emailVerified ? user.uid : undefined);
+      addToast('info', `Deleted ${ids.length} contacts`);
+    } catch (err) {
+      console.error('Bulk delete contacts failed:', err);
+      setContacts((prev) => {
+        const reverted = [...deleted, ...prev];
+        if (!user?.emailVerified) ContactRepository.saveGuestContacts(reverted);
+        return reverted;
+      });
+      addToast('error', 'Delete Failed', 'Could not batch delete contacts.');
+    }
+  };
+
+  // Link Contact to Application
+  const handleLinkContact = async (contactId: string, appId: string) => {
+    setContacts((prev) => {
+      const next = prev.map((c) =>
+        c.id === contactId
+          ? { ...c, applicationIds: Array.from(new Set([...(c.applicationIds || []), appId])) }
+          : c
+      );
+      if (!user?.emailVerified) ContactRepository.saveGuestContacts(next);
+      return next;
+    });
+
+    setApplications((prev) => {
+      const next = prev.map((a) =>
+        a.id === appId
+          ? { ...a, contactIds: Array.from(new Set([...(a.contactIds || []), contactId])) }
+          : a
+      );
+      if (!user?.emailVerified) ApplicationRepository.saveGuestApplications(next);
+      return next;
+    });
+
+    try {
+      if (user?.emailVerified) {
+        await ContactRepository.linkContactToApplication(contactId, appId, user.uid);
+      }
+      const cName = contacts.find((c) => c.id === contactId)?.name || 'Contact';
+      addToast('success', 'Contact Linked', cName);
+    } catch (err) {
+      console.error('Failed to link contact:', err);
+      addToast('error', 'Link Failed', 'Could not link contact.');
+    }
+  };
+
+  // Unlink Contact from Application
+  const handleUnlinkContact = async (contactId: string, appId: string) => {
+    const contact = contacts.find((c) => c.id === contactId);
+
+    setContacts((prev) => {
+      const next = prev.map((c) =>
+        c.id === contactId
+          ? { ...c, applicationIds: (c.applicationIds || []).filter((id) => id !== appId) }
+          : c
+      );
+      if (!user?.emailVerified) ContactRepository.saveGuestContacts(next);
+      return next;
+    });
+
+    setApplications((prev) => {
+      const next = prev.map((a) =>
+        a.id === appId
+          ? { ...a, contactIds: (a.contactIds || []).filter((id) => id !== contactId) }
+          : a
+      );
+      if (!user?.emailVerified) ApplicationRepository.saveGuestApplications(next);
+      return next;
+    });
+
+    try {
+      if (user?.emailVerified) {
+        await ContactRepository.unlinkContactFromApplication(contactId, appId, user.uid);
+      }
+
+      addToast('info', `Unlinked ${contact?.name || 'Contact'}`, undefined, {
+        label: 'Undo',
+        onClick: () => {
+          handleLinkContact(contactId, appId);
+        },
+      });
+    } catch (err) {
+      console.error('Failed to unlink contact:', err);
+      addToast('error', 'Unlink Failed', 'Could not unlink contact.');
     }
   };
 
@@ -751,6 +1102,10 @@ function TrackletAppContent() {
     return applications.find((a) => a.id === selectedAppId) || null;
   }, [applications, selectedAppId]);
 
+  const selectedContact = useMemo(() => {
+    return contacts.find((c) => c.id === selectedContactId) || null;
+  }, [contacts, selectedContactId]);
+
   // If authentication state is still loading
   if (authLoading) {
     return (
@@ -809,6 +1164,7 @@ function TrackletAppContent() {
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         applications={applications}
+        contacts={contacts}
         expirySettings={expirySettings}
         user={user}
         onSignIn={handleSignIn}
@@ -875,6 +1231,18 @@ function TrackletAppContent() {
               />
             )}
 
+            {activeTab === 'contacts' && (
+              <ContactsView
+                contacts={contacts}
+                applications={applications}
+                onAddContact={handleAddContact}
+                onUpdateContact={handleUpdateContact}
+                onDeleteContact={handleDeleteContact}
+                onSelectContact={(contactId) => setSelectedContactId(contactId)}
+                onOpenMobileSidebar={() => setIsMobileSidebarOpen(true)}
+              />
+            )}
+
             {activeTab === 'stats' && (
               <StatsView
                 applications={applications}
@@ -908,17 +1276,44 @@ function TrackletAppContent() {
       {/* Right Slide-over Detail Panel */}
       <ApplicationDetailPanel
         app={selectedApp}
+        allContacts={contacts}
         onClose={() => setSelectedAppId(null)}
         onUpdateApp={handleUpdateApplication}
         onDeleteApp={handleDeleteApplication}
+        onLinkContact={handleLinkContact}
+        onUnlinkContact={handleUnlinkContact}
+        onCreateAndLinkContact={async (contactData, appId) => {
+          const created = await handleAddContact(contactData);
+          await handleLinkContact(created.id, appId);
+        }}
+        onSelectContact={(contactId) => setSelectedContactId(contactId)}
+        onEditContact={(contact) => {
+          setSelectedContactId(contact.id);
+        }}
         onShowToast={addToast}
+      />
+
+      {/* Right Slide-over Contact Detail Panel */}
+      <ContactDetailPanel
+        contact={selectedContact}
+        applications={applications}
+        onClose={() => setSelectedContactId(null)}
+        onUpdateContact={handleUpdateContact}
+        onDeleteContact={handleDeleteContact}
+        onUnlinkFromApp={handleUnlinkContact}
+        onSelectApplication={(appId) => {
+          setSelectedContactId(null);
+          setSelectedAppId(appId);
+        }}
       />
 
       {/* Add Application Modal */}
       <AddApplicationModal
         isOpen={isAddModalOpen}
+        allContacts={contacts}
         onClose={() => setIsAddModalOpen(false)}
         onAdd={handleAddApplication}
+        onCreateContact={handleAddContact}
       />
 
       {/* Multi-Provider Auth Modal */}
@@ -928,6 +1323,7 @@ function TrackletAppContent() {
       <GuestMigrationModal
         isOpen={isMigrationModalOpen}
         guestApplications={migrationApps}
+        guestContacts={migrationContacts}
         onImport={handleImportGuestApps}
         onDiscard={handleDiscardGuestApps}
         onClose={() => setIsMigrationModalOpen(false)}

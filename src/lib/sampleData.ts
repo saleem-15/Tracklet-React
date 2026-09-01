@@ -1,4 +1,4 @@
-import { Application } from '../types';
+import { Application, Contact } from '../types';
 
 export const INITIAL_SAMPLE_APPLICATIONS: Omit<Application, 'id' | 'userId'>[] = [
   {
@@ -424,7 +424,85 @@ export const INITIAL_SAMPLE_APPLICATIONS: Omit<Application, 'id' | 'userId'>[] =
     stageUpdatedAt: '2026-07-24T08:00:00Z',
     createdAt: '2026-07-24T08:00:00Z',
     updatedAt: '2026-07-24T08:00:00Z',
-  }
+  },
+];
+
+export const INITIAL_SAMPLE_CONTACTS: Omit<Contact, 'id' | 'userId'>[] = [
+  {
+    name: 'Karla Lindqvist',
+    role: 'Tech Talent Lead',
+    organization: 'Linear',
+    category: 'Recruiter',
+    email: 'karla@linear.app',
+    phone: '+1 415-555-0144',
+    linkedIn: 'https://linkedin.com/in/karlaindqvist',
+    notes: 'Very friendly, responds promptly via email. Coordinating system design panel.',
+    applicationIds: [],
+    createdAt: '2026-07-15T09:00:00Z',
+    updatedAt: '2026-07-20T10:00:00Z',
+  },
+  {
+    name: 'Tuomas Artman',
+    role: 'Co-founder & CTO',
+    organization: 'Linear',
+    category: 'Hiring Manager',
+    email: 'tuomas@linear.app',
+    notes: 'Key decision maker for frontend architecture team.',
+    applicationIds: [],
+    createdAt: '2026-07-15T09:00:00Z',
+    updatedAt: '2026-07-15T09:00:00Z',
+  },
+  {
+    name: 'Alex Rivera',
+    role: 'Senior Staff Recruiter',
+    organization: 'Stripe',
+    category: 'Recruiter',
+    email: 'alex.recruiter@stripe.com',
+    phone: '+1 650-555-0199',
+    linkedIn: 'https://linkedin.com/in/alexriverastripe',
+    notes: 'Primary point of contact for offer negotiations and benefits package.',
+    applicationIds: [],
+    createdAt: '2026-07-10T11:00:00Z',
+    updatedAt: '2026-07-24T15:30:00Z',
+  },
+  {
+    name: 'David Chen',
+    role: 'Engineering Director',
+    organization: 'Stripe',
+    category: 'Hiring Manager',
+    email: 'dchen@stripe.com',
+    notes: 'Hiring manager for Billing Infrastructure.',
+    applicationIds: [],
+    createdAt: '2026-07-10T11:00:00Z',
+    updatedAt: '2026-07-24T15:30:00Z',
+  },
+  {
+    name: 'Elena Rostova',
+    role: 'Principal Architect & Career Mentor',
+    organization: 'Tech Mentorship Network',
+    category: 'Mentor',
+    email: 'elena.rostova@mentors.dev',
+    phone: '+1 206-555-0188',
+    linkedIn: 'https://linkedin.com/in/elenarostova-mentor',
+    notes: 'Monthly 1:1 strategy sessions on executive presence, salary negotiation, and system design interviews.',
+    nextFollowUpDate: new Date(Date.now() + 86400000).toISOString().slice(0, 10),
+    applicationIds: [],
+    createdAt: '2026-07-01T10:00:00Z',
+    updatedAt: '2026-07-25T14:00:00Z',
+  },
+  {
+    name: 'Marcus Vance',
+    role: 'Staff Frontend Engineer',
+    organization: 'Supabase Alumni',
+    category: 'Peer / Alumni',
+    email: 'marcus.vance@alumni.dev',
+    linkedIn: 'https://linkedin.com/in/marcusvance',
+    notes: 'College classmate. Offered referral for upcoming senior engineer headcount.',
+    nextFollowUpDate: new Date(Date.now() + 86400000 * 3).toISOString().slice(0, 10),
+    applicationIds: [],
+    createdAt: '2026-07-05T12:00:00Z',
+    updatedAt: '2026-07-20T08:00:00Z',
+  },
 ];
 
 import { calculateDaysInStage } from './dateUtils';

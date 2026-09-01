@@ -1,4 +1,4 @@
-import { Application } from '../types';
+import { Application, Contact } from '../types';
 import { calculateDaysInStage } from './sampleData';
 
 export function exportApplicationsToCSV(
@@ -55,6 +55,66 @@ export function exportApplicationsToCSV(
       days.toString(),
       escapeCSV(app.jobLink || ''),
       escapeCSV(app.notes || ''),
+    ].join(',');
+  });
+
+  const csvContent = [headers.join(','), ...rows].join('\n');
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.setAttribute('href', url);
+  const timestamp = new Date().toISOString().slice(0, 10);
+  link.setAttribute('download', `${filenamePrefix}_${timestamp}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+  return true;
+}
+
+export function exportContactsToCSV(
+  contacts: Contact[],
+  filenamePrefix: string = 'tracklet_contacts_directory'
+): boolean {
+  if (!contacts || contacts.length === 0) {
+    return false;
+  }
+
+  const headers = [
+    'Name',
+    'Category',
+    'Role',
+    'Organization',
+    'Email',
+    'Phone',
+    'LinkedIn',
+    'Next Follow-up Date',
+    'Notes',
+  ];
+
+  const escapeCSV = (value: string | number | undefined | null) => {
+    if (value === undefined || value === null) return '""';
+    let str = String(value);
+
+    if (/^[=+\-@\t\r%]/.test(str)) {
+      str = `'${str}`;
+    }
+
+    const escaped = str.replace(/"/g, '""');
+    return `"${escaped}"`;
+  };
+
+  const rows = contacts.map((c) => {
+    return [
+      escapeCSV(c.name),
+      escapeCSV(c.category || 'Other'),
+      escapeCSV(c.role || ''),
+      escapeCSV(c.organization || ''),
+      escapeCSV(c.email || ''),
+      escapeCSV(c.phone || ''),
+      escapeCSV(c.linkedIn || ''),
+      escapeCSV(c.nextFollowUpDate || ''),
+      escapeCSV(c.notes || ''),
     ].join(',');
   });
 

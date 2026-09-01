@@ -32,7 +32,9 @@ import {
   where, 
   writeBatch, 
   serverTimestamp, 
-  orderBy
+  orderBy,
+  arrayUnion,
+  arrayRemove
 } from 'firebase/firestore';
 // Check if Firebase environment variables are configured
 export const isFirebaseConfigured = Boolean(
@@ -92,6 +94,8 @@ export {
   writeBatch, 
   serverTimestamp, 
   orderBy,
+  arrayUnion,
+  arrayRemove,
   signInWithPopup, 
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,

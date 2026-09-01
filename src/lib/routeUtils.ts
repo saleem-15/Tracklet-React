@@ -5,6 +5,7 @@ import { ActiveTab, FilterState, JobPlatform, ApplicationStatus, WorkLocation, E
 export const TAB_TO_PATH: Record<ActiveTab, string> = {
   all: '/applications',
   pipeline: '/pipeline',
+  contacts: '/contacts',
   stats: '/analytics',
   settings: '/settings',
 };
@@ -13,6 +14,7 @@ export const PATH_TO_TAB: Record<string, ActiveTab> = {
   '/': 'all',
   '/applications': 'all',
   '/pipeline': 'pipeline',
+  '/contacts': 'contacts',
   '/analytics': 'stats',
   '/stats': 'stats',
   '/settings': 'settings',

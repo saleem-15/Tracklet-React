@@ -27,18 +27,38 @@ service cloud.firestore {
         && (!('companyDomain' in data) || (data.companyDomain is string && data.companyDomain.size() <= 200))
         && (!('contactEmail' in data) || (data.contactEmail is string && data.contactEmail.size() <= 200))
         && (!('contacts' in data) || (data.contacts is list && data.contacts.size() <= 50))
+        && (!('contactIds' in data) || (data.contactIds is list && data.contactIds.size() <= 100))
         && (!('tasks' in data) || (data.tasks is list && data.tasks.size() <= 100))
         && (!('emails' in data) || (data.emails is list && data.emails.size() <= 100))
         && (!('history' in data) || (data.history is list && data.history.size() <= 100));
     }
 
-    // User document & User Applications Sub-collection
+    function isValidContact(data) {
+      return (data.name is string && data.name.size() > 0 && data.name.size() <= 200)
+        && (!('userId' in data) || data.userId == null || (data.userId is string && data.userId == request.auth.uid))
+        && (!('category' in data) || (data.category is string && data.category.size() <= 50))
+        && (!('role' in data) || (data.role is string && data.role.size() <= 200))
+        && (!('organization' in data) || (data.organization is string && data.organization.size() <= 200))
+        && (!('email' in data) || (data.email is string && data.email.size() <= 200))
+        && (!('phone' in data) || (data.phone is string && data.phone.size() <= 50))
+        && (!('linkedIn' in data) || (data.linkedIn is string && data.linkedIn.size() <= 1000))
+        && (!('notes' in data) || (data.notes is string && data.notes.size() <= 20000))
+        && (!('nextFollowUpDate' in data) || (data.nextFollowUpDate is string && data.nextFollowUpDate.size() <= 40))
+        && (!('applicationIds' in data) || (data.applicationIds is list && data.applicationIds.size() <= 100));
+    }
+
+    // User document, User Applications & User Contacts Sub-collections
     match /users/{userId} {
       allow read, write: if isOwner(userId);
 
       match /applications/{applicationId} {
         allow read, delete: if isOwner(userId);
         allow create, update: if isOwner(userId) && isValidApplication(request.resource.data);
+      }
+
+      match /contacts/{contactId} {
+        allow read, delete: if isOwner(userId);
+        allow create, update: if isOwner(userId) && isValidContact(request.resource.data);
       }
     }
 

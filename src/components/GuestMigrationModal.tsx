@@ -1,10 +1,11 @@
 import React from 'react';
-import { UploadCloud, Trash2, ArrowRight, ShieldCheck, Sparkles, X } from 'lucide-react';
-import { Application } from '../types';
+import { UploadCloud, Trash2, ArrowRight, Sparkles, X, Users, Briefcase } from 'lucide-react';
+import { Application, Contact } from '../types';
 
 interface GuestMigrationModalProps {
   isOpen: boolean;
   guestApplications: Application[];
+  guestContacts?: Contact[];
   onImport: () => Promise<void>;
   onDiscard: () => void;
   onClose: () => void;
@@ -13,13 +14,14 @@ interface GuestMigrationModalProps {
 export const GuestMigrationModal: React.FC<GuestMigrationModalProps> = ({
   isOpen,
   guestApplications,
+  guestContacts = [],
   onImport,
   onDiscard,
   onClose,
 }) => {
   const [isImporting, setIsImporting] = React.useState(false);
 
-  if (!isOpen || guestApplications.length === 0) return null;
+  if (!isOpen || (guestApplications.length === 0 && guestContacts.length === 0)) return null;
 
   const handleImport = async () => {
     setIsImporting(true);
@@ -30,11 +32,13 @@ export const GuestMigrationModal: React.FC<GuestMigrationModalProps> = ({
     }
   };
 
+  const totalItems = guestApplications.length + guestContacts.length;
+
   return (
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="Import Guest Applications"
+      aria-label="Import Guest Workspace"
       className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 animate-in fade-in duration-200"
     >
       <div className="relative w-full max-w-lg bg-white rounded-2xl border border-slate-200/90 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 motion-reduce:animate-none">
@@ -47,18 +51,21 @@ export const GuestMigrationModal: React.FC<GuestMigrationModalProps> = ({
           </div>
 
           <h2 className="text-xl font-bold tracking-tight text-white flex items-center justify-center gap-2">
-            <span>Import Guest Applications</span>
+            <span>Import Guest Workspace</span>
             <Sparkles className="w-4 h-4 text-amber-300 animate-pulse motion-reduce:animate-none" />
           </h2>
           <p className="text-blue-100 text-xs mt-1.5 max-w-sm mx-auto leading-relaxed">
-            We found <strong>{guestApplications.length}</strong> job application{guestApplications.length === 1 ? '' : 's'} tracked during your guest session.
+            We found <strong>{guestApplications.length}</strong> application{guestApplications.length === 1 ? '' : 's'}
+            {guestContacts.length > 0 && (
+              <> and <strong>{guestContacts.length}</strong> contact{guestContacts.length === 1 ? '' : 's'}</>
+            )} tracked during your guest session.
           </p>
 
           <button
             type="button"
             onClick={onClose}
             aria-label="Close dialog"
-            className="relative absolute top-4 right-4 p-1.5 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-colors cursor-pointer after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:min-w-[44px] after:min-h-[44px]"
+            className="absolute top-4 right-4 p-1.5 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -66,31 +73,62 @@ export const GuestMigrationModal: React.FC<GuestMigrationModalProps> = ({
 
         {/* Content */}
         <div className="p-6 space-y-4">
-          <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2 max-h-48 overflow-y-auto">
-            <span className="text-[11px] font-mono uppercase tracking-wider text-slate-500 font-semibold block">
-              Found local applications:
-            </span>
-            <div className="divide-y divide-slate-100">
-              {guestApplications.slice(0, 5).map((app) => (
-                <div key={app.id} className="py-1.5 flex items-center justify-between text-xs">
-                  <div className="font-semibold text-slate-800 truncate mr-2">
-                    {app.company} <span className="font-normal text-slate-500">({app.role})</span>
-                  </div>
-                  <span className="font-mono text-[11px] bg-white border border-slate-200 px-1.5 py-0.5 rounded text-slate-600 shrink-0">
-                    {app.status}
-                  </span>
+          <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3 max-h-56 overflow-y-auto">
+            {guestApplications.length > 0 && (
+              <div>
+                <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 font-bold block mb-1 flex items-center gap-1">
+                  <Briefcase className="w-3 h-3 text-blue-500" />
+                  Applications ({guestApplications.length}):
+                </span>
+                <div className="divide-y divide-slate-100">
+                  {guestApplications.slice(0, 4).map((app) => (
+                    <div key={app.id} className="py-1 flex items-center justify-between text-xs">
+                      <div className="font-semibold text-slate-800 truncate mr-2">
+                        {app.company} <span className="font-normal text-slate-500">({app.role})</span>
+                      </div>
+                      <span className="font-mono text-[10px] bg-white border border-slate-200 px-1.5 py-0.5 rounded text-slate-600 shrink-0">
+                        {app.status}
+                      </span>
+                    </div>
+                  ))}
+                  {guestApplications.length > 4 && (
+                    <div className="pt-1 text-center text-[10px] font-mono text-slate-500">
+                      + {guestApplications.length - 4} more applications
+                    </div>
+                  )}
                 </div>
-              ))}
-              {guestApplications.length > 5 && (
-                <div className="pt-1.5 text-center text-[11px] font-mono text-slate-500">
-                  + {guestApplications.length - 5} more applications
+              </div>
+            )}
+
+            {guestContacts.length > 0 && (
+              <div className="pt-2 border-t border-slate-200/60">
+                <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 font-bold block mb-1 flex items-center gap-1">
+                  <Users className="w-3 h-3 text-blue-500" />
+                  Contacts ({guestContacts.length}):
+                </span>
+                <div className="divide-y divide-slate-100">
+                  {guestContacts.slice(0, 3).map((c) => (
+                    <div key={c.id} className="py-1 flex items-center justify-between text-xs">
+                      <div className="font-semibold text-slate-800 truncate mr-2">
+                        {c.name} <span className="font-normal text-slate-500">({c.role || c.category || 'Contact'})</span>
+                      </div>
+                      <span className="font-mono text-[10px] bg-white border border-slate-200 px-1.5 py-0.5 rounded text-slate-600 shrink-0">
+                        {c.organization || '—'}
+                      </span>
+                    </div>
+                  ))}
+                  {guestContacts.length > 3 && (
+                    <div className="pt-1 text-center text-[10px] font-mono text-slate-500">
+                      + {guestContacts.length - 3} more contacts
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
 
           <p className="text-xs text-slate-600 leading-relaxed">
-            Would you like to upload these applications to your verified cloud account so they sync across all your devices?
+            Would you like to sync your guest data to your verified cloud account?
           </p>
 
           {/* Action buttons */}
@@ -103,7 +141,7 @@ export const GuestMigrationModal: React.FC<GuestMigrationModalProps> = ({
               className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white font-bold text-xs shadow-md shadow-blue-500/20 transition-all cursor-pointer disabled:opacity-60"
             >
               <UploadCloud className="w-4 h-4" />
-              <span>{isImporting ? 'Importing to Cloud...' : `Import ${guestApplications.length} Applications to Account`}</span>
+              <span>{isImporting ? 'Importing to Cloud...' : `Import ${totalItems} Items to Cloud Account`}</span>
               {!isImporting && <ArrowRight className="w-4 h-4" />}
             </button>
 
@@ -111,18 +149,12 @@ export const GuestMigrationModal: React.FC<GuestMigrationModalProps> = ({
               type="button"
               onClick={onDiscard}
               disabled={isImporting}
-              className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-rose-50 text-rose-700 hover:text-rose-800 hover:border-rose-200 border border-transparent font-semibold text-xs transition-colors cursor-pointer"
+              className="w-full flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl text-rose-600 hover:bg-rose-50 font-semibold text-xs transition-colors cursor-pointer"
             >
               <Trash2 className="w-3.5 h-3.5" />
-              <span>Discard Guest Data & Start Fresh</span>
+              <span>Discard Guest Data &amp; Start Fresh</span>
             </button>
           </div>
-        </div>
-
-        {/* Footer */}
-        <div className="px-6 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-center gap-2 text-[11px] text-slate-500 font-mono">
-          <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-          <span>Encrypted Cloud Sync to Your User ID</span>
         </div>
       </div>
     </div>

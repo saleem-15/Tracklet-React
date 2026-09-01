@@ -125,6 +125,7 @@ export class ApplicationRepository {
 
     const appData = {
       ...newApp,
+      contactIds: newApp.contactIds || [],
       history: initialHistory,
       stageUpdatedAt: now,
       createdAt: now,
@@ -275,6 +276,7 @@ export class ApplicationRepository {
 
           const appObj = sanitizeForFirestore({
             ...appItem,
+            contactIds: appItem.contactIds || [],
             history: initialHistory,
             userId,
             stageUpdatedAt: now,
@@ -306,6 +308,7 @@ export class ApplicationRepository {
           id: `imported-${Date.now()}-${index}`,
           userId: 'guest',
           ...appItem,
+          contactIds: appItem.contactIds || [],
           history: initialHistory,
           stageUpdatedAt: now,
           createdAt: now,
@@ -324,6 +327,7 @@ export class ApplicationRepository {
     const now = new Date().toISOString();
     const initialWithHistory = INITIAL_SAMPLE_APPLICATIONS.map((item) => ({
       ...item,
+      contactIds: item.contactIds || [],
       history: item.history && item.history.length > 0
         ? item.history
         : [createStatusHistoryEntry(item.status, undefined, item.createdAt || now)],
