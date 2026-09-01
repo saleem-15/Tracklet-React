@@ -5,6 +5,7 @@ import { AuthViewMode } from '../types';
 import { getFriendlyAuthErrorMessage } from '../lib/authErrors';
 import { SegmentedTabs } from './SegmentedTabs';
 import { AuthTextField } from './auth/AuthTextField';
+import { useEscapeKey } from '../lib/useEscapeKey';
 
 interface AuthModalProps {
   onShowToast?: (type: 'success' | 'error' | 'info' | 'warning', title: string, message?: string) => void;
@@ -33,6 +34,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onShowToast }) => {
   const [resetSent, setResetSent] = useState(false);
   const [resetCooldown, setResetCooldown] = useState(0);
 
+  // Dismiss on Escape key
+  useEscapeKey(closeAuthModal, isAuthModalOpen);
+
   // Cooldown countdown for password reset
   useEffect(() => {
     if (resetCooldown <= 0) return;
@@ -55,7 +59,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onShowToast }) => {
   const modalRef = React.useRef<HTMLDivElement>(null);
   const previousFocusRef = React.useRef<HTMLElement | null>(null);
 
-  // Handle escape key and focus trap with focus save/restore
+  // Handle focus trap with focus save/restore
   useEffect(() => {
     if (!isAuthModalOpen) return;
 
@@ -75,9 +79,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onShowToast }) => {
     }, 50);
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isAuthModalOpen) {
-        closeAuthModal();
-      } else if (e.key === 'Tab' && isAuthModalOpen && modalRef.current) {
+      if (e.key === 'Tab' && isAuthModalOpen && modalRef.current) {
         const focusable = modalRef.current.querySelectorAll<HTMLElement>(
           'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
         );
@@ -102,7 +104,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onShowToast }) => {
         previousFocusRef.current.focus();
       }
     };
-  }, [isAuthModalOpen, closeAuthModal]);
+  }, [isAuthModalOpen]);
 
   if (!isAuthModalOpen) return null;
 

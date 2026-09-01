@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { X, User, Briefcase, Building2, Mail, Phone, Linkedin, Calendar, FileText, Plus, Check } from 'lucide-react';
+import { X, User, Briefcase, Building2, Mail, Phone, Linkedin, Calendar, Check } from 'lucide-react';
 import { Contact, ContactCategory, Application } from '../../types';
-import { CONTACT_CATEGORIES, CONTACT_CATEGORY_STYLES } from '../../lib/constants';
+import { CONTACT_CATEGORIES } from '../../lib/constants';
+import { CustomSelectDropdown, SelectOption } from '../CustomSelectDropdown';
+import { RichTextEditor } from '../editor';
+import { useEscapeKey } from '../../lib/useEscapeKey';
 
 interface ContactModalProps {
   isOpen: boolean;
@@ -10,6 +13,11 @@ interface ContactModalProps {
   onClose: () => void;
   onSave: (contactData: Omit<Contact, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => Promise<void>;
 }
+
+const categoryOptions: SelectOption<ContactCategory>[] = CONTACT_CATEGORIES.map((cat) => ({
+  label: cat,
+  value: cat,
+}));
 
 export const ContactModal: React.FC<ContactModalProps> = ({
   isOpen,
@@ -30,6 +38,9 @@ export const ContactModal: React.FC<ContactModalProps> = ({
   const [selectedAppIds, setSelectedAppIds] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Close on Escape key (stack-aware)
+  useEscapeKey(onClose, isOpen);
 
   useEffect(() => {
     if (isOpen) {
@@ -168,17 +179,12 @@ export const ContactModal: React.FC<ContactModalProps> = ({
               <label className="block text-[11px] font-mono uppercase tracking-wider text-slate-500 font-semibold">
                 Category
               </label>
-              <select
+              <CustomSelectDropdown<ContactCategory>
                 value={category}
-                onChange={(e) => setCategory(e.target.value as ContactCategory)}
-                className="w-full bg-slate-50/60 text-slate-900 py-2 px-3 rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500 focus:bg-white text-xs font-medium cursor-pointer"
-              >
-                {CONTACT_CATEGORIES.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
-                  </option>
-                ))}
-              </select>
+                onChange={setCategory}
+                options={categoryOptions}
+                size="sm"
+              />
             </div>
           </div>
 
@@ -286,18 +292,18 @@ export const ContactModal: React.FC<ContactModalProps> = ({
             </div>
           </div>
 
-          {/* Notes */}
+          {/* Notes using shared RichTextEditor */}
           <div className="space-y-1">
             <label className="block text-[11px] font-mono uppercase tracking-wider text-slate-500 font-semibold">
               Notes &amp; Context
             </label>
-            <div className="relative">
-              <textarea
+            <div className="bg-white rounded-xl border border-slate-200 overflow-hidden focus-within:border-blue-300 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
+              <RichTextEditor
                 value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Meeting takeaways, mentorship topics, referral details..."
-                rows={3}
-                className="w-full bg-slate-50/60 text-slate-900 placeholder-slate-400 p-3 rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500 focus:bg-white text-xs resize-none leading-relaxed"
+                onChange={setNotes}
+                ariaLabel="Contact Notes"
+                minRows={4}
+                placeholder="Meeting takeaways, mentorship topics, referral details... Type / for commands"
               />
             </div>
           </div>

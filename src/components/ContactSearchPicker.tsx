@@ -2,6 +2,12 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Search, UserPlus, X, Check, Building2, Briefcase, ChevronDown } from 'lucide-react';
 import { Contact, ContactCategory } from '../types';
 import { CONTACT_CATEGORIES, CONTACT_CATEGORY_STYLES, CONTACT_AVATAR_COLORS, getInitials } from '../lib/constants';
+import { CustomSelectDropdown, SelectOption } from './CustomSelectDropdown';
+
+const categoryOptions: SelectOption<ContactCategory>[] = CONTACT_CATEGORIES.map((cat) => ({
+  label: cat,
+  value: cat,
+}));
 
 export interface ContactSearchPickerProps {
   contacts: Contact[];
@@ -274,17 +280,12 @@ export const ContactSearchPicker: React.FC<ContactSearchPickerProps> = ({
               <label className="block text-[10px] font-mono uppercase text-slate-500 font-semibold mb-0.5">
                 Category
               </label>
-              <select
+              <CustomSelectDropdown<ContactCategory>
                 value={newCategory}
-                onChange={(e) => setNewCategory(e.target.value as ContactCategory)}
-                className="w-full bg-white text-slate-900 px-2 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:border-blue-500 text-xs font-medium cursor-pointer"
-              >
-                {CONTACT_CATEGORIES.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
-                  </option>
-                ))}
-              </select>
+                onChange={setNewCategory}
+                options={categoryOptions}
+                size="sm"
+              />
             </div>
           </div>
 

@@ -1,6 +1,7 @@
 import React from 'react';
 import { UploadCloud, Trash2, ArrowRight, Sparkles, X, Users, Briefcase } from 'lucide-react';
 import { Application, Contact } from '../types';
+import { useEscapeKey } from '../lib/useEscapeKey';
 
 interface GuestMigrationModalProps {
   isOpen: boolean;
@@ -20,6 +21,9 @@ export const GuestMigrationModal: React.FC<GuestMigrationModalProps> = ({
   onClose,
 }) => {
   const [isImporting, setIsImporting] = React.useState(false);
+
+  // Close on Escape key (stack-aware)
+  useEscapeKey(onClose, isOpen);
 
   if (!isOpen || (guestApplications.length === 0 && guestContacts.length === 0)) return null;
 

@@ -1302,7 +1302,6 @@ function TrackletAppContent() {
         onDeleteContact={handleDeleteContact}
         onUnlinkFromApp={handleUnlinkContact}
         onSelectApplication={(appId) => {
-          setSelectedContactId(null);
           setSelectedAppId(appId);
         }}
       />

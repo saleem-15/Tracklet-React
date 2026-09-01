@@ -8,6 +8,7 @@ import { AddApplicationContactsSection } from './add-modal/AddApplicationContact
 import { AddApplicationNotesSection } from './add-modal/AddApplicationNotesSection';
 import { AddApplicationFooter } from './add-modal/AddApplicationFooter';
 import { UnsavedChangesPrompt } from './detail/UnsavedChangesPrompt';
+import { useEscapeKey } from '../lib/useEscapeKey';
 
 export interface AddApplicationModalProps {
   isOpen: boolean;
@@ -63,13 +64,15 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
   const dialogRef = React.useRef<HTMLDivElement>(null);
   const previousFocusRef = React.useRef<HTMLElement | null>(null);
 
+  useEscapeKey(handleRequestClose, isOpen && !showUnsavedPrompt);
+
   useEffect(() => {
     if (!isOpen) return;
 
-    // Save previously focused element
+    // Save active element to restore focus on close
     previousFocusRef.current = document.activeElement as HTMLElement | null;
 
-    // Move focus to first focusable input or button inside dialog
+    // Auto-focus first input field after animation mount
     const timer = setTimeout(() => {
       if (dialogRef.current) {
         const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
@@ -82,9 +85,7 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
     }, 50);
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        handleRequestClose();
-      } else if (e.key === 'Tab' && dialogRef.current) {
+      if (e.key === 'Tab' && dialogRef.current) {
         const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
           'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
         );
@@ -109,7 +110,7 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
         previousFocusRef.current.focus();
       }
     };
-  }, [isOpen, onClose, isDirty]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 

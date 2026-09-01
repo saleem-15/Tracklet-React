@@ -18,6 +18,7 @@ import { ActiveTab, Application, Contact, ExpiryNotificationSettings } from '../
 import { User } from '../lib/firebase';
 import { getExpiringSoonTasks } from '../lib/expiryUtils';
 import { getContactsFollowUpDueSoon } from '../lib/contactUtils';
+import { useEscapeKey } from '../lib/useEscapeKey';
 import { ACTIVE_STATUSES } from '../lib/constants';
 
 interface SidebarProps {
@@ -55,16 +56,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
     }
   });
 
-  // Handle escape key to close mobile drawer
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isMobileOpen && onCloseMobile) {
-        onCloseMobile();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isMobileOpen, onCloseMobile]);
+  // Handle escape key to close mobile drawer (stack-aware)
+  useEscapeKey(() => {
+    if (onCloseMobile) onCloseMobile();
+  }, isMobileOpen);
 
   // Lock body scroll on mobile when drawer is open
   useEffect(() => {

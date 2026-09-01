@@ -18,6 +18,7 @@ import { Application, ApplicationStatus, JobPlatform } from '../types';
 import { CustomSelectDropdown, SelectOption } from './CustomSelectDropdown';
 import { CloseIconButton } from './IconButton';
 import { UI_TOKENS } from '../theme/tokens';
+import { useEscapeKey } from '../lib/useEscapeKey';
 import { 
   parseRawCSV, 
   autoDetectFieldMapping, 
@@ -73,6 +74,9 @@ export const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
   const modalRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
 
+  // Stack-aware escape key handler
+  useEscapeKey(onClose, isOpen);
+
   React.useEffect(() => {
     if (!isOpen) return;
 
@@ -92,9 +96,7 @@ export const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
     }, 50);
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose();
-      } else if (e.key === 'Tab' && modalRef.current) {
+      if (e.key === 'Tab' && modalRef.current) {
         const focusable = modalRef.current.querySelectorAll<HTMLElement>(
           'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
         );
@@ -119,7 +121,7 @@ export const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
         previousFocusRef.current.focus();
       }
     };
-  }, [isOpen, onClose]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 

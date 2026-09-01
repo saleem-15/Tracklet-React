@@ -31,6 +31,8 @@ import {
 } from '../lib/contactUtils';
 import { LinkifiedText } from './LinkifiedText';
 import { ContactModal } from './contacts/ContactModal';
+import { RichTextEditor } from './editor';
+import { useEscapeKey } from '../lib/useEscapeKey';
 
 export interface ContactDetailPanelProps {
   contact: Contact | null;
@@ -55,6 +57,9 @@ export const ContactDetailPanel: React.FC<ContactDetailPanelProps> = ({
   const [copiedPhone, setCopiedPhone] = useState(false);
   const [inlineNotes, setInlineNotes] = useState('');
   const [isSavingNotes, setIsSavingNotes] = useState(false);
+
+  // Close drawer on Escape key when no child edit modal is active
+  useEscapeKey(onClose, Boolean(contact) && !isEditing);
 
   useEffect(() => {
     if (contact) {
@@ -97,7 +102,7 @@ export const ContactDetailPanel: React.FC<ContactDetailPanelProps> = ({
   };
 
   const handleNavigateToApp = (appId: string) => {
-    onClose();
+    // Open the application detail modal layered on top; contact drawer remains active underneath
     onSelectApplication(appId);
   };
 
@@ -107,7 +112,7 @@ export const ContactDetailPanel: React.FC<ContactDetailPanelProps> = ({
         role="dialog"
         aria-modal="true"
         aria-label={`Contact Profile - ${contact.name}`}
-        className="fixed inset-0 z-50 flex justify-end bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200 select-none"
+        className="fixed inset-0 z-[45] flex justify-end bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200 select-none"
         onClick={onClose}
       >
         <div
@@ -366,7 +371,7 @@ export const ContactDetailPanel: React.FC<ContactDetailPanelProps> = ({
               </div>
             </div>
 
-            {/* Notes & Meeting Context */}
+            {/* Notes & Meeting Context using shared RichTextEditor */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <label className="block text-[11px] font-mono uppercase tracking-wider text-slate-500 font-semibold">
@@ -383,14 +388,18 @@ export const ContactDetailPanel: React.FC<ContactDetailPanelProps> = ({
                   </button>
                 )}
               </div>
-              <textarea
-                value={inlineNotes}
-                onChange={(e) => setInlineNotes(e.target.value)}
-                onBlur={handleSaveNotes}
-                placeholder="Add meeting notes, discussion points, action items, referral updates..."
-                rows={5}
-                className="w-full bg-slate-50/70 focus:bg-white text-slate-900 p-3 rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500 text-xs leading-relaxed resize-none transition-colors"
-              />
+              <div className="bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden focus-within:border-blue-300 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
+                <RichTextEditor
+                  key={contact.id}
+                  value={inlineNotes}
+                  onChange={(val) => {
+                    setInlineNotes(val);
+                  }}
+                  ariaLabel="Contact Conversation Notes"
+                  minRows={6}
+                  placeholder="Add meeting notes, discussion points, action items, referral updates... Type / for commands"
+                />
+              </div>
             </div>
           </div>
         </div>

@@ -13,6 +13,7 @@ import { UnsavedChangesPrompt } from './detail/UnsavedChangesPrompt';
 import { ApplicationNotesSection } from './detail/ApplicationNotesSection';
 import { ApplicationQuickLinks } from './detail/ApplicationQuickLinks';
 import { resolveDraftOnOpen, clearNoteDraft } from '../lib/editor/noteDrafts';
+import { useEscapeKey } from '../lib/useEscapeKey';
 
 export interface ApplicationDetailPanelProps {
   app: Application | null;
@@ -225,17 +226,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
     onClose();
   }, [isEditingInfo, onClose, onUpdateApp]);
 
-  useEffect(() => {
-    if (!app) return;
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        if (showUnsavedPrompt) setShowUnsavedPrompt(false);
-        else handleRequestClose();
-      }
-    };
-    window.addEventListener('keydown', handleKey);
-    return () => window.removeEventListener('keydown', handleKey);
-  }, [app, showUnsavedPrompt, handleRequestClose]);
+  useEscapeKey(handleRequestClose, Boolean(app) && !showUnsavedPrompt);
 
   if (!app) return null;
 
