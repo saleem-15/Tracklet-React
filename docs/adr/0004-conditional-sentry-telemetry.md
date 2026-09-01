@@ -18,17 +18,17 @@ If Sentry is initialized unconditionally without verifying the presence of a Dat
 
 ## Decision
 
-1. **Explicit DSN Presence Guard in `src/instrument.ts`**:
-   - The Sentry initialization strictly inspects `const dsn = import.meta.env.VITE_SENTRY_DSN;`.
+1. **Explicit DSN & Production Mode Guard in `src/instrument.ts`**:
+   - The Sentry initialization strictly inspects `const dsn = import.meta.env.VITE_SENTRY_DSN;` and `const isProd = import.meta.env.PROD;`.
    - Sentry is initialized with:
      ```typescript
      Sentry.init({
        dsn: dsn || undefined,
-       enabled: Boolean(dsn),
+       enabled: Boolean(dsn) && isProd,
        ...
      });
      ```
-   - When `dsn` is omitted, empty, or undefined, Sentry enters a passive, zero-overhead no-op state. Tracing listeners, DOM recording workers, and network transports remain completely inactive.
+   - In local development or when `dsn` is omitted, Sentry enters a passive, zero-overhead no-op state. Tracing listeners, DOM recording workers, and network transports remain completely inactive.
 
 2. **Safe Code-Level Telemetry Invocations**:
    - Calls to `Sentry.captureReactException(error, errorInfo)` in `ErrorBoundary.tsx`, `Sentry.setUser(...)` in `AuthContext.tsx`, and `reactErrorHandler()` in `main.tsx` remain in the codebase.
