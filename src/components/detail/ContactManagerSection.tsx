@@ -25,7 +25,7 @@ export const ContactManagerSection: React.FC<ContactManagerSectionProps> = ({
   onEditContact,
   onSelectContact,
 }) => {
-  const [showAttachPicker, setShowAttachPicker] = useState(false);
+  const [showLinkPicker, setShowLinkPicker] = useState(false);
   const [copiedPhoneId, setCopiedPhoneId] = useState<string | null>(null);
 
   // Resolve linked contacts (combining contactIds lookup with any un-migrated legacy embedded contacts)
@@ -49,7 +49,7 @@ export const ContactManagerSection: React.FC<ContactManagerSectionProps> = ({
 
   const handleSelectToLink = async (contact: Contact) => {
     await onLinkContact(contact.id);
-    setShowAttachPicker(false);
+    setShowLinkPicker(false);
   };
 
   return (
@@ -65,22 +65,22 @@ export const ContactManagerSection: React.FC<ContactManagerSectionProps> = ({
 
         <button
           type="button"
-          onClick={() => setShowAttachPicker(!showAttachPicker)}
+          onClick={() => setShowLinkPicker(!showLinkPicker)}
           className="flex items-center gap-1 text-[11px] font-mono font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded-lg border border-blue-200/60 cursor-pointer transition-colors"
         >
-          {showAttachPicker ? (
+          {showLinkPicker ? (
             'Close'
           ) : (
             <>
               <UserPlus className="w-3 h-3" />
-              <span>Attach Contact</span>
+              <span>Link Contact</span>
             </>
           )}
         </button>
       </div>
 
-      {/* Attach Picker Combobox */}
-      {showAttachPicker && (
+      {/* Link Picker Combobox */}
+      {showLinkPicker && (
         <div className="p-3 bg-slate-50/80 rounded-xl border border-slate-200/90 shadow-2xs">
           <ContactSearchPicker
             contacts={allContacts}
@@ -88,9 +88,9 @@ export const ContactManagerSection: React.FC<ContactManagerSectionProps> = ({
             onSelectContact={handleSelectToLink}
             onCreateAndLink={async (data) => {
               await onCreateAndLinkContact(data);
-              setShowAttachPicker(false);
+              setShowLinkPicker(false);
             }}
-            onCancel={() => setShowAttachPicker(false)}
+            onCancel={() => setShowLinkPicker(false)}
           />
         </div>
       )}
@@ -98,8 +98,11 @@ export const ContactManagerSection: React.FC<ContactManagerSectionProps> = ({
       {/* Linked Contacts List */}
       <div className="rounded-xl border border-slate-200/80 divide-y divide-slate-100 overflow-hidden bg-white shadow-2xs">
         {linkedContacts.length > 0 ? (
-          linkedContacts.map((contact, idx) => {
-            const avatarColor = CONTACT_AVATAR_COLORS[idx % CONTACT_AVATAR_COLORS.length];
+          linkedContacts.map((contact) => {
+            const colorIndex = (contact.id || contact.name)
+              .split('')
+              .reduce((acc, char) => acc + char.charCodeAt(0), 0) % CONTACT_AVATAR_COLORS.length;
+            const avatarColor = CONTACT_AVATAR_COLORS[colorIndex];
             const category = contact.category || 'Other';
             const categoryStyle = CONTACT_CATEGORY_STYLES[category] || CONTACT_CATEGORY_STYLES.Other;
 
@@ -216,15 +219,15 @@ export const ContactManagerSection: React.FC<ContactManagerSectionProps> = ({
               </div>
             );
           })
-        ) : !showAttachPicker ? (
+        ) : !showLinkPicker ? (
           <div className="text-slate-500 font-mono text-[11px] text-center py-4">
-            No contacts attached yet.{' '}
+            No contacts linked yet.{' '}
             <button
               type="button"
-              onClick={() => setShowAttachPicker(true)}
+              onClick={() => setShowLinkPicker(true)}
               className="text-blue-600 hover:underline cursor-pointer font-semibold ml-1"
             >
-              Attach one
+              Link one
             </button>
           </div>
         ) : null}

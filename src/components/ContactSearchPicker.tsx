@@ -210,7 +210,7 @@ export const ContactSearchPicker: React.FC<ContactSearchPickerProps> = ({
                           {contact.category || 'Other'}
                         </span>
                         <span className="text-[11px] font-mono text-blue-600 font-semibold">
-                          Attach
+                          Link
                         </span>
                       </div>
                     </div>
@@ -222,7 +222,7 @@ export const ContactSearchPicker: React.FC<ContactSearchPickerProps> = ({
                 </div>
               ) : (
                 <div className="p-3 text-center text-xs text-slate-500 font-mono">
-                  No contacts available to attach.
+                  No contacts available to link.
                 </div>
               )}
 
@@ -251,7 +251,7 @@ export const ContactSearchPicker: React.FC<ContactSearchPickerProps> = ({
           <div className="flex items-center justify-between border-b border-blue-200/60 pb-2">
             <h4 className="text-xs font-bold text-slate-900 font-heading flex items-center gap-1.5">
               <UserPlus className="w-3.5 h-3.5 text-blue-600" />
-              <span>Create &amp; Attach New Contact</span>
+              <span>Create &amp; Link New Contact</span>
             </h4>
             <button
               type="button"
@@ -357,7 +357,7 @@ export const ContactSearchPicker: React.FC<ContactSearchPickerProps> = ({
               className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold text-xs rounded-lg shadow-2xs transition-all cursor-pointer flex items-center gap-1"
             >
               <Check className="w-3.5 h-3.5 stroke-[2.5]" />
-              <span>{isSubmittingNew ? 'Saving...' : 'Save & Attach'}</span>
+              <span>{isSubmittingNew ? 'Saving...' : 'Save & Link'}</span>
             </button>
           </div>
         </form>

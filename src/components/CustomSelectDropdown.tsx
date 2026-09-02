@@ -127,9 +127,9 @@ export function CustomSelectDropdown<T extends string | number = string>({
 
   const getSizeStyles = () => {
     if (size === 'sm') {
-      return `${UI_TOKENS.controlSm} px-2.5 text-xs`;
+      return 'h-[32px] rounded-lg px-2.5 text-xs';
     }
-    return `${UI_TOKENS.controlMd} px-3 text-xs`;
+    return 'h-[38px] rounded-xl px-3 text-xs';
   };
 
   const accessibleLabel = labelPrefix

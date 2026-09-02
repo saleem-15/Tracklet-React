@@ -91,8 +91,7 @@ export const ContactsView: React.FC<ContactsViewProps> = ({
   };
 
   const handleOpenEdit = (contact: Contact) => {
-    setEditingContact(contact);
-    setIsModalOpen(true);
+    onSelectContact(contact.id);
   };
 
   const handleSaveModal = async (contactData: Omit<Contact, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => {

@@ -62,7 +62,7 @@ export const AddApplicationContactsSection: React.FC<AddApplicationContactsSecti
           onClick={() => setShowPicker(!showPicker)}
           className="flex items-center gap-1 text-[11px] font-mono font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded-lg border border-blue-200/60 cursor-pointer transition-colors"
         >
-          {showPicker ? 'Close' : '+ Attach Contact'}
+          {showPicker ? 'Close' : '+ Link Contact'}
         </button>
       </div>
 
@@ -80,8 +80,11 @@ export const AddApplicationContactsSection: React.FC<AddApplicationContactsSecti
 
       <div className="rounded-xl border border-slate-200/80 divide-y divide-slate-100 overflow-hidden bg-white shadow-2xs">
         {contacts.length > 0 ? (
-          contacts.map((c, idx) => {
-            const avatarColor = CONTACT_AVATAR_COLORS[idx % CONTACT_AVATAR_COLORS.length];
+          contacts.map((c) => {
+            const colorIndex = (c.id || c.name)
+              .split('')
+              .reduce((acc, char) => acc + char.charCodeAt(0), 0) % CONTACT_AVATAR_COLORS.length;
+            const avatarColor = CONTACT_AVATAR_COLORS[colorIndex];
             const category = c.category || 'Other';
             const categoryStyle = CONTACT_CATEGORY_STYLES[category] || CONTACT_CATEGORY_STYLES.Other;
 
@@ -156,7 +159,7 @@ export const AddApplicationContactsSection: React.FC<AddApplicationContactsSecti
           })
         ) : !showPicker ? (
           <div className="text-slate-500 font-mono text-[11px] text-center py-3.5">
-            No contacts attached yet.
+            No contacts linked yet.
           </div>
         ) : null}
       </div>

@@ -105,17 +105,20 @@ export const ContactTable: React.FC<ContactTableProps> = ({
                   onClick={() => onSortChange('nextFollowUpDate')}
                   className="flex items-center gap-1.5 hover:text-slate-900 transition-colors cursor-pointer group"
                 >
-                  <span>Next Follow-up</span>
+                  <span>Follow-up</span>
                   {renderSortIcon('nextFollowUpDate')}
                 </button>
               </th>
-              <th className="py-3 px-4">Linked Jobs</th>
+              <th className="py-3 px-4">Linked Applications</th>
               <th className="py-3 px-4 text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 font-sans">
-            {contacts.map((contact, idx) => {
-              const avatarColor = CONTACT_AVATAR_COLORS[idx % CONTACT_AVATAR_COLORS.length];
+            {contacts.map((contact) => {
+              const colorIndex = (contact.id || contact.name)
+                .split('')
+                .reduce((acc, char) => acc + char.charCodeAt(0), 0) % CONTACT_AVATAR_COLORS.length;
+              const avatarColor = CONTACT_AVATAR_COLORS[colorIndex];
               const category = contact.category || 'Other';
               const categoryStyle = CONTACT_CATEGORY_STYLES[category] || CONTACT_CATEGORY_STYLES.Other;
               const linkedCompanies = getApplicationNames(contact.applicationIds);

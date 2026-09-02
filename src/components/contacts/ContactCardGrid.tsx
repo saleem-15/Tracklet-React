@@ -55,8 +55,11 @@ export const ContactCardGrid: React.FC<ContactCardGridProps> = ({
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 animate-in fade-in duration-200">
-      {contacts.map((contact, idx) => {
-        const avatarColor = CONTACT_AVATAR_COLORS[idx % CONTACT_AVATAR_COLORS.length];
+      {contacts.map((contact) => {
+        const colorIndex = (contact.id || contact.name)
+          .split('')
+          .reduce((acc, char) => acc + char.charCodeAt(0), 0) % CONTACT_AVATAR_COLORS.length;
+        const avatarColor = CONTACT_AVATAR_COLORS[colorIndex];
         const category = contact.category || 'Other';
         const categoryStyle = CONTACT_CATEGORY_STYLES[category] || CONTACT_CATEGORY_STYLES.Other;
         const linkedCompanies = getApplicationNames(contact.applicationIds);

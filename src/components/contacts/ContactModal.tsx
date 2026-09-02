@@ -3,6 +3,7 @@ import { X, User, Briefcase, Building2, Mail, Phone, Linkedin, Calendar, Check }
 import { Contact, ContactCategory, Application } from '../../types';
 import { CONTACT_CATEGORIES } from '../../lib/constants';
 import { CustomSelectDropdown, SelectOption } from '../CustomSelectDropdown';
+import { ApplicationSearchPicker } from '../ApplicationSearchPicker';
 import { RichTextEditor } from '../editor';
 import { useEscapeKey } from '../../lib/useEscapeKey';
 
@@ -114,7 +115,7 @@ export const ContactModal: React.FC<ContactModalProps> = ({
     <div
       role="dialog"
       aria-modal="true"
-      aria-label={editingContact ? 'Edit Contact' : 'Add New Contact'}
+      aria-label={editingContact ? 'Edit Contact' : 'New Contact'}
       className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200 overflow-y-auto"
       onClick={onClose}
     >
@@ -124,18 +125,13 @@ export const ContactModal: React.FC<ContactModalProps> = ({
       >
         {/* Header */}
         <div className="px-5 py-4 border-b border-slate-200/80 bg-slate-50/75 flex items-center justify-between">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-xl bg-blue-50 border border-blue-200/80 text-blue-600 flex items-center justify-center">
               <User className="w-4 h-4" />
             </div>
-            <div>
-              <h2 className="text-sm font-bold text-slate-900 font-heading">
-                {editingContact ? 'Edit Contact' : 'Add New Contact'}
-              </h2>
-              <p className="text-[11px] text-slate-500 font-mono">
-                {editingContact ? 'Update contact profile' : 'Add mentor, recruiter, or peer'}
-              </p>
-            </div>
+            <h2 className="text-sm font-bold text-slate-900 font-heading">
+              {editingContact ? 'Edit Contact' : 'New Contact'}
+            </h2>
           </div>
 
           <button
@@ -149,7 +145,7 @@ export const ContactModal: React.FC<ContactModalProps> = ({
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-5 space-y-4 max-h-[80vh] overflow-y-auto">
+        <form onSubmit={handleSubmit} className="p-5 space-y-3.5 max-h-[80vh] overflow-y-auto">
           {error && (
             <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs">
               {error}
@@ -159,8 +155,8 @@ export const ContactModal: React.FC<ContactModalProps> = ({
           {/* Name & Category */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1">
-              <label className="block text-[11px] font-mono uppercase tracking-wider text-slate-500 font-semibold">
-                Full Name *
+              <label className="block text-xs font-semibold text-slate-700">
+                Name <span className="text-rose-500">*</span>
               </label>
               <div className="relative">
                 <input
@@ -168,57 +164,58 @@ export const ContactModal: React.FC<ContactModalProps> = ({
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Sarah Connor"
-                  className="w-full bg-slate-50/60 text-slate-900 placeholder-slate-400 pl-8 pr-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500 focus:bg-white text-xs font-medium"
+                  placeholder="Jane Doe"
+                  className="w-full bg-slate-50/60 text-slate-900 placeholder-slate-400 pl-8 pr-3 h-[38px] rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500 focus:bg-white text-xs font-medium transition-all"
                 />
-                <User className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
+                <User className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               </div>
             </div>
 
             <div className="space-y-1">
-              <label className="block text-[11px] font-mono uppercase tracking-wider text-slate-500 font-semibold">
+              <label className="block text-xs font-semibold text-slate-700">
                 Category
               </label>
               <CustomSelectDropdown<ContactCategory>
                 value={category}
                 onChange={setCategory}
                 options={categoryOptions}
-                size="sm"
+                size="md"
+                className="w-full"
               />
             </div>
           </div>
 
-          {/* Role & Organization */}
+          {/* Role & Company */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1">
-              <label className="block text-[11px] font-mono uppercase tracking-wider text-slate-500 font-semibold">
-                Role / Title
+              <label className="block text-xs font-semibold text-slate-700">
+                Role
               </label>
               <div className="relative">
                 <input
                   type="text"
                   value={role}
                   onChange={(e) => setRole(e.target.value)}
-                  placeholder="e.g. Senior Recruiter"
-                  className="w-full bg-slate-50/60 text-slate-900 placeholder-slate-400 pl-8 pr-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500 focus:bg-white text-xs"
+                  placeholder="e.g. Recruiter"
+                  className="w-full bg-slate-50/60 text-slate-900 placeholder-slate-400 pl-8 pr-3 h-[38px] rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500 focus:bg-white text-xs transition-all"
                 />
-                <Briefcase className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
+                <Briefcase className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               </div>
             </div>
 
             <div className="space-y-1">
-              <label className="block text-[11px] font-mono uppercase tracking-wider text-slate-500 font-semibold">
-                Organization / Company
+              <label className="block text-xs font-semibold text-slate-700">
+                Company
               </label>
               <div className="relative">
                 <input
                   type="text"
                   value={organization}
                   onChange={(e) => setOrganization(e.target.value)}
-                  placeholder="e.g. Stripe / TAP Program"
-                  className="w-full bg-slate-50/60 text-slate-900 placeholder-slate-400 pl-8 pr-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500 focus:bg-white text-xs"
+                  placeholder="e.g. Google"
+                  className="w-full bg-slate-50/60 text-slate-900 placeholder-slate-400 pl-8 pr-3 h-[38px] rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500 focus:bg-white text-xs transition-all"
                 />
-                <Building2 className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
+                <Building2 className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               </div>
             </div>
           </div>
@@ -226,24 +223,24 @@ export const ContactModal: React.FC<ContactModalProps> = ({
           {/* Email & Phone */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1">
-              <label className="block text-[11px] font-mono uppercase tracking-wider text-slate-500 font-semibold">
-                Email Address
+              <label className="block text-xs font-semibold text-slate-700">
+                Email
               </label>
               <div className="relative">
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="sarah@example.com"
-                  className="w-full bg-slate-50/60 text-slate-900 placeholder-slate-400 pl-8 pr-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500 focus:bg-white text-xs font-mono"
+                  placeholder="jane@company.com"
+                  className="w-full bg-slate-50/60 text-slate-900 placeholder-slate-400 pl-8 pr-3 h-[38px] rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500 focus:bg-white text-xs font-mono transition-all"
                 />
-                <Mail className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
+                <Mail className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               </div>
             </div>
 
             <div className="space-y-1">
-              <label className="block text-[11px] font-mono uppercase tracking-wider text-slate-500 font-semibold">
-                Phone Number
+              <label className="block text-xs font-semibold text-slate-700">
+                Phone
               </label>
               <div className="relative">
                 <input
@@ -251,9 +248,9 @@ export const ContactModal: React.FC<ContactModalProps> = ({
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="+1 (555) 000-0000"
-                  className="w-full bg-slate-50/60 text-slate-900 placeholder-slate-400 pl-8 pr-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500 focus:bg-white text-xs font-mono"
+                  className="w-full bg-slate-50/60 text-slate-900 placeholder-slate-400 pl-8 pr-3 h-[38px] rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500 focus:bg-white text-xs font-mono transition-all"
                 />
-                <Phone className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
+                <Phone className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               </div>
             </div>
           </div>
@@ -261,82 +258,66 @@ export const ContactModal: React.FC<ContactModalProps> = ({
           {/* LinkedIn & Follow-up Date */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1">
-              <label className="block text-[11px] font-mono uppercase tracking-wider text-slate-500 font-semibold">
-                LinkedIn Profile URL
+              <label className="block text-xs font-semibold text-slate-700">
+                LinkedIn
               </label>
               <div className="relative">
                 <input
                   type="url"
                   value={linkedIn}
                   onChange={(e) => setLinkedIn(e.target.value)}
-                  placeholder="https://linkedin.com/in/..."
-                  className="w-full bg-slate-50/60 text-slate-900 placeholder-slate-400 pl-8 pr-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500 focus:bg-white text-xs font-mono"
+                  placeholder="linkedin.com/in/username"
+                  className="w-full bg-slate-50/60 text-slate-900 placeholder-slate-400 pl-8 pr-3 h-[38px] rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500 focus:bg-white text-xs font-mono transition-all"
                 />
-                <Linkedin className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
+                <Linkedin className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               </div>
             </div>
 
             <div className="space-y-1">
-              <label className="block text-[11px] font-mono uppercase tracking-wider text-slate-500 font-semibold">
-                Next Follow-up Date
+              <label className="block text-xs font-semibold text-slate-700">
+                Follow-up Date
               </label>
               <div className="relative">
                 <input
                   type="date"
                   value={nextFollowUpDate}
                   onChange={(e) => setNextFollowUpDate(e.target.value)}
-                  className="w-full bg-slate-50/60 text-slate-900 pl-8 pr-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500 focus:bg-white text-xs font-mono"
+                  className="w-full bg-slate-50/60 text-slate-900 pl-8 pr-3 h-[38px] rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500 focus:bg-white text-xs font-mono cursor-pointer transition-all"
                 />
-                <Calendar className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
+                <Calendar className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               </div>
             </div>
           </div>
 
+          {/* Linked Applications with Search Picker */}
+          {applications.length > 0 && (
+            <div className="space-y-1.5 pt-0.5">
+              <label className="block text-xs font-semibold text-slate-700">
+                Link Applications {selectedAppIds.length > 0 && <span className="text-slate-400 font-normal">({selectedAppIds.length})</span>}
+              </label>
+              <ApplicationSearchPicker
+                applications={applications}
+                selectedAppIds={selectedAppIds}
+                onToggleApp={toggleApplicationLink}
+              />
+            </div>
+          )}
+
           {/* Notes using shared RichTextEditor */}
           <div className="space-y-1">
-            <label className="block text-[11px] font-mono uppercase tracking-wider text-slate-500 font-semibold">
-              Notes &amp; Context
+            <label className="block text-xs font-semibold text-slate-700">
+              Notes
             </label>
             <div className="bg-white rounded-xl border border-slate-200 overflow-hidden focus-within:border-blue-300 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
               <RichTextEditor
                 value={notes}
                 onChange={setNotes}
                 ariaLabel="Contact Notes"
-                minRows={4}
-                placeholder="Meeting takeaways, mentorship topics, referral details... Type / for commands"
+                minRows={3}
+                placeholder="Add notes..."
               />
             </div>
           </div>
-
-          {/* Linked Applications */}
-          {applications.length > 0 && (
-            <div className="space-y-1.5 pt-1">
-              <label className="block text-[11px] font-mono uppercase tracking-wider text-slate-500 font-semibold">
-                Link to Job Applications ({selectedAppIds.length} selected)
-              </label>
-              <div className="max-h-28 overflow-y-auto p-2 bg-slate-50/75 rounded-xl border border-slate-200/80 flex flex-wrap gap-1.5">
-                {applications.map((app) => {
-                  const isSelected = selectedAppIds.includes(app.id);
-                  return (
-                    <button
-                      key={app.id}
-                      type="button"
-                      onClick={() => toggleApplicationLink(app.id)}
-                      className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium border transition-colors cursor-pointer ${
-                        isSelected
-                          ? 'bg-blue-600 text-white border-blue-600 shadow-2xs'
-                          : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
-                      }`}
-                    >
-                      {isSelected && <Check className="w-3 h-3 stroke-[2.5]" />}
-                      <span>{app.company}</span>
-                      <span className="opacity-75 text-[10px]">({app.role})</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
 
           {/* Footer Actions */}
           <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
@@ -350,7 +331,7 @@ export const ContactModal: React.FC<ContactModalProps> = ({
             <button
               type="submit"
               disabled={isSubmitting || !name.trim()}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold text-xs rounded-xl shadow-md shadow-blue-500/20 transition-all cursor-pointer min-h-[36px]"
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold text-xs rounded-xl shadow-xs transition-all cursor-pointer min-h-[36px]"
             >
               {isSubmitting ? 'Saving...' : editingContact ? 'Save Changes' : 'Create Contact'}
             </button>
