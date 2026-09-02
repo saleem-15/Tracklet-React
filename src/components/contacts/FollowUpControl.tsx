@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Clock, Calendar, AlertCircle, X, Plus } from 'lucide-react';
-import { getHumanFollowUpInfo } from '../../lib/contactUtils';
+import { getHumanFollowUpInfo, getPresetDate } from '../../lib/contactUtils';
 
 export interface FollowUpControlProps {
   dueDateStr?: string;
@@ -13,12 +13,6 @@ const PRESETS = [
   { label: '+1w', days: 7 },
   { label: '+2w', days: 14 },
 ];
-
-function getPresetDate(daysAhead: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() + daysAhead);
-  return d.toISOString().split('T')[0];
-}
 
 export const FollowUpControl: React.FC<FollowUpControlProps> = ({
   dueDateStr,

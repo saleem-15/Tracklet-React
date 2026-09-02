@@ -75,8 +75,17 @@ export const ContactCardGrid: React.FC<ContactCardGridProps> = ({
         return (
           <div
             key={contact.id}
+            role="button"
+            tabIndex={0}
             onClick={() => onSelectContact(contact.id)}
-            className="group relative flex flex-col justify-between rounded-2xl bg-white border border-slate-200/85 hover:border-blue-300/80 shadow-2xs hover:shadow-md hover:shadow-blue-500/5 transition-all p-4.5 cursor-pointer text-left overflow-hidden"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onSelectContact(contact.id);
+              }
+            }}
+            aria-label={`View contact ${contact.name}`}
+            className="group relative flex flex-col justify-between rounded-2xl bg-white border border-slate-200/85 hover:border-blue-300/80 focus:outline-none focus:ring-2 focus:ring-blue-500/20 shadow-2xs hover:shadow-md hover:shadow-blue-500/5 transition-all p-4.5 cursor-pointer text-left overflow-hidden"
           >
             <div>
               {/* Top Row: Avatar + Category Chip + Menu */}

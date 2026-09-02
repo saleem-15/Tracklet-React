@@ -30,8 +30,10 @@ rm src/lib/contactMigration.ts
   setContacts(loadedContacts);
   ```
 
-### 3. Clean up `Application` Interface in `src/types.ts`
-- Remove `contacts?: Contact[];` from `Application` interface.
+### 3. Clean up `Application.contacts` References and `Application` Interface
+- In `src/lib/applicationRepository.ts`: Remove `appItem.contacts` read in `batchImport`.
+- In `src/components/ApplicationDetailPanel.tsx`: Remove `legacyContacts={app.contacts || []}` passed to `ContactManagerSection`.
+- In `src/types.ts`: Remove `contacts?: Contact[];` from `Application` interface.
 
 ### 4. Verify Build
 ```bash

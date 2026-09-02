@@ -3,6 +3,7 @@ import { Search, UserPlus, X, Check, Building2, Briefcase, ChevronDown } from 'l
 import { Contact, ContactCategory } from '../types';
 import { CONTACT_CATEGORIES, CONTACT_CATEGORY_STYLES, CONTACT_AVATAR_COLORS, getInitials } from '../lib/constants';
 import { CustomSelectDropdown, SelectOption } from './CustomSelectDropdown';
+import { useEscapeKey } from '../lib/useEscapeKey';
 
 const categoryOptions: SelectOption<ContactCategory>[] = CONTACT_CATEGORIES.map((cat) => ({
   label: cat,
@@ -39,6 +40,16 @@ export const ContactSearchPicker: React.FC<ContactSearchPickerProps> = ({
   const [newEmail, setNewEmail] = useState('');
   const [newPhone, setNewPhone] = useState('');
   const [isSubmittingNew, setIsSubmittingNew] = useState(false);
+
+  useEscapeKey(() => {
+    if (isCreatingInline) {
+      setIsCreatingInline(false);
+    } else if (onCancel) {
+      onCancel();
+    } else {
+      setIsOpen(false);
+    }
+  }, isOpen || isCreatingInline);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);

@@ -182,6 +182,7 @@ function TrackletAppContent() {
           loadedApps = appsResult.value;
         } else {
           console.error('Failed to load applications from Firestore:', appsResult.reason);
+          throw appsResult.reason;
         }
 
         if (contactsResult.status === 'fulfilled') {
@@ -192,17 +193,17 @@ function TrackletAppContent() {
         }
 
         // Automatic legacy embedded contact migration
-        const { migratedContacts, updatedApplications, migratedCount } = migrateLegacyEmbeddedContacts(
+        const { migratedContacts, updatedApplications, hasChanges } = migrateLegacyEmbeddedContacts(
           loadedApps,
           loadedContacts
         );
 
-        if (migratedCount > 0) {
+        if (hasChanges) {
           loadedApps = updatedApplications;
           loadedContacts = migratedContacts;
-          // Asynchronously persist any newly migrated standalone contacts
+          // Asynchronously persist any newly migrated standalone contacts preserving IDs
           for (const newC of migratedContacts) {
-            ContactRepository.addContact(newC, user.uid).catch((err) => {
+            ContactRepository.upsertContact(newC, user.uid).catch((err) => {
               console.warn('Could not save migrated contact to Firestore:', err);
             });
           }
@@ -398,7 +399,6 @@ function TrackletAppContent() {
         const result = await ContactRepository.migrateGuestContacts(user.uid, migrationContacts);
         importedContacts = result.migratedContacts;
         contactIdMap = result.idMap;
-        setContacts((prev) => [...importedContacts, ...prev]);
         localStorage.removeItem(LOCAL_STORAGE_KEYS.GUEST_CONTACTS);
       }
 
@@ -415,6 +415,31 @@ function TrackletAppContent() {
         const imported = await ApplicationRepository.batchImport(remappedApps, user.uid);
         setApplications((prev) => [...imported, ...prev]);
         localStorage.removeItem(LOCAL_STORAGE_KEYS.GUEST_APPS);
+
+        // Map old guest application ID -> new Firestore application ID
+        const appIdMap = new Map<string, string>();
+        migrationApps.forEach((oldApp, idx) => {
+          if (oldApp.id && imported[idx]) {
+            appIdMap.set(oldApp.id, imported[idx].id);
+          }
+        });
+
+        // Remap application IDs on imported contacts
+        if (appIdMap.size > 0 && importedContacts.length > 0) {
+          importedContacts = importedContacts.map((c) => {
+            const remappedAppIds = (c.applicationIds || []).map((aId) => appIdMap.get(aId) || aId);
+            return { ...c, applicationIds: remappedAppIds };
+          });
+          for (const c of importedContacts) {
+            ContactRepository.updateContact(c.id, { applicationIds: c.applicationIds }, user.uid).catch((err) => {
+              console.warn('Failed to update contact application links after guest migration:', err);
+            });
+          }
+        }
+      }
+
+      if (importedContacts.length > 0) {
+        setContacts((prev) => [...importedContacts, ...prev]);
       }
 
       setIsMigrationModalOpen(false);
@@ -676,9 +701,10 @@ function TrackletAppContent() {
           }
 
           if (user?.emailVerified) {
-            await ContactRepository.addContact(targetContact, user.uid);
+            await ContactRepository.upsertContact(targetContact, user.uid);
             for (const appId of linkedAppIds) {
-              await ContactRepository.linkContactToApplication(id, appId, user.uid);
+              const fullApp = applications.find((a) => a.id === appId);
+              await ContactRepository.linkContactToApplication(id, appId, user.uid, targetContact, fullApp);
             }
           }
           addToast('success', `Restored ${targetContact.name}`);
@@ -720,6 +746,8 @@ function TrackletAppContent() {
 
   // Link Contact to Application
   const handleLinkContact = async (contactId: string, appId: string) => {
+    const prevContacts = contacts;
+    const prevApps = applications;
     const targetContact = contacts.find((c) => c.id === contactId);
     const targetApp = applications.find((a) => a.id === appId);
 
@@ -757,12 +785,20 @@ function TrackletAppContent() {
       addToast('success', 'Contact Linked', cName);
     } catch (err) {
       console.error('Failed to link contact:', err);
+      setContacts(prevContacts);
+      setApplications(prevApps);
+      if (!user?.emailVerified) {
+        ContactRepository.saveGuestContacts(prevContacts);
+        ApplicationRepository.saveGuestApplications(prevApps);
+      }
       addToast('error', 'Link Failed', 'Could not link contact.');
     }
   };
 
   // Unlink Contact from Application
   const handleUnlinkContact = async (contactId: string, appId: string) => {
+    const prevContacts = contacts;
+    const prevApps = applications;
     const targetContact = contacts.find((c) => c.id === contactId);
     const targetApp = applications.find((a) => a.id === appId);
 
@@ -805,6 +841,12 @@ function TrackletAppContent() {
       });
     } catch (err) {
       console.error('Failed to unlink contact:', err);
+      setContacts(prevContacts);
+      setApplications(prevApps);
+      if (!user?.emailVerified) {
+        ContactRepository.saveGuestContacts(prevContacts);
+        ApplicationRepository.saveGuestApplications(prevApps);
+      }
       addToast('error', 'Unlink Failed', 'Could not unlink contact.');
     }
   };
@@ -1329,6 +1371,7 @@ function TrackletAppContent() {
                 onSelectContact={(contactId) => setSelectedContactId(contactId)}
                 onOpenMobileSidebar={() => setIsMobileSidebarOpen(true)}
                 onShowToast={addToast}
+                expiryThresholdHours={expirySettings.expiryThresholdHours}
               />
             )}
 

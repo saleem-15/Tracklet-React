@@ -51,7 +51,7 @@ src/
 4. Update CSV export (`src/lib/exportCsv.ts`) and CSV import (`src/lib/importCsv.ts`).
 
 ### B. Creating New React Components & Canonical Shared Primitives
-- Keep components under **300 lines**. If a component exceeds 400 lines, extract logical sub-components.
+- Keep components under **300 lines**. If a component exceeds 300 lines, extract logical sub-components.
 - Always define a clear `Props` TypeScript interface.
 - Never use inline raw hex colors; use Tailwind utility classes aligned with the design tokens in `DESIGN.md`.
 - **Mandatory Canonical Shared Components**:

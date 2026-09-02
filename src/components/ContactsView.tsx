@@ -36,6 +36,7 @@ interface ContactsViewProps {
     title: string,
     description?: string
   ) => void;
+  expiryThresholdHours?: number;
 }
 
 export const ContactsView: React.FC<ContactsViewProps> = ({
@@ -47,6 +48,7 @@ export const ContactsView: React.FC<ContactsViewProps> = ({
   onSelectContact,
   onOpenMobileSidebar,
   onShowToast,
+  expiryThresholdHours = 48,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<ContactCategory | 'All'>('All');
@@ -91,7 +93,8 @@ export const ContactsView: React.FC<ContactsViewProps> = ({
   };
 
   const handleOpenEdit = (contact: Contact) => {
-    onSelectContact(contact.id);
+    setEditingContact(contact);
+    setIsModalOpen(true);
   };
 
   const handleSaveModal = async (contactData: Omit<Contact, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => {
@@ -102,16 +105,16 @@ export const ContactsView: React.FC<ContactsViewProps> = ({
     }
   };
 
-  // Follow-up due count (due within 48h or overdue within 120h)
+  // Follow-up due count (using configured thresholdHours or default 48h)
   const dueFollowUpsCount = useMemo(() => {
-    return getContactsFollowUpDueSoon(contacts, 48).length;
-  }, [contacts]);
+    return getContactsFollowUpDueSoon(contacts, expiryThresholdHours).length;
+  }, [contacts, expiryThresholdHours]);
 
   // Filter & Sort Contacts
   const filteredAndSortedContacts = useMemo(() => {
-    const filtered = filterContacts(contacts, searchQuery, selectedCategory, filterDueOnly);
+    const filtered = filterContacts(contacts, searchQuery, selectedCategory, filterDueOnly, expiryThresholdHours);
     return sortContacts(filtered, sortField, sortOrder);
-  }, [contacts, searchQuery, selectedCategory, filterDueOnly, sortField, sortOrder]);
+  }, [contacts, searchQuery, selectedCategory, filterDueOnly, sortField, sortOrder, expiryThresholdHours]);
 
   // Category counts
   const categoryCounts = useMemo(() => {

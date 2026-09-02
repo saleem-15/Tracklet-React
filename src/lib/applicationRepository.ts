@@ -13,52 +13,7 @@ import { Application, ApplicationStatus } from '../types';
 import { INITIAL_SAMPLE_APPLICATIONS } from './sampleData';
 import { LOCAL_STORAGE_KEYS, APPLICATION_STATUSES } from './constants';
 import { createStatusHistoryEntry, appendStatusHistory } from './historyService';
-
-/**
- * Strips undefined properties recursively so Firestore does not reject document writes.
- * Supports nested objects, array elements, and primitive values.
- */
-function sanitizeForFirestore<T extends Record<string, unknown>>(obj: T): Record<string, unknown> {
-  const result: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(obj)) {
-    if (value !== undefined && value !== null) {
-      if (Array.isArray(value)) {
-        // Recursively sanitize array elements that are objects, dropping nulls/undefineds
-        result[key] = value
-          .filter((item) => item !== undefined && item !== null)
-          .map((item) => {
-            if (typeof item === 'object' && !Array.isArray(item)) {
-              return sanitizeForFirestore(item as Record<string, unknown>);
-            }
-            return item;
-          });
-      } else if (typeof value === 'object') {
-        result[key] = sanitizeForFirestore(value as Record<string, unknown>);
-      } else {
-        result[key] = value;
-      }
-    }
-  }
-  return result;
-}
-
-/**
- * Helper to commit Firestore batch operations in safe chunks (< 500 operations per batch).
- */
-async function commitInChunks<T>(
-  items: T[],
-  operation: (batch: ReturnType<typeof writeBatch>, item: T) => void
-): Promise<void> {
-  const CHUNK_SIZE = 450;
-  for (let i = 0; i < items.length; i += CHUNK_SIZE) {
-    const chunk = items.slice(i, i + CHUNK_SIZE);
-    const batch = writeBatch(db);
-    for (const item of chunk) {
-      operation(batch, item);
-    }
-    await batch.commit();
-  }
-}
+import { sanitizeForFirestore, commitInChunks } from './firestoreUtils';
 
 export class ApplicationRepository {
   /**

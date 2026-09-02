@@ -35,7 +35,9 @@ if (typeof window !== 'undefined') {
  */
 export function useEscapeKey(handler: EscapeHandler, isActive: boolean = true): void {
   const handlerRef = useRef(handler);
-  handlerRef.current = handler;
+  useEffect(() => {
+    handlerRef.current = handler;
+  }, [handler]);
 
   useEffect(() => {
     if (!isActive) return;

@@ -20,10 +20,6 @@ import {
   CONTACT_CATEGORY_STYLES, 
   getInitials 
 } from '../../lib/constants';
-import { 
-  getContactFollowUpHoursRemaining, 
-  formatContactHoursLeft 
-} from '../../lib/contactUtils';
 import { normalizeUrl } from '../../lib/linkUtils';
 import { ContactSearchPicker } from '../ContactSearchPicker';
 import { CustomSelectDropdown, SelectOption } from '../CustomSelectDropdown';
@@ -48,18 +44,6 @@ const categoryOptions: SelectOption<ContactCategory>[] = CONTACT_CATEGORIES.map(
   value: cat,
 }));
 
-const FOLLOW_UP_PRESETS = [
-  { label: '+3d', days: 3 },
-  { label: '+1w', days: 7 },
-  { label: '+2w', days: 14 },
-];
-
-function getPresetDate(daysAhead: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() + daysAhead);
-  return d.toISOString().split('T')[0];
-}
-
 export const ContactManagerSection: React.FC<ContactManagerSectionProps> = ({
   allContacts = [],
   linkedContactIds = [],
@@ -68,6 +52,7 @@ export const ContactManagerSection: React.FC<ContactManagerSectionProps> = ({
   onUnlinkContact,
   onCreateAndLinkContact,
   onUpdateContact,
+  onEditContact,
   onSelectContact,
 }) => {
   const [showLinkPicker, setShowLinkPicker] = useState(false);
@@ -183,12 +168,6 @@ export const ContactManagerSection: React.FC<ContactManagerSectionProps> = ({
     );
   };
 
-  const handleApplyPresetFollowUp = (contactId: string, days: number) => {
-    if (!onUpdateContact) return;
-    const dateStr = getPresetDate(days);
-    onUpdateContact(contactId, { nextFollowUpDate: dateStr });
-  };
-
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
@@ -241,12 +220,6 @@ export const ContactManagerSection: React.FC<ContactManagerSectionProps> = ({
             const categoryStyle = CONTACT_CATEGORY_STYLES[category] || CONTACT_CATEGORY_STYLES.Other;
             const isExpanded = expandedContactIds.includes(contact.id);
             const isEditingThis = editingContactId === contact.id;
-
-            const followUpHours = contact.nextFollowUpDate
-              ? getContactFollowUpHoursRemaining(contact.nextFollowUpDate)
-              : null;
-            const isFollowUpDueSoon = followUpHours !== null && followUpHours <= 48 && followUpHours >= -120;
-            const isFollowUpOverdue = followUpHours !== null && followUpHours < 0;
 
             if (isEditingThis) {
               /* --- INLINE MINI-EDIT FORM --- */
@@ -449,11 +422,18 @@ export const ContactManagerSection: React.FC<ContactManagerSectionProps> = ({
                       </a>
                     )}
 
-                    {onUpdateContact && (
+                    {(onEditContact || onUpdateContact) && (
                       <button
                         type="button"
-                        onClick={(e) => handleStartInlineEdit(e, contact)}
-                        title="Edit contact inline"
+                        onClick={(e) => {
+                          if (onEditContact) {
+                            e.stopPropagation();
+                            onEditContact(contact);
+                          } else {
+                            handleStartInlineEdit(e, contact);
+                          }
+                        }}
+                        title={onEditContact ? 'Edit contact' : 'Edit contact inline'}
                         className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer opacity-0 group-hover:opacity-100"
                       >
                         <Pencil className="w-3.5 h-3.5" />

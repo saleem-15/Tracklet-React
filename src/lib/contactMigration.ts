@@ -4,6 +4,7 @@ export interface MigrationResult {
   migratedContacts: Contact[];
   updatedApplications: Application[];
   migratedCount: number;
+  hasChanges: boolean;
 }
 
 /**
@@ -22,6 +23,7 @@ export function migrateLegacyEmbeddedContacts(
   }
 
   let migratedCount = 0;
+  let hasChanges = false;
 
   const updatedApplications: Application[] = applications.map((app) => {
     const embeddedContacts = app.contacts;
@@ -29,33 +31,48 @@ export function migrateLegacyEmbeddedContacts(
       return app;
     }
 
+    hasChanges = true;
     const currentContactIds = new Set(app.contactIds || []);
 
     for (const legacy of embeddedContacts) {
       if (!legacy.name && !legacy.email) continue;
 
-      // Check if contact already exists by ID, email, or exact name
+      const legacyEmail = legacy.email?.trim().toLowerCase();
+      const legacyName = legacy.name?.trim().toLowerCase();
+
+      // Check if contact already exists by ID, email, or trimmed name
       let match: Contact | undefined;
       for (const c of contactMap.values()) {
         if (c.id === legacy.id) {
           match = c;
           break;
         }
-        if (legacy.email && c.email && legacy.email.toLowerCase() === c.email.toLowerCase()) {
+        if (legacyEmail && c.email && c.email.trim().toLowerCase() === legacyEmail) {
           match = c;
           break;
         }
-        if (legacy.name && c.name && legacy.name.toLowerCase() === c.name.toLowerCase()) {
+        if (legacyName && c.name && c.name.trim().toLowerCase() === legacyName) {
           match = c;
           break;
         }
       }
 
       if (match) {
+        // Merge non-empty legacy fields into matching contact if empty
+        if (!match.role && legacy.role) match.role = legacy.role;
+        if (!match.organization && (legacy.organization || app.company)) {
+          match.organization = legacy.organization || app.company;
+        }
+        if (!match.phone && legacy.phone) match.phone = legacy.phone;
+        if (!match.linkedIn && legacy.linkedIn) match.linkedIn = legacy.linkedIn;
+        if (!match.notes && legacy.notes) match.notes = legacy.notes;
+        if (!match.nextFollowUpDate && legacy.nextFollowUpDate) match.nextFollowUpDate = legacy.nextFollowUpDate;
+
         // Link match to this application if not already linked
         if (!match.applicationIds) match.applicationIds = [];
         if (!match.applicationIds.includes(app.id)) {
           match.applicationIds.push(app.id);
+          hasChanges = true;
         }
         currentContactIds.add(match.id);
       } else {
@@ -63,13 +80,13 @@ export function migrateLegacyEmbeddedContacts(
         const newContactId = legacy.id || `c-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
         const newContact: Contact = {
           id: newContactId,
-          name: legacy.name || 'Contact',
-          role: legacy.role,
-          organization: legacy.organization || app.company,
+          name: legacy.name?.trim() || 'Contact',
+          role: legacy.role?.trim() || undefined,
+          organization: legacy.organization?.trim() || app.company?.trim() || undefined,
           category: legacy.category || 'Other',
-          email: legacy.email,
-          phone: legacy.phone,
-          linkedIn: legacy.linkedIn,
+          email: legacy.email?.trim() || undefined,
+          phone: legacy.phone?.trim() || undefined,
+          linkedIn: legacy.linkedIn?.trim() || undefined,
           notes: legacy.notes,
           nextFollowUpDate: legacy.nextFollowUpDate,
           applicationIds: [app.id],
@@ -80,11 +97,13 @@ export function migrateLegacyEmbeddedContacts(
         contactMap.set(newContactId, newContact);
         currentContactIds.add(newContactId);
         migratedCount++;
+        hasChanges = true;
       }
     }
 
     return {
       ...app,
+      contacts: [],
       contactIds: Array.from(currentContactIds),
     };
   });
@@ -93,5 +112,6 @@ export function migrateLegacyEmbeddedContacts(
     migratedContacts: Array.from(contactMap.values()),
     updatedApplications,
     migratedCount,
+    hasChanges,
   };
 }

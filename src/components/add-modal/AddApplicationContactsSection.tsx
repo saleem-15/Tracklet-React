@@ -5,6 +5,7 @@ import { CONTACT_AVATAR_COLORS, CONTACT_CATEGORY_STYLES, getInitials } from '../
 import { DeleteIconButton } from '../IconButton';
 import { LinkifiedText } from '../LinkifiedText';
 import { ContactSearchPicker } from '../ContactSearchPicker';
+import { normalizeUrl } from '../../lib/linkUtils';
 
 export interface AddApplicationContactsSectionProps {
   contacts: Contact[];
@@ -123,7 +124,7 @@ export const AddApplicationContactsSection: React.FC<AddApplicationContactsSecti
                     )}
                     {c.linkedIn && (
                       <a
-                        href={c.linkedIn}
+                        href={normalizeUrl(c.linkedIn)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="p-1 text-blue-700 hover:text-blue-800 hover:bg-blue-50 rounded transition-colors"

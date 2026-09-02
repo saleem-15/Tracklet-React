@@ -26,10 +26,6 @@ import {
   STAGE_CONFIG_MAP, 
   getInitials 
 } from '../lib/constants';
-import { 
-  getContactFollowUpHoursRemaining, 
-  formatContactHoursLeft 
-} from '../lib/contactUtils';
 import { CustomSelectDropdown, SelectOption } from './CustomSelectDropdown';
 import { ApplicationSearchPicker } from './ApplicationSearchPicker';
 import { RichTextEditor } from './editor';
@@ -51,19 +47,6 @@ const categoryOptions: SelectOption<ContactCategory>[] = CONTACT_CATEGORIES.map(
   label: cat,
   value: cat,
 }));
-
-const FOLLOW_UP_PRESETS = [
-  { label: '+3d', days: 3 },
-  { label: '+1w', days: 7 },
-  { label: '+2w', days: 14 },
-  { label: '+1m', days: 30 },
-];
-
-function getPresetDate(daysAhead: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() + daysAhead);
-  return d.toISOString().split('T')[0];
-}
 
 export const ContactDetailPanel: React.FC<ContactDetailPanelProps> = ({
   contact,
@@ -96,7 +79,9 @@ export const ContactDetailPanel: React.FC<ContactDetailPanelProps> = ({
   const [formError, setFormError] = useState<string | null>(null);
 
   const inlineNotesRef = useRef(inlineNotes);
-  inlineNotesRef.current = inlineNotes;
+  useEffect(() => {
+    inlineNotesRef.current = inlineNotes;
+  }, [inlineNotes]);
 
   // Auto-flush notes if dirty on close or switch
   const flushNotes = useCallback(async () => {
@@ -148,12 +133,6 @@ export const ContactDetailPanel: React.FC<ContactDetailPanelProps> = ({
   const linkedApps = (contact.applicationIds || [])
     .map((appId) => applications.find((a) => a.id === appId))
     .filter((app): app is Application => Boolean(app));
-
-  const followUpHours = contact.nextFollowUpDate
-    ? getContactFollowUpHoursRemaining(contact.nextFollowUpDate)
-    : null;
-  const isFollowUpDueSoon = followUpHours !== null && followUpHours <= 48 && followUpHours >= -120;
-  const isFollowUpOverdue = followUpHours !== null && followUpHours < 0;
 
   const handleCopyPhone = () => {
     if (!contact.phone) return;
@@ -244,18 +223,19 @@ export const ContactDetailPanel: React.FC<ContactDetailPanelProps> = ({
     onSelectApplication(appId);
   };
 
-  const handleApplyPresetFollowUp = (days: number) => {
-    const dateStr = getPresetDate(days);
-    onUpdateContact(contact.id, { nextFollowUpDate: dateStr });
-  };
-
   return (
     <div
       role="dialog"
       aria-modal="true"
       aria-label={`Contact Profile - ${contact.name}`}
       className="fixed inset-0 z-[60] flex justify-end bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200 select-none"
-      onClick={handleCloseWithFlush}
+      onClick={() => {
+        if (isEditing) {
+          handleCancelEdit();
+        } else {
+          handleCloseWithFlush();
+        }
+      }}
     >
       <div
         className="w-full max-w-lg h-full bg-white border-l border-slate-200/90 shadow-2xl flex flex-col justify-between animate-in slide-in-from-right duration-250 select-text overflow-hidden"

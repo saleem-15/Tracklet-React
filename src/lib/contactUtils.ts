@@ -13,16 +13,17 @@ export function filterContacts(
   contacts: Contact[],
   query: string,
   category: ContactCategory | 'All',
-  onlyFollowUpDue: boolean = false
+  onlyFollowUpDue: boolean = false,
+  thresholdHours: number = 48
 ): Contact[] {
   const normalizedQuery = query.trim().toLowerCase();
 
   return contacts.filter((contact) => {
-    // Follow-up due filter (due in <= 48h or overdue within 120h)
+    // Follow-up due filter (due in <= thresholdHours or overdue within 120h)
     if (onlyFollowUpDue) {
       if (!contact.nextFollowUpDate) return false;
       const hours = getContactFollowUpHoursRemaining(contact.nextFollowUpDate);
-      if (hours === null || hours > 48 || hours < -120) return false;
+      if (hours === null || hours > thresholdHours || hours < -120) return false;
     }
 
     // Category match
@@ -242,4 +243,18 @@ export function getHumanFollowUpInfo(
     dateStr: dueDateStr,
   };
 }
+
+/**
+ * Calculates a local YYYY-MM-DD date string shifted by daysAhead.
+ * Formats directly from local date parts to prevent UTC midnight shifts.
+ */
+export function getPresetDate(daysAhead: number, baseDate = new Date()): string {
+  const d = new Date(baseDate);
+  d.setDate(d.getDate() + daysAhead);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 

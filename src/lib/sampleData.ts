@@ -1,4 +1,5 @@
 import { Application, Contact } from '../types';
+import { getPresetDate } from './contactUtils';
 
 export const INITIAL_SAMPLE_APPLICATIONS: Omit<Application, 'id' | 'userId'>[] = [
   {
@@ -485,7 +486,7 @@ export const INITIAL_SAMPLE_CONTACTS: Omit<Contact, 'id' | 'userId'>[] = [
     phone: '+1 206-555-0188',
     linkedIn: 'https://linkedin.com/in/elenarostova-mentor',
     notes: 'Monthly 1:1 strategy sessions on executive presence, salary negotiation, and system design interviews.',
-    nextFollowUpDate: new Date(Date.now() + 86400000).toISOString().slice(0, 10),
+    nextFollowUpDate: getPresetDate(1),
     applicationIds: [],
     createdAt: '2026-07-01T10:00:00Z',
     updatedAt: '2026-07-25T14:00:00Z',
@@ -498,7 +499,7 @@ export const INITIAL_SAMPLE_CONTACTS: Omit<Contact, 'id' | 'userId'>[] = [
     email: 'marcus.vance@alumni.dev',
     linkedIn: 'https://linkedin.com/in/marcusvance',
     notes: 'College classmate. Offered referral for upcoming senior engineer headcount.',
-    nextFollowUpDate: new Date(Date.now() + 86400000 * 3).toISOString().slice(0, 10),
+    nextFollowUpDate: getPresetDate(3),
     applicationIds: [],
     createdAt: '2026-07-05T12:00:00Z',
     updatedAt: '2026-07-20T08:00:00Z',

@@ -1,6 +1,42 @@
 import { Application, Contact } from '../types';
 import { calculateDaysInStage } from './sampleData';
 
+/**
+ * Escapes values for CSV format and neutralizes CSV / Formula Injection (CWE-1236).
+ * Prepends a single quote if the field begins with =, +, -, @, \t, \r, or % so
+ * spreadsheet programs treat it as plain text instead of executing a formula.
+ */
+export function escapeCSV(value: string | number | undefined | null): string {
+  if (value === undefined || value === null) return '""';
+  let str = String(value);
+
+  // If string begins with spreadsheet formula operators, prepend single quote
+  if (/^[=+\-@\t\r%]/.test(str)) {
+    str = `'${str}`;
+  }
+
+  const escaped = str.replace(/"/g, '""');
+  return `"${escaped}"`;
+}
+
+/**
+ * Shared helper to create a UTF-8 CSV Blob and trigger browser download.
+ */
+function downloadCsv(headers: string[], rows: string[], filenamePrefix: string): boolean {
+  const csvContent = [headers.join(','), ...rows].join('\n');
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.setAttribute('href', url);
+  const timestamp = new Date().toISOString().slice(0, 10);
+  link.setAttribute('download', `${filenamePrefix}_${timestamp}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+  return true;
+}
+
 export function exportApplicationsToCSV(
   applications: Application[],
   filenamePrefix: string = 'tracklet_job_applications'
@@ -23,24 +59,6 @@ export function exportApplicationsToCSV(
     'Notes',
   ];
 
-  /**
-   * Escapes values for CSV format and neutralizes CSV / Formula Injection (CWE-1236).
-   * Prepends a single quote if the field begins with =, +, -, @, \t, \r, or % so
-   * spreadsheet programs treat it as plain text instead of executing a formula.
-   */
-  const escapeCSV = (value: string | number | undefined | null) => {
-    if (value === undefined || value === null) return '""';
-    let str = String(value);
-
-    // If string begins with spreadsheet formula operators, prepend single quote
-    if (/^[=+\-@\t\r%]/.test(str)) {
-      str = `'${str}`;
-    }
-
-    const escaped = str.replace(/"/g, '""');
-    return `"${escaped}"`;
-  };
-
   const rows = applications.map((app) => {
     const days = calculateDaysInStage(app.stageUpdatedAt);
     return [
@@ -58,18 +76,7 @@ export function exportApplicationsToCSV(
     ].join(',');
   });
 
-  const csvContent = [headers.join(','), ...rows].join('\n');
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.setAttribute('href', url);
-  const timestamp = new Date().toISOString().slice(0, 10);
-  link.setAttribute('download', `${filenamePrefix}_${timestamp}.csv`);
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
-  return true;
+  return downloadCsv(headers, rows, filenamePrefix);
 }
 
 export function exportContactsToCSV(
@@ -92,18 +99,6 @@ export function exportContactsToCSV(
     'Notes',
   ];
 
-  const escapeCSV = (value: string | number | undefined | null) => {
-    if (value === undefined || value === null) return '""';
-    let str = String(value);
-
-    if (/^[=+\-@\t\r%]/.test(str)) {
-      str = `'${str}`;
-    }
-
-    const escaped = str.replace(/"/g, '""');
-    return `"${escaped}"`;
-  };
-
   const rows = contacts.map((c) => {
     return [
       escapeCSV(c.name),
@@ -118,16 +113,5 @@ export function exportContactsToCSV(
     ].join(',');
   });
 
-  const csvContent = [headers.join(','), ...rows].join('\n');
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.setAttribute('href', url);
-  const timestamp = new Date().toISOString().slice(0, 10);
-  link.setAttribute('download', `${filenamePrefix}_${timestamp}.csv`);
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
-  return true;
+  return downloadCsv(headers, rows, filenamePrefix);
 }

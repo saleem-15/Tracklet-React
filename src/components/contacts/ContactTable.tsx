@@ -133,8 +133,16 @@ export const ContactTable: React.FC<ContactTableProps> = ({
               return (
                 <tr
                   key={contact.id}
+                  tabIndex={0}
                   onClick={() => onSelectContact(contact.id)}
-                  className="hover:bg-slate-50/80 transition-colors cursor-pointer group"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      onSelectContact(contact.id);
+                    }
+                  }}
+                  aria-label={`View contact ${contact.name}`}
+                  className="hover:bg-slate-50/80 focus:bg-blue-50/40 focus:outline-none transition-colors cursor-pointer group"
                 >
                   {/* Name + Avatar */}
                   <td className="py-3 px-4">

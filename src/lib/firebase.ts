@@ -34,7 +34,8 @@ import {
   serverTimestamp, 
   orderBy,
   arrayUnion,
-  arrayRemove
+  arrayRemove,
+  deleteField
 } from 'firebase/firestore';
 // Check if Firebase environment variables are configured
 export const isFirebaseConfigured = Boolean(
@@ -96,6 +97,7 @@ export {
   orderBy,
   arrayUnion,
   arrayRemove,
+  deleteField,
   signInWithPopup, 
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,

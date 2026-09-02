@@ -9,55 +9,13 @@ import {
   doc, 
   writeBatch,
   arrayUnion,
-  arrayRemove
+  arrayRemove,
+  deleteField
 } from './firebase';
 import { Contact, Application } from '../types';
 import { INITIAL_SAMPLE_CONTACTS } from './sampleData';
 import { LOCAL_STORAGE_KEYS } from './constants';
-
-/**
- * Strips undefined properties recursively so Firestore does not reject document writes.
- */
-function sanitizeForFirestore<T extends Record<string, unknown>>(obj: T): Record<string, unknown> {
-  const result: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(obj)) {
-    if (value !== undefined && value !== null) {
-      if (Array.isArray(value)) {
-        result[key] = value
-          .filter((item) => item !== undefined && item !== null)
-          .map((item) => {
-            if (typeof item === 'object' && !Array.isArray(item)) {
-              return sanitizeForFirestore(item as Record<string, unknown>);
-            }
-            return item;
-          });
-      } else if (typeof value === 'object') {
-        result[key] = sanitizeForFirestore(value as Record<string, unknown>);
-      } else {
-        result[key] = value;
-      }
-    }
-  }
-  return result;
-}
-
-/**
- * Helper to commit Firestore batch operations in safe chunks (< 500 operations per batch).
- */
-async function commitInChunks<T>(
-  items: T[],
-  operation: (batch: ReturnType<typeof writeBatch>, item: T) => void
-): Promise<void> {
-  const CHUNK_SIZE = 450;
-  for (let i = 0; i < items.length; i += CHUNK_SIZE) {
-    const chunk = items.slice(i, i + CHUNK_SIZE);
-    const batch = writeBatch(db);
-    for (const item of chunk) {
-      operation(batch, item);
-    }
-    await batch.commit();
-  }
-}
+import { sanitizeForFirestore, commitInChunks } from './firestoreUtils';
 
 export class ContactRepository {
   /**
@@ -142,12 +100,8 @@ export class ContactRepository {
         const docRef = await addDoc(collection(db, 'users', userId, 'contacts'), payload);
         createdId = docRef.id;
       } catch (err) {
-        console.warn('Failed to add contact to Firestore (saving locally):', err);
-        const currentGuest = this.loadGuestContacts();
-        this.saveGuestContacts([
-          { id: createdId, userId, ...contactData },
-          ...currentGuest.filter((c) => c.id !== createdId),
-        ]);
+        console.error('Failed to add contact to Firestore:', err);
+        throw err;
       }
       createdContact = {
         id: createdId,
@@ -166,6 +120,39 @@ export class ContactRepository {
   }
 
   /**
+   * Safely upserts a contact preserving its existing ID (for undo/restore or legacy migration).
+   */
+  static async upsertContact(
+    contact: Contact,
+    userId?: string
+  ): Promise<Contact> {
+    const now = new Date().toISOString();
+    const contactData: Contact = {
+      ...contact,
+      name: contact.name.trim(),
+      category: contact.category || 'Other',
+      applicationIds: contact.applicationIds || [],
+      updatedAt: now,
+    };
+
+    if (userId) {
+      try {
+        const docRef = doc(db, 'users', userId, 'contacts', contact.id);
+        const payload = sanitizeForFirestore({
+          ...contactData,
+          userId,
+        });
+        await setDoc(docRef, payload, { merge: true });
+      } catch (err) {
+        console.error('Failed to upsert contact in Firestore:', err);
+        throw err;
+      }
+    }
+
+    return contactData;
+  }
+
+  /**
    * Update an existing contact record at /users/{userId}/contacts/{id}.
    * Safely upserts using setDoc with merge: true so that un-persisted or guest-migrated
    * contacts are seamlessly written to Firestore without throwing 'No document to update'.
@@ -177,11 +164,16 @@ export class ContactRepository {
     fullContact?: Contact
   ): Promise<Partial<Contact>> {
     const now = new Date().toISOString();
-    const cleanUpdates = {
+    const rawUpdates: Record<string, unknown> = {
       ...updates,
       ...(updates.name ? { name: updates.name.trim() } : {}),
       updatedAt: now,
     };
+
+    // If nextFollowUpDate is explicitly set to undefined or null, translate to deleteField() for Firestore
+    if ('nextFollowUpDate' in updates && (!updates.nextFollowUpDate || updates.nextFollowUpDate === '')) {
+      rawUpdates.nextFollowUpDate = deleteField();
+    }
 
     if (userId) {
       try {
@@ -189,13 +181,13 @@ export class ContactRepository {
         if (fullContact) {
           const payload = sanitizeForFirestore({
             ...fullContact,
-            ...cleanUpdates,
+            ...rawUpdates,
             userId,
           });
           await setDoc(docRef, payload, { merge: true });
         } else {
           const payload = sanitizeForFirestore({
-            ...cleanUpdates,
+            ...rawUpdates,
             userId,
           });
           await setDoc(docRef, payload, { merge: true });
@@ -206,7 +198,7 @@ export class ContactRepository {
       }
     }
 
-    return sanitizeForFirestore(cleanUpdates);
+    return sanitizeForFirestore(rawUpdates);
   }
 
   /**

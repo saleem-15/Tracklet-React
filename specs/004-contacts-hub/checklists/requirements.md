@@ -2,7 +2,7 @@
 
 **Purpose**: Validate specification completeness and quality before proceeding to planning
 **Created**: 2026-09-01
-**Feature**: [spec.md](file:///d:/Programming/Tracklet/specs/004-contacts-hub/spec.md)
+**Feature**: [spec.md](../spec.md)
 
 ## Content Quality
 
