@@ -23,6 +23,7 @@ import {
   getContactFollowUpHoursRemaining, 
   formatContactHoursLeft 
 } from '../../lib/contactUtils';
+import { FollowUpBadge } from './FollowUpBadge';
 
 interface ContactTableProps {
   contacts: Contact[];
@@ -184,21 +185,7 @@ export const ContactTable: React.FC<ContactTableProps> = ({
                   {/* Follow-up */}
                   <td className="py-3 px-4 font-mono text-[11px]">
                     {contact.nextFollowUpDate ? (
-                      <span
-                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md border ${
-                          isFollowUpOverdue
-                            ? 'bg-rose-50 text-rose-700 border-rose-200'
-                            : isFollowUpDueSoon
-                            ? 'bg-amber-50 text-amber-700 border-amber-200'
-                            : 'bg-slate-50 text-slate-600 border-slate-200/60'
-                        }`}
-                      >
-                        <Clock className="w-3 h-3 shrink-0" />
-                        <span>
-                          {contact.nextFollowUpDate}{' '}
-                          {followUpHours !== null && `(${formatContactHoursLeft(followUpHours)})`}
-                        </span>
-                      </span>
+                      <FollowUpBadge dueDateStr={contact.nextFollowUpDate} size="sm" />
                     ) : (
                       <span className="text-slate-400">—</span>
                     )}

@@ -35,6 +35,7 @@ import { ApplicationSearchPicker } from './ApplicationSearchPicker';
 import { RichTextEditor } from './editor';
 import { useEscapeKey } from '../lib/useEscapeKey';
 import { normalizeUrl } from '../lib/linkUtils';
+import { FollowUpControl } from './contacts/FollowUpControl';
 
 export interface ContactDetailPanelProps {
   contact: Contact | null;
@@ -599,67 +600,13 @@ export const ContactDetailPanel: React.FC<ContactDetailPanelProps> = ({
                   <span>Add email, phone, or LinkedIn</span>
                 </button>
               )}
-
               {/* Follow-up reminder */}
-              <div className="p-3 rounded-xl bg-slate-50/90 border border-slate-200/80 space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
-                    <Clock className="w-3.5 h-3.5 text-amber-500" />
-                    Follow-up
-                  </span>
-                  {contact.nextFollowUpDate && (
-                    <span
-                      className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-mono font-bold border ${
-                        isFollowUpOverdue
-                          ? 'bg-rose-50 text-rose-700 border-rose-200'
-                          : isFollowUpDueSoon
-                          ? 'bg-amber-50 text-amber-700 border-amber-200'
-                          : 'bg-slate-100 text-slate-700 border-slate-200'
-                      }`}
-                    >
-                      {followUpHours !== null ? formatContactHoursLeft(followUpHours) : ''}
-                    </span>
-                  )}
-                </div>
-
-                {/* Quick Presets */}
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  {FOLLOW_UP_PRESETS.map((preset) => (
-                    <button
-                      key={preset.label}
-                      type="button"
-                      onClick={() => handleApplyPresetFollowUp(preset.days)}
-                      className="px-2 py-0.5 rounded-lg text-[11px] font-medium bg-white hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 border border-slate-200 text-slate-600 transition-colors cursor-pointer"
-                    >
-                      {preset.label}
-                    </button>
-                  ))}
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <input
-                    type="date"
-                    value={contact.nextFollowUpDate || ''}
-                    onChange={(e) =>
-                      onUpdateContact(contact.id, {
-                        nextFollowUpDate: e.target.value || undefined,
-                      })
-                    }
-                    className="bg-white text-slate-900 px-3 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:border-blue-500 text-xs font-mono cursor-pointer"
-                  />
-                  {contact.nextFollowUpDate && (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        onUpdateContact(contact.id, { nextFollowUpDate: undefined })
-                      }
-                      className="text-xs text-slate-500 hover:text-slate-800 px-2 py-1 rounded hover:bg-slate-200/60 transition-colors cursor-pointer"
-                    >
-                      Clear
-                    </button>
-                  )}
-                </div>
-              </div>
+              <FollowUpControl
+                dueDateStr={contact.nextFollowUpDate}
+                onUpdateFollowUp={(dateStr) =>
+                  onUpdateContact(contact.id, { nextFollowUpDate: dateStr })
+                }
+              />
 
               {/* Linked Applications */}
               <div className="space-y-1.5">

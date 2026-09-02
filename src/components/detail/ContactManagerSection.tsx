@@ -28,6 +28,8 @@ import { normalizeUrl } from '../../lib/linkUtils';
 import { ContactSearchPicker } from '../ContactSearchPicker';
 import { CustomSelectDropdown, SelectOption } from '../CustomSelectDropdown';
 import { RichTextEditor } from '../editor';
+import { FollowUpControl } from '../contacts/FollowUpControl';
+import { FollowUpBadge } from '../contacts/FollowUpBadge';
 
 export interface ContactManagerSectionProps {
   allContacts?: Contact[];
@@ -411,7 +413,7 @@ export const ContactManagerSection: React.FC<ContactManagerSectionProps> = ({
                       {getInitials(contact.name)}
                     </div>
                     <div className="min-w-0">
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1.5 flex-wrap">
                         <p className="text-xs font-bold text-slate-900 truncate leading-tight group-hover:text-blue-600 transition-colors">
                           {contact.name}
                         </p>
@@ -422,6 +424,9 @@ export const ContactManagerSection: React.FC<ContactManagerSectionProps> = ({
                           >
                             {category}
                           </span>
+                        )}
+                        {contact.nextFollowUpDate && (
+                          <FollowUpBadge dueDateStr={contact.nextFollowUpDate} size="sm" />
                         )}
                       </div>
                       <p className="text-[11px] text-slate-500 truncate">
@@ -552,68 +557,15 @@ export const ContactManagerSection: React.FC<ContactManagerSectionProps> = ({
                       )}
                     </div>
 
-                    {/* Inline Editable Follow-up Reminder */}
-                    <div className="p-2.5 rounded-lg bg-slate-50/90 border border-slate-200/70 space-y-2">
-                      <div className="flex items-center justify-between gap-2 flex-wrap">
-                        <div className="flex items-center gap-1.5 text-[11px] text-slate-700">
-                          <Clock className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                          <span className="font-semibold text-slate-700">Follow-up:</span>
-                          {contact.nextFollowUpDate && (
-                            <span
-                              className={`px-1.5 py-0.2 rounded text-[10px] font-mono font-bold border ${
-                                isFollowUpOverdue
-                                  ? 'bg-rose-50 text-rose-700 border-rose-200'
-                                  : isFollowUpDueSoon
-                                  ? 'bg-amber-50 text-amber-700 border-amber-200'
-                                  : 'bg-slate-100 text-slate-700 border-slate-200'
-                              }`}
-                            >
-                              {followUpHours !== null ? formatContactHoursLeft(followUpHours) : contact.nextFollowUpDate}
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Quick Presets */}
-                        <div className="flex items-center gap-1">
-                          {FOLLOW_UP_PRESETS.map((p) => (
-                            <button
-                              key={p.label}
-                              type="button"
-                              onClick={() => handleApplyPresetFollowUp(contact.id, p.days)}
-                              className="px-1.5 py-0.5 text-[10px] font-medium bg-white hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 border border-slate-200 text-slate-600 rounded transition-colors cursor-pointer"
-                            >
-                              {p.label}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="date"
-                          value={contact.nextFollowUpDate || ''}
-                          onChange={(e) =>
-                            onUpdateContact &&
-                            onUpdateContact(contact.id, {
-                              nextFollowUpDate: e.target.value || undefined,
-                            })
-                          }
-                          className="bg-white text-slate-900 px-2 py-1 rounded border border-slate-200 text-xs font-mono cursor-pointer focus:outline-none focus:border-blue-500"
-                        />
-                        {contact.nextFollowUpDate && (
-                          <button
-                            type="button"
-                            onClick={() =>
-                              onUpdateContact &&
-                              onUpdateContact(contact.id, { nextFollowUpDate: undefined })
-                            }
-                            className="text-[11px] text-slate-500 hover:text-slate-800 px-1.5 py-0.5 rounded hover:bg-slate-200/60 transition-colors cursor-pointer"
-                          >
-                            Clear
-                          </button>
-                        )}
-                      </div>
-                    </div>
+                    {/* Follow-up Reminder */}
+                    <FollowUpControl
+                      dueDateStr={contact.nextFollowUpDate}
+                      onUpdateFollowUp={(dateStr) =>
+                        onUpdateContact &&
+                        onUpdateContact(contact.id, { nextFollowUpDate: dateStr })
+                      }
+                      compact
+                    />
 
                     {/* Notes preview */}
                     {contact.notes && (

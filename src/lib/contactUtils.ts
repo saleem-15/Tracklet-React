@@ -159,3 +159,87 @@ export function getContactsFollowUpDueSoon(
   // Sort by urgency: most overdue/soonest first
   return result.sort((a, b) => a.hoursLeft - b.hoursLeft);
 }
+
+export interface HumanFollowUpInfo {
+  urgency: 'overdue' | 'due-today' | 'due-soon' | 'upcoming';
+  shortLabel: string;
+  relativeLabel: string;
+  formattedDate: string;
+  dateStr: string;
+}
+
+/**
+ * Pure function to format a contact follow-up date into humanized labels and urgency levels.
+ */
+export function getHumanFollowUpInfo(
+  dueDateStr?: string,
+  now = new Date()
+): HumanFollowUpInfo | null {
+  if (!dueDateStr) return null;
+  const parts = dueDateStr.split('T')[0].split('-');
+  if (parts.length !== 3) return null;
+  const year = parseInt(parts[0], 10);
+  const month = parseInt(parts[1], 10) - 1;
+  const day = parseInt(parts[2], 10);
+
+  const dueDate = new Date(year, month, day);
+  if (isNaN(dueDate.getTime())) return null;
+
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const diffDays = Math.round((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const formattedDate = `${dayNames[dueDate.getDay()]}, ${monthNames[month]} ${day}`;
+  const shortDate = `${monthNames[month]} ${day}`;
+
+  if (diffDays < 0) {
+    const daysOverdue = Math.abs(diffDays);
+    return {
+      urgency: 'overdue',
+      shortLabel: `Overdue (${daysOverdue}d)`,
+      relativeLabel: daysOverdue === 1 ? 'Overdue by 1 day' : `Overdue by ${daysOverdue} days`,
+      formattedDate,
+      dateStr: dueDateStr,
+    };
+  }
+
+  if (diffDays === 0) {
+    return {
+      urgency: 'due-today',
+      shortLabel: 'Today',
+      relativeLabel: 'Due today',
+      formattedDate,
+      dateStr: dueDateStr,
+    };
+  }
+
+  if (diffDays === 1) {
+    return {
+      urgency: 'due-soon',
+      shortLabel: 'Tomorrow',
+      relativeLabel: 'Due tomorrow',
+      formattedDate,
+      dateStr: dueDateStr,
+    };
+  }
+
+  if (diffDays <= 6) {
+    return {
+      urgency: diffDays <= 2 ? 'due-soon' : 'upcoming',
+      shortLabel: `In ${diffDays}d`,
+      relativeLabel: `In ${diffDays} days`,
+      formattedDate,
+      dateStr: dueDateStr,
+    };
+  }
+
+  return {
+    urgency: 'upcoming',
+    shortLabel: shortDate,
+    relativeLabel: `On ${shortDate}`,
+    formattedDate,
+    dateStr: dueDateStr,
+  };
+}
+

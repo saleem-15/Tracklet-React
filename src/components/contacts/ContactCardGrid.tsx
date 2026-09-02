@@ -21,6 +21,7 @@ import {
   getContactFollowUpHoursRemaining, 
   formatContactHoursLeft 
 } from '../../lib/contactUtils';
+import { FollowUpBadge } from './FollowUpBadge';
 
 interface ContactCardGridProps {
   contacts: Contact[];
@@ -161,22 +162,8 @@ export const ContactCardGrid: React.FC<ContactCardGridProps> = ({
 
               {/* Follow-up Indicator (if configured) */}
               {contact.nextFollowUpDate && (
-                <div className="mt-3">
-                  <div
-                    className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-[11px] font-mono font-medium border ${
-                      isFollowUpOverdue
-                        ? 'bg-rose-50 text-rose-700 border-rose-200'
-                        : isFollowUpDueSoon
-                        ? 'bg-amber-50 text-amber-700 border-amber-200 animate-pulse motion-reduce:animate-none'
-                        : 'bg-slate-50 text-slate-600 border-slate-200/80'
-                    }`}
-                  >
-                    <Clock className="w-3 h-3 shrink-0" />
-                    <span>
-                      Follow-up: {contact.nextFollowUpDate}{' '}
-                      {followUpHours !== null && `(${formatContactHoursLeft(followUpHours)})`}
-                    </span>
-                  </div>
+                <div className="mt-2.5">
+                  <FollowUpBadge dueDateStr={contact.nextFollowUpDate} size="md" />
                 </div>
               )}
             </div>
