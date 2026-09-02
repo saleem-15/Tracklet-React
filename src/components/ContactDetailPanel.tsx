@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { 
   X, 
   User, 
@@ -15,7 +15,8 @@ import {
   Clock, 
   Check, 
   ChevronRight,
-  Unlink
+  Unlink,
+  Plus
 } from 'lucide-react';
 import { Contact, ContactCategory, Application } from '../types';
 import { 
@@ -49,6 +50,19 @@ const categoryOptions: SelectOption<ContactCategory>[] = CONTACT_CATEGORIES.map(
   value: cat,
 }));
 
+const FOLLOW_UP_PRESETS = [
+  { label: '+3d', days: 3 },
+  { label: '+1w', days: 7 },
+  { label: '+2w', days: 14 },
+  { label: '+1m', days: 30 },
+];
+
+function getPresetDate(daysAhead: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() + daysAhead);
+  return d.toISOString().split('T')[0];
+}
+
 export const ContactDetailPanel: React.FC<ContactDetailPanelProps> = ({
   contact,
   applications,
@@ -60,8 +74,10 @@ export const ContactDetailPanel: React.FC<ContactDetailPanelProps> = ({
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [copiedPhone, setCopiedPhone] = useState(false);
+  const [copiedEmail, setCopiedEmail] = useState(false);
   const [inlineNotes, setInlineNotes] = useState('');
   const [isSavingNotes, setIsSavingNotes] = useState(false);
+  const [showViewModeLinkPicker, setShowViewModeLinkPicker] = useState(false);
 
   // In-place edit form state
   const [editName, setEditName] = useState('');
@@ -77,12 +93,34 @@ export const ContactDetailPanel: React.FC<ContactDetailPanelProps> = ({
   const [isSavingEdit, setIsSavingEdit] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
+  const inlineNotesRef = useRef(inlineNotes);
+  inlineNotesRef.current = inlineNotes;
+
+  // Auto-flush notes if dirty on close or switch
+  const flushNotes = useCallback(async () => {
+    if (!contact) return;
+    const currentNotes = inlineNotesRef.current.trim();
+    const originalNotes = (contact.notes || '').trim();
+    if (currentNotes !== originalNotes) {
+      try {
+        await onUpdateContact(contact.id, { notes: currentNotes || undefined });
+      } catch (err) {
+        console.error('Failed to auto-save notes:', err);
+      }
+    }
+  }, [contact, onUpdateContact]);
+
+  const handleCloseWithFlush = async () => {
+    await flushNotes();
+    onClose();
+  };
+
   // Close drawer or cancel edit mode on Escape key
   useEscapeKey(() => {
     if (isEditing) {
       handleCancelEdit();
     } else {
-      onClose();
+      handleCloseWithFlush();
     }
   }, Boolean(contact));
 
@@ -91,6 +129,7 @@ export const ContactDetailPanel: React.FC<ContactDetailPanelProps> = ({
       setInlineNotes(contact.notes || '');
       setIsEditing(false);
       setFormError(null);
+      setShowViewModeLinkPicker(false);
     }
   }, [contact?.id]);
 
@@ -121,6 +160,15 @@ export const ContactDetailPanel: React.FC<ContactDetailPanelProps> = ({
     setTimeout(() => setCopiedPhone(false), 2000);
   };
 
+  const handleCopyEmail = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!contact.email) return;
+    navigator.clipboard.writeText(contact.email);
+    setCopiedEmail(true);
+    setTimeout(() => setCopiedEmail(false), 2000);
+  };
+
   const handleSaveNotes = async () => {
     setIsSavingNotes(true);
     try {
@@ -142,6 +190,7 @@ export const ContactDetailPanel: React.FC<ContactDetailPanelProps> = ({
     setEditNotes(contact.notes || '');
     setEditSelectedAppIds(contact.applicationIds || []);
     setFormError(null);
+    setShowViewModeLinkPicker(false);
     setIsEditing(true);
   };
 
@@ -193,13 +242,18 @@ export const ContactDetailPanel: React.FC<ContactDetailPanelProps> = ({
     onSelectApplication(appId);
   };
 
+  const handleApplyPresetFollowUp = (days: number) => {
+    const dateStr = getPresetDate(days);
+    onUpdateContact(contact.id, { nextFollowUpDate: dateStr });
+  };
+
   return (
     <div
       role="dialog"
       aria-modal="true"
       aria-label={`Contact Profile - ${contact.name}`}
       className="fixed inset-0 z-[45] flex justify-end bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200 select-none"
-      onClick={onClose}
+      onClick={handleCloseWithFlush}
     >
       <div
         className="w-full max-w-lg h-full bg-white border-l border-slate-200/90 shadow-2xl flex flex-col justify-between animate-in slide-in-from-right duration-250 select-text overflow-hidden"
@@ -281,7 +335,7 @@ export const ContactDetailPanel: React.FC<ContactDetailPanelProps> = ({
                   </button>
                   <button
                     type="button"
-                    onClick={onClose}
+                    onClick={handleCloseWithFlush}
                     aria-label="Close drawer"
                     className="p-2 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-200/60 transition-colors cursor-pointer min-h-[36px] min-w-[36px] flex items-center justify-center"
                   >
@@ -475,62 +529,83 @@ export const ContactDetailPanel: React.FC<ContactDetailPanelProps> = ({
             /* --- VIEW MODE --- */
             <>
               {/* Quick Contact Links */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {contact.email ? (
-                  <a
-                    href={`mailto:${contact.email}`}
-                    className="flex items-center gap-2.5 p-2.5 rounded-xl border border-slate-200/80 bg-slate-50/60 hover:bg-blue-50 hover:border-blue-200 transition-colors group min-h-[40px]"
-                  >
-                    <div className="w-6 h-6 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
-                      <Mail className="w-3 h-3" />
-                    </div>
-                    <span className="text-xs font-mono text-slate-800 group-hover:text-blue-700 truncate">
-                      {contact.email}
-                    </span>
-                  </a>
-                ) : null}
-
-                {contact.phone ? (
-                  <div
-                    onClick={handleCopyPhone}
-                    className="flex items-center justify-between p-2.5 rounded-xl border border-slate-200/80 bg-slate-50/60 hover:bg-emerald-50 hover:border-emerald-200 transition-colors cursor-pointer group min-h-[40px]"
-                  >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="w-6 h-6 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
-                        <Phone className="w-3 h-3" />
+              {contact.email || contact.phone || contact.linkedIn ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {contact.email ? (
+                    <a
+                      href={`mailto:${contact.email}`}
+                      className="flex items-center justify-between p-2.5 rounded-xl border border-slate-200/80 bg-slate-50/60 hover:bg-blue-50 hover:border-blue-200 transition-colors group min-h-[40px]"
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-6 h-6 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
+                          <Mail className="w-3 h-3" />
+                        </div>
+                        <span className="text-xs font-mono text-slate-800 group-hover:text-blue-700 truncate">
+                          {contact.email}
+                        </span>
                       </div>
-                      <span className="text-xs font-mono text-slate-800 group-hover:text-emerald-700 truncate">
-                        {contact.phone}
+                      <button
+                        type="button"
+                        onClick={handleCopyEmail}
+                        title="Copy email address"
+                        className="text-[10px] font-mono text-blue-700 font-semibold px-1.5 py-0.5 rounded bg-blue-100/70 hover:bg-blue-200 transition-colors shrink-0 cursor-pointer"
+                      >
+                        {copiedEmail ? 'Copied' : 'Copy'}
+                      </button>
+                    </a>
+                  ) : null}
+
+                  {contact.phone ? (
+                    <div
+                      onClick={handleCopyPhone}
+                      className="flex items-center justify-between p-2.5 rounded-xl border border-slate-200/80 bg-slate-50/60 hover:bg-emerald-50 hover:border-emerald-200 transition-colors cursor-pointer group min-h-[40px]"
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-6 h-6 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+                          <Phone className="w-3 h-3" />
+                        </div>
+                        <span className="text-xs font-mono text-slate-800 group-hover:text-emerald-700 truncate">
+                          {contact.phone}
+                        </span>
+                      </div>
+                      <span className="text-[10px] font-mono text-emerald-700 font-semibold px-1.5 py-0.5 rounded bg-emerald-100/70">
+                        {copiedPhone ? 'Copied' : 'Copy'}
                       </span>
                     </div>
-                    <span className="text-[10px] font-mono text-emerald-700 font-semibold px-1.5 py-0.5 rounded bg-emerald-100/70">
-                      {copiedPhone ? 'Copied' : 'Copy'}
-                    </span>
-                  </div>
-                ) : null}
+                  ) : null}
 
-                {contact.linkedIn ? (
-                  <a
-                    href={contact.linkedIn}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-between p-2.5 rounded-xl border border-slate-200/80 bg-slate-50/60 hover:bg-blue-50 hover:border-blue-200 transition-colors group min-h-[40px]"
-                  >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="w-6 h-6 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
-                        <Linkedin className="w-3 h-3" />
+                  {contact.linkedIn ? (
+                    <a
+                      href={contact.linkedIn}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-between p-2.5 rounded-xl border border-slate-200/80 bg-slate-50/60 hover:bg-blue-50 hover:border-blue-200 transition-colors group min-h-[40px]"
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-6 h-6 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
+                          <Linkedin className="w-3 h-3" />
+                        </div>
+                        <span className="text-xs text-slate-800 group-hover:text-blue-700 truncate">
+                          LinkedIn Profile
+                        </span>
                       </div>
-                      <span className="text-xs text-slate-800 group-hover:text-blue-700 truncate">
-                        LinkedIn Profile
-                      </span>
-                    </div>
-                    <ExternalLink className="w-3 h-3 text-slate-400 group-hover:text-blue-600 shrink-0" />
-                  </a>
-                ) : null}
-              </div>
+                      <ExternalLink className="w-3 h-3 text-slate-400 group-hover:text-blue-600 shrink-0" />
+                    </a>
+                  ) : null}
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleStartEdit}
+                  className="w-full p-3 rounded-xl border border-dashed border-slate-300 hover:border-blue-300 hover:bg-blue-50/30 text-slate-500 hover:text-blue-600 text-xs font-medium flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Add email, phone, or LinkedIn</span>
+                </button>
+              )}
 
               {/* Follow-up reminder */}
-              <div className="p-3 rounded-xl bg-slate-50/90 border border-slate-200/80 space-y-2">
+              <div className="p-3 rounded-xl bg-slate-50/90 border border-slate-200/80 space-y-2.5">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
                     <Clock className="w-3.5 h-3.5 text-amber-500" />
@@ -549,6 +624,20 @@ export const ContactDetailPanel: React.FC<ContactDetailPanelProps> = ({
                       {followUpHours !== null ? formatContactHoursLeft(followUpHours) : ''}
                     </span>
                   )}
+                </div>
+
+                {/* Quick Presets */}
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {FOLLOW_UP_PRESETS.map((preset) => (
+                    <button
+                      key={preset.label}
+                      type="button"
+                      onClick={() => handleApplyPresetFollowUp(preset.days)}
+                      className="px-2 py-0.5 rounded-lg text-[11px] font-medium bg-white hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 border border-slate-200 text-slate-600 transition-colors cursor-pointer"
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -578,10 +667,41 @@ export const ContactDetailPanel: React.FC<ContactDetailPanelProps> = ({
 
               {/* Linked Applications */}
               <div className="space-y-1.5">
-                <h3 className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
-                  <Link2 className="w-3.5 h-3.5 text-blue-500" />
-                  Linked Applications ({linkedApps.length})
-                </h3>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                    <Link2 className="w-3.5 h-3.5 text-blue-500" />
+                    Linked Applications ({linkedApps.length})
+                  </h3>
+                  {applications.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setShowViewModeLinkPicker(!showViewModeLinkPicker)}
+                      className="text-[11px] font-bold text-blue-600 hover:text-blue-700 hover:bg-blue-50 px-2 py-0.5 rounded-lg transition-colors cursor-pointer"
+                    >
+                      {showViewModeLinkPicker ? 'Done' : '+ Link Job'}
+                    </button>
+                  )}
+                </div>
+
+                {/* Inline Link Picker in View Mode */}
+                {showViewModeLinkPicker && (
+                  <div className="p-3 bg-slate-50/90 rounded-xl border border-blue-200/80 space-y-2 animate-in fade-in duration-150">
+                    <span className="text-[11px] font-semibold text-slate-600 block">
+                      Select applications to link:
+                    </span>
+                    <ApplicationSearchPicker
+                      applications={applications}
+                      selectedAppIds={contact.applicationIds || []}
+                      onToggleApp={async (appId) => {
+                        const current = contact.applicationIds || [];
+                        const next = current.includes(appId)
+                          ? current.filter((id) => id !== appId)
+                          : [...current, appId];
+                        await onUpdateContact(contact.id, { applicationIds: next });
+                      }}
+                    />
+                  </div>
+                )}
 
                 <div className="rounded-xl border border-slate-200/80 divide-y divide-slate-100 overflow-hidden bg-white shadow-2xs">
                   {linkedApps.length > 0 ? (
@@ -656,7 +776,14 @@ export const ContactDetailPanel: React.FC<ContactDetailPanelProps> = ({
                     </button>
                   )}
                 </div>
-                <div className="bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden focus-within:border-blue-300 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
+                <div 
+                  onBlur={(e) => {
+                    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                      flushNotes();
+                    }
+                  }}
+                  className="bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden focus-within:border-blue-300 focus-within:ring-2 focus-within:ring-blue-100 transition-all"
+                >
                   <RichTextEditor
                     key={contact.id}
                     value={inlineNotes}

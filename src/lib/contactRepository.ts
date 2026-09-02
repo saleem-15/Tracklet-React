@@ -11,7 +11,7 @@ import {
   arrayUnion,
   arrayRemove
 } from './firebase';
-import { Contact } from '../types';
+import { Contact, Application } from '../types';
 import { INITIAL_SAMPLE_CONTACTS } from './sampleData';
 import { LOCAL_STORAGE_KEYS } from './constants';
 
@@ -261,7 +261,9 @@ export class ContactRepository {
   static async linkContactToApplication(
     contactId: string,
     applicationId: string,
-    userId?: string
+    userId?: string,
+    fullContact?: Contact,
+    fullApp?: Application
   ): Promise<void> {
     const now = new Date().toISOString();
     if (userId) {
@@ -270,16 +272,41 @@ export class ContactRepository {
         const contactRef = doc(db, 'users', userId, 'contacts', contactId);
         const appRef = doc(db, 'users', userId, 'applications', applicationId);
 
-        batch.set(contactRef, {
-          applicationIds: arrayUnion(applicationId),
-          updatedAt: now,
-          userId,
-        }, { merge: true });
+        if (fullContact) {
+          const mergedAppIds = Array.from(
+            new Set([...(fullContact.applicationIds || []), applicationId])
+          );
+          const payload = sanitizeForFirestore({
+            ...fullContact,
+            applicationIds: mergedAppIds,
+            updatedAt: now,
+            userId,
+          });
+          batch.set(contactRef, payload, { merge: true });
+        } else {
+          batch.update(contactRef, {
+            applicationIds: arrayUnion(applicationId),
+            updatedAt: now,
+          });
+        }
 
-        batch.update(appRef, {
-          contactIds: arrayUnion(contactId),
-          updatedAt: now,
-        });
+        if (fullApp) {
+          const mergedContactIds = Array.from(
+            new Set([...(fullApp.contactIds || []), contactId])
+          );
+          const payload = sanitizeForFirestore({
+            ...fullApp,
+            contactIds: mergedContactIds,
+            updatedAt: now,
+            userId,
+          });
+          batch.set(appRef, payload, { merge: true });
+        } else {
+          batch.update(appRef, {
+            contactIds: arrayUnion(contactId),
+            updatedAt: now,
+          });
+        }
 
         await batch.commit();
       } catch (err) {
@@ -295,7 +322,9 @@ export class ContactRepository {
   static async unlinkContactFromApplication(
     contactId: string,
     applicationId: string,
-    userId?: string
+    userId?: string,
+    fullContact?: Contact,
+    fullApp?: Application
   ): Promise<void> {
     const now = new Date().toISOString();
     if (userId) {
@@ -304,16 +333,41 @@ export class ContactRepository {
         const contactRef = doc(db, 'users', userId, 'contacts', contactId);
         const appRef = doc(db, 'users', userId, 'applications', applicationId);
 
-        batch.set(contactRef, {
-          applicationIds: arrayRemove(applicationId),
-          updatedAt: now,
-          userId,
-        }, { merge: true });
+        if (fullContact) {
+          const filteredAppIds = (fullContact.applicationIds || []).filter(
+            (id) => id !== applicationId
+          );
+          const payload = sanitizeForFirestore({
+            ...fullContact,
+            applicationIds: filteredAppIds,
+            updatedAt: now,
+            userId,
+          });
+          batch.set(contactRef, payload, { merge: true });
+        } else {
+          batch.update(contactRef, {
+            applicationIds: arrayRemove(applicationId),
+            updatedAt: now,
+          });
+        }
 
-        batch.update(appRef, {
-          contactIds: arrayRemove(contactId),
-          updatedAt: now,
-        });
+        if (fullApp) {
+          const filteredContactIds = (fullApp.contactIds || []).filter(
+            (id) => id !== contactId
+          );
+          const payload = sanitizeForFirestore({
+            ...fullApp,
+            contactIds: filteredContactIds,
+            updatedAt: now,
+            userId,
+          });
+          batch.set(appRef, payload, { merge: true });
+        } else {
+          batch.update(appRef, {
+            contactIds: arrayRemove(contactId),
+            updatedAt: now,
+          });
+        }
 
         await batch.commit();
       } catch (err) {

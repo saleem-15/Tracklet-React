@@ -511,7 +511,8 @@ function TrackletAppContent() {
         // Sync to Firestore if authenticated
         if (user?.emailVerified) {
           for (const appId of created.applicationIds) {
-            ContactRepository.linkContactToApplication(created.id, appId, user.uid).catch((e) => {
+            const targetApp = applications.find((a) => a.id === appId);
+            ContactRepository.linkContactToApplication(created.id, appId, user.uid, created, targetApp).catch((e) => {
               console.warn(`Could not sync link between contact ${created.id} and app ${appId}:`, e);
             });
           }
@@ -588,12 +589,14 @@ function TrackletAppContent() {
 
       if (user?.emailVerified) {
         for (const appId of addedAppIds) {
-          ContactRepository.linkContactToApplication(id, appId, user.uid).catch((e) => {
+          const targetApp = applications.find((a) => a.id === appId);
+          ContactRepository.linkContactToApplication(id, appId, user.uid, updatedContact, targetApp).catch((e) => {
             console.warn(`Could not sync link between contact ${id} and app ${appId}:`, e);
           });
         }
         for (const appId of removedAppIds) {
-          ContactRepository.unlinkContactFromApplication(id, appId, user.uid).catch((e) => {
+          const targetApp = applications.find((a) => a.id === appId);
+          ContactRepository.unlinkContactFromApplication(id, appId, user.uid, updatedContact, targetApp).catch((e) => {
             console.warn(`Could not sync unlink between contact ${id} and app ${appId}:`, e);
           });
         }
@@ -717,6 +720,9 @@ function TrackletAppContent() {
 
   // Link Contact to Application
   const handleLinkContact = async (contactId: string, appId: string) => {
+    const targetContact = contacts.find((c) => c.id === contactId);
+    const targetApp = applications.find((a) => a.id === appId);
+
     setContacts((prev) => {
       const next = prev.map((c) =>
         c.id === contactId
@@ -739,9 +745,15 @@ function TrackletAppContent() {
 
     try {
       if (user?.emailVerified) {
-        await ContactRepository.linkContactToApplication(contactId, appId, user.uid);
+        await ContactRepository.linkContactToApplication(
+          contactId,
+          appId,
+          user.uid,
+          targetContact,
+          targetApp
+        );
       }
-      const cName = contacts.find((c) => c.id === contactId)?.name || 'Contact';
+      const cName = targetContact?.name || 'Contact';
       addToast('success', 'Contact Linked', cName);
     } catch (err) {
       console.error('Failed to link contact:', err);
@@ -751,7 +763,8 @@ function TrackletAppContent() {
 
   // Unlink Contact from Application
   const handleUnlinkContact = async (contactId: string, appId: string) => {
-    const contact = contacts.find((c) => c.id === contactId);
+    const targetContact = contacts.find((c) => c.id === contactId);
+    const targetApp = applications.find((a) => a.id === appId);
 
     setContacts((prev) => {
       const next = prev.map((c) =>
@@ -775,10 +788,16 @@ function TrackletAppContent() {
 
     try {
       if (user?.emailVerified) {
-        await ContactRepository.unlinkContactFromApplication(contactId, appId, user.uid);
+        await ContactRepository.unlinkContactFromApplication(
+          contactId,
+          appId,
+          user.uid,
+          targetContact,
+          targetApp
+        );
       }
 
-      addToast('info', `Unlinked ${contact?.name || 'Contact'}`, undefined, {
+      addToast('info', `Unlinked ${targetContact?.name || 'Contact'}`, undefined, {
         label: 'Undo',
         onClick: () => {
           handleLinkContact(contactId, appId);
@@ -853,10 +872,12 @@ function TrackletAppContent() {
 
     try {
       if (user?.emailVerified) {
+        const fullApp = currentApp ? { ...currentApp, ...mergedUpdates, updatedAt: now } : undefined;
         await ApplicationRepository.updateApplication(
           id,
           mergedUpdates,
-          user.uid
+          user.uid,
+          fullApp
         );
       }
 
@@ -1371,6 +1392,7 @@ function TrackletAppContent() {
         onDeleteContact={handleDeleteContact}
         onUnlinkFromApp={handleUnlinkContact}
         onSelectApplication={(appId) => {
+          setSelectedContactId(null);
           setSelectedAppId(appId);
         }}
       />

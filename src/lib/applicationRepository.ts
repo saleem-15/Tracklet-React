@@ -3,6 +3,7 @@ import {
   collection, 
   getDocs, 
   addDoc, 
+  setDoc,
   updateDoc, 
   deleteDoc, 
   doc, 
@@ -171,22 +172,33 @@ export class ApplicationRepository {
   static async updateApplication(
     id: string,
     updates: Partial<Application>,
-    userId?: string
+    userId?: string,
+    fullApp?: Application
   ): Promise<Partial<Application>> {
     const now = new Date().toISOString();
-    const updatedFields = sanitizeForFirestore({ ...updates, updatedAt: now });
+    const cleanUpdates = { ...updates, updatedAt: now };
 
     if (userId) {
       try {
         const docRef = doc(db, 'users', userId, 'applications', id);
-        await updateDoc(docRef, updatedFields);
+        if (fullApp) {
+          const payload = sanitizeForFirestore({
+            ...fullApp,
+            ...cleanUpdates,
+            userId,
+          });
+          await setDoc(docRef, payload, { merge: true });
+        } else {
+          const updatedFields = sanitizeForFirestore(cleanUpdates);
+          await updateDoc(docRef, updatedFields);
+        }
       } catch (err) {
         console.error('Failed to update Firestore application:', err);
         throw err;
       }
     }
 
-    return updatedFields;
+    return sanitizeForFirestore(cleanUpdates);
   }
 
   /**
