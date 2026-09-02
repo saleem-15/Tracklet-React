@@ -21,13 +21,11 @@ export interface LinkToken {
  */
 export function normalizeUrl(url: string): string {
   const trimmed = url.trim();
+  if (!trimmed) return '';
   if (/^https?:\/\//i.test(trimmed)) {
     return trimmed;
   }
-  if (/^www\./i.test(trimmed)) {
-    return `https://${trimmed}`;
-  }
-  return trimmed;
+  return `https://${trimmed}`;
 }
 
 /**

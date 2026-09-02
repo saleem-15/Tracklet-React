@@ -24,6 +24,7 @@ export interface ApplicationDetailPanelProps {
   onLinkContact?: (contactId: string, appId: string) => Promise<void>;
   onUnlinkContact?: (contactId: string, appId: string) => Promise<void>;
   onCreateAndLinkContact?: (contactData: Omit<Contact, 'id' | 'userId' | 'createdAt' | 'updatedAt'>, appId: string) => Promise<void>;
+  onUpdateContact?: (id: string, updates: Partial<Contact>) => Promise<void>;
   onSelectContact?: (contactId: string) => void;
   onEditContact?: (contact: Contact) => void;
   onShowToast?: (
@@ -44,6 +45,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
   onLinkContact,
   onUnlinkContact,
   onCreateAndLinkContact,
+  onUpdateContact,
   onSelectContact,
   onEditContact,
   onShowToast,
@@ -448,6 +450,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
                     await onCreateAndLinkContact(data, app.id);
                   }
                 }}
+                onUpdateContact={onUpdateContact}
                 onSelectContact={onSelectContact}
                 onEditContact={onEditContact}
               />

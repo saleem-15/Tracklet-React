@@ -1376,8 +1376,13 @@ function TrackletAppContent() {
           const created = await handleAddContact(contactData);
           await handleLinkContact(created.id, appId);
         }}
-        onSelectContact={(contactId) => setSelectedContactId(contactId)}
+        onUpdateContact={handleUpdateContact}
+        onSelectContact={(contactId) => {
+          setSelectedAppId(null);
+          setSelectedContactId(contactId);
+        }}
         onEditContact={(contact) => {
+          setSelectedAppId(null);
           setSelectedContactId(contact.id);
         }}
         onShowToast={addToast}

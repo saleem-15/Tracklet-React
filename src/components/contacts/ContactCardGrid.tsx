@@ -90,11 +90,13 @@ export const ContactCardGrid: React.FC<ContactCardGridProps> = ({
                     <h4 className="text-sm font-bold text-slate-900 truncate leading-snug group-hover:text-blue-600 transition-colors font-heading">
                       {contact.name}
                     </h4>
-                    <span
-                      className={`inline-flex items-center px-2 py-0.5 mt-0.5 rounded-md text-[10px] font-semibold border ${categoryStyle.bg} ${categoryStyle.text} ${categoryStyle.border}`}
-                    >
-                      {category}
-                    </span>
+                    {category && category !== 'Other' && (
+                      <span
+                        className={`inline-flex items-center px-2 py-0.5 mt-0.5 rounded-md text-[10px] font-semibold border ${categoryStyle.bg} ${categoryStyle.text} ${categoryStyle.border}`}
+                      >
+                        {category}
+                      </span>
+                    )}
                   </div>
                 </div>
 

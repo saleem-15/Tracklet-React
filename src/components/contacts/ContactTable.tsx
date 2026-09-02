@@ -170,11 +170,15 @@ export const ContactTable: React.FC<ContactTableProps> = ({
 
                   {/* Category */}
                   <td className="py-3 px-4">
-                    <span
-                      className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold border ${categoryStyle.bg} ${categoryStyle.text} ${categoryStyle.border}`}
-                    >
-                      {category}
-                    </span>
+                    {category && category !== 'Other' ? (
+                      <span
+                        className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold border ${categoryStyle.bg} ${categoryStyle.text} ${categoryStyle.border}`}
+                      >
+                        {category}
+                      </span>
+                    ) : (
+                      <span className="text-slate-400 text-xs">—</span>
+                    )}
                   </td>
 
                   {/* Follow-up */}

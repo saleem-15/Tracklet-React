@@ -34,6 +34,7 @@ import { CustomSelectDropdown, SelectOption } from './CustomSelectDropdown';
 import { ApplicationSearchPicker } from './ApplicationSearchPicker';
 import { RichTextEditor } from './editor';
 import { useEscapeKey } from '../lib/useEscapeKey';
+import { normalizeUrl } from '../lib/linkUtils';
 
 export interface ContactDetailPanelProps {
   contact: Contact | null;
@@ -252,7 +253,7 @@ export const ContactDetailPanel: React.FC<ContactDetailPanelProps> = ({
       role="dialog"
       aria-modal="true"
       aria-label={`Contact Profile - ${contact.name}`}
-      className="fixed inset-0 z-[45] flex justify-end bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200 select-none"
+      className="fixed inset-0 z-[60] flex justify-end bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200 select-none"
       onClick={handleCloseWithFlush}
     >
       <div
@@ -281,11 +282,13 @@ export const ContactDetailPanel: React.FC<ContactDetailPanelProps> = ({
                       <h2 className="text-base font-bold text-slate-900 truncate font-heading leading-tight">
                         {contact.name}
                       </h2>
-                      <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold border shrink-0 ${categoryStyle.bg} ${categoryStyle.text} ${categoryStyle.border}`}
-                      >
-                        {category}
-                      </span>
+                      {category && category !== 'Other' && (
+                        <span
+                          className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold border shrink-0 ${categoryStyle.bg} ${categoryStyle.text} ${categoryStyle.border}`}
+                        >
+                          {category}
+                        </span>
+                      )}
                     </div>
                     <div className="flex items-center gap-1.5 text-xs text-slate-600 truncate mt-0.5">
                       {contact.role && <span className="truncate">{contact.role}</span>}
@@ -530,15 +533,15 @@ export const ContactDetailPanel: React.FC<ContactDetailPanelProps> = ({
             <>
               {/* Quick Contact Links */}
               {contact.email || contact.phone || contact.linkedIn ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   {contact.email ? (
                     <a
                       href={`mailto:${contact.email}`}
-                      className="flex items-center justify-between p-2.5 rounded-xl border border-slate-200/80 bg-slate-50/60 hover:bg-blue-50 hover:border-blue-200 transition-colors group min-h-[40px]"
+                      className="flex-1 min-w-[200px] flex items-center justify-between p-2.5 rounded-xl border border-slate-200/80 bg-slate-50/60 hover:bg-blue-50 hover:border-blue-200 transition-colors group min-h-[42px]"
                     >
                       <div className="flex items-center gap-2.5 min-w-0">
                         <div className="w-6 h-6 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
-                          <Mail className="w-3 h-3" />
+                          <Mail className="w-3.5 h-3.5" />
                         </div>
                         <span className="text-xs font-mono text-slate-800 group-hover:text-blue-700 truncate">
                           {contact.email}
@@ -558,11 +561,11 @@ export const ContactDetailPanel: React.FC<ContactDetailPanelProps> = ({
                   {contact.phone ? (
                     <div
                       onClick={handleCopyPhone}
-                      className="flex items-center justify-between p-2.5 rounded-xl border border-slate-200/80 bg-slate-50/60 hover:bg-emerald-50 hover:border-emerald-200 transition-colors cursor-pointer group min-h-[40px]"
+                      className="flex-1 min-w-[170px] flex items-center justify-between p-2.5 rounded-xl border border-slate-200/80 bg-slate-50/60 hover:bg-emerald-50 hover:border-emerald-200 transition-colors cursor-pointer group min-h-[42px]"
                     >
                       <div className="flex items-center gap-2.5 min-w-0">
                         <div className="w-6 h-6 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
-                          <Phone className="w-3 h-3" />
+                          <Phone className="w-3.5 h-3.5" />
                         </div>
                         <span className="text-xs font-mono text-slate-800 group-hover:text-emerald-700 truncate">
                           {contact.phone}
@@ -576,20 +579,13 @@ export const ContactDetailPanel: React.FC<ContactDetailPanelProps> = ({
 
                   {contact.linkedIn ? (
                     <a
-                      href={contact.linkedIn}
+                      href={normalizeUrl(contact.linkedIn)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center justify-between p-2.5 rounded-xl border border-slate-200/80 bg-slate-50/60 hover:bg-blue-50 hover:border-blue-200 transition-colors group min-h-[40px]"
+                      title="Open LinkedIn Profile"
+                      className="flex items-center justify-center p-2.5 rounded-xl border border-slate-200/80 bg-slate-50/60 hover:bg-blue-50 hover:border-blue-200 text-blue-700 transition-colors h-[42px] w-[42px] shrink-0"
                     >
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="w-6 h-6 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
-                          <Linkedin className="w-3 h-3" />
-                        </div>
-                        <span className="text-xs text-slate-800 group-hover:text-blue-700 truncate">
-                          LinkedIn Profile
-                        </span>
-                      </div>
-                      <ExternalLink className="w-3 h-3 text-slate-400 group-hover:text-blue-600 shrink-0" />
+                      <Linkedin className="w-4 h-4" />
                     </a>
                   ) : null}
                 </div>
