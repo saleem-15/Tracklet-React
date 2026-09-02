@@ -390,16 +390,33 @@ function TrackletAppContent() {
   const handleImportGuestApps = async () => {
     if (!user || (migrationApps.length === 0 && migrationContacts.length === 0)) return;
     try {
-      if (migrationApps.length > 0) {
-        const imported = await ApplicationRepository.batchImport(migrationApps, user.uid);
-        setApplications((prev) => [...imported, ...prev]);
-        localStorage.removeItem(LOCAL_STORAGE_KEYS.GUEST_APPS);
-      }
+      let importedContacts: Contact[] = [];
+      let contactIdMap = new Map<string, string>();
+
+      // 1. Migrate contacts first so we can remap old guest contact IDs to new Firestore IDs
       if (migrationContacts.length > 0) {
-        const importedContacts = await ContactRepository.migrateGuestContacts(user.uid, migrationContacts);
+        const result = await ContactRepository.migrateGuestContacts(user.uid, migrationContacts);
+        importedContacts = result.migratedContacts;
+        contactIdMap = result.idMap;
         setContacts((prev) => [...importedContacts, ...prev]);
         localStorage.removeItem(LOCAL_STORAGE_KEYS.GUEST_CONTACTS);
       }
+
+      // 2. Remap application contactIds using new contact Firestore IDs, then batch import
+      if (migrationApps.length > 0) {
+        const remappedApps = migrationApps.map((app) => {
+          const remappedContactIds = (app.contactIds || []).map((cId) => contactIdMap.get(cId) || cId);
+          return {
+            ...app,
+            contactIds: remappedContactIds,
+          };
+        });
+
+        const imported = await ApplicationRepository.batchImport(remappedApps, user.uid);
+        setApplications((prev) => [...imported, ...prev]);
+        localStorage.removeItem(LOCAL_STORAGE_KEYS.GUEST_APPS);
+      }
+
       setIsMigrationModalOpen(false);
       setMigrationApps([]);
       setMigrationContacts([]);
@@ -527,15 +544,65 @@ function TrackletAppContent() {
   const handleUpdateContact = async (id: string, updates: Partial<Contact>) => {
     const currentContact = contacts.find((c) => c.id === id);
     const now = new Date().toISOString();
+
+    const oldAppIds = currentContact?.applicationIds || [];
+    const newAppIds = updates.applicationIds;
+    const hasAppIdsChanged = newAppIds !== undefined && JSON.stringify(oldAppIds) !== JSON.stringify(newAppIds);
+
+    const updatedContact: Contact = {
+      ...(currentContact || { id, name: 'Contact' }),
+      ...updates,
+      userId: user?.uid || currentContact?.userId || 'guest',
+      updatedAt: now,
+    };
+
     setContacts((prev) => {
-      const next = prev.map((c) => (c.id === id ? { ...c, ...updates, updatedAt: now } : c));
+      const next = prev.map((c) => (c.id === id ? updatedContact : c));
       if (!user?.emailVerified) ContactRepository.saveGuestContacts(next);
       return next;
     });
 
+    if (hasAppIdsChanged && newAppIds) {
+      const addedAppIds = newAppIds.filter((appId) => !oldAppIds.includes(appId));
+      const removedAppIds = oldAppIds.filter((appId) => !newAppIds.includes(appId));
+
+      setApplications((prev) => {
+        const next = prev.map((app) => {
+          if (addedAppIds.includes(app.id)) {
+            return {
+              ...app,
+              contactIds: Array.from(new Set([...(app.contactIds || []), id])),
+            };
+          }
+          if (removedAppIds.includes(app.id)) {
+            return {
+              ...app,
+              contactIds: (app.contactIds || []).filter((cId) => cId !== id),
+            };
+          }
+          return app;
+        });
+        if (!user?.emailVerified) ApplicationRepository.saveGuestApplications(next);
+        return next;
+      });
+
+      if (user?.emailVerified) {
+        for (const appId of addedAppIds) {
+          ContactRepository.linkContactToApplication(id, appId, user.uid).catch((e) => {
+            console.warn(`Could not sync link between contact ${id} and app ${appId}:`, e);
+          });
+        }
+        for (const appId of removedAppIds) {
+          ContactRepository.unlinkContactFromApplication(id, appId, user.uid).catch((e) => {
+            console.warn(`Could not sync unlink between contact ${id} and app ${appId}:`, e);
+          });
+        }
+      }
+    }
+
     try {
       if (user?.emailVerified) {
-        await ContactRepository.updateContact(id, updates, user.uid);
+        await ContactRepository.updateContact(id, updates, user.uid, updatedContact);
       }
     } catch (err) {
       console.error('Failed to update contact:', err);
@@ -1257,6 +1324,7 @@ function TrackletAppContent() {
                   settings={expirySettings}
                   onUpdateSettings={handleUpdateExpirySettings}
                   applications={applications}
+                  contacts={contacts}
                   onSelectApplication={(id) => setSelectedAppId(id)}
                   onExportCSV={handleExportCSV}
                   onImportCSV={handleBatchImportApplications}

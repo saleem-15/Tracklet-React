@@ -3,6 +3,7 @@ import {
   collection, 
   getDocs, 
   addDoc, 
+  setDoc,
   updateDoc, 
   deleteDoc, 
   doc, 
@@ -20,15 +21,17 @@ import { LOCAL_STORAGE_KEYS } from './constants';
 function sanitizeForFirestore<T extends Record<string, unknown>>(obj: T): Record<string, unknown> {
   const result: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(obj)) {
-    if (value !== undefined) {
+    if (value !== undefined && value !== null) {
       if (Array.isArray(value)) {
-        result[key] = value.map((item) => {
-          if (item !== null && typeof item === 'object' && !Array.isArray(item)) {
-            return sanitizeForFirestore(item as Record<string, unknown>);
-          }
-          return item;
-        });
-      } else if (value !== null && typeof value === 'object') {
+        result[key] = value
+          .filter((item) => item !== undefined && item !== null)
+          .map((item) => {
+            if (typeof item === 'object' && !Array.isArray(item)) {
+              return sanitizeForFirestore(item as Record<string, unknown>);
+            }
+            return item;
+          });
+      } else if (typeof value === 'object') {
         result[key] = sanitizeForFirestore(value as Record<string, unknown>);
       } else {
         result[key] = value;
@@ -73,13 +76,7 @@ export class ContactRepository {
           });
         });
 
-        // If cloud collection returned results, return them; otherwise check if local guest has items to merge
-        if (docsData.length > 0) {
-          return docsData;
-        }
-
-        const localGuest = this.loadGuestContacts();
-        return localGuest;
+        return docsData;
       } catch (err) {
         console.warn('Could not fetch Firestore contacts (falling back to local cache):', err);
         return this.loadGuestContacts();
@@ -170,11 +167,14 @@ export class ContactRepository {
 
   /**
    * Update an existing contact record at /users/{userId}/contacts/{id}.
+   * Safely upserts using setDoc with merge: true so that un-persisted or guest-migrated
+   * contacts are seamlessly written to Firestore without throwing 'No document to update'.
    */
   static async updateContact(
     id: string,
     updates: Partial<Contact>,
-    userId?: string
+    userId?: string,
+    fullContact?: Contact
   ): Promise<Partial<Contact>> {
     const now = new Date().toISOString();
     const cleanUpdates = {
@@ -182,19 +182,31 @@ export class ContactRepository {
       ...(updates.name ? { name: updates.name.trim() } : {}),
       updatedAt: now,
     };
-    const updatedFields = sanitizeForFirestore(cleanUpdates);
 
     if (userId) {
       try {
         const docRef = doc(db, 'users', userId, 'contacts', id);
-        await updateDoc(docRef, updatedFields);
+        if (fullContact) {
+          const payload = sanitizeForFirestore({
+            ...fullContact,
+            ...cleanUpdates,
+            userId,
+          });
+          await setDoc(docRef, payload, { merge: true });
+        } else {
+          const payload = sanitizeForFirestore({
+            ...cleanUpdates,
+            userId,
+          });
+          await setDoc(docRef, payload, { merge: true });
+        }
       } catch (err) {
         console.error('Failed to update Firestore contact:', err);
         throw err;
       }
     }
 
-    return updatedFields;
+    return sanitizeForFirestore(cleanUpdates);
   }
 
   /**
@@ -258,10 +270,11 @@ export class ContactRepository {
         const contactRef = doc(db, 'users', userId, 'contacts', contactId);
         const appRef = doc(db, 'users', userId, 'applications', applicationId);
 
-        batch.update(contactRef, {
+        batch.set(contactRef, {
           applicationIds: arrayUnion(applicationId),
           updatedAt: now,
-        });
+          userId,
+        }, { merge: true });
 
         batch.update(appRef, {
           contactIds: arrayUnion(contactId),
@@ -291,10 +304,11 @@ export class ContactRepository {
         const contactRef = doc(db, 'users', userId, 'contacts', contactId);
         const appRef = doc(db, 'users', userId, 'applications', applicationId);
 
-        batch.update(contactRef, {
+        batch.set(contactRef, {
           applicationIds: arrayRemove(applicationId),
           updatedAt: now,
-        });
+          userId,
+        }, { merge: true });
 
         batch.update(appRef, {
           contactIds: arrayRemove(contactId),
@@ -369,27 +383,39 @@ export class ContactRepository {
   static async migrateGuestContacts(
     userId: string,
     guestContacts: Contact[]
-  ): Promise<Contact[]> {
-    if (!userId || guestContacts.length === 0) return [];
+  ): Promise<{ migratedContacts: Contact[]; idMap: Map<string, string> }> {
+    if (!userId || guestContacts.length === 0) {
+      return { migratedContacts: [], idMap: new Map() };
+    }
 
     const now = new Date().toISOString();
+    const idMap = new Map<string, string>();
+
     const itemsWithRefs = guestContacts.map((contact) => {
       const docRef = doc(collection(db, 'users', userId, 'contacts'));
+      if (contact.id) {
+        idMap.set(contact.id, docRef.id);
+      }
+
+      const cleanName = String(contact.name || 'Contact').trim().slice(0, 200) || 'Contact';
+      const cleanCategory = contact.category || 'Other';
+
       const contactObj = sanitizeForFirestore({
-        name: contact.name,
-        role: contact.role,
-        organization: contact.organization,
-        category: contact.category || 'Other',
-        email: contact.email,
-        phone: contact.phone,
-        linkedIn: contact.linkedIn,
-        notes: contact.notes,
-        nextFollowUpDate: contact.nextFollowUpDate,
-        applicationIds: contact.applicationIds || [],
+        name: cleanName,
+        role: contact.role ? String(contact.role).slice(0, 200) : undefined,
+        organization: contact.organization ? String(contact.organization).slice(0, 200) : undefined,
+        category: cleanCategory,
+        email: contact.email ? String(contact.email).slice(0, 200) : undefined,
+        phone: contact.phone ? String(contact.phone).slice(0, 50) : undefined,
+        linkedIn: contact.linkedIn ? String(contact.linkedIn).slice(0, 1000) : undefined,
+        notes: contact.notes ? String(contact.notes).slice(0, 20000) : undefined,
+        nextFollowUpDate: contact.nextFollowUpDate ? String(contact.nextFollowUpDate).slice(0, 40) : undefined,
+        applicationIds: Array.isArray(contact.applicationIds) ? contact.applicationIds.slice(0, 100) : [],
         userId,
-        createdAt: contact.createdAt || now,
+        createdAt: contact.createdAt ? String(contact.createdAt).slice(0, 40) : now,
         updatedAt: now,
       });
+
       return { docRef, contactObj, originalGuestId: contact.id };
     });
 
@@ -401,10 +427,12 @@ export class ContactRepository {
       // Clear guest contacts from local storage
       localStorage.removeItem(LOCAL_STORAGE_KEYS.GUEST_CONTACTS);
 
-      return itemsWithRefs.map(({ docRef, contactObj }) => ({
-        id: docRef.id,
+      const migratedContacts: Contact[] = itemsWithRefs.map(({ docRef, contactObj }) => ({
         ...(contactObj as unknown as Omit<Contact, 'id'>),
+        id: docRef.id,
       }));
+
+      return { migratedContacts, idMap };
     } catch (err) {
       console.error('Failed to migrate guest contacts to Firestore:', err);
       throw err;

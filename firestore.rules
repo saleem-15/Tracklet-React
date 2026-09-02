@@ -22,29 +22,29 @@ service cloud.firestore {
         && (data.platform is string && data.platform.size() > 0 && data.platform.size() <= 100)
         && (data.dateApplied is string && data.dateApplied.size() > 0 && data.dateApplied.size() <= 40)
         && (!('userId' in data) || data.userId == null || (data.userId is string && data.userId == request.auth.uid))
-        && (!('notes' in data) || (data.notes is string && data.notes.size() <= 20000))
-        && (!('jobLink' in data) || (data.jobLink is string && data.jobLink.size() <= 3000))
-        && (!('companyDomain' in data) || (data.companyDomain is string && data.companyDomain.size() <= 200))
-        && (!('contactEmail' in data) || (data.contactEmail is string && data.contactEmail.size() <= 200))
-        && (!('contacts' in data) || (data.contacts is list && data.contacts.size() <= 50))
-        && (!('contactIds' in data) || (data.contactIds is list && data.contactIds.size() <= 100))
-        && (!('tasks' in data) || (data.tasks is list && data.tasks.size() <= 100))
-        && (!('emails' in data) || (data.emails is list && data.emails.size() <= 100))
-        && (!('history' in data) || (data.history is list && data.history.size() <= 100));
+        && (!('notes' in data) || data.notes == null || (data.notes is string && data.notes.size() <= 20000))
+        && (!('jobLink' in data) || data.jobLink == null || (data.jobLink is string && data.jobLink.size() <= 3000))
+        && (!('companyDomain' in data) || data.companyDomain == null || (data.companyDomain is string && data.companyDomain.size() <= 200))
+        && (!('contactEmail' in data) || data.contactEmail == null || (data.contactEmail is string && data.contactEmail.size() <= 200))
+        && (!('contacts' in data) || data.contacts == null || (data.contacts is list && data.contacts.size() <= 50))
+        && (!('contactIds' in data) || data.contactIds == null || (data.contactIds is list && data.contactIds.size() <= 100))
+        && (!('tasks' in data) || data.tasks == null || (data.tasks is list && data.tasks.size() <= 100))
+        && (!('emails' in data) || data.emails == null || (data.emails is list && data.emails.size() <= 100))
+        && (!('history' in data) || data.history == null || (data.history is list && data.history.size() <= 100));
     }
 
     function isValidContact(data) {
       return (data.name is string && data.name.size() > 0 && data.name.size() <= 200)
         && (!('userId' in data) || data.userId == null || (data.userId is string && data.userId == request.auth.uid))
-        && (!('category' in data) || (data.category is string && data.category.size() <= 50))
-        && (!('role' in data) || (data.role is string && data.role.size() <= 200))
-        && (!('organization' in data) || (data.organization is string && data.organization.size() <= 200))
-        && (!('email' in data) || (data.email is string && data.email.size() <= 200))
-        && (!('phone' in data) || (data.phone is string && data.phone.size() <= 50))
-        && (!('linkedIn' in data) || (data.linkedIn is string && data.linkedIn.size() <= 1000))
-        && (!('notes' in data) || (data.notes is string && data.notes.size() <= 20000))
-        && (!('nextFollowUpDate' in data) || (data.nextFollowUpDate is string && data.nextFollowUpDate.size() <= 40))
-        && (!('applicationIds' in data) || (data.applicationIds is list && data.applicationIds.size() <= 100));
+        && (!('category' in data) || data.category == null || (data.category is string && data.category.size() <= 50))
+        && (!('role' in data) || data.role == null || (data.role is string && data.role.size() <= 200))
+        && (!('organization' in data) || data.organization == null || (data.organization is string && data.organization.size() <= 200))
+        && (!('email' in data) || data.email == null || (data.email is string && data.email.size() <= 200))
+        && (!('phone' in data) || data.phone == null || (data.phone is string && data.phone.size() <= 50))
+        && (!('linkedIn' in data) || data.linkedIn == null || (data.linkedIn is string && data.linkedIn.size() <= 1000))
+        && (!('notes' in data) || data.notes == null || (data.notes is string && data.notes.size() <= 20000))
+        && (!('nextFollowUpDate' in data) || data.nextFollowUpDate == null || (data.nextFollowUpDate is string && data.nextFollowUpDate.size() <= 40))
+        && (!('applicationIds' in data) || data.applicationIds == null || (data.applicationIds is list && data.applicationIds.size() <= 100));
     }
 
     // User document, User Applications & User Contacts Sub-collections
