@@ -29,14 +29,29 @@ export type EmploymentType =
   | 'Contract'
   | 'Internship';
 
+export type ContactCategory =
+  | 'Mentor'
+  | 'Recruiter'
+  | 'Hiring Manager'
+  | 'Referral'
+  | 'Peer / Alumni'
+  | 'Other';
+
 export interface Contact {
   id: string;
+  userId?: string;
   name: string;
   role?: string;
+  organization?: string;
+  category?: ContactCategory;
   email?: string;
   phone?: string;
   linkedIn?: string;
   notes?: string;
+  nextFollowUpDate?: string; // YYYY-MM-DD
+  applicationIds?: string[];
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface ApplicationTask {
@@ -69,6 +84,7 @@ export interface Application {
   jobLink?: string;
   notes?: string;
   contactEmail?: string;
+  contactIds?: string[];
   contacts?: Contact[];
   tasks?: ApplicationTask[];
   emails?: EmailLog[];
@@ -104,7 +120,7 @@ export interface SortState {
   order: SortOrder;
 }
 
-export type ActiveTab = 'all' | 'pipeline' | 'stats' | 'settings';
+export type ActiveTab = 'all' | 'pipeline' | 'contacts' | 'stats' | 'settings';
 
 export interface ExpiryNotificationSettings {
   enabled: boolean;

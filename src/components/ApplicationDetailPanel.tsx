@@ -13,12 +13,20 @@ import { UnsavedChangesPrompt } from './detail/UnsavedChangesPrompt';
 import { ApplicationNotesSection } from './detail/ApplicationNotesSection';
 import { ApplicationQuickLinks } from './detail/ApplicationQuickLinks';
 import { resolveDraftOnOpen, clearNoteDraft } from '../lib/editor/noteDrafts';
+import { useEscapeKey } from '../lib/useEscapeKey';
 
 export interface ApplicationDetailPanelProps {
   app: Application | null;
+  allContacts?: Contact[];
   onClose: () => void;
   onUpdateApp: (id: string, updates: Partial<Application>) => Promise<void>;
   onDeleteApp: (id: string) => Promise<void>;
+  onLinkContact?: (contactId: string, appId: string) => Promise<void>;
+  onUnlinkContact?: (contactId: string, appId: string) => Promise<void>;
+  onCreateAndLinkContact?: (contactData: Omit<Contact, 'id' | 'userId' | 'createdAt' | 'updatedAt'>, appId: string) => Promise<void>;
+  onUpdateContact?: (id: string, updates: Partial<Contact>) => Promise<void>;
+  onSelectContact?: (contactId: string) => void;
+  onEditContact?: (contact: Contact) => void;
   onShowToast?: (
     type: 'success' | 'error' | 'info' | 'warning',
     title: string,
@@ -30,9 +38,16 @@ export interface ApplicationDetailPanelProps {
 
 export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
   app,
+  allContacts = [],
   onClose,
   onUpdateApp,
   onDeleteApp,
+  onLinkContact,
+  onUnlinkContact,
+  onCreateAndLinkContact,
+  onUpdateContact,
+  onSelectContact,
+  onEditContact,
   onShowToast,
 }) => {
   const [notes, setNotes] = useState(app?.notes || '');
@@ -213,17 +228,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
     onClose();
   }, [isEditingInfo, onClose, onUpdateApp]);
 
-  useEffect(() => {
-    if (!app) return;
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        if (showUnsavedPrompt) setShowUnsavedPrompt(false);
-        else handleRequestClose();
-      }
-    };
-    window.addEventListener('keydown', handleKey);
-    return () => window.removeEventListener('keydown', handleKey);
-  }, [app, showUnsavedPrompt, handleRequestClose]);
+  useEscapeKey(handleRequestClose, Boolean(app) && !showUnsavedPrompt);
 
   if (!app) return null;
 
@@ -431,9 +436,23 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
               />
 
               <ContactManagerSection
-                contacts={app.contacts}
-                onSaveContact={handleSaveContact}
-                onDeleteContact={handleDeleteContact}
+                allContacts={allContacts}
+                linkedContactIds={app.contactIds || []}
+                legacyContacts={app.contacts || []}
+                onLinkContact={async (contactId) => {
+                  if (onLinkContact) await onLinkContact(contactId, app.id);
+                }}
+                onUnlinkContact={async (contactId) => {
+                  if (onUnlinkContact) await onUnlinkContact(contactId, app.id);
+                }}
+                onCreateAndLinkContact={async (data) => {
+                  if (onCreateAndLinkContact) {
+                    await onCreateAndLinkContact(data, app.id);
+                  }
+                }}
+                onUpdateContact={onUpdateContact}
+                onSelectContact={onSelectContact}
+                onEditContact={onEditContact}
               />
 
               <StatusHistoryTimeline

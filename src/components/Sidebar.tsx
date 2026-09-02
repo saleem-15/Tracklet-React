@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Table, 
   Kanban, 
+  Users,
   BarChart3, 
   LogIn, 
   LogOut, 
@@ -13,15 +14,18 @@ import {
   PanelLeftOpen,
   X
 } from 'lucide-react';
-import { ActiveTab, Application, ExpiryNotificationSettings } from '../types';
+import { ActiveTab, Application, Contact, ExpiryNotificationSettings } from '../types';
 import { User } from '../lib/firebase';
 import { getExpiringSoonTasks } from '../lib/expiryUtils';
+import { getContactsFollowUpDueSoon } from '../lib/contactUtils';
+import { useEscapeKey } from '../lib/useEscapeKey';
 import { ACTIVE_STATUSES } from '../lib/constants';
 
 interface SidebarProps {
   activeTab: ActiveTab;
   setActiveTab: (tab: ActiveTab) => void;
   applications: Application[];
+  contacts?: Contact[];
   expirySettings: ExpiryNotificationSettings;
   user: User | null;
   onSignIn: () => void;
@@ -35,6 +39,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   activeTab,
   setActiveTab,
   applications,
+  contacts = [],
   expirySettings,
   user,
   onSignIn,
@@ -51,16 +56,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
     }
   });
 
-  // Handle escape key to close mobile drawer
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isMobileOpen && onCloseMobile) {
-        onCloseMobile();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isMobileOpen, onCloseMobile]);
+  // Handle escape key to close mobile drawer (stack-aware)
+  useEscapeKey(() => {
+    if (onCloseMobile) onCloseMobile();
+  }, isMobileOpen);
 
   // Lock body scroll on mobile when drawer is open
   useEffect(() => {
@@ -90,12 +89,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const totalCount = applications.filter((a) => a.status !== 'Archived').length;
 
-  // Calculate expiring tasks count based on threshold settings
   const expiringTasks = getExpiringSoonTasks(
     applications,
     expirySettings.expiryThresholdHours
   );
   const expiringTasksCount = expiringTasks.length;
+
+  // Calculate follow-up due count for contacts
+  const followUpDueCount = getContactsFollowUpDueSoon(
+    contacts,
+    expirySettings.expiryThresholdHours
+  ).length;
 
   const handleTabClick = (tab: ActiveTab) => {
     setActiveTab(tab);
@@ -188,6 +192,51 @@ export const Sidebar: React.FC<SidebarProps> = ({
           )
         ) : activePipelineCount > 0 ? (
           <span className="w-2 h-2 rounded-full bg-blue-600" />
+        ) : null}
+      </button>
+
+      <button
+        type="button"
+        onClick={() => handleTabClick('contacts')}
+        title="Contacts & Mentors"
+        className={`w-full flex items-center ${
+          isMobileView
+            ? 'justify-between px-3.5 py-3 min-h-[44px]'
+            : isCollapsed
+            ? 'justify-center py-2.5 px-0'
+            : 'justify-between px-2.5 py-2'
+        } rounded-[10px] transition-all text-left group cursor-pointer ${
+          activeTab === 'contacts'
+            ? 'bg-white text-slate-900 font-bold border border-slate-200/90 shadow-xs ring-1 ring-slate-950/5'
+            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
+        }`}
+      >
+        <div className="flex items-center gap-2.5">
+          <Users className={`w-4 h-4 shrink-0 transition-colors ${activeTab === 'contacts' ? 'text-blue-600' : 'text-slate-500 group-hover:text-slate-700'}`} />
+          {(!isCollapsed || isMobileView) && <span className="text-xs">Contacts</span>}
+        </div>
+        {!isCollapsed || isMobileView ? (
+          <div className="flex items-center gap-1.5">
+            {followUpDueCount > 0 && (
+              <span
+                className="font-mono text-xs text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded-md border border-amber-200/80 font-bold animate-pulse motion-reduce:animate-none"
+                title={`${followUpDueCount} follow-up${followUpDueCount === 1 ? '' : 's'} due soon`}
+              >
+                {followUpDueCount}
+              </span>
+            )}
+            <span className={`font-mono text-xs px-1.5 py-0.5 rounded-md border transition-colors ${
+              activeTab === 'contacts'
+                ? 'text-slate-800 bg-slate-100 border-slate-200 font-semibold'
+                : 'text-slate-500 bg-slate-100/60 border-slate-200/60'
+            }`}>
+              {contacts.length}
+            </span>
+          </div>
+        ) : followUpDueCount > 0 ? (
+          <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse motion-reduce:animate-none" />
+        ) : contacts.length > 0 ? (
+          <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
         ) : null}
       </button>
 

@@ -3,6 +3,7 @@ import {
   collection, 
   getDocs, 
   addDoc, 
+  setDoc,
   updateDoc, 
   deleteDoc, 
   doc, 
@@ -10,52 +11,9 @@ import {
 } from './firebase';
 import { Application, ApplicationStatus } from '../types';
 import { INITIAL_SAMPLE_APPLICATIONS } from './sampleData';
-import { LOCAL_STORAGE_KEYS } from './constants';
+import { LOCAL_STORAGE_KEYS, APPLICATION_STATUSES } from './constants';
 import { createStatusHistoryEntry, appendStatusHistory } from './historyService';
-
-/**
- * Strips undefined properties recursively so Firestore does not reject document writes.
- * Supports nested objects, array elements, and primitive values.
- */
-function sanitizeForFirestore<T extends Record<string, unknown>>(obj: T): Record<string, unknown> {
-  const result: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(obj)) {
-    if (value !== undefined) {
-      if (Array.isArray(value)) {
-        // Recursively sanitize array elements that are objects
-        result[key] = value.map((item) => {
-          if (item !== null && typeof item === 'object' && !Array.isArray(item)) {
-            return sanitizeForFirestore(item as Record<string, unknown>);
-          }
-          return item;
-        });
-      } else if (value !== null && typeof value === 'object') {
-        result[key] = sanitizeForFirestore(value as Record<string, unknown>);
-      } else {
-        result[key] = value;
-      }
-    }
-  }
-  return result;
-}
-
-/**
- * Helper to commit Firestore batch operations in safe chunks (< 500 operations per batch).
- */
-async function commitInChunks<T>(
-  items: T[],
-  operation: (batch: ReturnType<typeof writeBatch>, item: T) => void
-): Promise<void> {
-  const CHUNK_SIZE = 450;
-  for (let i = 0; i < items.length; i += CHUNK_SIZE) {
-    const chunk = items.slice(i, i + CHUNK_SIZE);
-    const batch = writeBatch(db);
-    for (const item of chunk) {
-      operation(batch, item);
-    }
-    await batch.commit();
-  }
-}
+import { sanitizeForFirestore, commitInChunks } from './firestoreUtils';
 
 export class ApplicationRepository {
   /**
@@ -125,6 +83,7 @@ export class ApplicationRepository {
 
     const appData = {
       ...newApp,
+      contactIds: newApp.contactIds || [],
       history: initialHistory,
       stageUpdatedAt: now,
       createdAt: now,
@@ -168,22 +127,33 @@ export class ApplicationRepository {
   static async updateApplication(
     id: string,
     updates: Partial<Application>,
-    userId?: string
+    userId?: string,
+    fullApp?: Application
   ): Promise<Partial<Application>> {
     const now = new Date().toISOString();
-    const updatedFields = sanitizeForFirestore({ ...updates, updatedAt: now });
+    const cleanUpdates = { ...updates, updatedAt: now };
 
     if (userId) {
       try {
         const docRef = doc(db, 'users', userId, 'applications', id);
-        await updateDoc(docRef, updatedFields);
+        if (fullApp) {
+          const payload = sanitizeForFirestore({
+            ...fullApp,
+            ...cleanUpdates,
+            userId,
+          });
+          await setDoc(docRef, payload, { merge: true });
+        } else {
+          const updatedFields = sanitizeForFirestore(cleanUpdates);
+          await updateDoc(docRef, updatedFields);
+        }
       } catch (err) {
         console.error('Failed to update Firestore application:', err);
         throw err;
       }
     }
 
-    return updatedFields;
+    return sanitizeForFirestore(cleanUpdates);
   }
 
   /**
@@ -256,10 +226,10 @@ export class ApplicationRepository {
   }
 
   /**
-   * Batch import applications (from CSV) into /users/{userId}/applications.
+   * Batch import applications (from CSV or guest migration) into /users/{userId}/applications.
    */
   static async batchImport(
-    newApps: Omit<Application, 'id' | 'userId' | 'createdAt' | 'updatedAt' | 'stageUpdatedAt'>[],
+    newApps: (Partial<Application> | Omit<Application, 'id' | 'userId' | 'createdAt' | 'updatedAt' | 'stageUpdatedAt'>)[],
     userId?: string
   ): Promise<Application[]> {
     const now = new Date().toISOString();
@@ -269,18 +239,53 @@ export class ApplicationRepository {
       try {
         const itemsWithRefs = newApps.map((appItem) => {
           const docRef = doc(collection(db, 'users', userId, 'applications'));
-          const initialHistory = appItem.history && appItem.history.length > 0
-            ? appItem.history
-            : [createStatusHistoryEntry(appItem.status, undefined, now)];
+          
+          const validStatus: ApplicationStatus = 
+            appItem.status && (APPLICATION_STATUSES as string[]).includes(appItem.status)
+              ? (appItem.status as ApplicationStatus)
+              : 'Saved';
 
-          const appObj = sanitizeForFirestore({
-            ...appItem,
+          const initialHistory = Array.isArray(appItem.history) && appItem.history.length > 0
+            ? appItem.history.slice(0, 100)
+            : [createStatusHistoryEntry(validStatus, undefined, now)];
+
+          // Extract and strip any existing client ID / userId to avoid document payload pollution
+          const { id: _oldId, userId: _oldUserId, ...restFields } = appItem as Record<string, unknown>;
+
+          const sanitizedPayload: Record<string, unknown> = {
+            ...restFields,
+            company: String(appItem.company || 'Untitled Company').trim().slice(0, 200) || 'Untitled Company',
+            role: String(appItem.role || 'Position').trim().slice(0, 200) || 'Position',
+            status: validStatus,
+            platform: String(appItem.platform || 'Other').trim().slice(0, 100) || 'Other',
+            dateApplied: String(appItem.dateApplied || now.slice(0, 10)).trim().slice(0, 40) || now.slice(0, 10),
+            contactIds: Array.isArray(appItem.contactIds) ? appItem.contactIds.slice(0, 100) : [],
+            tasks: Array.isArray(appItem.tasks) ? appItem.tasks.slice(0, 100) : [],
+            emails: Array.isArray(appItem.emails) ? appItem.emails.slice(0, 100) : [],
             history: initialHistory,
             userId,
-            stageUpdatedAt: now,
-            createdAt: now,
+            stageUpdatedAt: typeof restFields.stageUpdatedAt === 'string' ? restFields.stageUpdatedAt.slice(0, 40) : now,
+            createdAt: typeof restFields.createdAt === 'string' ? restFields.createdAt.slice(0, 40) : now,
             updatedAt: now,
-          });
+          };
+
+          if (appItem.notes) {
+            sanitizedPayload.notes = String(appItem.notes).slice(0, 20000);
+          }
+          if (appItem.jobLink) {
+            sanitizedPayload.jobLink = String(appItem.jobLink).slice(0, 3000);
+          }
+          if (appItem.companyDomain) {
+            sanitizedPayload.companyDomain = String(appItem.companyDomain).slice(0, 200);
+          }
+          if (appItem.contactEmail) {
+            sanitizedPayload.contactEmail = String(appItem.contactEmail).slice(0, 200);
+          }
+          if (Array.isArray(appItem.contacts)) {
+            sanitizedPayload.contacts = appItem.contacts.slice(0, 50);
+          }
+
+          const appObj = sanitizeForFirestore(sanitizedPayload);
 
           return { docRef, appObj };
         });
@@ -290,7 +295,7 @@ export class ApplicationRepository {
         });
 
         itemsWithRefs.forEach(({ docRef, appObj }) => {
-          createdList.push({ id: docRef.id, ...(appObj as unknown as Omit<Application, 'id'>) });
+          createdList.push({ ...(appObj as unknown as Omit<Application, 'id'>), id: docRef.id });
         });
       } catch (err) {
         console.error('Failed batch import in Firestore:', err);
@@ -298,17 +303,30 @@ export class ApplicationRepository {
       }
     } else {
       newApps.forEach((appItem, index) => {
-        const initialHistory = appItem.history && appItem.history.length > 0
-          ? appItem.history
-          : [createStatusHistoryEntry(appItem.status, undefined, now)];
+        const validStatus: ApplicationStatus = 
+          appItem.status && (APPLICATION_STATUSES as string[]).includes(appItem.status)
+            ? (appItem.status as ApplicationStatus)
+            : 'Saved';
+
+        const initialHistory = Array.isArray(appItem.history) && appItem.history.length > 0
+          ? appItem.history.slice(0, 100)
+          : [createStatusHistoryEntry(validStatus, undefined, now)];
+
+        const { id: oldId, userId: _oldUserId, ...restFields } = appItem as Record<string, unknown>;
 
         createdList.push({
-          id: `imported-${Date.now()}-${index}`,
+          ...(restFields as unknown as Omit<Application, 'id' | 'userId'>),
+          id: (typeof oldId === 'string' && oldId) ? oldId : `imported-${Date.now()}-${index}`,
           userId: 'guest',
-          ...appItem,
+          company: String(appItem.company || 'Untitled Company').trim() || 'Untitled Company',
+          role: String(appItem.role || 'Position').trim() || 'Position',
+          status: validStatus,
+          platform: (appItem.platform as any) || 'Other',
+          dateApplied: String(appItem.dateApplied || now.slice(0, 10)).trim() || now.slice(0, 10),
+          contactIds: Array.isArray(appItem.contactIds) ? appItem.contactIds : [],
           history: initialHistory,
-          stageUpdatedAt: now,
-          createdAt: now,
+          stageUpdatedAt: typeof restFields.stageUpdatedAt === 'string' ? restFields.stageUpdatedAt : now,
+          createdAt: typeof restFields.createdAt === 'string' ? restFields.createdAt : now,
           updatedAt: now,
         });
       });
@@ -324,6 +342,7 @@ export class ApplicationRepository {
     const now = new Date().toISOString();
     const initialWithHistory = INITIAL_SAMPLE_APPLICATIONS.map((item) => ({
       ...item,
+      contactIds: item.contactIds || [],
       history: item.history && item.history.length > 0
         ? item.history
         : [createStatusHistoryEntry(item.status, undefined, item.createdAt || now)],

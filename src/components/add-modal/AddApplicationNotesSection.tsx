@@ -30,7 +30,7 @@ export const AddApplicationNotesSection: React.FC<AddApplicationNotesSectionProp
           onChange={onNotesChange}
           ariaLabel="New application notes"
           minRows={6}
-          placeholder="Referral info, salary target, interview notes... Type / for commands"
+          placeholder="Referral info, salary target, interview notes..."
           templates={NOTE_TEMPLATES}
         />
       </div>

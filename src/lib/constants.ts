@@ -1,4 +1,25 @@
-import { ApplicationStatus, JobPlatform, WorkLocation, EmploymentType } from '../types';
+import { ApplicationStatus, JobPlatform, WorkLocation, EmploymentType, ContactCategory } from '../types';
+
+export const CONTACT_CATEGORIES: ContactCategory[] = [
+  'Mentor',
+  'Recruiter',
+  'Hiring Manager',
+  'Referral',
+  'Peer / Alumni',
+  'Other',
+];
+
+export const CONTACT_CATEGORY_STYLES: Record<
+  ContactCategory,
+  { bg: string; text: string; border: string }
+> = {
+  Mentor: { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200/80' },
+  Recruiter: { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200/80' },
+  'Hiring Manager': { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200/80' },
+  Referral: { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200/80' },
+  'Peer / Alumni': { bg: 'bg-indigo-50', text: 'text-indigo-700', border: 'border-indigo-200/80' },
+  Other: { bg: 'bg-slate-100', text: 'text-slate-700', border: 'border-slate-200/80' },
+};
 
 export const APPLICATION_STATUSES: ApplicationStatus[] = [
   'Saved',
@@ -111,6 +132,9 @@ export const STATUS_ACTIVE_STYLES: Record<ApplicationStatus, string> = {
 
 export const LOCAL_STORAGE_KEYS = {
   GUEST_APPS: 'tracklet_guest_apps_v1',
+  GUEST_CONTACTS: 'tracklet_guest_contacts_v1',
+  CONTACTS_LAYOUT: 'tracklet_contacts_layout_v1',
+  CONTACTS_MIGRATED: 'tracklet_contacts_migrated',
   EXPIRY_SETTINGS: 'tracklet_expiry_settings_v1',
   SIDEBAR_COLLAPSED: 'tracklet_sidebar_collapsed',
   HISTORY_PREFIX: 'tracklet_history_',

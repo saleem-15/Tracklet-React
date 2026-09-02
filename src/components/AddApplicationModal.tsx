@@ -8,17 +8,22 @@ import { AddApplicationContactsSection } from './add-modal/AddApplicationContact
 import { AddApplicationNotesSection } from './add-modal/AddApplicationNotesSection';
 import { AddApplicationFooter } from './add-modal/AddApplicationFooter';
 import { UnsavedChangesPrompt } from './detail/UnsavedChangesPrompt';
+import { useEscapeKey } from '../lib/useEscapeKey';
 
 export interface AddApplicationModalProps {
   isOpen: boolean;
+  allContacts?: Contact[];
   onClose: () => void;
   onAdd: (newApp: Omit<Application, 'id' | 'userId' | 'createdAt' | 'updatedAt' | 'stageUpdatedAt'>) => Promise<void>;
+  onCreateContact?: (contactData: Omit<Contact, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => Promise<Contact>;
 }
 
 export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
   isOpen,
+  allContacts = [],
   onClose,
   onAdd,
+  onCreateContact,
 }) => {
   const todayStr = new Date().toISOString().split('T')[0];
 
@@ -59,13 +64,15 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
   const dialogRef = React.useRef<HTMLDivElement>(null);
   const previousFocusRef = React.useRef<HTMLElement | null>(null);
 
+  useEscapeKey(handleRequestClose, isOpen && !showUnsavedPrompt);
+
   useEffect(() => {
     if (!isOpen) return;
 
-    // Save previously focused element
+    // Save active element to restore focus on close
     previousFocusRef.current = document.activeElement as HTMLElement | null;
 
-    // Move focus to first focusable input or button inside dialog
+    // Auto-focus first input field after animation mount
     const timer = setTimeout(() => {
       if (dialogRef.current) {
         const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
@@ -78,9 +85,7 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
     }, 50);
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        handleRequestClose();
-      } else if (e.key === 'Tab' && dialogRef.current) {
+      if (e.key === 'Tab' && dialogRef.current) {
         const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
           'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
         );
@@ -105,19 +110,13 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
         previousFocusRef.current.focus();
       }
     };
-  }, [isOpen, onClose, isDirty]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
   // Contact Handlers
-  const handleAddContact = (contactData: Omit<Contact, 'id'>) => {
-    setContacts((prev) => [
-      ...prev,
-      {
-        id: `c-${Date.now()}-${Math.random().toString(36).substring(2, 5)}`,
-        ...contactData,
-      },
-    ]);
+  const handleAddContact = (contact: Contact) => {
+    setContacts((prev) => (prev.some((c) => c.id === contact.id) ? prev : [...prev, contact]));
   };
 
   const handleRemoveContact = (id: string) => {
@@ -172,7 +171,7 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
       status,
       jobLink: formattedJobLink || undefined,
       contactEmail: primaryContactEmail,
-      contacts: contacts.length > 0 ? contacts : undefined,
+      contactIds: contacts.map((c) => c.id),
       tasks: tasks.length > 0 ? tasks : undefined,
       notes: notes.trim() || undefined,
     };
@@ -265,8 +264,10 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
 
                 <AddApplicationContactsSection
                   contacts={contacts}
+                  allContacts={allContacts}
                   onAddContact={handleAddContact}
                   onRemoveContact={handleRemoveContact}
+                  onCreateContact={onCreateContact}
                 />
               </div>
             </div>

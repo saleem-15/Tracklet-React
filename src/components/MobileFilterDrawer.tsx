@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { X, Filter, RotateCcw, Check, Search } from 'lucide-react';
 import { FilterState, JobPlatform, ApplicationStatus, WorkLocation, EmploymentType } from '../types';
 import { UI_TOKENS } from '../theme/tokens';
+import { useEscapeKey } from '../lib/useEscapeKey';
 
 interface MobileFilterDrawerProps {
   isOpen: boolean;

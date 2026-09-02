@@ -1,5 +1,6 @@
 import React from 'react';
 import { Sparkles } from 'lucide-react';
+import { useEscapeKey } from '../../lib/useEscapeKey';
 
 export interface UnsavedChangesPromptProps {
   onKeepEditing: () => void;
@@ -10,6 +11,9 @@ export const UnsavedChangesPrompt: React.FC<UnsavedChangesPromptProps> = ({
   onKeepEditing,
   onDiscardAndExit,
 }) => {
+  // Dismiss prompt on Escape key (topmost on stack)
+  useEscapeKey(onKeepEditing, true);
+
   return (
     <div
       className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/50 p-4 animate-in fade-in duration-150"

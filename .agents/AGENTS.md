@@ -50,10 +50,15 @@ src/
 3. Update sample data in `src/lib/sampleData.ts`.
 4. Update CSV export (`src/lib/exportCsv.ts`) and CSV import (`src/lib/importCsv.ts`).
 
-### B. Creating New React Components
-- Keep components under **300 lines**. If a component exceeds 400 lines, extract logical sub-components.
+### B. Creating New React Components & Canonical Shared Primitives
+- Keep components under **300 lines**. If a component exceeds 300 lines, extract logical sub-components.
 - Always define a clear `Props` TypeScript interface.
 - Never use inline raw hex colors; use Tailwind utility classes aligned with the design tokens in `DESIGN.md`.
+- **Mandatory Canonical Shared Components**:
+  1. **Notes & Markdown Editor**: ALWAYS use the shared `RichTextEditor` (`src/components/editor/RichTextEditor.tsx`) for notes, meeting logs, discussion surfaces, and prep notes. Raw HTML `<textarea>` for notes is strictly forbidden.
+  2. **Dropdowns & Selects**: ALWAYS use the shared `CustomSelectDropdown` (`src/components/CustomSelectDropdown.tsx`) for select menus. Raw HTML `<select>` elements are strictly forbidden.
+  3. **Modals & Drawers Dismissal**: ALL modals, slide-overs, drawers, and overlay dialogs MUST implement an `Escape` keydown listener (`e.key === 'Escape'`) to dismiss cleanly.
+  4. **Status & Stages**: ALWAYS use `StatusBadge` or `STAGE_CONFIG_MAP` from `src/lib/constants.ts`. Never hardcode status colors or labels.
 
 ### C. State Management
 - `App.tsx` holds top-level state (`applications`, `filter`, `sort`, `user`, `activeTab`, `selectedAppId`).

@@ -1,46 +1,50 @@
 import React, { useState } from 'react';
-import { Users, Plus, Linkedin, Phone } from 'lucide-react';
+import { Users, UserPlus, Linkedin, Phone } from 'lucide-react';
 import { Contact } from '../../types';
-import { CONTACT_AVATAR_COLORS, getInitials } from '../../lib/constants';
+import { CONTACT_AVATAR_COLORS, CONTACT_CATEGORY_STYLES, getInitials } from '../../lib/constants';
 import { DeleteIconButton } from '../IconButton';
 import { LinkifiedText } from '../LinkifiedText';
+import { ContactSearchPicker } from '../ContactSearchPicker';
+import { normalizeUrl } from '../../lib/linkUtils';
 
 export interface AddApplicationContactsSectionProps {
   contacts: Contact[];
-  onAddContact: (contact: Omit<Contact, 'id'>) => void;
+  allContacts?: Contact[];
+  onAddContact: (contact: Contact) => void;
   onRemoveContact: (id: string) => void;
+  onCreateContact?: (contactData: Omit<Contact, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => Promise<Contact>;
 }
 
 export const AddApplicationContactsSection: React.FC<AddApplicationContactsSectionProps> = ({
   contacts,
+  allContacts = [],
   onAddContact,
   onRemoveContact,
+  onCreateContact,
 }) => {
-  const [cName, setCName] = useState('');
-  const [cRole, setCRole] = useState('');
-  const [cEmail, setCEmail] = useState('');
-  const [cPhone, setCPhone] = useState('');
-  const [cLinkedIn, setCLinkedIn] = useState('');
-  const [cNotes, setCNotes] = useState('');
-  const [showExtraContactFields, setShowExtraContactFields] = useState(false);
+  const [showPicker, setShowPicker] = useState(false);
 
-  const handleAdd = () => {
-    if (!cName.trim() && !cEmail.trim() && !cPhone.trim()) return;
-    onAddContact({
-      name: cName.trim() || 'Point of Contact',
-      role: cRole.trim() || undefined,
-      email: cEmail.trim() || undefined,
-      phone: cPhone.trim() || undefined,
-      linkedIn: cLinkedIn.trim() || undefined,
-      notes: cNotes.trim() || undefined,
-    });
-    setCName('');
-    setCRole('');
-    setCEmail('');
-    setCPhone('');
-    setCLinkedIn('');
-    setCNotes('');
-    setShowExtraContactFields(false);
+  const handleSelectExisting = (contact: Contact) => {
+    onAddContact(contact);
+    setShowPicker(false);
+  };
+
+  const handleCreateAndLink = async (
+    data: Omit<Contact, 'id' | 'userId' | 'createdAt' | 'updatedAt'>
+  ) => {
+    if (onCreateContact) {
+      const created = await onCreateContact(data);
+      onAddContact(created);
+      setShowPicker(false);
+    } else {
+      // Fallback local creation if no global handler passed
+      const localContact: Contact = {
+        id: `local-c-${Date.now()}`,
+        ...data,
+      };
+      onAddContact(localContact);
+      setShowPicker(false);
+    }
   };
 
   return (
@@ -49,26 +53,69 @@ export const AddApplicationContactsSection: React.FC<AddApplicationContactsSecti
         <h3 className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
           <Users className="w-3.5 h-3.5 text-blue-500" />
           Key Contacts
-          {contacts.length > 0 && <span className="ml-1 text-slate-500 font-normal">({contacts.length})</span>}
+          {contacts.length > 0 && (
+            <span className="ml-1 text-slate-500 font-normal">({contacts.length})</span>
+          )}
         </h3>
+
+        <button
+          type="button"
+          onClick={() => setShowPicker(!showPicker)}
+          className="flex items-center gap-1 text-[11px] font-mono font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded-lg border border-blue-200/60 cursor-pointer transition-colors"
+        >
+          {showPicker ? 'Close' : '+ Link Contact'}
+        </button>
       </div>
+
+      {showPicker && (
+        <div className="p-3 bg-slate-50/80 rounded-xl border border-slate-200/90 shadow-2xs">
+          <ContactSearchPicker
+            contacts={allContacts}
+            linkedContactIds={contacts.map((c) => c.id)}
+            onSelectContact={handleSelectExisting}
+            onCreateAndLink={handleCreateAndLink}
+            onCancel={() => setShowPicker(false)}
+          />
+        </div>
+      )}
 
       <div className="rounded-xl border border-slate-200/80 divide-y divide-slate-100 overflow-hidden bg-white shadow-2xs">
         {contacts.length > 0 ? (
-          contacts.map((c, idx) => {
-            const avatarColor = CONTACT_AVATAR_COLORS[idx % CONTACT_AVATAR_COLORS.length];
+          contacts.map((c) => {
+            const colorIndex = (c.id || c.name)
+              .split('')
+              .reduce((acc, char) => acc + char.charCodeAt(0), 0) % CONTACT_AVATAR_COLORS.length;
+            const avatarColor = CONTACT_AVATAR_COLORS[colorIndex];
+            const category = c.category || 'Other';
+            const categoryStyle = CONTACT_CATEGORY_STYLES[category] || CONTACT_CATEGORY_STYLES.Other;
+
             return (
               <div key={c.id} className="p-3 hover:bg-slate-50/60 transition-colors group">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <div className={`w-8 h-8 rounded-full border-2 font-bold font-mono text-xs flex items-center justify-center shrink-0 ${avatarColor}`}>
+                    <div
+                      className={`w-8 h-8 rounded-full border-2 font-bold font-mono text-xs flex items-center justify-center shrink-0 ${avatarColor}`}
+                    >
                       {getInitials(c.name)}
                     </div>
                     <div className="min-w-0">
-                      <p className="text-xs font-bold text-slate-900 truncate leading-tight">{c.name}</p>
-                      <p className="text-[11px] text-slate-500 truncate">{c.role || 'Contact'}</p>
+                      <div className="flex items-center gap-1.5">
+                        <p className="text-xs font-bold text-slate-900 truncate leading-tight">
+                          {c.name}
+                        </p>
+                        <span
+                          className={`inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-semibold border ${categoryStyle.bg} ${categoryStyle.text} ${categoryStyle.border}`}
+                        >
+                          {category}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 truncate">
+                        {c.role || 'Contact'}
+                        {c.organization && ` · ${c.organization}`}
+                      </p>
                     </div>
                   </div>
+
                   <div className="flex items-center gap-1 shrink-0">
                     {c.email && (
                       <span className="font-mono text-[11px] text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200/80 truncate max-w-[110px]">
@@ -77,7 +124,7 @@ export const AddApplicationContactsSection: React.FC<AddApplicationContactsSecti
                     )}
                     {c.linkedIn && (
                       <a
-                        href={c.linkedIn}
+                        href={normalizeUrl(c.linkedIn)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="p-1 text-blue-700 hover:text-blue-800 hover:bg-blue-50 rounded transition-colors"
@@ -88,7 +135,7 @@ export const AddApplicationContactsSection: React.FC<AddApplicationContactsSecti
                     )}
                     <DeleteIconButton
                       onClick={() => onRemoveContact(c.id)}
-                      title="Remove contact"
+                      title="Remove contact from this application"
                     />
                   </div>
                 </div>
@@ -111,87 +158,11 @@ export const AddApplicationContactsSection: React.FC<AddApplicationContactsSecti
               </div>
             );
           })
-        ) : (
+        ) : !showPicker ? (
           <div className="text-slate-500 font-mono text-[11px] text-center py-3.5">
-            No contacts added.
+            No contacts linked yet.
           </div>
-        )}
-
-        {/* Inline Contact Add Form */}
-        <div className="p-3 bg-slate-50/60 space-y-2 border-t border-slate-100">
-          <div className="grid grid-cols-2 gap-2">
-            <input
-              type="text"
-              value={cName}
-              onChange={(e) => setCName(e.target.value)}
-              placeholder="Name *"
-              className="bg-white text-slate-900 placeholder-slate-500 px-2.5 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:border-blue-400 text-xs font-medium"
-            />
-            <input
-              type="text"
-              value={cRole}
-              onChange={(e) => setCRole(e.target.value)}
-              placeholder="Role"
-              className="bg-white text-slate-900 placeholder-slate-500 px-2.5 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:border-blue-400 text-xs"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-2">
-            <input
-              type="email"
-              value={cEmail}
-              onChange={(e) => setCEmail(e.target.value)}
-              placeholder="Email"
-              className="bg-white text-slate-900 placeholder-slate-500 px-2.5 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:border-blue-400 font-mono text-[11px]"
-            />
-            <input
-              type="tel"
-              value={cPhone}
-              onChange={(e) => setCPhone(e.target.value)}
-              placeholder="Phone"
-              className="bg-white text-slate-900 placeholder-slate-500 px-2.5 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:border-blue-400 font-mono text-[11px]"
-            />
-          </div>
-
-          {showExtraContactFields ? (
-            <div className="space-y-2 animate-in fade-in duration-150">
-              <input
-                type="url"
-                value={cLinkedIn}
-                onChange={(e) => setCLinkedIn(e.target.value)}
-                placeholder="LinkedIn URL (https://linkedin.com/in/...)"
-                className="w-full bg-white text-slate-900 placeholder-slate-500 px-2.5 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:border-blue-400 font-mono text-[11px]"
-              />
-              <textarea
-                value={cNotes}
-                onChange={(e) => setCNotes(e.target.value)}
-                placeholder="Contact notes..."
-                rows={2}
-                className="w-full bg-white text-slate-900 placeholder-slate-500 p-2 rounded-lg border border-slate-200 text-xs resize-none"
-              />
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setShowExtraContactFields(true)}
-              className="text-[11px] font-mono text-blue-600 hover:text-blue-700 font-semibold cursor-pointer py-0.5 inline-flex items-center gap-1"
-            >
-              <span>+ LinkedIn &amp; Notes</span>
-            </button>
-          )}
-
-          <div className="flex justify-end pt-1">
-            <button
-              type="button"
-              onClick={handleAdd}
-              disabled={!cName.trim() && !cEmail.trim() && !cPhone.trim()}
-              className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white font-semibold rounded-lg transition-all shadow-2xs cursor-pointer flex items-center gap-1 text-xs"
-            >
-              <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-              <span>Add Contact</span>
-            </button>
-          </div>
-        </div>
+        ) : null}
       </div>
     </div>
   );
