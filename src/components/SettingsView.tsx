@@ -18,9 +18,10 @@ import {
   FileCode2,
   Database
 } from 'lucide-react';
-import { Application, ExpiryNotificationSettings } from '../types';
+import { Application, Contact, ExpiryNotificationSettings } from '../types';
 import { getExpiringSoonTasks } from '../lib/expiryUtils';
 import { exportApplicationsToJSON, validateAndParseJSONBackup } from '../lib/backupJson';
+import { exportContactsToCSV } from '../lib/exportCsv';
 import { ImportCSVModal } from './ImportCSVModal';
 import { AccountSettingsCard } from './AccountSettingsCard';
 import { UI_TOKENS } from '../theme/tokens';
@@ -29,8 +30,10 @@ interface SettingsViewProps {
   settings: ExpiryNotificationSettings;
   onUpdateSettings: (newSettings: ExpiryNotificationSettings) => void;
   applications: Application[];
+  contacts?: Contact[];
   onSelectApplication?: (appId: string) => void;
   onExportCSV?: () => void;
+  onExportContactsCSV?: () => void;
   onExportJSON?: () => void;
   onImportCSV?: (
     apps: Omit<Application, 'id' | 'userId' | 'createdAt' | 'updatedAt' | 'stageUpdatedAt'>[]
@@ -49,8 +52,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   settings,
   onUpdateSettings,
   applications,
+  contacts = [],
   onSelectApplication,
   onExportCSV,
+  onExportContactsCSV,
   onExportJSON,
   onImportCSV,
   onImportJSON,
@@ -87,6 +92,23 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         onShowToast?.('success', 'JSON Backup Exported', `Saved 1:1 complete snapshot of ${applications.length} applications.`);
       } else {
         onShowToast?.('warning', 'Backup Empty', 'No applications available to backup.');
+      }
+    }
+  };
+
+  const handleExportContactsCSV = () => {
+    if (onExportContactsCSV) {
+      onExportContactsCSV();
+    } else {
+      if (!contacts || contacts.length === 0) {
+        onShowToast?.('warning', 'No Contacts to Export', 'Add contacts to export a directory CSV.');
+        return;
+      }
+      const success = exportContactsToCSV(contacts);
+      if (success) {
+        onShowToast?.('success', 'Contacts Exported', `Downloaded ${contacts.length} contacts as CSV.`);
+      } else {
+        onShowToast?.('error', 'Export Failed', 'Could not generate CSV file.');
       }
     }
   };
@@ -465,7 +487,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-slate-700 group-hover:translate-x-0.5 transition-transform" />
           </button>
 
-          {/* CSV Export */}
+          {/* CSV Export Applications */}
           {onExportCSV && (
             <button
               type="button"
@@ -475,13 +497,29 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               <div className="flex items-center gap-3">
                 <Download className="w-4 h-4 text-slate-600 group-hover:scale-110 transition-transform" />
                 <div className="text-left">
-                  <span className="block font-bold text-xs text-slate-900">Export CSV</span>
-                  <span className="text-[11px] text-slate-500">Tabular spreadsheet export</span>
+                  <span className="block font-bold text-xs text-slate-900">Export Jobs (CSV)</span>
+                  <span className="text-[11px] text-slate-500">Job applications spreadsheet</span>
                 </div>
               </div>
               <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-slate-700" />
             </button>
           )}
+
+          {/* CSV Export Contacts */}
+          <button
+            type="button"
+            onClick={handleExportContactsCSV}
+            className="flex items-center justify-between p-3.5 rounded-[10px] border border-slate-200 bg-slate-50 hover:bg-slate-100/80 hover:border-slate-300 text-slate-800 transition-all cursor-pointer shadow-2xs group"
+          >
+            <div className="flex items-center gap-3">
+              <Download className="w-4 h-4 text-slate-600 group-hover:scale-110 transition-transform" />
+              <div className="text-left">
+                <span className="block font-bold text-xs text-slate-900">Export Contacts (CSV)</span>
+                <span className="text-[11px] text-slate-500">Contacts directory spreadsheet</span>
+              </div>
+            </div>
+            <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-slate-700" />
+          </button>
 
           {/* Sample Demo Data Reload */}
           {onSeedDemoData && (

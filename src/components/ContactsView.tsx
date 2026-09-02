@@ -7,8 +7,7 @@ import {
   List, 
   Menu,
   X,
-  Clock,
-  Download
+  Clock
 } from 'lucide-react';
 import { Contact, ContactCategory, Application } from '../types';
 import { CONTACT_CATEGORIES, LOCAL_STORAGE_KEYS } from '../lib/constants';
@@ -19,7 +18,6 @@ import {
   ContactSortField, 
   ContactSortOrder 
 } from '../lib/contactUtils';
-import { exportContactsToCSV } from '../lib/exportCsv';
 import { ContactCardGrid } from './contacts/ContactCardGrid';
 import { ContactTable } from './contacts/ContactTable';
 import { ContactEmptyState } from './contacts/ContactEmptyState';
@@ -127,24 +125,6 @@ export const ContactsView: React.FC<ContactsViewProps> = ({
 
   const isFiltered = searchQuery.trim().length > 0 || selectedCategory !== 'All' || filterDueOnly;
 
-  const handleExportCSV = () => {
-    if (contacts.length === 0) {
-      onShowToast?.('warning', 'No contacts to export', 'Add contacts to export a directory CSV');
-      return;
-    }
-    const contactsToExport = filteredAndSortedContacts.length > 0 ? filteredAndSortedContacts : contacts;
-    const success = exportContactsToCSV(contactsToExport);
-    if (success) {
-      onShowToast?.(
-        'success',
-        'Contacts exported',
-        `Downloaded ${contactsToExport.length} contact${contactsToExport.length === 1 ? '' : 's'} as CSV`
-      );
-    } else {
-      onShowToast?.('error', 'Export failed', 'Could not generate CSV file');
-    }
-  };
-
   return (
     <div className="flex-1 flex flex-col min-h-0 bg-slate-50 overflow-hidden">
       {/* Top Header & Search Bar */}
@@ -204,17 +184,6 @@ export const ContactsView: React.FC<ContactsViewProps> = ({
                 <List className="w-4 h-4" />
               </button>
             </div>
-
-            {/* Export CSV Button */}
-            <button
-              type="button"
-              onClick={handleExportCSV}
-              title="Export contacts as CSV"
-              className="flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-slate-50 active:scale-[0.99] text-slate-700 font-semibold text-xs rounded-xl border border-slate-200 shadow-2xs transition-all cursor-pointer min-h-[36px]"
-            >
-              <Download className="w-3.5 h-3.5 text-slate-500" />
-              <span className="hidden sm:inline">Export CSV</span>
-            </button>
 
             {/* Add Contact Button */}
             <button
