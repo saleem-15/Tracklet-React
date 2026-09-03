@@ -53,10 +53,11 @@ const SlashMenu: React.FC<SlashMenuProps> = ({
 
   const top = shouldFlipUp
     ? Math.max(8, anchorTop - menuHeight - 6)
-    : Math.min(anchorBottom + 4, viewportHeight - menuHeight - 8);
+    : Math.max(8, Math.min(anchorBottom + 4, viewportHeight - menuHeight - 8));
 
-  // Clamp left coordinate within viewport boundaries
-  const left = Math.max(12, Math.min(rawLeft, viewportWidth - menuWidth - 12));
+  // Clamp left coordinate within viewport boundaries with safety fallback for narrow viewports
+  const maxLeft = Math.max(12, viewportWidth - menuWidth - 12);
+  const left = Math.max(12, Math.min(rawLeft, maxLeft));
 
   return (
     <div
@@ -64,7 +65,7 @@ const SlashMenu: React.FC<SlashMenuProps> = ({
       aria-label="Formatting commands"
       aria-activedescendant={`slash-option-${items[selectedIndex]?.id ?? ''}`}
       tabIndex={-1}
-      className="fixed z-[60] w-56 max-h-60 overflow-y-auto bg-white border border-slate-200/90 rounded-[12px] shadow-xl p-1.5 animate-in fade-in zoom-in-95 duration-150"
+      className="fixed z-[60] w-56 max-w-[calc(100vw-24px)] max-h-60 overflow-y-auto bg-white border border-slate-200/90 rounded-[12px] shadow-xl p-1.5 animate-in fade-in zoom-in-95 duration-150"
       style={{ top, left }}
     >
       {items.map((action, index) => {

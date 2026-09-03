@@ -545,8 +545,10 @@ function TrackletAppContent() {
 
     // 4. Background Firestore sync if authenticated
     if (user?.emailVerified) {
+      let persistedContactId: string | null = null;
       ContactRepository.addContact(newContact, user.uid)
-        .then((created) => {
+        .then(async (created) => {
+          persistedContactId = created.id;
           // Reconcile optimistic ID with the final Firestore document ID
           setContacts((prev) => prev.map((c) => (c.id === tempId ? created : c)));
 
@@ -562,26 +564,43 @@ function TrackletAppContent() {
               )
             );
 
-            for (const appId of created.applicationIds) {
-              const targetApp = applications.find((a) => a.id === appId);
-              ContactRepository.linkContactToApplication(created.id, appId, user.uid, created, targetApp).catch((e) => {
-                console.warn(`Could not sync link between contact ${created.id} and app ${appId}:`, e);
-              });
+            const linkResults = await Promise.allSettled(
+              created.applicationIds.map((appId) =>
+                ContactRepository.linkContactToApplication(created.id, appId, user.uid)
+              )
+            );
+
+            const failedAppIds = linkResults
+              .map((res, idx) => (res.status === 'rejected' ? created.applicationIds![idx] : null))
+              .filter((id): id is string => id !== null);
+
+            if (failedAppIds.length > 0) {
+              setApplications((prev) =>
+                prev.map((app) =>
+                  failedAppIds.includes(app.id)
+                    ? {
+                        ...app,
+                        contactIds: (app.contactIds || []).filter(
+                          (cId) => cId !== created.id && cId !== tempId
+                        ),
+                      }
+                    : app
+                )
+              );
+              throw new Error(`Failed to link contact to application(s): ${failedAppIds.join(', ')}`);
             }
           }
         })
         .catch((err) => {
           console.error('Failed to sync contact to Firestore, rolling back:', err);
           // Rollback state
-          setContacts((prev) => {
-            const reverted = prev.filter((c) => c.id !== tempId);
-            ContactRepository.saveGuestContacts(reverted);
-            return reverted;
-          });
+          setContacts((prev) => prev.filter((c) => c.id !== tempId && c.id !== persistedContactId));
           setApplications((prev) =>
             prev.map((app) => ({
               ...app,
-              contactIds: (app.contactIds || []).filter((cId) => cId !== tempId),
+              contactIds: (app.contactIds || []).filter(
+                (cId) => cId !== tempId && cId !== persistedContactId
+              ),
             }))
           );
           addToast('error', 'Sync Failed', `Could not save ${optimisticContact.name} to cloud.`);
@@ -1441,8 +1460,11 @@ function TrackletAppContent() {
         onLinkContact={handleLinkContact}
         onUnlinkContact={handleUnlinkContact}
         onCreateAndLinkContact={async (contactData, appId) => {
-          const created = await handleAddContact(contactData);
-          await handleLinkContact(created.id, appId);
+          const mergedAppIds = Array.from(new Set([...(contactData.applicationIds || []), appId]));
+          await handleAddContact({
+            ...contactData,
+            applicationIds: mergedAppIds,
+          });
         }}
         onUpdateContact={handleUpdateContact}
         onSelectContact={(contactId) => {

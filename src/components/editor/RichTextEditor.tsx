@@ -36,7 +36,7 @@ const isEmptyMarkdown = (md: string): boolean => !canonicalizeMarkdown(md);
 export const RichTextEditor: React.FC<RichTextEditorProps> = ({
   value,
   onChange,
-  placeholder = "Type '/' for commands, or start writing...",
+  placeholder = "Start writing or type '/' for commands...",
   ariaLabel = 'Rich text editor',
   minRows = 8,
   templates = null,
@@ -174,7 +174,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
           onFocus={() => setEditorFocused(true)}
           onBlur={() => setEditorFocused(false)}
           style={{ minHeight: userHeight ? `${userHeight}px` : minHeight }}
-          className="w-full p-3.5 bg-white text-slate-800 focus:outline-none font-sans text-xs leading-relaxed border-none block"
+          className="w-full p-3.5 pb-8 bg-white text-slate-800 focus:outline-none font-sans text-xs leading-relaxed border-none block"
           role="textbox"
           aria-multiline="true"
           aria-label={ariaLabel}
