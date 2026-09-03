@@ -485,6 +485,8 @@ export const ContactManagerSection: React.FC<ContactManagerSectionProps> = ({
                         <div className="flex-1 min-w-[140px] flex items-center justify-between text-[11px] font-mono bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200/60 group/email">
                           <a
                             href={`mailto:${contact.email}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
                             className="flex items-center gap-1.5 text-slate-700 hover:text-blue-600 truncate"
                           >
                             <Mail className="w-3 h-3 text-blue-500 shrink-0" />
@@ -561,14 +563,7 @@ export const ContactManagerSection: React.FC<ContactManagerSectionProps> = ({
           })
         ) : !showLinkPicker ? (
           <div className="text-slate-500 font-mono text-[11px] text-center py-4">
-            No contacts linked yet.{' '}
-            <button
-              type="button"
-              onClick={() => setShowLinkPicker(true)}
-              className="text-blue-600 hover:underline cursor-pointer font-semibold ml-1"
-            >
-              Link one
-            </button>
+            No contacts linked to this application yet.
           </div>
         ) : null}
       </div>

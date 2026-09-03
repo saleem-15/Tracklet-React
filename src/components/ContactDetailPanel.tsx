@@ -313,7 +313,7 @@ export const ContactDetailPanel: React.FC<ContactDetailPanelProps> = ({
                       onClose();
                     }}
                     title="Delete contact"
-                    className="p-2 rounded-xl text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer min-h-[36px] min-w-[36px] flex items-center justify-center"
+                    className="p-2 rounded-xl text-slate-500 hover:text-rose-600 hover:bg-rose-50 active:bg-rose-100 transition-colors cursor-pointer min-h-[36px] min-w-[36px] flex items-center justify-center"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -483,7 +483,7 @@ export const ContactDetailPanel: React.FC<ContactDetailPanelProps> = ({
               {applications.length > 0 && (
                 <div className="space-y-1.5">
                   <label className="block text-xs font-semibold text-slate-700">
-                    Linked Applications {editSelectedAppIds.length > 0 && <span className="text-slate-400 font-normal">({editSelectedAppIds.length})</span>}
+                    Linked Applications
                   </label>
                   <ApplicationSearchPicker
                     applications={applications}
@@ -518,6 +518,8 @@ export const ContactDetailPanel: React.FC<ContactDetailPanelProps> = ({
                   {contact.email ? (
                     <a
                       href={`mailto:${contact.email}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="flex-1 min-w-[200px] flex items-center justify-between p-2.5 rounded-xl border border-slate-200/80 bg-slate-50/60 hover:bg-blue-50 hover:border-blue-200 transition-colors group min-h-[42px]"
                     >
                       <div className="flex items-center gap-2.5 min-w-0">
@@ -593,7 +595,7 @@ export const ContactDetailPanel: React.FC<ContactDetailPanelProps> = ({
                 <div className="flex items-center justify-between">
                   <h3 className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
                     <Link2 className="w-3.5 h-3.5 text-blue-500" />
-                    Linked Applications ({linkedApps.length})
+                    Linked Applications
                   </h3>
                   {applications.length > 0 && (
                     <button

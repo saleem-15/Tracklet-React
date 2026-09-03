@@ -48,9 +48,6 @@ export const StatusHistoryTimeline: React.FC<StatusHistoryTimelineProps> = ({
           <History className="w-3.5 h-3.5 text-blue-500" />
           Status History
         </h3>
-        <span className="text-[11px] font-mono text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">
-          {history.length} {history.length === 1 ? 'event' : 'events'}
-        </span>
       </div>
 
       <div className="bg-white border border-slate-200/80 rounded-xl p-3.5 max-h-[200px] overflow-y-auto shadow-2xs">

@@ -36,7 +36,7 @@ const isEmptyMarkdown = (md: string): boolean => !canonicalizeMarkdown(md);
 export const RichTextEditor: React.FC<RichTextEditorProps> = ({
   value,
   onChange,
-  placeholder = 'Start writing...',
+  placeholder = "Start writing or type '/' for commands...",
   ariaLabel = 'Rich text editor',
   minRows = 8,
   templates = null,
@@ -174,7 +174,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
           onFocus={() => setEditorFocused(true)}
           onBlur={() => setEditorFocused(false)}
           style={{ minHeight: userHeight ? `${userHeight}px` : minHeight }}
-          className="w-full p-3.5 bg-white text-slate-800 focus:outline-none font-sans text-xs leading-relaxed border-none block"
+          className="w-full p-3.5 pb-8 bg-white text-slate-800 focus:outline-none font-sans text-xs leading-relaxed border-none block"
           role="textbox"
           aria-multiline="true"
           aria-label={ariaLabel}
@@ -191,12 +191,12 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
           </div>
         )}
 
-        {/* Discoverability hint: press / for commands (focused + empty) */}
+        {/* Discoverability hint: press / for commands (shown whenever editor has focus) */}
         <div
           aria-hidden="true"
           data-hint-pill="true"
           className={`pointer-events-none absolute bottom-2 right-3 flex items-center gap-1.5 text-[11px] text-slate-400 select-none transition-opacity duration-200 ${
-            editorFocused && isEmpty ? 'opacity-100' : 'opacity-0'
+            editorFocused ? 'opacity-100' : 'opacity-0'
           }`}
         >
           Press

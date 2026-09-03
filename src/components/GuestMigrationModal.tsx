@@ -153,7 +153,7 @@ export const GuestMigrationModal: React.FC<GuestMigrationModalProps> = ({
               type="button"
               onClick={onDiscard}
               disabled={isImporting}
-              className="w-full flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl text-rose-600 hover:bg-rose-50 font-semibold text-xs transition-colors cursor-pointer"
+              className="w-full flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl text-slate-500 hover:text-rose-600 hover:bg-rose-50 active:bg-rose-100 font-semibold text-xs transition-colors cursor-pointer"
             >
               <Trash2 className="w-3.5 h-3.5" />
               <span>Discard Guest Data &amp; Start Fresh</span>

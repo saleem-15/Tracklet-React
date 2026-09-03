@@ -141,10 +141,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
             : isCollapsed
             ? 'justify-center py-2.5 px-0'
             : 'justify-between px-2.5 py-2'
-        } rounded-[10px] transition-all text-left group cursor-pointer ${
+        } rounded-[10px] border transition-colors duration-150 text-left group cursor-pointer font-semibold ${
           activeTab === 'all'
-            ? 'bg-white text-slate-900 font-bold border border-slate-200/90 shadow-xs ring-1 ring-slate-950/5'
-            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
+            ? 'bg-white text-slate-900 border-slate-200/90 shadow-xs ring-1 ring-slate-950/5'
+            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50 border-transparent'
         }`}
       >
         <div className="flex items-center gap-2.5">
@@ -174,10 +174,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
             : isCollapsed
             ? 'justify-center py-2.5 px-0'
             : 'justify-between px-2.5 py-2'
-        } rounded-[10px] transition-all text-left group cursor-pointer ${
+        } rounded-[10px] border transition-colors duration-150 text-left group cursor-pointer font-semibold ${
           activeTab === 'pipeline'
-            ? 'bg-white text-slate-900 font-bold border border-slate-200/90 shadow-xs ring-1 ring-slate-950/5'
-            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
+            ? 'bg-white text-slate-900 border-slate-200/90 shadow-xs ring-1 ring-slate-950/5'
+            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50 border-transparent'
         }`}
       >
         <div className="flex items-center gap-2.5">
@@ -205,10 +205,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
             : isCollapsed
             ? 'justify-center py-2.5 px-0'
             : 'justify-between px-2.5 py-2'
-        } rounded-[10px] transition-all text-left group cursor-pointer ${
+        } rounded-[10px] border transition-colors duration-150 text-left group cursor-pointer font-semibold ${
           activeTab === 'contacts'
-            ? 'bg-white text-slate-900 font-bold border border-slate-200/90 shadow-xs ring-1 ring-slate-950/5'
-            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
+            ? 'bg-white text-slate-900 border-slate-200/90 shadow-xs ring-1 ring-slate-950/5'
+            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50 border-transparent'
         }`}
       >
         <div className="flex items-center gap-2.5">
@@ -250,10 +250,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
             : isCollapsed
             ? 'justify-center py-2.5 px-0'
             : 'justify-between px-2.5 py-2'
-        } rounded-[10px] transition-all text-left group cursor-pointer ${
+        } rounded-[10px] border transition-colors duration-150 text-left group cursor-pointer font-semibold ${
           activeTab === 'stats'
-            ? 'bg-white text-slate-900 font-bold border border-slate-200/90 shadow-xs ring-1 ring-slate-950/5'
-            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
+            ? 'bg-white text-slate-900 border-slate-200/90 shadow-xs ring-1 ring-slate-950/5'
+            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50 border-transparent'
         }`}
       >
         <div className="flex items-center gap-2.5">
@@ -272,10 +272,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
             : isCollapsed
             ? 'justify-center py-2.5 px-0'
             : 'justify-between px-2.5 py-2'
-        } rounded-[10px] transition-all text-left group cursor-pointer ${
+        } rounded-[10px] border transition-colors duration-150 text-left group cursor-pointer font-semibold ${
           activeTab === 'settings'
-            ? 'bg-white text-slate-900 font-bold border border-slate-200/90 shadow-xs ring-1 ring-slate-950/5'
-            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
+            ? 'bg-white text-slate-900 border-slate-200/90 shadow-xs ring-1 ring-slate-950/5'
+            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50 border-transparent'
         }`}
       >
         <div className="flex items-center gap-2.5">

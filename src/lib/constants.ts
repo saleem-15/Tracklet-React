@@ -226,4 +226,14 @@ export const STAGE_CONFIG_MAP: Record<
   },
 };
 
+/**
+ * Standardized destructive action styling token.
+ * Uses calm slate text in resting state and reveals a soft rose background on hover/active.
+ */
+export const DESTRUCTIVE_ACTION_STYLE = {
+  iconButton: 'text-slate-500 hover:text-rose-600 hover:bg-rose-50 active:bg-rose-100 transition-colors',
+  button: 'text-slate-500 hover:text-rose-600 hover:bg-rose-50 active:bg-rose-100 transition-colors',
+};
+
+
 

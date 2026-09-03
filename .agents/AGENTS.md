@@ -83,6 +83,15 @@ src/
    - Delete feature branches immediately after merging.
 2. **No Unprompted Commits**: NEVER run `git commit` or commit changes unless the user **explicitly asks/commands** you to do so in the prompt. Always leave modified files uncommitted in the working tree for the user to review.
 
+### F. Universal UI/UX Standards
+All components must follow the formalized guidelines in `.agents/rules/ui-ux-standards.md`:
+1. **Universal Outbound Links**: All `mailto:`, `tel:`, and external URLs MUST have `target="_blank" rel="noopener noreferrer"`. Never navigate the current tab away from Tracklet.
+2. **Universal Optimistic UI**: Modals/forms dismiss immediately on submit (`onClose()`), React state updates synchronously with a local optimistic ID, and background Firestore syncing executes with automatic rollback on error.
+3. **Standardized Destructive Palette**: Destructive actions (delete, discard, unlink) must use subtle rest and rose hover: `text-slate-500 hover:text-rose-600 hover:bg-rose-50 active:bg-rose-100 transition-colors`. Never use permanent alarming red for row or card buttons.
+4. **Resilient Form Validation**: Always include `noValidate` on forms, auto-trim strings, and use permissive RFC-compliant regex with inline error messaging.
+5. **Header Hierarchy**: Do not place dynamic record counts as subtitles directly under primary page or modal headings.
+6. **Micro-interaction Stability**: Use `transition-colors duration-150` instead of `transition-all`. Keep font-weights and borders constant across states to prevent layout shifts.
+
 ---
 
 ## 4. Verification Checklist Before Marking Work Complete

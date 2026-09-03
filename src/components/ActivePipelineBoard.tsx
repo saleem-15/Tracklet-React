@@ -349,6 +349,8 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
                               {app.contactEmail ? (
                                 <a
                                   href={`mailto:${app.contactEmail}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
                                   onClick={(e) => e.stopPropagation()}
                                   className="inline-flex items-center gap-1 text-blue-700 hover:text-blue-900 bg-blue-50/80 hover:bg-blue-100 px-1.5 py-0.5 rounded border border-blue-200/80 transition-colors"
                                   title={`Contact email: ${app.contactEmail}`}

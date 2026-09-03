@@ -502,68 +502,112 @@ function TrackletAppContent() {
     }
   };
 
-  // Add Contact
+  // Add Contact (Optimistic UI with Background Sync & Rollback)
   const handleAddContact = async (
     newContact: Omit<Contact, 'id' | 'userId' | 'createdAt' | 'updatedAt'>
   ): Promise<Contact> => {
-    try {
-      const created = await ContactRepository.addContact(
-        newContact,
-        user?.emailVerified ? user.uid : undefined
-      );
+    const now = new Date().toISOString();
+    const tempId = `c-opt-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+    const optimisticContact: Contact = {
+      id: tempId,
+      userId: user?.uid || 'guest',
+      createdAt: now,
+      updatedAt: now,
+      ...newContact,
+      applicationIds: newContact.applicationIds || [],
+    };
 
-      setContacts((prev) => {
-        const next = [created, ...prev.filter((c) => c.id !== created.id)];
-        if (!user?.emailVerified) ContactRepository.saveGuestContacts(next);
+    // 1. Synchronously update local contacts state
+    setContacts((prev) => {
+      const next = [optimisticContact, ...prev.filter((c) => c.id !== tempId)];
+      if (!user?.emailVerified) ContactRepository.saveGuestContacts(next);
+      return next;
+    });
+
+    // 2. Synchronously link to application(s) in local state if provided
+    if (optimisticContact.applicationIds && optimisticContact.applicationIds.length > 0) {
+      setApplications((prev) => {
+        const next = prev.map((app) =>
+          optimisticContact.applicationIds!.includes(app.id)
+            ? {
+                ...app,
+                contactIds: Array.from(new Set([...(app.contactIds || []), tempId])),
+              }
+            : app
+        );
+        if (!user?.emailVerified) ApplicationRepository.saveGuestApplications(next);
         return next;
       });
-
-      // If contact was linked to application(s) during creation, update those applications
-      if (created.applicationIds && created.applicationIds.length > 0) {
-        setApplications((prev) => {
-          const next = prev.map((app) =>
-            created.applicationIds!.includes(app.id)
-              ? {
-                  ...app,
-                  contactIds: Array.from(new Set([...(app.contactIds || []), created.id])),
-                }
-              : app
-          );
-          if (!user?.emailVerified) ApplicationRepository.saveGuestApplications(next);
-          return next;
-        });
-
-        // Sync to Firestore if authenticated
-        if (user?.emailVerified) {
-          for (const appId of created.applicationIds) {
-            const targetApp = applications.find((a) => a.id === appId);
-            ContactRepository.linkContactToApplication(created.id, appId, user.uid, created, targetApp).catch((e) => {
-              console.warn(`Could not sync link between contact ${created.id} and app ${appId}:`, e);
-            });
-          }
-        }
-      }
-
-      addToast('success', 'Contact Added', created.name);
-      return created;
-    } catch (err) {
-      console.error('Failed to add contact (using local fallback):', err);
-      const fallbackContact: Contact = {
-        id: `local-c-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-        userId: user?.uid || 'guest',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        ...newContact,
-        applicationIds: newContact.applicationIds || [],
-      };
-      setContacts((prev) => {
-        const next = [fallbackContact, ...prev];
-        ContactRepository.saveGuestContacts(next);
-        return next;
-      });
-      addToast('success', 'Contact Added', fallbackContact.name);
-      return fallbackContact;
     }
+
+    // 3. Instant toast feedback
+    addToast('success', 'Contact Added', optimisticContact.name);
+
+    // 4. Background Firestore sync if authenticated
+    if (user?.emailVerified) {
+      let persistedContactId: string | null = null;
+      ContactRepository.addContact(newContact, user.uid)
+        .then(async (created) => {
+          persistedContactId = created.id;
+          // Reconcile optimistic ID with the final Firestore document ID
+          setContacts((prev) => prev.map((c) => (c.id === tempId ? created : c)));
+
+          if (created.applicationIds && created.applicationIds.length > 0) {
+            setApplications((prev) =>
+              prev.map((app) =>
+                created.applicationIds!.includes(app.id)
+                  ? {
+                      ...app,
+                      contactIds: (app.contactIds || []).map((cId) => (cId === tempId ? created.id : cId)),
+                    }
+                  : app
+              )
+            );
+
+            const linkResults = await Promise.allSettled(
+              created.applicationIds.map((appId) =>
+                ContactRepository.linkContactToApplication(created.id, appId, user.uid)
+              )
+            );
+
+            const failedAppIds = linkResults
+              .map((res, idx) => (res.status === 'rejected' ? created.applicationIds![idx] : null))
+              .filter((id): id is string => id !== null);
+
+            if (failedAppIds.length > 0) {
+              setApplications((prev) =>
+                prev.map((app) =>
+                  failedAppIds.includes(app.id)
+                    ? {
+                        ...app,
+                        contactIds: (app.contactIds || []).filter(
+                          (cId) => cId !== created.id && cId !== tempId
+                        ),
+                      }
+                    : app
+                )
+              );
+              throw new Error(`Failed to link contact to application(s): ${failedAppIds.join(', ')}`);
+            }
+          }
+        })
+        .catch((err) => {
+          console.error('Failed to sync contact to Firestore, rolling back:', err);
+          // Rollback state
+          setContacts((prev) => prev.filter((c) => c.id !== tempId && c.id !== persistedContactId));
+          setApplications((prev) =>
+            prev.map((app) => ({
+              ...app,
+              contactIds: (app.contactIds || []).filter(
+                (cId) => cId !== tempId && cId !== persistedContactId
+              ),
+            }))
+          );
+          addToast('error', 'Sync Failed', `Could not save ${optimisticContact.name} to cloud.`);
+        });
+    }
+
+    return optimisticContact;
   };
 
   // Update Contact
@@ -1416,8 +1460,11 @@ function TrackletAppContent() {
         onLinkContact={handleLinkContact}
         onUnlinkContact={handleUnlinkContact}
         onCreateAndLinkContact={async (contactData, appId) => {
-          const created = await handleAddContact(contactData);
-          await handleLinkContact(created.id, appId);
+          const mergedAppIds = Array.from(new Set([...(contactData.applicationIds || []), appId]));
+          await handleAddContact({
+            ...contactData,
+            applicationIds: mergedAppIds,
+          });
         }}
         onUpdateContact={handleUpdateContact}
         onSelectContact={(contactId) => {

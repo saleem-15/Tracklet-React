@@ -34,12 +34,30 @@ const SlashMenu: React.FC<SlashMenuProps> = ({
 
   if (!open || items.length === 0) return null;
 
-  const top = rect
-    ? 'anchorBottom' in rect && rect.anchorBottom !== undefined
-      ? rect.anchorBottom + 4
-      : rect.top ?? 0
-    : 0;
-  const left = rect?.left ?? 0;
+  const menuHeight = 240; // max-h-60 is 240px
+  const menuWidth = 224; // w-56 is 224px
+
+  const anchorBottom =
+    rect && 'anchorBottom' in rect && rect.anchorBottom !== undefined
+      ? rect.anchorBottom
+      : rect?.top ?? 0;
+  const anchorTop = rect?.anchorTop ?? rect?.top ?? anchorBottom;
+  const rawLeft = rect?.left ?? 0;
+
+  const viewportHeight = typeof window !== 'undefined' ? window.innerHeight : 800;
+  const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 1200;
+
+  // If opening below would overflow off-screen, flip upward above caret
+  const spaceBelow = viewportHeight - anchorBottom;
+  const shouldFlipUp = spaceBelow < menuHeight + 20 && anchorTop > menuHeight;
+
+  const top = shouldFlipUp
+    ? Math.max(8, anchorTop - menuHeight - 6)
+    : Math.max(8, Math.min(anchorBottom + 4, viewportHeight - menuHeight - 8));
+
+  // Clamp left coordinate within viewport boundaries with safety fallback for narrow viewports
+  const maxLeft = Math.max(12, viewportWidth - menuWidth - 12);
+  const left = Math.max(12, Math.min(rawLeft, maxLeft));
 
   return (
     <div
@@ -47,7 +65,7 @@ const SlashMenu: React.FC<SlashMenuProps> = ({
       aria-label="Formatting commands"
       aria-activedescendant={`slash-option-${items[selectedIndex]?.id ?? ''}`}
       tabIndex={-1}
-      className="fixed z-[60] w-56 max-h-60 overflow-y-auto bg-white border border-slate-200/90 rounded-[12px] shadow-xl p-1.5 animate-in fade-in zoom-in-95 duration-150"
+      className="fixed z-[60] w-56 max-w-[calc(100vw-24px)] max-h-60 overflow-y-auto bg-white border border-slate-200/90 rounded-[12px] shadow-xl p-1.5 animate-in fade-in zoom-in-95 duration-150"
       style={{ top, left }}
     >
       {items.map((action, index) => {

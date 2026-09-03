@@ -143,7 +143,7 @@ export const ContactCardGrid: React.FC<ContactCardGridProps> = ({
                           setActiveMenuId(null);
                           onDeleteContact(contact.id);
                         }}
-                        className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer text-left"
+                        className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-slate-600 hover:text-rose-600 hover:bg-rose-50 active:bg-rose-100 transition-colors cursor-pointer text-left"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                         <span>Delete Contact</span>
@@ -199,6 +199,8 @@ export const ContactCardGrid: React.FC<ContactCardGridProps> = ({
                 {contact.email && (
                   <a
                     href={`mailto:${contact.email}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     title={`Email ${contact.name}`}
                     className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors min-h-[28px] min-w-[28px] flex items-center justify-center"
                   >
@@ -208,6 +210,8 @@ export const ContactCardGrid: React.FC<ContactCardGridProps> = ({
                 {contact.phone && (
                   <a
                     href={`tel:${contact.phone}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     title={`Call ${contact.name}`}
                     className="p-1.5 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors min-h-[28px] min-w-[28px] flex items-center justify-center"
                   >
