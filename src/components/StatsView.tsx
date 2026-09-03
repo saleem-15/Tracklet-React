@@ -66,9 +66,6 @@ export const StatsView: React.FC<StatsViewProps> = ({
             <h2 className="text-lg font-bold text-slate-900 tracking-tight font-heading leading-tight">
               Job Search Analytics
             </h2>
-            <p className="text-xs text-slate-500">
-              Overview across <span className="font-semibold text-slate-700">{filteredApps.length}</span> applications
-            </p>
           </div>
         </div>
       </div>

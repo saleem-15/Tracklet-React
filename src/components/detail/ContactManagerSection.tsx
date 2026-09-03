@@ -563,14 +563,7 @@ export const ContactManagerSection: React.FC<ContactManagerSectionProps> = ({
           })
         ) : !showLinkPicker ? (
           <div className="text-slate-500 font-mono text-[11px] text-center py-4">
-            No contacts linked yet.{' '}
-            <button
-              type="button"
-              onClick={() => setShowLinkPicker(true)}
-              className="text-blue-600 hover:underline cursor-pointer font-semibold ml-1"
-            >
-              Link one
-            </button>
+            No contacts linked to this application yet.
           </div>
         ) : null}
       </div>
