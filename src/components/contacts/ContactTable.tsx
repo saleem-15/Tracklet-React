@@ -221,6 +221,8 @@ export const ContactTable: React.FC<ContactTableProps> = ({
                       {contact.email && (
                         <a
                           href={`mailto:${contact.email}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
                           title={`Email ${contact.name}`}
                           className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                         >
@@ -230,6 +232,8 @@ export const ContactTable: React.FC<ContactTableProps> = ({
                       {contact.phone && (
                         <a
                           href={`tel:${contact.phone}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
                           title={`Call ${contact.name}`}
                           className="p-1.5 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
                         >
@@ -259,7 +263,7 @@ export const ContactTable: React.FC<ContactTableProps> = ({
                         type="button"
                         onClick={() => onDeleteContact(contact.id)}
                         title="Delete contact"
-                        className="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                        className="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 active:bg-rose-100 rounded-lg transition-colors cursor-pointer"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>

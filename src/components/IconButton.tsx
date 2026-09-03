@@ -21,7 +21,7 @@ export const IconButton: React.FC<IconButtonProps> = ({
   const variantStyles = {
     default: 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 active:bg-slate-200',
     primary: 'text-blue-700 hover:text-blue-800 hover:bg-blue-50 active:bg-blue-100',
-    danger: 'text-rose-700 hover:text-rose-800 hover:bg-rose-50 active:bg-rose-100',
+    danger: 'text-slate-500 hover:text-rose-600 hover:bg-rose-50 active:bg-rose-100',
     subtle: 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 active:bg-slate-200',
   };
 

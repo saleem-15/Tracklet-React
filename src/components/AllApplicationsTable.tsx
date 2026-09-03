@@ -283,10 +283,10 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
 
             <button
               onClick={handleBulkDeleteAction}
-              className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white hover:bg-rose-50 text-rose-700 border border-slate-200 hover:border-rose-200 transition-all shadow-2xs font-medium cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white hover:bg-rose-50 text-slate-600 hover:text-rose-600 active:bg-rose-100 border border-slate-200 hover:border-rose-200 transition-colors shadow-2xs font-medium cursor-pointer"
               title="Delete selected applications (Del)"
             >
-              <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+              <Trash2 className="w-3.5 h-3.5" />
               <span>Delete</span>
             </button>
 
