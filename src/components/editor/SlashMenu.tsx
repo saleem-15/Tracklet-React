@@ -34,12 +34,29 @@ const SlashMenu: React.FC<SlashMenuProps> = ({
 
   if (!open || items.length === 0) return null;
 
-  const top = rect
-    ? 'anchorBottom' in rect && rect.anchorBottom !== undefined
-      ? rect.anchorBottom + 4
-      : rect.top ?? 0
-    : 0;
-  const left = rect?.left ?? 0;
+  const menuHeight = 240; // max-h-60 is 240px
+  const menuWidth = 224; // w-56 is 224px
+
+  const anchorBottom =
+    rect && 'anchorBottom' in rect && rect.anchorBottom !== undefined
+      ? rect.anchorBottom
+      : rect?.top ?? 0;
+  const anchorTop = rect?.anchorTop ?? rect?.top ?? anchorBottom;
+  const rawLeft = rect?.left ?? 0;
+
+  const viewportHeight = typeof window !== 'undefined' ? window.innerHeight : 800;
+  const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 1200;
+
+  // If opening below would overflow off-screen, flip upward above caret
+  const spaceBelow = viewportHeight - anchorBottom;
+  const shouldFlipUp = spaceBelow < menuHeight + 20 && anchorTop > menuHeight;
+
+  const top = shouldFlipUp
+    ? Math.max(8, anchorTop - menuHeight - 6)
+    : Math.min(anchorBottom + 4, viewportHeight - menuHeight - 8);
+
+  // Clamp left coordinate within viewport boundaries
+  const left = Math.max(12, Math.min(rawLeft, viewportWidth - menuWidth - 12));
 
   return (
     <div

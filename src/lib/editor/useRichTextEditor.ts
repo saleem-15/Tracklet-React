@@ -337,6 +337,7 @@ export function useRichTextEditor({ value, onChange }: UseRichTextEditorOptions)
         if (action) applyAction(action, true);
       },
       closeSlashMenu,
+      openSlashMenu: openOptimistically,
       openLinkDialog: linkApi.openLinkDialog,
       linkDialog: linkApi.linkDialog,
       setLinkUrl: linkApi.setLinkUrl,
@@ -352,6 +353,7 @@ export function useRichTextEditor({ value, onChange }: UseRichTextEditorOptions)
       setSlash,
       applyAction,
       closeSlashMenu,
+      openOptimistically,
       linkApi,
     ]
   );

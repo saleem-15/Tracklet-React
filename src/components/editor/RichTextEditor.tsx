@@ -36,7 +36,7 @@ const isEmptyMarkdown = (md: string): boolean => !canonicalizeMarkdown(md);
 export const RichTextEditor: React.FC<RichTextEditorProps> = ({
   value,
   onChange,
-  placeholder = 'Start writing...',
+  placeholder = "Type '/' for commands, or start writing...",
   ariaLabel = 'Rich text editor',
   minRows = 8,
   templates = null,
@@ -191,12 +191,12 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
           </div>
         )}
 
-        {/* Discoverability hint: press / for commands (focused + empty) */}
+        {/* Discoverability hint: press / for commands (shown whenever editor has focus) */}
         <div
           aria-hidden="true"
           data-hint-pill="true"
           className={`pointer-events-none absolute bottom-2 right-3 flex items-center gap-1.5 text-[11px] text-slate-400 select-none transition-opacity duration-200 ${
-            editorFocused && isEmpty ? 'opacity-100' : 'opacity-0'
+            editorFocused ? 'opacity-100' : 'opacity-0'
           }`}
         >
           Press
