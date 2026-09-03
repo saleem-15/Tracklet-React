@@ -74,35 +74,42 @@ export const ContactModal: React.FC<ContactModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) {
+    const trimmedName = name.trim();
+    if (!trimmedName) {
       setError('Contact name is required.');
       return;
     }
 
-    setIsSubmitting(true);
-    setError(null);
-    try {
-      await onSave({
-        name: name.trim(),
-        role: role.trim() || undefined,
-        organization: organization.trim() || undefined,
-        category,
-        email: email.trim() || undefined,
-        phone: phone.trim() || undefined,
-        linkedIn: linkedIn.trim() || undefined,
-        nextFollowUpDate: nextFollowUpDate || undefined,
-        notes: notes.trim() || undefined,
-        applicationIds: selectedAppIds,
-      });
-      onClose();
-    } catch (err) {
-      console.error('Failed to save contact:', err);
-      setError('Failed to save contact. Please check your inputs.');
-    } finally {
-      setIsSubmitting(false);
+    const trimmedEmail = email.trim();
+    if (trimmedEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      setError('Please enter a valid email address (e.g. name.family@company.com).');
+      return;
     }
+
+    let formattedLinkedIn = linkedIn.trim();
+    if (formattedLinkedIn && !/^https?:\/\//i.test(formattedLinkedIn)) {
+      formattedLinkedIn = `https://${formattedLinkedIn}`;
+    }
+
+    setError(null);
+    onSave({
+      name: trimmedName,
+      role: role.trim() || undefined,
+      organization: organization.trim() || undefined,
+      category,
+      email: trimmedEmail || undefined,
+      phone: phone.trim() || undefined,
+      linkedIn: formattedLinkedIn || undefined,
+      nextFollowUpDate: nextFollowUpDate || undefined,
+      notes: notes.trim() || undefined,
+      applicationIds: selectedAppIds,
+    }).catch((err) => {
+      console.error('Failed to save contact:', err);
+    });
+
+    onClose();
   };
 
   const toggleApplicationLink = (appId: string) => {
@@ -145,7 +152,7 @@ export const ContactModal: React.FC<ContactModalProps> = ({
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-5 space-y-3.5 max-h-[80vh] overflow-y-auto">
+        <form noValidate onSubmit={handleSubmit} className="p-5 space-y-3.5 max-h-[80vh] overflow-y-auto">
           {error && (
             <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs">
               {error}
@@ -263,7 +270,7 @@ export const ContactModal: React.FC<ContactModalProps> = ({
               </label>
               <div className="relative">
                 <input
-                  type="url"
+                  type="text"
                   value={linkedIn}
                   onChange={(e) => setLinkedIn(e.target.value)}
                   placeholder="linkedin.com/in/username"

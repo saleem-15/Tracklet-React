@@ -146,14 +146,9 @@ export const ContactsView: React.FC<ContactsViewProps> = ({
             <div className="w-8 h-8 rounded-xl bg-blue-50 border border-blue-200/80 text-blue-600 flex items-center justify-center shrink-0">
               <Users className="w-4 h-4" />
             </div>
-            <div className="min-w-0">
-              <h1 className="text-sm sm:text-base font-bold text-slate-900 truncate leading-none font-heading">
-                Contacts &amp; Mentors Hub
-              </h1>
-              <span className="text-[11px] text-slate-500 font-mono">
-                {filteredAndSortedContacts.length} of {contacts.length} contact{contacts.length === 1 ? '' : 's'}
-              </span>
-            </div>
+            <h1 className="text-sm sm:text-base font-bold text-slate-900 truncate leading-none font-heading">
+              Contacts
+            </h1>
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
@@ -209,14 +204,14 @@ export const ContactsView: React.FC<ContactsViewProps> = ({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search by name, role, organization, or email..."
-              className="w-full bg-slate-50/80 text-slate-900 placeholder-slate-400 pl-8 pr-7 py-1.5 rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500 focus:bg-white text-xs transition-colors"
+              className="w-full bg-slate-50/80 text-slate-900 placeholder-slate-400 pl-8 pr-7 py-1.5 h-[34px] rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500 focus:bg-white text-xs transition-colors"
             />
-            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5 pointer-events-none" />
+            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             {searchQuery && (
               <button
                 type="button"
                 onClick={() => setSearchQuery('')}
-                className="absolute right-2 top-2 text-slate-400 hover:text-slate-600 p-0.5 cursor-pointer"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 cursor-pointer flex items-center justify-center"
               >
                 <X className="w-3 h-3" />
               </button>

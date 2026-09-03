@@ -47,12 +47,19 @@ This document establishes the mandatory interaction rules, visual standards, and
 
 ---
 
-## 5. Header Hierarchy & Metadata Hygiene
-**Rule**: Page titles and modal headers must communicate clear contextual orientation, not raw database counters.
-1. **No Counter Subtitles**: Never place dynamic record counts (e.g. `4 of 12 contacts` or `Overview across 15 applications`) directly underneath primary `<h1>` or `<h2>` headings.
-2. **Contextual Placement**:
-   - Total or filtered item counts belong in **filter toolbars**, **table status bars**, or **compact inline badges** beside the title.
-   - Headers in audit logs and timelines (e.g. `Status History`) must not show meaningless tally badges (e.g. `3 events`). An audit trail's value is in the chronological timeline, not in a raw transition count.
+## 5. Header Hierarchy & Subtitle Standards
+**Rule**: Headers must be clean, high-density, and scannable. Avoid "decorative explanation clutter" and dynamic tally subtitles.
+
+1. **Primary Operational Views (Zero Subtitles)**:
+   - Views like **Applications**, **Active Pipeline**, **Contacts**, and **Analytics** MUST NOT have filler subtitles (e.g. avoid *"Professional network & touchpoints"* or *"Overview across 15 applications"*).
+   - Use clean, punchy noun headings aligned on a single horizontal axis with action buttons to maximize vertical viewport density.
+   - Never place dynamic record counters directly as subtitles under primary headings. Place counters in filter toolbars, status bars, or compact inline badges.
+   - Timelines and audit logs (e.g. `Status History`) must not show meaningless tally badges (e.g. `3 events`).
+
+2. **Legitimate Edge Cases Where Subtitles ARE Permitted & Encouraged**:
+   - **Edge Case A: Zero-Data & Empty States**: Subtitles are mandatory when guiding first-time or empty states (e.g. *"No contacts yet. Add your first recruiter or mentor to track communication history"*).
+   - **Edge Case B: Destructive Confirmation & Pre-Action Modals**: Subtitles are essential for explaining irreversible consequences before a destructive action (e.g. *"This action cannot be undone. All associated notes and logs will be permanently deleted"*).
+   - **Edge Case C: Settings Cards & Technical Field Descriptions**: Subtitles/helper text are valuable below specific complex settings toggles (e.g. explaining what the 48-hour expiration threshold governs), though top-level page headers themselves should remain succinct.
 
 ---
 

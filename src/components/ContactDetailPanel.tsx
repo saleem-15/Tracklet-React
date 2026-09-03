@@ -483,7 +483,7 @@ export const ContactDetailPanel: React.FC<ContactDetailPanelProps> = ({
               {applications.length > 0 && (
                 <div className="space-y-1.5">
                   <label className="block text-xs font-semibold text-slate-700">
-                    Linked Applications {editSelectedAppIds.length > 0 && <span className="text-slate-400 font-normal">({editSelectedAppIds.length})</span>}
+                    Linked Applications
                   </label>
                   <ApplicationSearchPicker
                     applications={applications}
@@ -595,7 +595,7 @@ export const ContactDetailPanel: React.FC<ContactDetailPanelProps> = ({
                 <div className="flex items-center justify-between">
                   <h3 className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
                     <Link2 className="w-3.5 h-3.5 text-blue-500" />
-                    Linked Applications ({linkedApps.length})
+                    Linked Applications
                   </h3>
                   {applications.length > 0 && (
                     <button
