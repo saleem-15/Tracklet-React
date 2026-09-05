@@ -82,6 +82,7 @@ export interface Application {
   dateApplied: string; // YYYY-MM-DD
   status: ApplicationStatus;
   jobLink?: string;
+  emailThreadUrl?: string;
   notes?: string;
   contactEmail?: string;
   contactIds?: string[];

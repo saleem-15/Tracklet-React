@@ -12,6 +12,7 @@ export const INITIAL_SAMPLE_APPLICATIONS: Omit<Application, 'id' | 'userId'>[] =
     dateApplied: '2026-07-15',
     status: 'Interview',
     jobLink: 'https://linear.app/careers/senior-frontend-engineer',
+    emailThreadUrl: 'https://mail.google.com/mail/u/0/#inbox/FMfcgzGsmWdGgKhV',
     contactEmail: 'karla@linear.app',
     contacts: [
       {
@@ -54,6 +55,7 @@ export const INITIAL_SAMPLE_APPLICATIONS: Omit<Application, 'id' | 'userId'>[] =
     dateApplied: '2026-07-10',
     status: 'Offer',
     jobLink: 'https://stripe.com/jobs/staff-product-engineer',
+    emailThreadUrl: 'https://mail.google.com/mail/u/0/#inbox/FMfcgzGsmQxLmNpR',
     contactEmail: 'alex.recruiter@stripe.com',
     contacts: [
       {

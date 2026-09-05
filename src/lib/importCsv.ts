@@ -61,6 +61,7 @@ export interface CSVFieldMapping {
   dateApplied: number;
   status: number;
   jobLink: number;
+  emailThreadUrl: number;
   notes: number;
   contactEmail: number;
   location: number;
@@ -87,6 +88,7 @@ export function autoDetectFieldMapping(headers: string[]): CSVFieldMapping {
     dateApplied: findIdx(['dateapplied', 'applieddate', 'date', 'applicationdate', 'appliedon']),
     status: findIdx(['status', 'stage', 'applicationstatus', 'state', 'progress']),
     jobLink: findIdx(['joblink', 'joblistingurl', 'url', 'link', 'joburl', 'website', 'posting']),
+    emailThreadUrl: findIdx(['emailthreadurl', 'threadurl', 'emailthread', 'emailurl', 'threadlink', 'thread']),
     notes: findIdx(['notes', 'comments', 'description', 'note', 'details', 'remarks']),
     contactEmail: findIdx(['contactemail', 'email', 'recruiteremail', 'contact']),
     location: findIdx(['location', 'city', 'address', 'workplace', 'remote']),

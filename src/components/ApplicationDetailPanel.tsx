@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Application, ApplicationStatus, Contact, ApplicationTask, EmailLog } from '../types';
+import { Application, ApplicationStatus, Contact, ApplicationTask } from '../types';
 import { calculateDaysInStage } from '../lib/sampleData';
 import { ApplicationDetailHeader } from './detail/ApplicationDetailHeader';
 import { ApplicationDetailFooter } from './detail/ApplicationDetailFooter';
@@ -7,7 +7,6 @@ import { ApplicationInfoEditor } from './detail/ApplicationInfoEditor';
 import { ApplicationMetricsBar } from './detail/ApplicationMetricsBar';
 import { TaskChecklistSection } from './detail/TaskChecklistSection';
 import { ContactManagerSection } from './detail/ContactManagerSection';
-import { EmailLogSection } from './detail/EmailLogSection';
 import { StatusHistoryTimeline } from './detail/StatusHistoryTimeline';
 import { UnsavedChangesPrompt } from './detail/UnsavedChangesPrompt';
 import { ApplicationNotesSection } from './detail/ApplicationNotesSection';
@@ -344,14 +343,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
     }
   };
 
-  // Email handlers
-  const handleAddEmailLog = async (emailData: Omit<EmailLog, 'id'>) => {
-    const newEmailLog: EmailLog = { id: `email-${Date.now()}`, ...emailData };
-    await onUpdateApp(app.id, {
-      emails: [...(app.emails || []), newEmailLog],
-      updatedAt: new Date().toISOString(),
-    });
-  };
+
 
   return (
     <div
@@ -425,14 +417,11 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
             <div className="lg:col-span-5 space-y-5">
               <ApplicationQuickLinks
                 jobLink={app.jobLink}
+                emailThreadUrl={app.emailThreadUrl}
                 contactEmail={app.contactEmail}
+                company={app.company}
+                role={app.role}
                 onOpenEditInfo={() => setIsEditingInfo(true)}
-              />
-
-              <EmailLogSection
-                emails={app.emails}
-                contactEmail={app.contactEmail}
-                onAddEmailLog={handleAddEmailLog}
               />
 
               <ContactManagerSection
