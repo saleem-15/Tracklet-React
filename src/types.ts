@@ -102,6 +102,27 @@ export interface StatusHistoryEntry {
   toStatus: ApplicationStatus;
   fromStatus?: ApplicationStatus;
   timestamp: string; // ISO string timestamp
+  note?: string;
+}
+
+export type FollowUpCategory = 
+  | 'Post-Application'
+  | 'Interview'
+  | 'Offer'
+  | 'Networking'
+  | 'Custom';
+
+export interface FollowUpTemplate {
+  id: string;
+  userId?: string;
+  title: string;
+  subject: string;
+  body: string;
+  category: FollowUpCategory;
+  isBuiltIn?: boolean;
+  order?: number;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export type SortField = 'company' | 'role' | 'platform' | 'dateApplied' | 'status' | 'daysInStage';

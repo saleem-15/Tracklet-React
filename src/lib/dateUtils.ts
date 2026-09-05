@@ -64,3 +64,23 @@ export function formatTimestamp(isoString: string): string {
     return isoString;
   }
 }
+
+/**
+ * Adds a specified number of business days (Monday-Friday) to a given date.
+ * Returns ISO date string in YYYY-MM-DD format.
+ */
+export function addBusinessDays(startDate: Date | string = new Date(), days: number = 5): string {
+  const current = typeof startDate === 'string' ? new Date(startDate) : new Date(startDate);
+  let added = 0;
+  while (added < days) {
+    current.setDate(current.getDate() + 1);
+    const dayOfWeek = current.getDay();
+    if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+      added++;
+    }
+  }
+  const yyyy = current.getFullYear();
+  const mm = String(current.getMonth() + 1).padStart(2, '0');
+  const dd = String(current.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}

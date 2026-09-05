@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pencil, Linkedin, Phone, Check, Copy } from 'lucide-react';
+import { Pencil, Linkedin, Phone, Check, Copy, Mail } from 'lucide-react';
 import { Contact } from '../../types';
 import { getInitials } from '../../lib/constants';
 import { IconButton, DeleteIconButton, EmailIconButton } from '../IconButton';
@@ -12,6 +12,7 @@ export interface ContactCardProps {
   onStartEdit: (contact: Contact) => void;
   onDeleteContact: (id: string) => void;
   onCopyPhone: (phone: string, id: string) => void;
+  onFollowUp?: (contact: Contact) => void;
 }
 
 export const ContactCard: React.FC<ContactCardProps> = ({
@@ -21,6 +22,7 @@ export const ContactCard: React.FC<ContactCardProps> = ({
   onStartEdit,
   onDeleteContact,
   onCopyPhone,
+  onFollowUp,
 }) => {
   return (
     <div className="p-3 hover:bg-slate-50/60 transition-colors group">
@@ -38,7 +40,18 @@ export const ContactCard: React.FC<ContactCardProps> = ({
         </div>
         <div className="flex items-center gap-0.5 shrink-0">
           {contact.email && (
-            <EmailIconButton email={contact.email} title={`Email ${contact.name}`} />
+            onFollowUp ? (
+              <button
+                type="button"
+                onClick={() => onFollowUp(contact)}
+                title={`Draft follow-up to ${contact.name}`}
+                className="p-1.5 text-blue-700 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+              >
+                <Mail className="w-3.5 h-3.5" />
+              </button>
+            ) : (
+              <EmailIconButton email={contact.email} title={`Email ${contact.name}`} />
+            )
           )}
           {contact.linkedIn && (
             <a
