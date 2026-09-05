@@ -138,7 +138,10 @@ export function validateAndParseJSONBackup(jsonString: string): JSONImportResult
             sender: typeof e.sender === 'string' ? e.sender : 'Unknown',
             recipient: typeof e.recipient === 'string' ? e.recipient : undefined,
             date: typeof e.date === 'string' ? e.date : new Date().toISOString().slice(0, 10),
+            direction: (e.direction === 'inbound' || e.direction === 'outbound') ? (e.direction as 'inbound' | 'outbound') : undefined,
             snippet: typeof e.snippet === 'string' ? e.snippet : undefined,
+            body: typeof e.body === 'string' ? e.body : undefined,
+            emailUrl: typeof e.emailUrl === 'string' ? e.emailUrl : undefined,
           }))
       : undefined;
 

@@ -1454,6 +1454,7 @@ function TrackletAppContent() {
       <ApplicationDetailPanel
         app={selectedApp}
         allContacts={contacts}
+        currentUserEmail={user?.email || undefined}
         onClose={() => setSelectedAppId(null)}
         onUpdateApp={handleUpdateApplication}
         onDeleteApp={handleDeleteApplication}

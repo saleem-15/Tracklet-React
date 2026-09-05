@@ -18,6 +18,7 @@ import { useEscapeKey } from '../lib/useEscapeKey';
 export interface ApplicationDetailPanelProps {
   app: Application | null;
   allContacts?: Contact[];
+  currentUserEmail?: string;
   onClose: () => void;
   onUpdateApp: (id: string, updates: Partial<Application>) => Promise<void>;
   onDeleteApp: (id: string) => Promise<void>;
@@ -39,6 +40,7 @@ export interface ApplicationDetailPanelProps {
 export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
   app,
   allContacts = [],
+  currentUserEmail,
   onClose,
   onUpdateApp,
   onDeleteApp,
@@ -351,6 +353,40 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
       emails: [...(app.emails || []), newEmailLog],
       updatedAt: new Date().toISOString(),
     });
+    onShowToast?.('success', 'Email logged');
+  };
+
+  const handleUpdateEmailLog = async (emailId: string, emailData: Partial<Omit<EmailLog, 'id'>>) => {
+    const updatedEmails = (app.emails || []).map((e) =>
+      e.id === emailId ? { ...e, ...emailData } : e
+    );
+    await onUpdateApp(app.id, {
+      emails: updatedEmails,
+      updatedAt: new Date().toISOString(),
+    });
+    onShowToast?.('success', 'Email log updated');
+  };
+
+  const handleDeleteEmailLog = async (emailId: string) => {
+    const deletedEmail = (app.emails || []).find((e) => e.id === emailId);
+    const updatedEmails = (app.emails || []).filter((e) => e.id !== emailId);
+    await onUpdateApp(app.id, {
+      emails: updatedEmails,
+      updatedAt: new Date().toISOString(),
+    });
+
+    if (deletedEmail) {
+      onShowToast?.('info', `Deleted "${deletedEmail.subject}"`, undefined, {
+        label: 'Undo',
+        onClick: async () => {
+          await onUpdateApp(app.id, {
+            emails: [...(app.emails || []), deletedEmail],
+            updatedAt: new Date().toISOString(),
+          });
+          onShowToast?.('success', `Restored "${deletedEmail.subject}"`);
+        },
+      });
+    }
   };
 
   return (
@@ -431,8 +467,14 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
 
               <EmailLogSection
                 emails={app.emails}
+                companyName={app.company}
                 contactEmail={app.contactEmail}
+                contacts={app.contacts}
+                allContacts={allContacts}
+                currentUserEmail={currentUserEmail}
                 onAddEmailLog={handleAddEmailLog}
+                onUpdateEmailLog={handleUpdateEmailLog}
+                onDeleteEmailLog={handleDeleteEmailLog}
               />
 
               <ContactManagerSection

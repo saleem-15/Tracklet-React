@@ -67,7 +67,10 @@ export interface EmailLog {
   sender: string;
   recipient?: string;
   date: string;
+  direction?: 'inbound' | 'outbound';
   snippet?: string;
+  body?: string;
+  emailUrl?: string;
 }
 
 export interface Application {

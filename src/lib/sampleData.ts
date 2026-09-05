@@ -37,8 +37,27 @@ export const INITIAL_SAMPLE_APPLICATIONS: Omit<Application, 'id' | 'userId'>[] =
     ],
     notes: 'Completed technical take-home design system task. Scheduled system design panel on Thursday.',
     emails: [
-      { id: 'em1', subject: 'Interview Confirmation — System Design Panel', sender: 'karla@linear.app', date: 'Jul 20', snippet: 'Hi! We are excited to move forward with the system design interview...' },
-      { id: 'em2', subject: 'Next Steps: Technical Take-Home Review', sender: 'karla@linear.app', date: 'Jul 16', snippet: 'Thanks for applying! Here is your assignment link...' }
+      {
+        id: 'em1',
+        subject: 'Interview Confirmation — System Design Panel',
+        sender: 'karla@linear.app',
+        recipient: 'You',
+        date: '2026-07-20',
+        direction: 'inbound',
+        snippet: 'Hi! We are excited to move forward with the system design interview on Thursday at 2:00 PM PST...',
+        body: 'Hi!\n\nWe are excited to move forward with your candidacy for the Senior Frontend Engineer role. We have scheduled the 60-minute System Design Panel for Thursday, July 23 at 2:00 PM PST.\n\nPanelists:\n- Tuomas Artman (Co-founder)\n- Sarah Chen (Staff Engineer)\n\nZoom Link: https://zoom.us/j/9842103948\n\nPlease let us know if you need to adjust any timing!\n\nBest,\nKarla',
+        emailUrl: 'https://mail.google.com/mail/u/0/#inbox/FMfcgzGsmWdGgKhV',
+      },
+      {
+        id: 'em2',
+        subject: 'Thank You & Follow-up — System Design Panel',
+        sender: 'You',
+        recipient: 'karla@linear.app',
+        date: '2026-07-21',
+        direction: 'outbound',
+        snippet: 'Hi Karla, thanks so much for coordinating the panel interview with Tuomas and Sarah yesterday...',
+        body: 'Hi Karla,\n\nThanks so much for coordinating the panel discussion yesterday. I really enjoyed speaking with Tuomas and Sarah about Linear\'s offline sync engine and design system architecture.\n\nPlease let me know if there is any additional information or work samples I can provide!\n\nBest,\nCandidate',
+      }
     ],
     stageUpdatedAt: '2026-07-20T10:00:00Z',
     createdAt: '2026-07-15T09:00:00Z',
@@ -79,6 +98,19 @@ export const INITIAL_SAMPLE_APPLICATIONS: Omit<Application, 'id' | 'userId'>[] =
       { id: 't6', title: 'Sign and return official offer agreement', completed: false, dueDate: '2026-07-30' }
     ],
     notes: 'Written offer received! $215k base + equity. Discussing start date and team matching.',
+    emails: [
+      {
+        id: 'em3',
+        subject: 'Official Offer Letter — Staff Product Engineer',
+        sender: 'alex.recruiter@stripe.com',
+        recipient: 'You',
+        date: '2026-07-24',
+        direction: 'inbound',
+        snippet: 'We are thrilled to extend an official offer for the Staff Product Engineer position...',
+        body: 'Hi,\n\nWe are thrilled to extend this formal offer for the Staff Product Engineer position on the Billing Infrastructure team at Stripe!\n\nSummary of terms:\n• Base Salary: $215,000 / year\n• Signing Bonus: $30,000\n• Equity Grant: $400,000 RSUs vested over 4 years\n• Location: Seattle, WA (Hybrid)\n\nPlease review the DocuSign package and let us know if you have questions before next Friday.\n\nBest regards,\nAlex Rivera',
+        emailUrl: 'https://mail.google.com/mail/u/0/#inbox/FMfcgzGsmQxLmNpR',
+      }
+    ],
     stageUpdatedAt: '2026-07-24T15:30:00Z',
     createdAt: '2026-07-10T11:00:00Z',
     updatedAt: '2026-07-24T15:30:00Z',
