@@ -180,7 +180,7 @@ export const EmailLogSection: React.FC<EmailLogSectionProps> = ({
                 }`}
               >
                 <ArrowDownLeft className="w-3 h-3 text-blue-500" />
-                Received (from Recruiter)
+                Received
               </button>
               <button
                 type="button"
@@ -195,7 +195,7 @@ export const EmailLogSection: React.FC<EmailLogSectionProps> = ({
                 }`}
               >
                 <ArrowUpRight className="w-3 h-3 text-purple-500" />
-                Sent by Me
+                Sent
               </button>
             </div>
           </div>
@@ -210,7 +210,7 @@ export const EmailLogSection: React.FC<EmailLogSectionProps> = ({
               required
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
-              placeholder="e.g. Interview Confirmation, Take-Home Challenge, Offer Letter..."
+              placeholder="e.g. Interview Confirmation"
               className="w-full bg-slate-50 text-slate-900 placeholder-slate-400 px-2.5 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:border-blue-500 focus:bg-white text-xs transition-colors"
             />
           </div>
@@ -231,7 +231,7 @@ export const EmailLogSection: React.FC<EmailLogSectionProps> = ({
               required
               value={counterparty}
               onChange={(e) => setCounterparty(e.target.value)}
-              placeholder={direction === 'inbound' ? 'Recruiter name or email' : 'Recipient name or email'}
+              placeholder="Name or email"
               className="w-full bg-slate-50 text-slate-900 placeholder-slate-400 px-2.5 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:border-blue-500 focus:bg-white text-xs font-mono transition-colors"
             />
 
@@ -298,7 +298,7 @@ export const EmailLogSection: React.FC<EmailLogSectionProps> = ({
                   type="url"
                   value={emailUrl}
                   onChange={(e) => setEmailUrl(e.target.value)}
-                  placeholder="Paste webmail thread link"
+                  placeholder="https://..."
                   className="w-full bg-slate-50 text-slate-900 placeholder-slate-400 pl-7 pr-2.5 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:border-blue-500 focus:bg-white font-mono text-[11px] transition-colors"
                 />
               </div>
@@ -313,7 +313,7 @@ export const EmailLogSection: React.FC<EmailLogSectionProps> = ({
             <textarea
               value={body}
               onChange={(e) => setBody(e.target.value)}
-              placeholder="Paste email text, interview instructions, panel schedule, Zoom link, or key notes..."
+              placeholder="Email body or notes..."
               rows={3}
               className="w-full bg-slate-50 text-slate-900 placeholder-slate-400 p-2.5 rounded-lg border border-slate-200 focus:outline-none focus:border-blue-500 focus:bg-white text-xs resize-y transition-colors leading-relaxed"
             />
@@ -340,23 +340,25 @@ export const EmailLogSection: React.FC<EmailLogSectionProps> = ({
       )}
 
       {/* Emails List */}
-      <div className="rounded-xl border border-slate-200/80 divide-y divide-slate-100 overflow-hidden bg-white shadow-2xs">
-        {emails.length > 0 ? (
-          emails.map((email) => (
-            <EmailLogCard
-              key={email.id}
-              email={email}
-              onOpenReader={(targetEmail) => setReaderEmail(targetEmail)}
-              onEdit={handleStartEdit}
-              onDelete={onDeleteEmailLog}
-            />
-          ))
-        ) : (
-          <div className="text-slate-500 font-mono text-[11px] text-center py-5">
-            No emails logged yet. Click &ldquo;Log Email&rdquo; to track correspondence.
-          </div>
-        )}
-      </div>
+      {(emails.length > 0 || !showAddEmail) && (
+        <div className="rounded-xl border border-slate-200/80 divide-y divide-slate-100 overflow-hidden bg-white shadow-2xs">
+          {emails.length > 0 ? (
+            emails.map((email) => (
+              <EmailLogCard
+                key={email.id}
+                email={email}
+                onOpenReader={(targetEmail) => setReaderEmail(targetEmail)}
+                onEdit={handleStartEdit}
+                onDelete={onDeleteEmailLog}
+              />
+            ))
+          ) : (
+            <div className="text-slate-500 font-mono text-[11px] text-center py-5">
+              No emails logged yet
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Reader Modal */}
       <EmailReaderModal

@@ -135,7 +135,7 @@ export const EmailLogCard: React.FC<EmailLogCardProps> = ({
           </>
         ) : (
           <>
-            <span>Sent by: You</span>
+            <span>From: You</span>
             {email.recipient && <span>→ To: {email.recipient}</span>}
           </>
         )}

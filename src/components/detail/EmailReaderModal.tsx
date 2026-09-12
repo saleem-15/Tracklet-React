@@ -97,7 +97,7 @@ export const EmailReaderModal: React.FC<EmailReaderModalProps> = ({
                 ) : (
                   <>
                     <ArrowUpRight className="w-3 h-3 text-purple-600" />
-                    Sent by You
+                    Sent
                   </>
                 )}
               </span>
