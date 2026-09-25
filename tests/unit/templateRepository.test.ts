@@ -102,7 +102,8 @@ describe('TemplateRepository', () => {
 
       // Reset
       const reset = await TemplateRepository.resetDefaultTemplates();
-      expect(reset.length).toBe(4);
+      expect(reset.length).toBe(5);
+      expect(reset.some((t) => t.title === 'Random')).toBe(true);
       expect(reset.map((t) => t.title)).toContain('Post-Application Check-In');
       expect(reset.map((t) => t.title)).toContain('Post-Interview Thank You');
     });

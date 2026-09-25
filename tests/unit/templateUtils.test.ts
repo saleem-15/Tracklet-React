@@ -54,6 +54,16 @@ describe('templateUtils', () => {
     it('returns empty string if template text is null or empty', () => {
       expect(interpolateTemplate('', { company: 'Linear' })).toBe('');
     });
+
+    it('preserves special dollar patterns in replacement values literally', () => {
+      const template = 'Role: {role} at {company}';
+      const result = interpolateTemplate(template, {
+        company: 'Stripe ($100B)',
+        role: 'Engineer - $150k ($& bonus)',
+      });
+
+      expect(result).toBe('Role: Engineer - $150k ($& bonus) at Stripe ($100B)');
+    });
   });
 
   describe('encodeMailtoUrl', () => {

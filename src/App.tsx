@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { 
   Application, 
   Contact,
@@ -31,7 +31,7 @@ import { AuthModal } from './components/AuthModal';
 import { EmailVerificationGate } from './components/EmailVerificationGate';
 import { GuestMigrationModal } from './components/GuestMigrationModal';
 import { loadExpirySettings, saveExpirySettings } from './lib/expiryUtils';
-import { setupExtensionSync, syncAuthSessionToExtension, syncApplicationsToExtension, normalizeJobUrl } from './lib/extensionSync';
+import { setupExtensionSync, syncAuthSessionToExtension, syncApplicationsToExtension, normalizeJobUrl, IncomingEmailPayload } from './lib/extensionSync';
 import { LOCAL_STORAGE_KEYS } from './lib/constants';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ToastContainer, ToastMessage } from './components/Toast';
@@ -288,6 +288,132 @@ function TrackletAppContent() {
     }
   }, [applications]);
 
+  // Buffer for incoming emails received before applications load
+  const pendingEmailPayloadsRef = useRef<IncomingEmailPayload[]>([]);
+  const dataLoadingRef = useRef(dataLoading);
+  useEffect(() => {
+    dataLoadingRef.current = dataLoading;
+  }, [dataLoading]);
+
+  const handleAddContactRef = useRef<(contactData: any) => Promise<any>>(async () => {});
+  useEffect(() => {
+    handleAddContactRef.current = handleAddContact;
+  });
+
+  const processIncomingEmail = useCallback(async (payload: IncomingEmailPayload) => {
+    const { appId, emailLog, updatedStatus, newContact } = payload;
+    let wasAdded = false;
+    let updatedTargetApp: Application | null = null;
+    let nextApplicationsState: Application[] = [];
+
+    setApplications((prev) => {
+      const appIndex = prev.findIndex((a) => a.id === appId);
+      if (appIndex < 0) return prev;
+
+      const existingApp = prev[appIndex];
+      // Duplicate guard
+      if (
+        (existingApp.emails || []).some(
+          (e) => e.id === emailLog.id || (e.emailUrl && emailLog.emailUrl && e.emailUrl === emailLog.emailUrl)
+        )
+      ) {
+        return prev;
+      }
+
+      const updatedEmails = [...(existingApp.emails || []), emailLog];
+      const nowISO = new Date().toISOString();
+
+      let updatedApp: Application = {
+        ...existingApp,
+        emails: updatedEmails,
+        updatedAt: nowISO,
+      };
+
+      if (updatedStatus && updatedStatus !== existingApp.status) {
+        updatedApp.status = updatedStatus;
+        updatedApp.stageUpdatedAt = nowISO;
+        updatedApp.history = appendStatusHistory(
+          existingApp.history,
+          updatedStatus,
+          existingApp.status,
+          nowISO
+        );
+      }
+
+      const next = [...prev];
+      next[appIndex] = updatedApp;
+
+      wasAdded = true;
+      updatedTargetApp = updatedApp;
+      nextApplicationsState = next;
+
+      return next;
+    });
+
+    if (!wasAdded || !updatedTargetApp) {
+      if (dataLoadingRef.current) {
+        pendingEmailPayloadsRef.current.push(payload);
+      }
+      return;
+    }
+
+    // Persist update outside setApplications updater
+    if (user?.emailVerified) {
+      ApplicationRepository.updateApplication(appId, updatedTargetApp, user.uid, updatedTargetApp).catch((err) => {
+        console.error('Failed to update email log in Firestore:', err);
+      });
+    } else {
+      ApplicationRepository.saveGuestApplications(nextApplicationsState);
+    }
+
+    // Acknowledge stored email to extension content script
+    try {
+      window.postMessage({
+        type: 'TRACKLET_EXT_EMAIL_ACK',
+        emailLogId: emailLog.id,
+      }, window.location.origin);
+    } catch {
+      // ignore
+    }
+
+    // User receipt toast
+    addToast(
+      'success',
+      'Email Logged via Extension',
+      `Logged "${emailLog.subject}" to ${updatedTargetApp.company}`,
+      {
+        label: 'View',
+        onClick: () => {
+          setSelectedAppId(appId);
+        },
+      }
+    );
+
+    // Auto-link discovered contact only when email was successfully added
+    if (newContact && newContact.name && newContact.email) {
+      handleAddContactRef.current({
+        name: newContact.name,
+        email: newContact.email,
+        organization: newContact.organization || undefined,
+        category: 'Recruiter',
+        applicationIds: [appId],
+      }).catch((err) => {
+        console.warn('Failed to auto-create contact from email log:', err);
+      });
+    }
+  }, [user, addToast]);
+
+  // Drain buffered incoming emails once applications data loading completes
+  useEffect(() => {
+    if (!dataLoading && pendingEmailPayloadsRef.current.length > 0) {
+      const queue = [...pendingEmailPayloadsRef.current];
+      pendingEmailPayloadsRef.current = [];
+      queue.forEach((payload) => {
+        processIncomingEmail(payload);
+      });
+    }
+  }, [dataLoading, processIncomingEmail]);
+
   // Browser Extension Sync Listener
   useEffect(() => {
     const cleanup = setupExtensionSync({
@@ -360,85 +486,13 @@ function TrackletAppContent() {
           return next;
         });
       },
-      onEmailReceived: async ({ appId, emailLog, updatedStatus, newContact }) => {
-        setApplications((prev) => {
-          const appIndex = prev.findIndex((a) => a.id === appId);
-          if (appIndex < 0) return prev;
-
-          const existingApp = prev[appIndex];
-          // Duplicate guard
-          if (
-            (existingApp.emails || []).some(
-              (e) => e.id === emailLog.id || (e.emailUrl && emailLog.emailUrl && e.emailUrl === emailLog.emailUrl)
-            )
-          ) {
-            return prev;
-          }
-
-          const updatedEmails = [...(existingApp.emails || []), emailLog];
-          const nowISO = new Date().toISOString();
-
-          let updatedApp: Application = {
-            ...existingApp,
-            emails: updatedEmails,
-            updatedAt: nowISO,
-          };
-
-          if (updatedStatus && updatedStatus !== existingApp.status) {
-            updatedApp.status = updatedStatus;
-            updatedApp.stageUpdatedAt = nowISO;
-            updatedApp.history = appendStatusHistory(
-              existingApp.history,
-              updatedStatus,
-              existingApp.status,
-              nowISO
-            );
-          }
-
-          const next = [...prev];
-          next[appIndex] = updatedApp;
-
-          // Persist update
-          if (user?.emailVerified) {
-            ApplicationRepository.updateApplication(appId, updatedApp, user.uid, updatedApp).catch((err) => {
-              console.error('Failed to update email log in Firestore:', err);
-            });
-          } else {
-            ApplicationRepository.saveGuestApplications(next);
-          }
-
-          addToast(
-            'success',
-            'Email Logged via Extension',
-            `Logged "${emailLog.subject}" to ${existingApp.company}`,
-            {
-              label: 'View',
-              onClick: () => {
-                setSelectedAppId(appId);
-              },
-            }
-          );
-
-          return next;
-        });
-
-        // Auto-link discovered contact if requested
-        if (newContact && newContact.name && newContact.email) {
-          handleAddContact({
-            name: newContact.name,
-            email: newContact.email,
-            organization: newContact.organization || undefined,
-            category: 'Recruiter',
-            applicationIds: [appId],
-          }).catch((err) => {
-            console.warn('Failed to auto-create contact from email log:', err);
-          });
-        }
+      onEmailReceived: (payload) => {
+        processIncomingEmail(payload);
       },
     });
 
     return () => cleanup();
-  }, [user, addToast]);
+  }, [user, addToast, processIncomingEmail]);
 
   // Synchronize URL on auth transitions
   useEffect(() => {

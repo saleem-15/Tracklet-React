@@ -36,8 +36,8 @@ export const TemplateEditorModal: React.FC<TemplateEditorModalProps> = ({
   const handleInsertVariable = (token: string) => {
     if (activeField === 'subject' && subjectInputRef.current) {
       const input = subjectInputRef.current;
-      const start = input.selectionStart || subject.length;
-      const end = input.selectionEnd || subject.length;
+      const start = input.selectionStart ?? subject.length;
+      const end = input.selectionEnd ?? subject.length;
       const updated = subject.substring(0, start) + token + subject.substring(end);
       setSubject(updated);
       setTimeout(() => {
@@ -46,8 +46,8 @@ export const TemplateEditorModal: React.FC<TemplateEditorModalProps> = ({
       }, 0);
     } else if (bodyTextareaRef.current) {
       const textarea = bodyTextareaRef.current;
-      const start = textarea.selectionStart || body.length;
-      const end = textarea.selectionEnd || body.length;
+      const start = textarea.selectionStart ?? body.length;
+      const end = textarea.selectionEnd ?? body.length;
       const updated = body.substring(0, start) + token + body.substring(end);
       setBody(updated);
       setTimeout(() => {

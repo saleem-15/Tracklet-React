@@ -98,7 +98,18 @@ export function validateAndParseJSONBackup(jsonString: string): JSONImportResult
     const dateApplied = normalizeCSVDate(rawDate);
 
     const jobLink = typeof record.jobLink === 'string' ? record.jobLink.trim() : undefined;
-    const emailThreadUrl = typeof record.emailThreadUrl === 'string' ? record.emailThreadUrl.trim() : undefined;
+    const rawThreadUrl = typeof record.emailThreadUrl === 'string' ? record.emailThreadUrl.trim() : '';
+    let emailThreadUrl: string | undefined = undefined;
+    if (rawThreadUrl && /^https?:\/\//i.test(rawThreadUrl)) {
+      try {
+        const parsed = new URL(rawThreadUrl);
+        if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+          emailThreadUrl = parsed.toString();
+        }
+      } catch {
+        emailThreadUrl = undefined;
+      }
+    }
     const notes = typeof record.notes === 'string' ? record.notes.trim() : undefined;
     const contactEmail = typeof record.contactEmail === 'string' ? record.contactEmail.trim() : undefined;
     const logoUrl = typeof record.logoUrl === 'string' ? record.logoUrl.trim() : undefined;

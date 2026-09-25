@@ -70,7 +70,13 @@ export function formatTimestamp(isoString: string): string {
  * Returns ISO date string in YYYY-MM-DD format.
  */
 export function addBusinessDays(startDate: Date | string = new Date(), days: number = 5): string {
-  const current = typeof startDate === 'string' ? new Date(startDate) : new Date(startDate);
+  let current: Date;
+  if (typeof startDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(startDate.trim())) {
+    const [y, m, d] = startDate.trim().split('-').map(Number);
+    current = new Date(y, m - 1, d);
+  } else {
+    current = new Date(startDate);
+  }
   let added = 0;
   while (added < days) {
     current.setDate(current.getDate() + 1);

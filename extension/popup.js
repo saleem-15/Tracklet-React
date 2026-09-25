@@ -702,14 +702,29 @@ document.addEventListener('DOMContentLoaded', async () => {
       const item = document.createElement('div');
       item.className = 'app-selector-item' + (selectedEmailMatchedApp?.id === app.id ? ' selected' : '');
       
-      const config = STAGE_CONFIG[app.status] || STAGE_CONFIG['Applied'];
-      item.innerHTML = `
-        <div class="app-selector-item-text">
-          <span class="app-selector-item-company">${app.company}</span>
-          <span class="app-selector-item-role">${app.role}</span>
-        </div>
-        <span class="stage-dot" style="background-color: ${config.dot}; width: 8px; height: 8px; border-radius: 50%;"></span>
-      `;
+      const textContainer = document.createElement('div');
+      textContainer.className = 'app-selector-item-text';
+
+      const companySpan = document.createElement('span');
+      companySpan.className = 'app-selector-item-company';
+      companySpan.textContent = app.company;
+
+      const roleSpan = document.createElement('span');
+      roleSpan.className = 'app-selector-item-role';
+      roleSpan.textContent = app.role;
+
+      textContainer.appendChild(companySpan);
+      textContainer.appendChild(roleSpan);
+
+      const stageDot = document.createElement('span');
+      stageDot.className = 'stage-dot';
+      stageDot.style.backgroundColor = config.dot;
+      stageDot.style.width = '8px';
+      stageDot.style.height = '8px';
+      stageDot.style.borderRadius = '50%';
+
+      item.appendChild(textContainer);
+      item.appendChild(stageDot);
 
       item.addEventListener('click', () => {
         renderMatchedApp(app, true);
@@ -770,7 +785,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   logEmailBtn.addEventListener('click', handleLogEmail);
 
+  let isLoggingEmail = false;
+
   async function handleLogEmail() {
+    if (isLoggingEmail) return;
+
     if (!selectedEmailMatchedApp) {
       emailMatchedCompany.classList.add('input-error');
       setTimeout(() => emailMatchedCompany.classList.remove('input-error'), 1500);
@@ -790,6 +809,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       return;
     }
 
+    isLoggingEmail = true;
     logEmailBtn.disabled = true;
     logEmailBtn.querySelector('span').textContent = 'Logging email...';
 
@@ -821,7 +841,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         emailLog: emailLogPayload,
         newContact
       }
-    }, () => {
+    }, (response) => {
+      const lastErr = chrome.runtime.lastError;
+      if (lastErr || (response && response.success === false)) {
+        isLoggingEmail = false;
+        logEmailBtn.disabled = false;
+        logEmailBtn.querySelector('span').textContent = 'Log Email to Tracklet';
+        emailMatchedCompany.classList.add('input-error');
+        setTimeout(() => emailMatchedCompany.classList.remove('input-error'), 1500);
+        return;
+      }
+
+      isLoggingEmail = false;
       // Show success view
       successTitle.textContent = 'Email Logged!';
       successSubtitle.textContent = `"${subject}" logged to ${selectedEmailMatchedApp.company} timeline.`;

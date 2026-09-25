@@ -116,16 +116,7 @@ export class TemplateRepository {
       updatedAt: now,
     };
 
-    if (userId) {
-      try {
-        const docRef = doc(db, 'users', userId, 'templates', templateId);
-        await setDoc(docRef, sanitizeForFirestore({ ...templateToSave } as Record<string, unknown>));
-      } catch (err) {
-        console.warn('Error saving template to Firestore, persisting locally:', err);
-      }
-    }
-
-    // Also update guest / local cache
+    // Update local cache first
     const current = this.loadGuestTemplates();
     const existingIndex = current.findIndex((t) => t.id === templateId);
     let updated: FollowUpTemplate[];
@@ -137,6 +128,16 @@ export class TemplateRepository {
     }
     this.saveGuestTemplates(updated);
 
+    if (userId) {
+      try {
+        const docRef = doc(db, 'users', userId, 'templates', templateId);
+        await setDoc(docRef, sanitizeForFirestore({ ...templateToSave } as Record<string, unknown>));
+      } catch (err) {
+        console.warn('Error saving template to Firestore, persisting locally:', err);
+        throw err;
+      }
+    }
+
     return templateToSave;
   }
 
@@ -144,32 +145,42 @@ export class TemplateRepository {
    * Delete a template by ID.
    */
   static async deleteTemplate(templateId: string, userId?: string): Promise<void> {
+    const current = this.loadGuestTemplates();
+    const filtered = current.filter((t) => t.id !== templateId);
+    this.saveGuestTemplates(filtered);
+
     if (userId) {
       try {
         const docRef = doc(db, 'users', userId, 'templates', templateId);
         await deleteDoc(docRef);
       } catch (err) {
         console.warn('Error deleting template from Firestore:', err);
+        throw err;
       }
     }
-
-    const current = this.loadGuestTemplates();
-    const filtered = current.filter((t) => t.id !== templateId);
-    this.saveGuestTemplates(filtered);
   }
 
   /**
-   * Reset all templates to default built-ins.
+   * Reset built-in templates to factory defaults while preserving custom templates.
    */
   static async resetDefaultTemplates(userId?: string): Promise<FollowUpTemplate[]> {
     const defaults = this.generateDefaultTemplates(userId);
+    let customTemplates: FollowUpTemplate[] = [];
 
     if (userId) {
       try {
-        // Delete existing templates
         const userTplCol = collection(db, 'users', userId, 'templates');
         const querySnapshot = await getDocs(userTplCol);
-        const toDelete = querySnapshot.docs.map((d) => d.ref);
+        
+        const toDelete: Array<{ delete: () => Promise<void> } | any> = [];
+        querySnapshot.docs.forEach((d) => {
+          const data = d.data() as FollowUpTemplate;
+          if (data.isBuiltIn) {
+            toDelete.push(d.ref);
+          } else {
+            customTemplates.push({ ...data, id: d.id });
+          }
+        });
         
         if (toDelete.length > 0) {
           await commitInChunks(toDelete, (batch, docRef) => {
@@ -185,9 +196,13 @@ export class TemplateRepository {
       } catch (err) {
         console.warn('Error resetting templates in Firestore:', err);
       }
+    } else {
+      const current = this.loadGuestTemplates();
+      customTemplates = current.filter((t) => !t.isBuiltIn);
     }
 
-    this.saveGuestTemplates(defaults);
-    return defaults;
+    const merged = [...defaults, ...customTemplates];
+    this.saveGuestTemplates(merged);
+    return merged;
   }
 }

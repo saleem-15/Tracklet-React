@@ -173,7 +173,13 @@ export const FollowUpModal: React.FC<FollowUpModalProps> = ({
 
   const handleCopy = async () => {
     const fullText = `Subject: ${currentSubject}\n\n${currentBody}`;
-    await navigator.clipboard.writeText(fullText);
+    try {
+      await navigator.clipboard.writeText(fullText);
+    } catch {
+      onShowToast?.('error', 'Failed to copy', 'Could not access clipboard to copy email text.');
+      return;
+    }
+
     setIsCopied(true);
     setTimeout(() => setIsCopied(false), 2000);
 

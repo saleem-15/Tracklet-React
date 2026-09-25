@@ -52,10 +52,10 @@ export function interpolateTemplate(
   const dateApplied = context.dateApplied?.trim() || 'recently';
 
   return templateText
-    .replace(/\{contactName\}/gi, salutationName)
-    .replace(/\{company\}/gi, company)
-    .replace(/\{role\}/gi, role)
-    .replace(/\{dateApplied\}/gi, dateApplied);
+    .replace(/\{contactName\}/gi, () => salutationName)
+    .replace(/\{company\}/gi, () => company)
+    .replace(/\{role\}/gi, () => role)
+    .replace(/\{dateApplied\}/gi, () => dateApplied);
 }
 
 /**

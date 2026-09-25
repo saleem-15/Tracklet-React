@@ -296,7 +296,7 @@ describe('Webmail Companion Engine', () => {
     it('parses diverse human-readable date strings into ISO YYYY-MM-DD', () => {
       expect(parseDateToIso('September 12, 2026, 11:30 AM')).toBe('2026-09-12');
       expect(parseDateToIso('2026-08-15T09:00:00Z')).toBe('2026-08-15');
-      expect(parseDateToIso('')).toBe(new Date().toISOString().split('T')[0]);
+      expect(parseDateToIso('')).toBe(formatDateParts(new Date()));
     });
 
     it('normalizes job links and strips marketing tracking parameters', () => {

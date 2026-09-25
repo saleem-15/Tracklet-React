@@ -425,7 +425,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
       timestamp: now,
       note: `Follow-up sent to ${details.recipientName} (${details.template.title})`,
     };
-    const updatedHistory = [...(app.history || []), historyEntry];
+    const updatedHistory = [historyEntry, ...(app.history || [])];
 
     // 2. Inject 5-day reminder task if requested (Task T015)
     let updatedTasks = app.tasks ? [...app.tasks] : [];
@@ -481,7 +481,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
         label: 'Undo',
         onClick: async () => {
           await onUpdateApp(app.id, {
-            emails: [...(app.emails || []), deletedEmail],
+            emails: [...updatedEmails, deletedEmail],
             updatedAt: new Date().toISOString(),
           });
           onShowToast?.('success', `Restored "${deletedEmail.subject}"`);

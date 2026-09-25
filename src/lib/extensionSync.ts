@@ -144,6 +144,7 @@ export function setupExtensionSync(callbacks: ExtensionSyncCallbacks): () => voi
 
   // 2. Window postMessage Listener (Content Script bridge fallback)
   const windowMessageHandler = (event: MessageEvent) => {
+    if (event.source !== window) return;
     if (event.data && event.data.type === 'TRACKLET_EXT_ADD_APPLICATION') {
       const app: Application = event.data.payload;
       const persistedToCloud: boolean = Boolean(event.data.persistedToCloud);

@@ -545,7 +545,7 @@ function parseGmailThread(currentUserEmail) {
   // Direction: if sender matches current user or 'me', or URL is sent
   const urlHash = (window.location.hash || '').toLowerCase();
   const urlPath = (window.location.pathname || '').toLowerCase();
-  const isSentFolder = urlHash.includes('sent') || urlPath.includes('/sent');
+  const isSentFolder = /^#sent(?:\/|$)/.test(urlHash) || /(?:^|\/)sentitems(?:\/|$)/.test(urlPath);
   const isSenderMe = senderName.toLowerCase() === 'me' || (senderName === '' && senderEmail.toLowerCase() === 'me');
   const isCurrentUser = Boolean(
     currentUserEmail && 
@@ -695,23 +695,46 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     const data = extractEmailData(request.userEmail);
     sendResponse(data);
   } else if (request.action === 'TRACKLET_EXT_INCOMING_APP') {
+    if (!isTrackletOrigin()) {
+      sendResponse({ received: false });
+      return true;
+    }
     // Deliver newly saved application directly to Tracklet web app running in this tab
     window.postMessage({
       type: 'TRACKLET_EXT_ADD_APPLICATION',
       payload: request.payload,
       persistedToCloud: request.persistedToCloud
-    }, '*');
+    }, window.location.origin);
     sendResponse({ received: true });
   } else if (request.action === 'TRACKLET_EXT_INCOMING_EMAIL') {
+    if (!isTrackletOrigin()) {
+      sendResponse({ received: false });
+      return true;
+    }
     // Deliver newly logged email directly to Tracklet web app running in this tab
     window.postMessage({
       type: 'TRACKLET_EXT_ADD_EMAIL',
       payload: request.payload
-    }, '*');
+    }, window.location.origin);
     sendResponse({ received: true });
   }
   return true;
 });
+
+// Helper: verifies whether the active tab is an authorized Tracklet origin
+function isTrackletOrigin() {
+  try {
+    const hostname = window.location.hostname.toLowerCase();
+    if (hostname === 'localhost' || hostname === '127.0.0.1') return true;
+    if (hostname === 'tracklet.app' || hostname.endsWith('.tracklet.app')) return true;
+    if (/^tracklet(-[a-z0-9-]+)?\.web\.app$/.test(hostname)) return true;
+    if (/^tracklet(-[a-z0-9-]+)?\.firebaseapp\.com$/.test(hostname)) return true;
+    if (/^tracklet(-[a-z0-9-]+)?\.vercel\.app$/.test(hostname)) return true;
+    return false;
+  } catch {
+    return false;
+  }
+}
 
 // 2. Listen for auth session and applications index sync from Tracklet web app window
 window.addEventListener('message', (event) => {
@@ -735,14 +758,27 @@ window.addEventListener('message', (event) => {
     } catch {
       // Extension context invalidated or reloaded
     }
+  } else if (event.data.type === 'TRACKLET_EXT_EMAIL_ACK') {
+    const ackId = event.data.emailLogId;
+    if (ackId && typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+      chrome.storage.local.get(['tracklet_pending_emails'], (res) => {
+        const current = res?.tracklet_pending_emails || [];
+        const remaining = current.filter(item => item.emailLog?.id !== ackId);
+        if (remaining.length < current.length) {
+          if (remaining.length === 0) {
+            chrome.storage.local.remove(['tracklet_pending_emails']);
+          } else {
+            chrome.storage.local.set({ tracklet_pending_emails: remaining });
+          }
+        }
+      });
+    }
   }
 });
 
 // 3. Drain any pending clipped applications or logged emails when Tracklet tab loads
 function drainPendingItemsToTracklet() {
-  const host = window.location.hostname.toLowerCase();
-  const isTracklet = host.includes('localhost') || host.includes('127.0.0.1') || host.includes('tracklet') || host.includes('web.app') || host.includes('vercel.app');
-  if (!isTracklet) return;
+  if (!isTrackletOrigin()) return;
 
   try {
     if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
@@ -756,7 +792,7 @@ function drainPendingItemsToTracklet() {
               type: 'TRACKLET_EXT_ADD_APPLICATION',
               payload: app,
               persistedToCloud: false
-            }, '*');
+            }, window.location.origin);
           });
           chrome.storage.local.remove(['tracklet_pending_apps']);
         }
@@ -766,9 +802,9 @@ function drainPendingItemsToTracklet() {
             window.postMessage({
               type: 'TRACKLET_EXT_ADD_EMAIL',
               payload: emailItem
-            }, '*');
+            }, window.location.origin);
           });
-          chrome.storage.local.remove(['tracklet_pending_emails']);
+          // Note: Pending emails are kept until acknowledged by Tracklet via TRACKLET_EXT_EMAIL_ACK
         }
       });
     }
