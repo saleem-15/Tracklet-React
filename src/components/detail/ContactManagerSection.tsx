@@ -417,9 +417,10 @@ export const ContactManagerSection: React.FC<ContactManagerSectionProps> = ({
                         type="button"
                         onClick={() => onFollowUpContact(contact)}
                         title={`Draft follow-up to ${contact.name}`}
-                        className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200/60 shadow-2xs transition-colors cursor-pointer"
                       >
-                        <Mail className="w-3.5 h-3.5" />
+                        <Mail className="w-3 h-3 text-blue-600" />
+                        <span>Follow-up</span>
                       </button>
                     )}
 
@@ -587,7 +588,7 @@ export const ContactManagerSection: React.FC<ContactManagerSectionProps> = ({
             );
           })
         ) : !showLinkPicker ? (
-          <div className="text-slate-500 font-mono text-[11px] text-center py-4">
+          <div className="text-slate-500 text-xs text-center py-3.5 bg-slate-50/40">
             No contacts linked to this application yet.
           </div>
         ) : null}

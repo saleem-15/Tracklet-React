@@ -218,12 +218,12 @@ export const TemplateManagerSection: React.FC<TemplateManagerSectionProps> = ({
                     </div>
                   </div>
 
-                  <div className="space-y-1">
+                  <div className="space-y-1 pt-1">
                     <p className="text-xs font-mono font-medium text-slate-700 truncate">
                       <span className="text-slate-400 font-sans mr-1">Subject:</span>
                       {template.subject}
                     </p>
-                    <p className="text-xs text-slate-500 line-clamp-3 leading-relaxed font-mono bg-slate-50/80 p-2 rounded-lg border border-slate-100">
+                    <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">
                       {template.body}
                     </p>
                   </div>
