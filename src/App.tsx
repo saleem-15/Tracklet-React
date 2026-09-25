@@ -360,6 +360,81 @@ function TrackletAppContent() {
           return next;
         });
       },
+      onEmailReceived: async ({ appId, emailLog, updatedStatus, newContact }) => {
+        setApplications((prev) => {
+          const appIndex = prev.findIndex((a) => a.id === appId);
+          if (appIndex < 0) return prev;
+
+          const existingApp = prev[appIndex];
+          // Duplicate guard
+          if (
+            (existingApp.emails || []).some(
+              (e) => e.id === emailLog.id || (e.emailUrl && emailLog.emailUrl && e.emailUrl === emailLog.emailUrl)
+            )
+          ) {
+            return prev;
+          }
+
+          const updatedEmails = [...(existingApp.emails || []), emailLog];
+          const nowISO = new Date().toISOString();
+
+          let updatedApp: Application = {
+            ...existingApp,
+            emails: updatedEmails,
+            updatedAt: nowISO,
+          };
+
+          if (updatedStatus && updatedStatus !== existingApp.status) {
+            updatedApp.status = updatedStatus;
+            updatedApp.stageUpdatedAt = nowISO;
+            updatedApp.history = appendStatusHistory(
+              existingApp.history,
+              updatedStatus,
+              existingApp.status,
+              nowISO
+            );
+          }
+
+          const next = [...prev];
+          next[appIndex] = updatedApp;
+
+          // Persist update
+          if (user?.emailVerified) {
+            ApplicationRepository.updateApplication(appId, updatedApp, user.uid, updatedApp).catch((err) => {
+              console.error('Failed to update email log in Firestore:', err);
+            });
+          } else {
+            ApplicationRepository.saveGuestApplications(next);
+          }
+
+          addToast(
+            'success',
+            'Email Logged via Extension',
+            `Logged "${emailLog.subject}" to ${existingApp.company}`,
+            {
+              label: 'View',
+              onClick: () => {
+                setSelectedAppId(appId);
+              },
+            }
+          );
+
+          return next;
+        });
+
+        // Auto-link discovered contact if requested
+        if (newContact && newContact.name && newContact.email) {
+          handleAddContact({
+            name: newContact.name,
+            email: newContact.email,
+            organization: newContact.organization || undefined,
+            category: 'Recruiter',
+            applicationIds: [appId],
+          }).catch((err) => {
+            console.warn('Failed to auto-create contact from email log:', err);
+          });
+        }
+      },
     });
 
     return () => cleanup();

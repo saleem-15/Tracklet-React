@@ -84,6 +84,7 @@ export class ApplicationRepository {
     const appData = {
       ...newApp,
       contactIds: newApp.contactIds || [],
+      emails: Array.isArray(newApp.emails) ? newApp.emails : [],
       history: initialHistory,
       stageUpdatedAt: now,
       createdAt: now,

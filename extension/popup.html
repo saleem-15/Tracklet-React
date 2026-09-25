@@ -182,6 +182,145 @@
       </button>
     </div>
 
+    <!-- Email Log View (Webmail Companion Mode) -->
+    <div id="email-log-view" style="display: none;">
+      <!-- Matched Application Section -->
+      <div class="matched-app-card" id="matched-app-card">
+        <div class="matched-app-header">
+          <span class="matched-app-badge">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            <span id="matched-status-label">Matched Job</span>
+          </span>
+          <button type="button" class="btn-text-link" id="change-app-btn">Change ▾</button>
+        </div>
+        <div class="matched-app-body">
+          <div class="company-avatar-box" id="email-matched-avatar">?</div>
+          <div class="matched-app-text">
+            <div class="matched-app-company" id="email-matched-company">Linear</div>
+            <div class="matched-app-role" id="email-matched-role">Senior Frontend Engineer</div>
+          </div>
+          <div class="already-saved-stage-pill" id="email-matched-stage-pill">
+            <span class="stage-dot" id="email-matched-stage-dot"></span>
+            <span id="email-matched-stage-text">Interview</span>
+          </div>
+        </div>
+
+        <!-- Application Selector Dropdown (Shown when "Change ▾" clicked) -->
+        <div class="app-selector-popover" id="app-selector-popover" style="display: none;">
+          <div class="app-selector-search-box">
+            <input type="text" id="app-search-input" placeholder="Search applications..." autocomplete="off">
+          </div>
+          <div class="app-selector-list" id="app-selector-list">
+            <!-- Dynamically populated -->
+          </div>
+          <button type="button" class="app-selector-new-btn" id="app-selector-new-btn">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            <span>Log to a new application instead</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Email Details Form Layout -->
+      <div class="form-layout" style="margin-top: 10px;">
+        <!-- Header & Direction Row -->
+        <div class="form-row" style="align-items: center; justify-content: space-between; margin-bottom: 2px;">
+          <span class="section-micro-label">Email Details</span>
+          <div class="direction-toggle-group">
+            <button type="button" class="direction-btn active" id="dir-inbound-btn" data-direction="inbound">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="7" y1="7" x2="17" y2="17"/><polyline points="17 7 17 17 7 17"/></svg>
+              <span>Received</span>
+            </button>
+            <button type="button" class="direction-btn" id="dir-outbound-btn" data-direction="outbound">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
+              <span>Sent</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Subject -->
+        <div class="form-group">
+          <label for="email-subject">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+            <span>Subject</span>
+            <span class="required-star">*</span>
+          </label>
+          <div class="input-wrapper">
+            <input type="text" id="email-subject" placeholder="e.g. Technical Interview Invitation" required autocomplete="off">
+          </div>
+        </div>
+
+        <!-- Counterparty (Sender / Recruiter) -->
+        <div class="form-group">
+          <label for="email-counterparty" id="email-counterparty-label">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <span id="counterparty-label-text">From (Recruiter / Company)</span>
+            <span class="required-star">*</span>
+          </label>
+          <div class="input-wrapper">
+            <input type="text" id="email-counterparty" placeholder="Name or email" required autocomplete="off">
+          </div>
+        </div>
+
+        <!-- Date & Thread URL Row -->
+        <div class="form-row">
+          <div class="form-group">
+            <label for="email-date">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg>
+              <span>Date</span>
+            </label>
+            <div class="input-wrapper">
+              <input type="date" id="email-date" required>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+              <span>Thread Link</span>
+            </label>
+            <div class="thread-link-badge-wrapper">
+              <a href="#" target="_blank" rel="noopener noreferrer" class="thread-link-chip" id="email-thread-link-chip">
+                <span id="email-thread-link-text">Open in Webmail</span>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Email Body / Notes -->
+        <div class="form-group">
+          <label for="email-body">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <span>Message Content / Notes</span>
+          </label>
+          <textarea id="email-body" rows="3" placeholder="Sanitized message preview or notes..."></textarea>
+        </div>
+
+        <!-- Recruiter Contact Discovery -->
+        <div class="milestone-box" id="milestone-box" style="display: none;">
+          <div class="milestone-option" id="add-contact-option" style="display: none;">
+            <label class="checkbox-container">
+              <input type="checkbox" id="add-contact-checkbox" checked>
+              <span class="checkmark"></span>
+              <span class="checkbox-label" id="add-contact-label">Add recruiter to contacts</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Primary Action Button -->
+      <button type="button" class="btn-primary" id="log-email-btn" style="margin-top: 10px;">
+        <span>⚡ Log Email to Tracklet</span>
+      </button>
+
+      <!-- Escape Hatch: Switch to job clipper -->
+      <div class="switch-mode-footer">
+        <button type="button" class="btn-text-link" id="switch-to-job-clipper-btn">
+          Not an email update? Clip as job posting instead
+        </button>
+      </div>
+    </div>
+
     <!-- Already Saved View (Detect, Inform & Route) -->
     <div class="already-saved-view" id="already-saved-view" style="display: none;">
       <div class="already-saved-card">

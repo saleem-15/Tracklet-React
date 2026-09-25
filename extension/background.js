@@ -215,6 +215,166 @@ async function saveAndSyncApplication(appData) {
   });
 }
 
+function convertEmailLogToFirestoreMap(email) {
+  const fields = {
+    id: { stringValue: email.id },
+    subject: { stringValue: email.subject || 'Email' },
+    sender: { stringValue: email.sender || '' },
+    date: { stringValue: email.date || new Date().toISOString().split('T')[0] },
+  };
+  if (email.recipient) fields.recipient = { stringValue: email.recipient };
+  if (email.direction) fields.direction = { stringValue: email.direction };
+  if (email.snippet) fields.snippet = { stringValue: email.snippet };
+  if (email.body) fields.body = { stringValue: email.body };
+  if (email.emailUrl) fields.emailUrl = { stringValue: email.emailUrl };
+  return { mapValue: { fields } };
+}
+
+// Push EmailLog update directly to Firestore document
+async function pushEmailLogToFirestore(appId, emailLog, updatedStatus, userSession, config) {
+  const projectId = config?.projectId || 'demo-tracklet';
+  const apiKey = config?.apiKey;
+  const userId = userSession.uid;
+  const idToken = userSession.idToken;
+
+  let getUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/users/${userId}/applications/${appId}`;
+  if (apiKey && apiKey !== 'demo-api-key') {
+    getUrl += `?key=${encodeURIComponent(apiKey)}`;
+  }
+
+  const headers = { 'Content-Type': 'application/json' };
+  if (idToken) headers['Authorization'] = `Bearer ${idToken}`;
+
+  // 1. GET current application document
+  const getRes = await fetch(getUrl, { method: 'GET', headers });
+  if (!getRes.ok) {
+    throw new Error(`Failed to fetch application doc: ${getRes.statusText}`);
+  }
+  const currentDoc = await getRes.json();
+  const existingFields = currentDoc.fields || {};
+
+  // Existing emails array
+  const existingEmails = existingFields.emails?.arrayValue?.values || [];
+  const newEmailMap = convertEmailLogToFirestoreMap(emailLog);
+  const updatedEmails = [...existingEmails, newEmailMap];
+
+  const nowISO = new Date().toISOString();
+  const patchFields = {
+    emails: { arrayValue: { values: updatedEmails } },
+    updatedAt: { stringValue: nowISO }
+  };
+  const updateMask = ['emails', 'updatedAt'];
+
+  if (updatedStatus && updatedStatus !== existingFields.status?.stringValue) {
+    patchFields.status = { stringValue: updatedStatus };
+    patchFields.stageUpdatedAt = { stringValue: nowISO };
+    updateMask.push('status', 'stageUpdatedAt');
+
+    // Append to history
+    const existingHistory = existingFields.history?.arrayValue?.values || [];
+    const newHistEntry = {
+      mapValue: {
+        fields: {
+          id: { stringValue: `hist-${Date.now()}` },
+          stage: { stringValue: updatedStatus },
+          timestamp: { stringValue: nowISO }
+        }
+      }
+    };
+    patchFields.history = { arrayValue: { values: [...existingHistory, newHistEntry] } };
+    updateMask.push('history');
+  }
+
+  let patchUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/users/${userId}/applications/${appId}?`;
+  if (apiKey && apiKey !== 'demo-api-key') {
+    patchUrl += `key=${encodeURIComponent(apiKey)}&`;
+  }
+  updateMask.forEach(f => {
+    patchUrl += `updateMask.fieldPaths=${f}&`;
+  });
+
+  const patchRes = await fetch(patchUrl, {
+    method: 'PATCH',
+    headers,
+    body: JSON.stringify({ fields: patchFields })
+  });
+
+  if (!patchRes.ok) {
+    throw new Error(`Failed to patch application doc with email log: ${patchRes.statusText}`);
+  }
+
+  return await patchRes.json();
+}
+
+// Save email log and broadcast to open tabs
+async function saveAndSyncEmailLog({ appId, emailLog, updatedStatus, newContact }) {
+  const { tracklet_user_session, tracklet_firebase_config } = await chrome.storage.local.get([
+    'tracklet_user_session',
+    'tracklet_firebase_config'
+  ]);
+
+  let savedToCloud = false;
+  if (tracklet_user_session && tracklet_user_session.uid) {
+    try {
+      await pushEmailLogToFirestore(appId, emailLog, updatedStatus, tracklet_user_session, tracklet_firebase_config);
+      savedToCloud = true;
+    } catch (e) {
+      console.warn('Direct Firestore email save failed from background worker:', e);
+    }
+  }
+
+  // 1. Deliver to open web tabs via content scripts
+  chrome.tabs.query({}, (tabs) => {
+    tabs.forEach((t) => {
+      if (t.id) {
+        chrome.tabs.sendMessage(t.id, {
+          action: 'TRACKLET_EXT_INCOMING_EMAIL',
+          payload: { appId, emailLog, updatedStatus, newContact }
+        }).catch(() => {});
+      }
+    });
+  });
+
+  // 2. Persist in chrome.storage.local
+  chrome.storage.local.get(['tracklet_guest_apps_v1', 'tracklet_apps_index', 'tracklet_pending_emails'], (result) => {
+    let guestApps = result.tracklet_guest_apps_v1 || [];
+    let appsIndex = result.tracklet_apps_index || [];
+    let pendingEmails = result.tracklet_pending_emails || [];
+
+    const updateAppInList = (list) => list.map(app => {
+      if (app.id !== appId) return app;
+      const emails = [...(app.emails || []), emailLog];
+      return {
+        ...app,
+        emails,
+        status: updatedStatus || app.status,
+        updatedAt: new Date().toISOString()
+      };
+    });
+
+    guestApps = updateAppInList(guestApps);
+    appsIndex = updateAppInList(appsIndex);
+
+    if (!savedToCloud) {
+      pendingEmails = [{ appId, emailLog, updatedStatus, newContact }, ...pendingEmails];
+    }
+
+    chrome.storage.local.set({
+      tracklet_guest_apps_v1: guestApps,
+      tracklet_apps_index: appsIndex,
+      tracklet_pending_emails: pendingEmails
+    }, () => {
+      chrome.action.setBadgeText({ text: '✓' });
+      chrome.action.setBadgeBackgroundColor({ color: '#059669' });
+      setTimeout(() => {
+        chrome.action.setBadgeText({ text: '' });
+      }, 2500);
+    });
+  });
+
+  return { success: true, savedToCloud };
+}
+
 // Listen for runtime messages (internal popup & content script bridge)
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'SYNC_USER_SESSION') {
@@ -235,6 +395,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       tracklet_apps_index: message.payload || []
     }, () => {
       sendResponse({ success: true });
+    });
+    return true;
+  }
+
+  if (message.action === 'SAVE_EMAIL_LOG') {
+    saveAndSyncEmailLog(message.payload).then(res => {
+      sendResponse(res);
+    }).catch(err => {
+      sendResponse({ success: false, error: err.message });
     });
     return true;
   }
