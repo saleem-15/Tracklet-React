@@ -4,14 +4,36 @@
  * for browser extension clipped applications.
  */
 
-import { Application } from '../types';
+import { Application, ApplicationStatus, EmailLog } from '../types';
 import { User } from './firebase';
 
 declare const chrome: any;
 
+export interface IncomingEmailPayload {
+  appId: string;
+  emailLog: EmailLog;
+  updatedStatus?: ApplicationStatus;
+  newContact?: { name: string; email: string; organization?: string; category?: string };
+}
+
 export interface ExtensionSyncCallbacks {
   onApplicationReceived: (app: Application, persistedToCloud?: boolean) => void;
   onApplicationUpdated?: (app: Application) => void;
+  onEmailReceived?: (payload: IncomingEmailPayload) => void;
+}
+
+export interface SyncedAppIndexItem {
+  id: string;
+  jobLink: string;
+  company: string;
+  role: string;
+  status: ApplicationStatus;
+  platform: string;
+  notes: string;
+  companyDomain?: string;
+  contactEmail?: string;
+  contactEmails?: string[];
+  updatedAt?: string;
 }
 
 const BROADCAST_CHANNEL_NAME = 'tracklet_extension_channel';
@@ -98,6 +120,8 @@ export function setupExtensionSync(callbacks: ExtensionSyncCallbacks): () => voi
         const app: Application = event.data.payload;
         const persistedToCloud: boolean = Boolean(event.data.persistedToCloud);
         callbacks.onApplicationReceived(app, persistedToCloud);
+      } else if (event.data.type === 'TRACKLET_EXT_ADD_EMAIL') {
+        callbacks.onEmailReceived?.(event.data.payload);
       } else if (event.data.type === 'REQUEST_TRACKLET_AUTH') {
         // Respond to extension request for auth session
         if (channel) {
@@ -120,16 +144,19 @@ export function setupExtensionSync(callbacks: ExtensionSyncCallbacks): () => voi
 
   // 2. Window postMessage Listener (Content Script bridge fallback)
   const windowMessageHandler = (event: MessageEvent) => {
+    if (event.source !== window) return;
     if (event.data && event.data.type === 'TRACKLET_EXT_ADD_APPLICATION') {
       const app: Application = event.data.payload;
       const persistedToCloud: boolean = Boolean(event.data.persistedToCloud);
       callbacks.onApplicationReceived(app, persistedToCloud);
+    } else if (event.data && event.data.type === 'TRACKLET_EXT_ADD_EMAIL') {
+      callbacks.onEmailReceived?.(event.data.payload);
     }
   };
   window.addEventListener('message', windowMessageHandler);
 
   // 3. Drain any pending items stored in localStorage / chrome.storage
-  syncPendingAppsFromStorage(callbacks.onApplicationReceived);
+  syncPendingAppsFromStorage(callbacks.onApplicationReceived, callbacks.onEmailReceived);
 
   // Return cleanup function
   return () => {
@@ -141,11 +168,14 @@ export function setupExtensionSync(callbacks: ExtensionSyncCallbacks): () => voi
 }
 
 /**
- * Checks localStorage or extension storage for applications clipped while Tracklet tab was closed.
+ * Checks localStorage or extension storage for applications or emails clipped while Tracklet tab was closed.
  */
-export function syncPendingAppsFromStorage(onAdd: (app: Application) => void) {
+export function syncPendingAppsFromStorage(
+  onAdd: (app: Application) => void,
+  onAddEmail?: (payload: IncomingEmailPayload) => void
+) {
   try {
-    // Check localStorage fallback key
+    // 1. Check localStorage fallback keys
     const rawPending = localStorage.getItem(PENDING_STORAGE_KEY);
     if (rawPending) {
       const pendingApps: Application[] = JSON.parse(rawPending);
@@ -155,18 +185,33 @@ export function syncPendingAppsFromStorage(onAdd: (app: Application) => void) {
       }
     }
 
-    // If chrome.storage is accessible directly (e.g. running in extension frame)
+    const rawPendingEmails = localStorage.getItem('tracklet_pending_emails');
+    if (rawPendingEmails && onAddEmail) {
+      const pendingEmails: IncomingEmailPayload[] = JSON.parse(rawPendingEmails);
+      if (Array.isArray(pendingEmails) && pendingEmails.length > 0) {
+        pendingEmails.forEach(payload => onAddEmail(payload));
+        localStorage.removeItem('tracklet_pending_emails');
+      }
+    }
+
+    // 2. If chrome.storage is accessible directly
     if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-      chrome.storage.local.get([PENDING_STORAGE_KEY], (result: any) => {
+      chrome.storage.local.get([PENDING_STORAGE_KEY, 'tracklet_pending_emails'], (result: any) => {
         const pending: Application[] = result[PENDING_STORAGE_KEY] || [];
         if (pending.length > 0) {
           pending.forEach(app => onAdd(app));
           chrome.storage.local.remove([PENDING_STORAGE_KEY]);
         }
+
+        const pendingEmails: IncomingEmailPayload[] = result['tracklet_pending_emails'] || [];
+        if (pendingEmails.length > 0 && onAddEmail) {
+          pendingEmails.forEach(payload => onAddEmail(payload));
+          chrome.storage.local.remove(['tracklet_pending_emails']);
+        }
       });
     }
   } catch (e) {
-    console.warn('Failed to sync pending extension apps:', e);
+    console.warn('Failed to sync pending extension items:', e);
   }
 }
 
@@ -191,18 +236,34 @@ export function normalizeJobUrl(url: string): string {
 }
 
 /**
- * Syncs the current list of saved applications to the extension for instant duplicate detection
+ * Syncs the current list of saved applications to the extension for instant duplicate detection and email matching
  */
 export function syncApplicationsToExtension(applications: Application[]): void {
-  const index = applications.map((a) => ({
-    id: a.id,
-    jobLink: a.jobLink || '',
-    company: a.company,
-    role: a.role,
-    status: a.status,
-    platform: a.platform,
-    notes: a.notes || '',
-  }));
+  const index: SyncedAppIndexItem[] = applications.map((a) => {
+    const contactEmailsSet = new Set<string>();
+    if (a.contactEmail) {
+      contactEmailsSet.add(a.contactEmail.toLowerCase().trim());
+    }
+    if (a.contacts && Array.isArray(a.contacts)) {
+      a.contacts.forEach((c) => {
+        if (c.email) contactEmailsSet.add(c.email.toLowerCase().trim());
+      });
+    }
+
+    return {
+      id: a.id,
+      jobLink: a.jobLink || '',
+      company: a.company,
+      role: a.role,
+      status: a.status,
+      platform: a.platform,
+      notes: a.notes || '',
+      companyDomain: a.companyDomain || '',
+      contactEmail: a.contactEmail || '',
+      contactEmails: Array.from(contactEmailsSet),
+      updatedAt: a.updatedAt || a.stageUpdatedAt || '',
+    };
+  });
 
   // 1. Post to window for content script
   try {

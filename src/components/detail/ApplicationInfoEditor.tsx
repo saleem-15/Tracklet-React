@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Pencil, Building2, Briefcase, Link, AtSign, Save } from 'lucide-react';
+import { Pencil, Building2, Briefcase, Link, AtSign, Save, MessageSquareText } from 'lucide-react';
 import { Application, JobPlatform, WorkLocation, EmploymentType } from '../../types';
 import { JOB_PLATFORMS, WORK_LOCATIONS, EMPLOYMENT_TYPES } from '../../lib/constants';
 import { CustomSelectDropdown } from '../CustomSelectDropdown';
@@ -23,6 +23,7 @@ export const ApplicationInfoEditor: React.FC<ApplicationInfoEditorProps> = ({
   const [editJobLocation, setEditJobLocation] = useState(app.location || '');
   const [editDateApplied, setEditDateApplied] = useState(app.dateApplied || '');
   const [editJobLink, setEditJobLink] = useState(app.jobLink || '');
+  const [editEmailThreadUrl, setEditEmailThreadUrl] = useState(app.emailThreadUrl || '');
   const [editCompanyDomain, setEditCompanyDomain] = useState(app.companyDomain || '');
   const [editContactEmail, setEditContactEmail] = useState(app.contactEmail || '');
   const [isSaving, setIsSaving] = useState(false);
@@ -41,6 +42,7 @@ export const ApplicationInfoEditor: React.FC<ApplicationInfoEditorProps> = ({
         location: editJobLocation.trim() || undefined,
         dateApplied: editDateApplied,
         jobLink: editJobLink.trim() || undefined,
+        emailThreadUrl: editEmailThreadUrl.trim() || undefined,
         companyDomain: editCompanyDomain.trim() || undefined,
         contactEmail: editContactEmail.trim() || undefined,
         updatedAt: new Date().toISOString(),
@@ -195,6 +197,23 @@ export const ApplicationInfoEditor: React.FC<ApplicationInfoEditorProps> = ({
               className="w-full bg-white text-slate-900 font-mono pl-8 pr-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 text-xs transition-all"
             />
           </div>
+        </div>
+      </div>
+
+      {/* Row 5: Email Thread URL */}
+      <div>
+        <label className="block text-[11px] font-mono font-medium text-slate-500 mb-1">
+          Email Thread URL <span className="text-slate-400 font-normal">(Gmail / Outlook webmail link)</span>
+        </label>
+        <div className="relative">
+          <MessageSquareText className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-slate-500" />
+          <input
+            type="url"
+            value={editEmailThreadUrl}
+            onChange={(e) => setEditEmailThreadUrl(e.target.value)}
+            placeholder="https://mail.google.com/mail/u/0/#inbox/..."
+            className="w-full bg-white text-slate-900 font-mono pl-8 pr-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 text-xs transition-all"
+          />
         </div>
       </div>
 

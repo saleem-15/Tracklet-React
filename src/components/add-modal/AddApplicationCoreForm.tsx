@@ -1,5 +1,5 @@
 import React from 'react';
-import { Building2, Globe, Briefcase, Link } from 'lucide-react';
+import { Building2, Globe, Briefcase, Link, MessageSquareText } from 'lucide-react';
 
 export interface AddApplicationCoreFormProps {
   company: string;
@@ -10,6 +10,8 @@ export interface AddApplicationCoreFormProps {
   onRoleChange: (val: string) => void;
   jobLink: string;
   onJobLinkChange: (val: string) => void;
+  emailThreadUrl?: string;
+  onEmailThreadUrlChange?: (val: string) => void;
 }
 
 export const AddApplicationCoreForm: React.FC<AddApplicationCoreFormProps> = ({
@@ -21,6 +23,8 @@ export const AddApplicationCoreForm: React.FC<AddApplicationCoreFormProps> = ({
   onRoleChange,
   jobLink,
   onJobLinkChange,
+  emailThreadUrl,
+  onEmailThreadUrlChange,
 }) => {
   const handleJobLinkChange = (val: string) => {
     onJobLinkChange(val);
@@ -111,6 +115,25 @@ export const AddApplicationCoreForm: React.FC<AddApplicationCoreFormProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Email Thread URL (Optional) */}
+      {onEmailThreadUrlChange && (
+        <div>
+          <label className="block text-[11px] font-mono font-medium text-slate-500 mb-1">
+            Email Thread URL <span className="text-slate-400 font-normal">(optional Gmail/Outlook link)</span>
+          </label>
+          <div className="relative">
+            <MessageSquareText className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+            <input
+              type="text"
+              value={emailThreadUrl || ''}
+              onChange={(e) => onEmailThreadUrlChange(e.target.value)}
+              placeholder="https://mail.google.com/mail/u/0/#inbox/..."
+              className="w-full bg-white text-slate-900 placeholder-slate-500 pl-8 pr-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 font-mono text-xs transition-all shadow-2xs"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

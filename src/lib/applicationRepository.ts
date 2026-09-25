@@ -84,6 +84,7 @@ export class ApplicationRepository {
     const appData = {
       ...newApp,
       contactIds: newApp.contactIds || [],
+      emails: Array.isArray(newApp.emails) ? newApp.emails : [],
       history: initialHistory,
       stageUpdatedAt: now,
       createdAt: now,
@@ -274,6 +275,9 @@ export class ApplicationRepository {
           }
           if (appItem.jobLink) {
             sanitizedPayload.jobLink = String(appItem.jobLink).slice(0, 3000);
+          }
+          if (appItem.emailThreadUrl) {
+            sanitizedPayload.emailThreadUrl = String(appItem.emailThreadUrl).slice(0, 3000);
           }
           if (appItem.companyDomain) {
             sanitizedPayload.companyDomain = String(appItem.companyDomain).slice(0, 200);

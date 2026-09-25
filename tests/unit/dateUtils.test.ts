@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { calculateDaysInStage, formatAppDate, formatTimestamp } from '../../src/lib/dateUtils';
+import { calculateDaysInStage, formatAppDate, formatTimestamp, addBusinessDays } from '../../src/lib/dateUtils';
 
 describe('dateUtils', () => {
   describe('calculateDaysInStage', () => {
@@ -47,6 +47,15 @@ describe('dateUtils', () => {
       const result = formatTimestamp('2026-08-15T14:30:00.000Z');
       expect(result).toContain('2026');
       expect(result).toContain('Aug');
+    });
+  });
+
+  describe('addBusinessDays', () => {
+    it('skips weekends correctly when adding 5 business days', () => {
+      // Monday 2026-09-07 + 5 business days -> Monday 2026-09-14 (Tue, Wed, Thu, Fri, Mon)
+      expect(addBusinessDays('2026-09-07', 5)).toBe('2026-09-14');
+      // Friday 2026-09-04 + 5 business days -> Friday 2026-09-11 (Mon, Tue, Wed, Thu, Fri)
+      expect(addBusinessDays('2026-09-04', 5)).toBe('2026-09-11');
     });
   });
 });

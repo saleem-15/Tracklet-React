@@ -61,6 +61,7 @@ export interface CSVFieldMapping {
   dateApplied: number;
   status: number;
   jobLink: number;
+  emailThreadUrl: number;
   notes: number;
   contactEmail: number;
   location: number;
@@ -78,6 +79,15 @@ export function autoDetectFieldMapping(headers: string[]): CSVFieldMapping {
     );
   };
 
+  const emailThreadUrl = findIdx(['emailthreadurl', 'threadurl', 'emailthread', 'emailurl', 'threadlink', 'thread']);
+  const reservedIndices = emailThreadUrl >= 0 ? [emailThreadUrl] : [];
+
+  const findIdxExcluding = (keywords: string[], excluded: number[]): number => {
+    return normalizedHeaders.findIndex(
+      (h, idx) => !excluded.includes(idx) && keywords.some((kw) => h === kw || h.includes(kw))
+    );
+  };
+
   return {
     company: findIdx(['company', 'organization', 'employer', 'companyname']),
     role: findIdx(['role', 'jobtitle', 'title', 'position', 'job', 'roletext']),
@@ -86,9 +96,10 @@ export function autoDetectFieldMapping(headers: string[]): CSVFieldMapping {
     employmentType: findIdx(['employmenttype', 'jobtype', 'employementtype']),
     dateApplied: findIdx(['dateapplied', 'applieddate', 'date', 'applicationdate', 'appliedon']),
     status: findIdx(['status', 'stage', 'applicationstatus', 'state', 'progress']),
-    jobLink: findIdx(['joblink', 'joblistingurl', 'url', 'link', 'joburl', 'website', 'posting']),
+    jobLink: findIdxExcluding(['joblink', 'joblistingurl', 'url', 'link', 'joburl', 'website', 'posting'], reservedIndices),
+    emailThreadUrl,
     notes: findIdx(['notes', 'comments', 'description', 'note', 'details', 'remarks']),
-    contactEmail: findIdx(['contactemail', 'email', 'recruiteremail', 'contact']),
+    contactEmail: findIdxExcluding(['contactemail', 'email', 'recruiteremail', 'contact'], reservedIndices),
     location: findIdx(['location', 'city', 'address', 'workplace', 'remote']),
     salary: findIdx(['salary', 'pay', 'compensation', 'rate', 'range']),
   };

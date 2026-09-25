@@ -59,6 +59,7 @@ export const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
     dateApplied: -1,
     status: -1,
     jobLink: -1,
+    emailThreadUrl: -1,
     notes: -1,
     contactEmail: -1,
     location: -1,
@@ -224,6 +225,11 @@ export const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
       jobLink = `https://${jobLink}`;
     }
 
+    let emailThreadUrl = mapping.emailThreadUrl >= 0 ? row[mapping.emailThreadUrl]?.trim() : undefined;
+    if (emailThreadUrl && !emailThreadUrl.startsWith('http://') && !emailThreadUrl.startsWith('https://')) {
+      emailThreadUrl = `https://${emailThreadUrl}`;
+    }
+
     let notes = mapping.notes >= 0 ? row[mapping.notes]?.trim() : undefined;
     const contactEmail = mapping.contactEmail >= 0 ? row[mapping.contactEmail]?.trim() : undefined;
     const salary = mapping.salary >= 0 ? row[mapping.salary]?.trim() : undefined;
@@ -257,6 +263,7 @@ export const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
       dateApplied,
       status,
       jobLink: jobLink || undefined,
+      emailThreadUrl: emailThreadUrl || undefined,
       contactEmail: contactEmail || undefined,
       notes: notes || undefined,
     };

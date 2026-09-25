@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   Settings, 
   Clock, 
@@ -24,6 +24,9 @@ import { exportApplicationsToJSON, validateAndParseJSONBackup } from '../lib/bac
 import { exportContactsToCSV } from '../lib/exportCsv';
 import { ImportCSVModal } from './ImportCSVModal';
 import { AccountSettingsCard } from './AccountSettingsCard';
+import { TemplateManagerSection } from './templates/TemplateManagerSection';
+import { FollowUpTemplate } from '../types';
+import { TemplateRepository } from '../lib/templateRepository';
 import { UI_TOKENS } from '../theme/tokens';
 
 interface SettingsViewProps {
@@ -44,6 +47,7 @@ interface SettingsViewProps {
   onSeedDemoData?: () => void;
   onShowToast?: (type: 'success' | 'error' | 'info' | 'warning', title: string, message?: string) => void;
   onAccountDeleted?: () => void;
+  userId?: string;
 }
 
 const PRESET_HOURS = [12, 24, 48, 72, 96];
@@ -62,10 +66,47 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onSeedDemoData,
   onShowToast,
   onAccountDeleted,
+  userId,
 }) => {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const jsonFileInputRef = useRef<HTMLInputElement>(null);
   const expiringTasks = getExpiringSoonTasks(applications, settings.expiryThresholdHours);
+
+  // Follow-Up Templates Library state
+  const [templates, setTemplates] = useState<FollowUpTemplate[]>(() => TemplateRepository.loadGuestTemplates());
+
+  useEffect(() => {
+    let isMounted = true;
+    TemplateRepository.loadTemplates(userId).then((loaded) => {
+      if (isMounted) setTemplates(loaded);
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, [userId]);
+
+  const handleSaveTemplate = async (templateToSave: Omit<FollowUpTemplate, 'id' | 'createdAt' | 'updatedAt'> & { id?: string }) => {
+    const saved = await TemplateRepository.saveTemplate(templateToSave, userId);
+    setTemplates((prev) => {
+      const idx = prev.findIndex((t) => t.id === saved.id);
+      if (idx >= 0) {
+        const copy = [...prev];
+        copy[idx] = saved;
+        return copy;
+      }
+      return [...prev, saved];
+    });
+  };
+
+  const handleDeleteTemplate = async (id: string) => {
+    await TemplateRepository.deleteTemplate(id, userId);
+    setTemplates((prev) => prev.filter((t) => t.id !== id));
+  };
+
+  const handleResetDefaults = async () => {
+    const resetted = await TemplateRepository.resetDefaultTemplates(userId);
+    setTemplates(resetted);
+  };
 
   const handleToggle = () => {
     onUpdateSettings({
@@ -407,6 +448,15 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Follow-Up Templates Library */}
+      <TemplateManagerSection
+        templates={templates}
+        onSaveTemplate={handleSaveTemplate}
+        onDeleteTemplate={handleDeleteTemplate}
+        onResetDefaults={handleResetDefaults}
+        onShowToast={onShowToast}
+      />
 
       {/* Additional Settings: Data Management, CSV & JSON Backup */}
       <div className={`p-6 space-y-5 ${UI_TOKENS.card}`}>

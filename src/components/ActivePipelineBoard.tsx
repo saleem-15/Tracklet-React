@@ -344,7 +344,7 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
                           </p>
 
                           {/* Notes snippet or Tasks/Contacts chips */}
-                          {Boolean(app.tasks?.length || app.contacts?.length || app.contactEmail) ? (
+                          {Boolean(app.tasks?.length || app.contacts?.length || app.contactEmail || app.emails?.length) ? (
                             <div className="flex items-center gap-1.5 flex-wrap mb-2 font-mono text-[11px]">
                               {app.contactEmail ? (
                                 <a
@@ -376,6 +376,15 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
                                 <span className="inline-flex items-center gap-1 text-slate-600 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-200/80" title={`${app.contacts.length} contact(s)`}>
                                   <Users className="w-2.5 h-2.5 text-slate-500" />
                                   <span>{app.contacts.length} contact{app.contacts.length > 1 ? 's' : ''}</span>
+                                </span>
+                              ) : null}
+                              {app.emails && app.emails.length > 0 ? (
+                                <span
+                                  className="inline-flex items-center gap-1 text-purple-700 bg-purple-50/80 hover:bg-purple-100/80 px-1.5 py-0.5 rounded border border-purple-200/80 font-medium transition-colors"
+                                  title={`${app.emails.length} logged email(s)`}
+                                >
+                                  <Mail className="w-2.5 h-2.5 text-purple-600" />
+                                  <span>{app.emails.length} email{app.emails.length > 1 ? 's' : ''}</span>
                                 </span>
                               ) : null}
                             </div>

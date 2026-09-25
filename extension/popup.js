@@ -32,6 +32,46 @@ document.addEventListener('DOMContentLoaded', async () => {
   const userAccountDot = document.getElementById('user-account-dot');
   const userAccountEmail = document.getElementById('user-account-email');
 
+  // Email Log Companion Elements
+  const emailLogView = document.getElementById('email-log-view');
+  const matchedAppCard = document.getElementById('matched-app-card');
+  const emailMatchedAvatar = document.getElementById('email-matched-avatar');
+  const emailMatchedCompany = document.getElementById('email-matched-company');
+  const emailMatchedRole = document.getElementById('email-matched-role');
+  const emailMatchedStagePill = document.getElementById('email-matched-stage-pill');
+  const emailMatchedStageDot = document.getElementById('email-matched-stage-dot');
+  const emailMatchedStageText = document.getElementById('email-matched-stage-text');
+  const changeAppBtn = document.getElementById('change-app-btn');
+  const appSelectorPopover = document.getElementById('app-selector-popover');
+  const appSearchInput = document.getElementById('app-search-input');
+  const appSelectorList = document.getElementById('app-selector-list');
+  const appSelectorNewBtn = document.getElementById('app-selector-new-btn');
+  const dirInboundBtn = document.getElementById('dir-inbound-btn');
+  const dirOutboundBtn = document.getElementById('dir-outbound-btn');
+  const emailSubjectInput = document.getElementById('email-subject');
+  const emailCounterpartyInput = document.getElementById('email-counterparty');
+  const emailCounterpartyLabel = document.getElementById('email-counterparty-label');
+  const counterpartyLabelText = document.getElementById('counterparty-label-text');
+  const emailDateInput = document.getElementById('email-date');
+  const emailThreadLinkChip = document.getElementById('email-thread-link-chip');
+  const emailThreadLinkText = document.getElementById('email-thread-link-text');
+  const emailBodyInput = document.getElementById('email-body');
+  const milestoneBox = document.getElementById('milestone-box');
+  const addContactOption = document.getElementById('add-contact-option');
+  const addContactCheckbox = document.getElementById('add-contact-checkbox');
+  const addContactLabel = document.getElementById('add-contact-label');
+  const logEmailBtn = document.getElementById('log-email-btn');
+  const switchToJobClipperBtn = document.getElementById('switch-to-job-clipper-btn');
+
+  let currentEmailDirection = 'inbound';
+  let selectedEmailMatchedApp = null;
+  let allKnownAppsList = [];
+  let discoveredRecruiterName = '';
+  let discoveredRecruiterEmail = '';
+  let currentEmailUrl = '';
+  let isWebmailMode = false;
+  let rawExtractedEmailData = null;
+
   // Custom Platform Elements
   const platformSelectContainer = document.getElementById('platform-select-container');
   const platformTrigger = document.getElementById('platform-trigger');
@@ -207,15 +247,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   // Avatar Preview Update Handler with dual-tier fallback (Clearbit -> Google Favicon -> Initial)
-  function updateCompanyAvatar(companyName, domain) {
+  function updateCompanyAvatar(companyName, domain, targetEl = companyAvatar) {
+    if (!targetEl) return;
     const cleanCompany = (companyName || '').trim();
     if (!cleanCompany) {
-      companyAvatar.textContent = '?';
+      targetEl.textContent = '?';
       return;
     }
 
     const initial = cleanCompany.charAt(0).toUpperCase();
-    companyAvatar.textContent = initial;
+    targetEl.textContent = initial;
 
     if (domain) {
       const clearbitUrl = `https://logo.clearbit.com/${domain}`;
@@ -223,21 +264,94 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       const img = new Image();
       img.onload = () => {
-        companyAvatar.innerHTML = `<img src="${clearbitUrl}" alt="${cleanCompany}" />`;
+        targetEl.innerHTML = `<img src="${clearbitUrl}" alt="${cleanCompany}" />`;
       };
       img.onerror = () => {
         // Fallback to high-res Google Favicon
         const fallbackImg = new Image();
         fallbackImg.onload = () => {
-          companyAvatar.innerHTML = `<img src="${googleFaviconUrl}" alt="${cleanCompany}" />`;
+          targetEl.innerHTML = `<img src="${googleFaviconUrl}" alt="${cleanCompany}" />`;
         };
         fallbackImg.onerror = () => {
-          companyAvatar.textContent = initial;
+          targetEl.textContent = initial;
         };
         fallbackImg.src = googleFaviconUrl;
       };
       img.src = clearbitUrl;
     }
+  }
+
+  // --- Webmail Companion Helpers ---
+  function isWebmail(url) {
+    if (!url) return false;
+    try {
+      const host = new URL(url).hostname.toLowerCase();
+      return host.includes('mail.google.com') ||
+        host.includes('outlook.live.com') ||
+        host.includes('outlook.office.com') ||
+        host.includes('outlook.office365.com');
+    } catch {
+      return false;
+    }
+  }
+
+  function matchEmailToApplications(emailData, allKnownApps) {
+    if (!allKnownApps || allKnownApps.length === 0) return { bestMatch: null, ranked: [] };
+
+    const senderEmail = (emailData.senderEmail || '').toLowerCase().trim();
+    const recipientEmail = (emailData.recipientEmail || '').toLowerCase().trim();
+    const domain = (emailData.counterpartyDomain || '').toLowerCase().trim();
+    const subject = (emailData.subject || '').toLowerCase().trim();
+    const senderName = (emailData.senderName || '').toLowerCase().trim();
+
+    const scored = allKnownApps.map(app => {
+      let score = 0;
+      const appCompany = (app.company || '').toLowerCase().trim();
+      const appDomain = (app.companyDomain || '').toLowerCase().trim();
+      const contactEmail = (app.contactEmail || '').toLowerCase().trim();
+      const contactEmails = (app.contactEmails || []).map(e => e.toLowerCase().trim());
+
+      // Tier 1: Direct Contact Match (100 pts)
+      if (senderEmail && (senderEmail === contactEmail || contactEmails.includes(senderEmail))) {
+        score += 100;
+      } else if (recipientEmail && (recipientEmail === contactEmail || contactEmails.includes(recipientEmail))) {
+        score += 90;
+      }
+
+      // Tier 2: Company Domain Match (80 pts)
+      if (domain && appDomain && (domain === appDomain || domain.endsWith('.' + appDomain))) {
+        score += 80;
+      } else if (domain && appCompany && (domain.includes(appCompany) || appCompany.includes(domain.split('.')[0]))) {
+        score += 70;
+      }
+
+      // Tier 3: ATS Disambiguation / Sender Display Name (60 pts)
+      if (emailData.isAts && appCompany) {
+        if (senderName && senderName.includes(appCompany)) {
+          score += 65;
+        }
+        if (subject && subject.includes(appCompany)) {
+          score += 60;
+        }
+      }
+
+      // Tier 4: Subject Mentions (40 pts)
+      if (appCompany && appCompany.length >= 3) {
+        const regex = new RegExp(`\\b${appCompany.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+        if (regex.test(subject)) {
+          score += 45;
+        }
+      }
+
+      return { app, score };
+    });
+
+    const ranked = scored
+      .filter(item => item.score > 0)
+      .sort((a, b) => b.score - a.score);
+
+    const bestMatch = ranked.length > 0 ? ranked[0].app : null;
+    return { bestMatch, ranked: ranked.map(r => r.app) };
   }
 
   let dupCheckTimeout = null;
@@ -277,36 +391,45 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (tab && tab.id) {
       jobLinkInput.value = tab.url || '';
       
-      chrome.tabs.sendMessage(tab.id, { action: 'EXTRACT_PAGE_DATA' }, (response) => {
-        if (!chrome.runtime.lastError && response) {
-          companyInput.value = response.company || '';
-          roleInput.value = response.role || '';
-          
-          setPlatform(response.platform || 'Company Site');
+      const isWebmailTab = isWebmail(tab.url);
+      if (isWebmailTab) {
+        initWebmailMode(tab);
+      } else {
+        chrome.tabs.sendMessage(tab.id, { action: 'EXTRACT_PAGE_DATA' }, (response) => {
+          if (!chrome.runtime.lastError && response) {
+            if (response.isWebmail) {
+              initWebmailMode(tab);
+              return;
+            }
+            companyInput.value = response.company || '';
+            roleInput.value = response.role || '';
+            
+            setPlatform(response.platform || 'Company Site');
 
-          notesInput.value = response.notes || '';
-          currentDomain = response.domain || '';
+            notesInput.value = response.notes || '';
+            currentDomain = response.domain || '';
 
-          updateCompanyAvatar(response.company, response.domain);
-          checkForDuplicates(tab.url);
-        } else {
-          const pageTitle = tab.title || '';
-          roleInput.value = pageTitle;
-          companyInput.value = getDomainFallback(tab.url);
-          currentDomain = getDomain(tab.url);
-          updateCompanyAvatar(companyInput.value, currentDomain);
-          checkForDuplicates(tab.url);
-        }
+            updateCompanyAvatar(response.company, response.domain);
+            checkForDuplicates(tab.url);
+          } else {
+            const pageTitle = tab.title || '';
+            roleInput.value = pageTitle;
+            companyInput.value = getDomainFallback(tab.url);
+            currentDomain = getDomain(tab.url);
+            updateCompanyAvatar(companyInput.value, currentDomain);
+            checkForDuplicates(tab.url);
+          }
 
-        // Auto focus first empty required field
-        if (!companyInput.value.trim()) {
-          companyInput.focus();
-        } else if (!roleInput.value.trim()) {
-          roleInput.focus();
-        }
+          // Auto focus first empty required field
+          if (!companyInput.value.trim()) {
+            companyInput.focus();
+          } else if (!roleInput.value.trim()) {
+            roleInput.focus();
+          }
 
-        validateInputs();
-      });
+          validateInputs();
+        });
+      }
     }
   } catch (err) {
     console.error('Failed to query tab:', err);
@@ -406,15 +529,355 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Save Application Click Handler
   saveBtn.addEventListener('click', handleSave);
 
+  // --- Webmail Mode Initialization & UI Controllers ---
+  async function initWebmailMode(tab) {
+    isWebmailMode = true;
+    mainFormView.style.display = 'none';
+    alreadySavedView.style.display = 'none';
+    emailLogView.style.display = 'flex';
+
+    // 1. Load known applications for matching
+    const storage = await chrome.storage.local.get(['tracklet_apps_index', 'tracklet_guest_apps_v1']);
+    const indexApps = storage.tracklet_apps_index || [];
+    const guestApps = storage.tracklet_guest_apps_v1 || [];
+    const appMap = new Map();
+    [...indexApps, ...guestApps].forEach(a => {
+      if (a && a.id && !appMap.has(a.id)) {
+        appMap.set(a.id, a);
+      }
+    });
+    allKnownAppsList = Array.from(appMap.values());
+
+    // 2. Request active email data from content script
+    let hasAttemptedInjection = false;
+
+    function applyExtractedEmailData(emailData) {
+      rawExtractedEmailData = emailData;
+
+      // Populate basic email inputs
+      emailSubjectInput.value = emailData.subject || '';
+      emailCounterpartyInput.value = emailData.counterparty || '';
+      emailDateInput.value = emailData.date || today;
+      emailBodyInput.value = emailData.body || emailData.snippet || '';
+      currentEmailUrl = emailData.emailUrl || tab.url || '';
+
+      if (emailThreadLinkChip) {
+        emailThreadLinkChip.href = currentEmailUrl;
+        emailThreadLinkText.textContent = emailData.provider === 'gmail' ? 'Open in Gmail' : 'Open in Outlook';
+      }
+
+      // Direction
+      setEmailDirection(emailData.direction || 'inbound');
+
+      // Match to application
+      const { bestMatch } = matchEmailToApplications(emailData, allKnownAppsList);
+      if (bestMatch) {
+        renderMatchedApp(bestMatch, true);
+      } else if (allKnownAppsList.length > 0) {
+        renderMatchedApp(allKnownAppsList[0], false);
+      } else {
+        renderMatchedApp(null, false);
+      }
+
+      // Contact Discovery
+      discoveredRecruiterName = emailData.counterpartyName || '';
+      discoveredRecruiterEmail = emailData.counterpartyEmail || '';
+      const isKnownContact = selectedEmailMatchedApp?.contactEmails?.includes(discoveredRecruiterEmail.toLowerCase());
+      if (discoveredRecruiterName && !isKnownContact && discoveredRecruiterName !== 'You' && discoveredRecruiterName.length > 1) {
+        if (milestoneBox) milestoneBox.style.display = 'block';
+        addContactOption.style.display = 'flex';
+        addContactLabel.textContent = `Add "${discoveredRecruiterName}" as recruiter contact`;
+        addContactCheckbox.checked = true;
+      } else {
+        if (milestoneBox) milestoneBox.style.display = 'none';
+        addContactOption.style.display = 'none';
+      }
+    }
+
+    function requestEmailExtraction() {
+      chrome.tabs.sendMessage(tab.id, { 
+        action: 'EXTRACT_EMAIL_DATA', 
+        userEmail: currentUserSession?.email 
+      }, (emailData) => {
+        if (chrome.runtime.lastError || !emailData) {
+          // If script wasn't injected yet, attempt dynamic programmatic injection once
+          if (!hasAttemptedInjection && chrome.scripting && tab.id) {
+            hasAttemptedInjection = true;
+            chrome.scripting.executeScript({
+              target: { tabId: tab.id },
+              files: ['content.js']
+            }, () => {
+              if (chrome.runtime.lastError) {
+                fallbackEmailData();
+              } else {
+                setTimeout(requestEmailExtraction, 150);
+              }
+            });
+            return;
+          }
+          fallbackEmailData();
+          return;
+        }
+
+        applyExtractedEmailData(emailData);
+      });
+    }
+
+    function fallbackEmailData() {
+      const fallback = {
+        subject: tab.title || '',
+        sender: '',
+        date: today,
+        direction: 'inbound',
+        snippet: '',
+        body: '',
+        emailUrl: tab.url || ''
+      };
+      applyExtractedEmailData(fallback);
+    }
+
+    requestEmailExtraction();
+  }
+
+  function setEmailDirection(dir) {
+    currentEmailDirection = dir;
+    if (dir === 'outbound') {
+      dirOutboundBtn.classList.add('active');
+      dirInboundBtn.classList.remove('active');
+      counterpartyLabelText.textContent = 'To (Recruiter / Contact)';
+    } else {
+      dirInboundBtn.classList.add('active');
+      dirOutboundBtn.classList.remove('active');
+      counterpartyLabelText.textContent = 'From (Recruiter / Company)';
+    }
+  }
+
+  function renderMatchedApp(app, isExactMatch = true) {
+    selectedEmailMatchedApp = app;
+    const matchedStatusLabel = document.getElementById('matched-status-label');
+
+    if (app) {
+      if (matchedStatusLabel) {
+        matchedStatusLabel.textContent = isExactMatch ? 'Matched Job' : 'Select Job';
+      }
+      emailMatchedCompany.textContent = app.company;
+      emailMatchedRole.textContent = app.role;
+      emailMatchedStagePill.style.display = 'inline-flex';
+
+      const config = STAGE_CONFIG[app.status] || STAGE_CONFIG['Applied'];
+      emailMatchedStageText.textContent = config.label;
+      emailMatchedStageDot.style.backgroundColor = config.dot;
+      emailMatchedStagePill.style.backgroundColor = config.bg;
+      emailMatchedStagePill.style.color = config.text;
+      emailMatchedStagePill.style.borderColor = config.border;
+
+      updateCompanyAvatar(app.company, app.companyDomain, emailMatchedAvatar);
+    } else {
+      if (matchedStatusLabel) {
+        matchedStatusLabel.textContent = 'No Applications';
+      }
+      emailMatchedCompany.textContent = 'No Applications Saved';
+      emailMatchedRole.textContent = 'Save as new job below';
+      emailMatchedStagePill.style.display = 'none';
+      emailMatchedAvatar.textContent = '?';
+    }
+  }
+
+  function renderAppSelectorList(filter = '') {
+    const cleanFilter = filter.toLowerCase().trim();
+    appSelectorList.innerHTML = '';
+
+    const filtered = allKnownAppsList.filter(a => 
+      !cleanFilter || 
+      a.company.toLowerCase().includes(cleanFilter) || 
+      a.role.toLowerCase().includes(cleanFilter)
+    );
+
+    if (filtered.length === 0) {
+      appSelectorList.innerHTML = '<div style="padding: 10px; text-align: center; color: var(--neutral-muted); font-size: 11px;">No applications found</div>';
+      return;
+    }
+
+    filtered.forEach(app => {
+      const item = document.createElement('div');
+      item.className = 'app-selector-item' + (selectedEmailMatchedApp?.id === app.id ? ' selected' : '');
+      
+      const textContainer = document.createElement('div');
+      textContainer.className = 'app-selector-item-text';
+
+      const companySpan = document.createElement('span');
+      companySpan.className = 'app-selector-item-company';
+      companySpan.textContent = app.company;
+
+      const roleSpan = document.createElement('span');
+      roleSpan.className = 'app-selector-item-role';
+      roleSpan.textContent = app.role;
+
+      textContainer.appendChild(companySpan);
+      textContainer.appendChild(roleSpan);
+
+      const stageDot = document.createElement('span');
+      stageDot.className = 'stage-dot';
+      stageDot.style.backgroundColor = config.dot;
+      stageDot.style.width = '8px';
+      stageDot.style.height = '8px';
+      stageDot.style.borderRadius = '50%';
+
+      item.appendChild(textContainer);
+      item.appendChild(stageDot);
+
+      item.addEventListener('click', () => {
+        renderMatchedApp(app, true);
+        appSelectorPopover.style.display = 'none';
+      });
+
+      appSelectorList.appendChild(item);
+    });
+  }
+
+  // Email Log Event Listeners
+  dirInboundBtn.addEventListener('click', () => setEmailDirection('inbound'));
+  dirOutboundBtn.addEventListener('click', () => setEmailDirection('outbound'));
+
+  changeAppBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const isVisible = appSelectorPopover.style.display !== 'none';
+    if (!isVisible) {
+      renderAppSelectorList();
+      appSelectorPopover.style.display = 'flex';
+      appSearchInput.value = '';
+      appSearchInput.focus();
+    } else {
+      appSelectorPopover.style.display = 'none';
+    }
+  });
+
+  appSearchInput.addEventListener('input', () => {
+    renderAppSelectorList(appSearchInput.value);
+  });
+
+  appSelectorNewBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    appSelectorPopover.style.display = 'none';
+    emailLogView.style.display = 'none';
+    mainFormView.style.display = 'block';
+    if (rawExtractedEmailData) {
+      companyInput.value = rawExtractedEmailData.counterpartyName || rawExtractedEmailData.counterpartyDomain || '';
+      notesInput.value = rawExtractedEmailData.snippet || '';
+    }
+    companyInput.focus();
+    validateInputs();
+  });
+
+  switchToJobClipperBtn.addEventListener('click', () => {
+    emailLogView.style.display = 'none';
+    mainFormView.style.display = 'block';
+    if (rawExtractedEmailData) {
+      if (!companyInput.value) {
+        companyInput.value = rawExtractedEmailData.counterpartyName || '';
+      }
+      if (!notesInput.value) {
+        notesInput.value = rawExtractedEmailData.snippet || '';
+      }
+    }
+    validateInputs();
+  });
+
+  logEmailBtn.addEventListener('click', handleLogEmail);
+
+  let isLoggingEmail = false;
+
+  async function handleLogEmail() {
+    if (isLoggingEmail) return;
+
+    if (!selectedEmailMatchedApp) {
+      emailMatchedCompany.classList.add('input-error');
+      setTimeout(() => emailMatchedCompany.classList.remove('input-error'), 1500);
+      return;
+    }
+
+    const subject = emailSubjectInput.value.trim();
+    const counterparty = emailCounterpartyInput.value.trim();
+    if (!subject) {
+      emailSubjectInput.classList.add('input-error');
+      emailSubjectInput.focus();
+      return;
+    }
+    if (!counterparty) {
+      emailCounterpartyInput.classList.add('input-error');
+      emailCounterpartyInput.focus();
+      return;
+    }
+
+    isLoggingEmail = true;
+    logEmailBtn.disabled = true;
+    logEmailBtn.querySelector('span').textContent = 'Logging email...';
+
+    const isOutbound = currentEmailDirection === 'outbound';
+    const emailLogPayload = {
+      id: `email-${Date.now()}`,
+      subject,
+      sender: isOutbound ? (currentUserSession?.email || 'You') : counterparty,
+      recipient: isOutbound ? counterparty : (currentUserSession?.email || undefined),
+      date: emailDateInput.value || today,
+      direction: currentEmailDirection,
+      snippet: emailBodyInput.value.trim().slice(0, 200),
+      body: emailBodyInput.value.trim(),
+      emailUrl: currentEmailUrl || '',
+    };
+    const newContact = (addContactCheckbox.checked && discoveredRecruiterName)
+      ? {
+          name: discoveredRecruiterName,
+          email: discoveredRecruiterEmail,
+          organization: selectedEmailMatchedApp.company,
+          category: 'Recruiter'
+        }
+      : undefined;
+
+    chrome.runtime.sendMessage({
+      action: 'SAVE_EMAIL_LOG',
+      payload: {
+        appId: selectedEmailMatchedApp.id,
+        emailLog: emailLogPayload,
+        newContact
+      }
+    }, (response) => {
+      const lastErr = chrome.runtime.lastError;
+      if (lastErr || (response && response.success === false)) {
+        isLoggingEmail = false;
+        logEmailBtn.disabled = false;
+        logEmailBtn.querySelector('span').textContent = 'Log Email to Tracklet';
+        emailMatchedCompany.classList.add('input-error');
+        setTimeout(() => emailMatchedCompany.classList.remove('input-error'), 1500);
+        return;
+      }
+
+      isLoggingEmail = false;
+      // Show success view
+      successTitle.textContent = 'Email Logged!';
+      successSubtitle.textContent = `"${subject}" logged to ${selectedEmailMatchedApp.company} timeline.`;
+
+      mainContainer.style.display = 'none';
+      successView.classList.add('visible');
+
+      scheduleAutoClose(3200);
+    });
+  }
+
   // Global Keyboard Shortcuts (Escape to dismiss dropdowns, Enter to submit)
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       platformSelectContainer.classList.remove('open');
       stageSelectorContainer.classList.remove('open');
+      if (appSelectorPopover) appSelectorPopover.style.display = 'none';
       return;
     }
     if (e.key === 'Enter' && !e.shiftKey && e.target.tagName !== 'TEXTAREA') {
       e.preventDefault();
+      if (isWebmailMode && emailLogView.style.display !== 'none') {
+        handleLogEmail();
+        return;
+      }
       if (alreadySavedView.style.display === 'flex') {
         focusOrOpenWorkspace(matchedApplication?.id);
         return;
@@ -643,7 +1106,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         t.url.includes('vercel.app')
       ));
 
-      const targetUrl = appId ? `http://localhost:5173/?appId=${encodeURIComponent(appId)}` : 'http://localhost:5173';
+      const targetUrl = appId ? `http://localhost:3000/?appId=${encodeURIComponent(appId)}` : 'http://localhost:3000';
 
       if (trackletTab && trackletTab.id) {
         if (appId) {
@@ -661,7 +1124,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     } catch (err) {
       console.warn('Tab focus check failed:', err);
     }
-    chrome.tabs.create({ url: appId ? `http://localhost:5173/?appId=${encodeURIComponent(appId)}` : 'http://localhost:5173' });
+    chrome.tabs.create({ url: appId ? `http://localhost:3000/?appId=${encodeURIComponent(appId)}` : 'http://localhost:3000' });
     window.close();
   }
 

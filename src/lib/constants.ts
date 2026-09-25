@@ -1,4 +1,20 @@
-import { ApplicationStatus, JobPlatform, WorkLocation, EmploymentType, ContactCategory } from '../types';
+import { 
+  ApplicationStatus, 
+  JobPlatform, 
+  WorkLocation, 
+  EmploymentType, 
+  ContactCategory,
+  FollowUpCategory,
+  FollowUpTemplate
+} from '../types';
+
+export const FOLLOWUP_CATEGORIES: FollowUpCategory[] = [
+  'Post-Application',
+  'Interview',
+  'Offer',
+  'Networking',
+  'Custom',
+];
 
 export const CONTACT_CATEGORIES: ContactCategory[] = [
   'Mentor',
@@ -133,6 +149,7 @@ export const STATUS_ACTIVE_STYLES: Record<ApplicationStatus, string> = {
 export const LOCAL_STORAGE_KEYS = {
   GUEST_APPS: 'tracklet_guest_apps_v1',
   GUEST_CONTACTS: 'tracklet_guest_contacts_v1',
+  GUEST_TEMPLATES: 'tracklet_guest_templates_v1',
   CONTACTS_LAYOUT: 'tracklet_contacts_layout_v1',
   CONTACTS_MIGRATED: 'tracklet_contacts_migrated',
   EXPIRY_SETTINGS: 'tracklet_expiry_settings_v1',
@@ -146,6 +163,83 @@ export const AUTH_PROVIDERS = {
   GOOGLE: 'google.com',
   PASSWORD: 'password',
 } as const;
+
+export const DEFAULT_FOLLOWUP_TEMPLATES: Omit<FollowUpTemplate, 'id'>[] = [
+  {
+    title: 'Post-Application Check-In',
+    category: 'Post-Application',
+    subject: 'Following up on {role} application - {company}',
+    body: `Hi {contactName},
+
+I hope you're having a great week.
+
+I recently applied for the {role} position at {company}, and I wanted to check in to reiterate my strong interest in joining the team.
+
+Given my background and enthusiasm for what {company} is building, I would love the chance to discuss how my skills align with your goals.
+
+Please let me know if there is any additional information, work samples, or references I can provide.
+
+Thank you for your time and consideration!
+
+Best regards,`,
+    isBuiltIn: true,
+    order: 1,
+  },
+  {
+    title: 'Post-Interview Thank You',
+    category: 'Interview',
+    subject: 'Thank you for your time today — {role} ({company})',
+    body: `Hi {contactName},
+
+Thank you so much for taking the time to speak with me today regarding the {role} position at {company}.
+
+I really enjoyed our discussion, especially learning more about your team's current roadmap and technical priorities. Our conversation confirmed my excitement about the opportunity.
+
+Please let me know if you need any follow-up information or additional materials from my side.
+
+Looking forward to hearing from you about the next steps!
+
+Best regards,`,
+    isBuiltIn: true,
+    order: 2,
+  },
+  {
+    title: '1-Week Status Inquiry',
+    category: 'Interview',
+    subject: 'Following up on {role} interview — {company}',
+    body: `Hi {contactName},
+
+I hope you've had a productive week.
+
+I'm checking in to see if there are any updates regarding the {role} position following our conversation.
+
+I remain very excited about the possibility of joining {company} and would be delighted to answer any additional questions that could assist your team's decision.
+
+Thank you again for your guidance and communication!
+
+Best regards,`,
+    isBuiltIn: true,
+    order: 3,
+  },
+  {
+    title: 'Offer Discussion / Terms',
+    category: 'Offer',
+    subject: 'Regarding the {role} offer — {company}',
+    body: `Hi {contactName},
+
+Thank you again for extending the offer to join {company} as {role}! I am thrilled about the prospect of contributing to the team's mission.
+
+I have reviewed the offer details carefully. Before making a final decision, I would appreciate the opportunity to discuss a few specific items regarding the compensation package and team start timeline.
+
+Could we schedule a quick 15-minute call this week?
+
+Thank you again for your support throughout this process!
+
+Best regards,`,
+    isBuiltIn: true,
+    order: 4,
+  },
+];
 
 export const EMAIL_VERIFICATION_COOLDOWN_SECONDS = 60;
 

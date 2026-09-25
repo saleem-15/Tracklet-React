@@ -67,7 +67,10 @@ export interface EmailLog {
   sender: string;
   recipient?: string;
   date: string;
+  direction?: 'inbound' | 'outbound';
   snippet?: string;
+  body?: string;
+  emailUrl?: string;
 }
 
 export interface Application {
@@ -82,6 +85,7 @@ export interface Application {
   dateApplied: string; // YYYY-MM-DD
   status: ApplicationStatus;
   jobLink?: string;
+  emailThreadUrl?: string;
   notes?: string;
   contactEmail?: string;
   contactIds?: string[];
@@ -101,6 +105,27 @@ export interface StatusHistoryEntry {
   toStatus: ApplicationStatus;
   fromStatus?: ApplicationStatus;
   timestamp: string; // ISO string timestamp
+  note?: string;
+}
+
+export type FollowUpCategory = 
+  | 'Post-Application'
+  | 'Interview'
+  | 'Offer'
+  | 'Networking'
+  | 'Custom';
+
+export interface FollowUpTemplate {
+  id: string;
+  userId?: string;
+  title: string;
+  subject: string;
+  body: string;
+  category: FollowUpCategory;
+  isBuiltIn?: boolean;
+  order?: number;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export type SortField = 'company' | 'role' | 'platform' | 'dateApplied' | 'status' | 'daysInStage';

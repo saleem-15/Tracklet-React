@@ -37,6 +37,7 @@ export interface ContactManagerSectionProps {
   onUpdateContact?: (id: string, updates: Partial<Contact>) => Promise<void>;
   onEditContact?: (contact: Contact) => void;
   onSelectContact?: (contactId: string) => void;
+  onFollowUpContact?: (contact: Contact) => void;
 }
 
 const categoryOptions: SelectOption<ContactCategory>[] = CONTACT_CATEGORIES.map((cat) => ({
@@ -54,6 +55,7 @@ export const ContactManagerSection: React.FC<ContactManagerSectionProps> = ({
   onUpdateContact,
   onEditContact,
   onSelectContact,
+  onFollowUpContact,
 }) => {
   const [showLinkPicker, setShowLinkPicker] = useState(false);
   const [expandedContactIds, setExpandedContactIds] = useState<string[]>([]);
@@ -410,6 +412,18 @@ export const ContactManagerSection: React.FC<ContactManagerSectionProps> = ({
                   </div>
 
                   <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                    {contact.email && onFollowUpContact && (
+                      <button
+                        type="button"
+                        onClick={() => onFollowUpContact(contact)}
+                        title={`Draft follow-up to ${contact.name}`}
+                        className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200/60 shadow-2xs transition-colors cursor-pointer"
+                      >
+                        <Mail className="w-3 h-3 text-blue-600" />
+                        <span>Follow-up</span>
+                      </button>
+                    )}
+
                     {contact.linkedIn && (
                       <a
                         href={normalizeUrl(contact.linkedIn)}
@@ -482,7 +496,7 @@ export const ContactManagerSection: React.FC<ContactManagerSectionProps> = ({
                     {/* Communication Chips with LinkedIn as Icon Button */}
                     <div className="flex items-center gap-1.5 flex-wrap">
                       {contact.email && (
-                        <div className="flex-1 min-w-[140px] flex items-center justify-between text-[11px] font-mono bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200/60 group/email">
+                        <div className="flex-1 min-w-[160px] flex items-center justify-between text-[11px] font-mono bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200/60 group/email">
                           <a
                             href={`mailto:${contact.email}`}
                             target="_blank"
@@ -492,17 +506,29 @@ export const ContactManagerSection: React.FC<ContactManagerSectionProps> = ({
                             <Mail className="w-3 h-3 text-blue-500 shrink-0" />
                             <span className="truncate">{contact.email}</span>
                           </a>
-                          <button
-                            type="button"
-                            onClick={(e) => handleCopyEmail(e, contact.email!, contact.id)}
-                            className="opacity-0 group-hover/email:opacity-100 transition-opacity text-[10px] text-blue-600 hover:text-blue-700 px-1 py-0.5 rounded cursor-pointer font-semibold"
-                          >
-                            {copiedEmailId === contact.id ? (
-                              <span className="text-emerald-600 font-bold">Copied</span>
-                            ) : (
-                              'Copy'
+                          <div className="flex items-center gap-1 shrink-0">
+                            {onFollowUpContact && (
+                              <button
+                                type="button"
+                                onClick={() => onFollowUpContact(contact)}
+                                className="text-[10px] text-blue-600 hover:text-blue-700 px-1.5 py-0.5 rounded hover:bg-blue-50 cursor-pointer font-semibold"
+                                title="Draft follow-up"
+                              >
+                                Follow-up
+                              </button>
                             )}
-                          </button>
+                            <button
+                              type="button"
+                              onClick={(e) => handleCopyEmail(e, contact.email!, contact.id)}
+                              className="opacity-0 group-hover/email:opacity-100 transition-opacity text-[10px] text-slate-600 hover:text-slate-800 px-1 py-0.5 rounded cursor-pointer font-semibold"
+                            >
+                              {copiedEmailId === contact.id ? (
+                                <span className="text-emerald-600 font-bold">Copied</span>
+                              ) : (
+                                'Copy'
+                              )}
+                            </button>
+                          </div>
                         </div>
                       )}
 
@@ -562,7 +588,7 @@ export const ContactManagerSection: React.FC<ContactManagerSectionProps> = ({
             );
           })
         ) : !showLinkPicker ? (
-          <div className="text-slate-500 font-mono text-[11px] text-center py-4">
+          <div className="text-slate-500 text-xs text-center py-3.5 bg-slate-50/40">
             No contacts linked to this application yet.
           </div>
         ) : null}
