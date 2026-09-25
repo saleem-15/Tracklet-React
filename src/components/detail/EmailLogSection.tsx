@@ -290,7 +290,7 @@ export const EmailLogSection: React.FC<EmailLogSectionProps> = ({
 
             <div>
               <label className="block text-[11px] font-mono text-slate-500 mb-1">
-                Thread URL <span className="text-slate-400 font-normal">(optional)</span>
+                Thread URL <span className="text-slate-500 font-normal">(optional)</span>
               </label>
               <div className="relative">
                 <Link2 className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -308,7 +308,7 @@ export const EmailLogSection: React.FC<EmailLogSectionProps> = ({
           {/* Body Content */}
           <div>
             <label className="block text-[11px] font-mono text-slate-500 mb-1">
-              Email Content / Notes <span className="text-slate-400 font-normal">(optional)</span>
+              Email Content / Notes <span className="text-slate-500 font-normal">(optional)</span>
             </label>
             <textarea
               value={body}
