@@ -37,6 +37,7 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
   const [dateApplied, setDateApplied] = useState(todayStr);
   const [status, setStatus] = useState<ApplicationStatus>('Saved');
   const [jobLink, setJobLink] = useState('');
+  const [emailThreadUrl, setEmailThreadUrl] = useState('');
   const [notes, setNotes] = useState('');
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [tasks, setTasks] = useState<ApplicationTask[]>([]);
@@ -47,6 +48,7 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
     role.trim() !== '' ||
     notes.trim() !== '' ||
     jobLink.trim() !== '' ||
+    emailThreadUrl.trim() !== '' ||
     workLocation !== '' ||
     employmentType !== '' ||
     jobLocation.trim() !== '' ||
@@ -157,6 +159,11 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
       formattedJobLink = `https://${formattedJobLink}`;
     }
 
+    let formattedThreadUrl = emailThreadUrl.trim();
+    if (formattedThreadUrl && !formattedThreadUrl.startsWith('http://') && !formattedThreadUrl.startsWith('https://')) {
+      formattedThreadUrl = `https://${formattedThreadUrl}`;
+    }
+
     const primaryContactEmail = contacts.find((c) => c.email)?.email || undefined;
 
     const payload = {
@@ -170,6 +177,7 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
       dateApplied: dateApplied || todayStr,
       status,
       jobLink: formattedJobLink || undefined,
+      emailThreadUrl: formattedThreadUrl || undefined,
       contactEmail: primaryContactEmail,
       contactIds: contacts.map((c) => c.id),
       tasks: tasks.length > 0 ? tasks : undefined,
@@ -188,6 +196,7 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
     setDateApplied(todayStr);
     setStatus('Saved');
     setJobLink('');
+    setEmailThreadUrl('');
     setNotes('');
     setContacts([]);
     setTasks([]);
@@ -234,6 +243,8 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
                   onRoleChange={setRole}
                   jobLink={jobLink}
                   onJobLinkChange={setJobLink}
+                  emailThreadUrl={emailThreadUrl}
+                  onEmailThreadUrlChange={setEmailThreadUrl}
                 />
 
                 <AddApplicationTasksSection

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Application, ApplicationStatus, Contact, ApplicationTask, EmailLog } from '../types';
+import { Application, ApplicationStatus, Contact, ApplicationTask, FollowUpTemplate, EmailLog } from '../types';
 import { calculateDaysInStage } from '../lib/sampleData';
 import { ApplicationDetailHeader } from './detail/ApplicationDetailHeader';
 import { ApplicationDetailFooter } from './detail/ApplicationDetailFooter';
@@ -7,11 +7,14 @@ import { ApplicationInfoEditor } from './detail/ApplicationInfoEditor';
 import { ApplicationMetricsBar } from './detail/ApplicationMetricsBar';
 import { TaskChecklistSection } from './detail/TaskChecklistSection';
 import { ContactManagerSection } from './detail/ContactManagerSection';
-import { EmailLogSection } from './detail/EmailLogSection';
 import { StatusHistoryTimeline } from './detail/StatusHistoryTimeline';
 import { UnsavedChangesPrompt } from './detail/UnsavedChangesPrompt';
 import { ApplicationNotesSection } from './detail/ApplicationNotesSection';
 import { ApplicationQuickLinks } from './detail/ApplicationQuickLinks';
+import { EmailLogSection } from './detail/EmailLogSection';
+import { FollowUpModal, FollowUpTriggerDetails } from './templates/FollowUpModal';
+import { TemplateRepository } from '../lib/templateRepository';
+import { addBusinessDays } from '../lib/dateUtils';
 import { resolveDraftOnOpen, clearNoteDraft } from '../lib/editor/noteDrafts';
 import { useEscapeKey } from '../lib/useEscapeKey';
 
@@ -60,6 +63,46 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
   const [isEditingInfo, setIsEditingInfo] = useState(false);
   const [showUnsavedPrompt, setShowUnsavedPrompt] = useState(false);
   const [draftNoticeVisible, setDraftNoticeVisible] = useState(false);
+
+  // Follow-up engine state
+  const [templates, setTemplates] = useState<FollowUpTemplate[]>(() => TemplateRepository.loadGuestTemplates());
+  const [isFollowUpModalOpen, setIsFollowUpModalOpen] = useState(false);
+  const [followUpContact, setFollowUpContact] = useState<Contact | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    TemplateRepository.loadTemplates(app?.userId).then((loaded) => {
+      if (isMounted) setTemplates(loaded);
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, [app?.userId]);
+
+  // Resolve primary contact name & email (checks app.contactEmail first, then linked contacts)
+  const effectiveContact = React.useMemo(() => {
+    if (!app) return { email: undefined, name: undefined };
+    if (app.contactEmail) {
+      const match = allContacts.find((c) => c.email === app.contactEmail) ||
+        (app.contacts || []).find((c) => c.email === app.contactEmail);
+      return {
+        email: app.contactEmail,
+        name: match?.name,
+      };
+    }
+    const linkedIds = new Set(app.contactIds || []);
+    const linked = allContacts.filter((c) => linkedIds.has(c.id) && c.email);
+    const legacy = (app.contacts || []).filter((c) => c.email);
+    const candidates = [...linked, ...legacy];
+    if (candidates.length > 0) {
+      const recruiter = candidates.find((c) => c.category === 'Recruiter' || c.category === 'Hiring Manager') || candidates[0];
+      return {
+        email: recruiter.email,
+        name: recruiter.name,
+      };
+    }
+    return { email: undefined, name: undefined };
+  }, [app, allContacts]);
 
   // Refs for tracking debounced auto-save state and flush on close
   const saveTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -346,8 +389,66 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
     }
   };
 
+  const handleSaveTemplate = async (templateToSave: Omit<FollowUpTemplate, 'id' | 'createdAt' | 'updatedAt'> & { id?: string }) => {
+    const saved = await TemplateRepository.saveTemplate(templateToSave, app?.userId);
+    setTemplates((prev) => {
+      const idx = prev.findIndex((t) => t.id === saved.id);
+      if (idx >= 0) {
+        const copy = [...prev];
+        copy[idx] = saved;
+        return copy;
+      }
+      return [...prev, saved];
+    });
+  };
+
+  const handleDeleteTemplate = async (id: string) => {
+    await TemplateRepository.deleteTemplate(id, app?.userId);
+    setTemplates((prev) => prev.filter((t) => t.id !== id));
+  };
+
+  const handleResetDefaults = async () => {
+    const resetted = await TemplateRepository.resetDefaultTemplates(app?.userId);
+    setTemplates(resetted);
+  };
+
+  const handleFollowUpTriggered = async (details: FollowUpTriggerDetails) => {
+    if (!app) return;
+
+    const now = new Date().toISOString();
+
+    // 1. Log timeline touchpoint marker (Task T014)
+    const historyEntry = {
+      id: `hist-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      toStatus: app.status,
+      fromStatus: app.status,
+      timestamp: now,
+      note: `Follow-up sent to ${details.recipientName} (${details.template.title})`,
+    };
+    const updatedHistory = [...(app.history || []), historyEntry];
+
+    // 2. Inject 5-day reminder task if requested (Task T015)
+    let updatedTasks = app.tasks ? [...app.tasks] : [];
+    if (details.addReminder) {
+      const reminderTask: ApplicationTask = {
+        id: `task-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+        title: `Follow up with ${details.recipientName} (${app.company})`,
+        completed: false,
+        dueDate: addBusinessDays(new Date(), 5),
+      };
+      updatedTasks.push(reminderTask);
+    }
+
+    await onUpdateApp(app.id, {
+      history: updatedHistory,
+      tasks: updatedTasks,
+      updatedAt: now,
+    });
+  };
+
   // Email handlers
   const handleAddEmailLog = async (emailData: Omit<EmailLog, 'id'>) => {
+    if (!app) return;
     const newEmailLog: EmailLog = { id: `email-${Date.now()}`, ...emailData };
     await onUpdateApp(app.id, {
       emails: [...(app.emails || []), newEmailLog],
@@ -461,8 +562,16 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
             <div className="lg:col-span-5 space-y-5">
               <ApplicationQuickLinks
                 jobLink={app.jobLink}
-                contactEmail={app.contactEmail}
+                emailThreadUrl={app.emailThreadUrl}
+                contactEmail={effectiveContact.email}
+                contactName={effectiveContact.name}
+                company={app.company}
+                role={app.role}
                 onOpenEditInfo={() => setIsEditingInfo(true)}
+                onOpenFollowUp={() => {
+                  setFollowUpContact(null);
+                  setIsFollowUpModalOpen(true);
+                }}
               />
 
               <EmailLogSection
@@ -495,6 +604,10 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
                 onUpdateContact={onUpdateContact}
                 onSelectContact={onSelectContact}
                 onEditContact={onEditContact}
+                onFollowUpContact={(contact) => {
+                  setFollowUpContact(contact);
+                  setIsFollowUpModalOpen(true);
+                }}
               />
 
               <StatusHistoryTimeline
@@ -515,6 +628,26 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
           showSavedToast={showSavedToast}
         />
       </div>
+
+      {isFollowUpModalOpen && (
+        <FollowUpModal
+          isOpen={isFollowUpModalOpen}
+          app={app}
+          allContacts={allContacts}
+          initialContactId={followUpContact?.id}
+          initialContactEmail={followUpContact?.email || effectiveContact.email}
+          templates={templates}
+          onSaveTemplate={handleSaveTemplate}
+          onDeleteTemplate={handleDeleteTemplate}
+          onResetDefaults={handleResetDefaults}
+          onFollowUpTriggered={handleFollowUpTriggered}
+          onShowToast={(type, title, msg) => onShowToast?.(type, title, msg)}
+          onClose={() => {
+            setIsFollowUpModalOpen(false);
+            setFollowUpContact(null);
+          }}
+        />
+      )}
     </div>
   );
 };

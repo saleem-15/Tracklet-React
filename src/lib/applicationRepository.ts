@@ -276,6 +276,9 @@ export class ApplicationRepository {
           if (appItem.jobLink) {
             sanitizedPayload.jobLink = String(appItem.jobLink).slice(0, 3000);
           }
+          if (appItem.emailThreadUrl) {
+            sanitizedPayload.emailThreadUrl = String(appItem.emailThreadUrl).slice(0, 3000);
+          }
           if (appItem.companyDomain) {
             sanitizedPayload.companyDomain = String(appItem.companyDomain).slice(0, 200);
           }

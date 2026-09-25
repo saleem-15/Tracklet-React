@@ -41,6 +41,7 @@ export interface ContactDetailPanelProps {
   onDeleteContact: (id: string) => Promise<void>;
   onUnlinkFromApp?: (contactId: string, appId: string) => Promise<void>;
   onSelectApplication: (appId: string) => void;
+  onFollowUp?: (contact: Contact) => void;
 }
 
 const categoryOptions: SelectOption<ContactCategory>[] = CONTACT_CATEGORIES.map((cat) => ({
@@ -56,6 +57,7 @@ export const ContactDetailPanel: React.FC<ContactDetailPanelProps> = ({
   onDeleteContact,
   onUnlinkFromApp,
   onSelectApplication,
+  onFollowUp,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [copiedPhone, setCopiedPhone] = useState(false);
@@ -516,29 +518,41 @@ export const ContactDetailPanel: React.FC<ContactDetailPanelProps> = ({
               {contact.email || contact.phone || contact.linkedIn ? (
                 <div className="flex items-center gap-2 flex-wrap">
                   {contact.email ? (
-                    <a
-                      href={`mailto:${contact.email}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex-1 min-w-[200px] flex items-center justify-between p-2.5 rounded-xl border border-slate-200/80 bg-slate-50/60 hover:bg-blue-50 hover:border-blue-200 transition-colors group min-h-[42px]"
-                    >
+                    <div className="flex-1 min-w-[200px] flex items-center justify-between p-2.5 rounded-xl border border-slate-200/80 bg-slate-50/60 hover:bg-blue-50 hover:border-blue-200 transition-colors group min-h-[42px]">
                       <div className="flex items-center gap-2.5 min-w-0">
                         <div className="w-6 h-6 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
                           <Mail className="w-3.5 h-3.5" />
                         </div>
-                        <span className="text-xs font-mono text-slate-800 group-hover:text-blue-700 truncate">
+                        <a
+                          href={`mailto:${contact.email}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs font-mono text-slate-800 group-hover:text-blue-700 truncate hover:underline"
+                        >
                           {contact.email}
-                        </span>
+                        </a>
                       </div>
-                      <button
-                        type="button"
-                        onClick={handleCopyEmail}
-                        title="Copy email address"
-                        className="text-[10px] font-mono text-blue-700 font-semibold px-1.5 py-0.5 rounded bg-blue-100/70 hover:bg-blue-200 transition-colors shrink-0 cursor-pointer"
-                      >
-                        {copiedEmail ? 'Copied' : 'Copy'}
-                      </button>
-                    </a>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {onFollowUp && (
+                          <button
+                            type="button"
+                            onClick={() => onFollowUp(contact)}
+                            className="text-[10px] font-semibold text-blue-700 px-2 py-0.5 rounded-lg bg-blue-100 hover:bg-blue-200 transition-colors cursor-pointer"
+                            title="Draft follow-up to this contact"
+                          >
+                            Follow-up
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={handleCopyEmail}
+                          title="Copy email address"
+                          className="text-[10px] font-mono text-blue-700 font-semibold px-1.5 py-0.5 rounded bg-blue-100/70 hover:bg-blue-200 transition-colors shrink-0 cursor-pointer"
+                        >
+                          {copiedEmail ? 'Copied' : 'Copy'}
+                        </button>
+                      </div>
+                    </div>
                   ) : null}
 
                   {contact.phone ? (

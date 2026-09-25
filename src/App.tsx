@@ -1518,6 +1518,7 @@ function TrackletAppContent() {
                     setApplications([]);
                     setSelectedAppId(null);
                   }}
+                  userId={user?.uid}
                 />
               </div>
             )}
@@ -1565,6 +1566,19 @@ function TrackletAppContent() {
         onSelectApplication={(appId) => {
           setSelectedContactId(null);
           setSelectedAppId(appId);
+        }}
+        onFollowUp={(contact) => {
+          if (contact.applicationIds && contact.applicationIds.length > 0) {
+            const linkedApp = applications.find((a) => contact.applicationIds?.includes(a.id));
+            if (linkedApp) {
+              setSelectedContactId(null);
+              setSelectedAppId(linkedApp.id);
+              return;
+            }
+          }
+          if (contact.email) {
+            window.open(`mailto:${contact.email}`, '_blank', 'noopener,noreferrer');
+          }
         }}
       />
 

@@ -56,6 +56,7 @@ export function exportApplicationsToCSV(
     'Status',
     'Days In Stage',
     'Job Listing URL',
+    'Email Thread URL',
     'Notes',
   ];
 
@@ -72,6 +73,7 @@ export function exportApplicationsToCSV(
       escapeCSV(app.status),
       days.toString(),
       escapeCSV(app.jobLink || ''),
+      escapeCSV(app.emailThreadUrl || ''),
       escapeCSV(app.notes || ''),
     ].join(',');
   });

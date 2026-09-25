@@ -70,7 +70,9 @@ export const StatusHistoryTimeline: React.FC<StatusHistoryTimelineProps> = ({
                 <div className="absolute -left-4 top-1.5 w-2 h-2 rounded-full bg-blue-500 ring-2 ring-white shrink-0" />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5 flex-wrap">
-                    {entry.fromStatus ? (
+                    {entry.note && (!entry.fromStatus || entry.fromStatus === entry.toStatus) ? (
+                      <span className="text-xs font-semibold text-slate-800">{entry.note}</span>
+                    ) : entry.fromStatus ? (
                       <>
                         <StatusBadge status={entry.fromStatus} size="sm" />
                         <ArrowRight className="w-3 h-3 text-slate-500 shrink-0" />
@@ -83,6 +85,9 @@ export const StatusHistoryTimeline: React.FC<StatusHistoryTimelineProps> = ({
                       </>
                     )}
                   </div>
+                  {entry.note && entry.fromStatus && entry.fromStatus !== entry.toStatus && (
+                    <p className="text-xs text-slate-600 mt-0.5">{entry.note}</p>
+                  )}
                   <p className="text-[11px] font-mono text-slate-500 mt-0.5">{formatTimestamp(entry.timestamp)}</p>
                 </div>
               </div>
