@@ -563,15 +563,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
               <ApplicationQuickLinks
                 jobLink={app.jobLink}
                 emailThreadUrl={app.emailThreadUrl}
-                contactEmail={effectiveContact.email}
-                contactName={effectiveContact.name}
-                company={app.company}
-                role={app.role}
                 onOpenEditInfo={() => setIsEditingInfo(true)}
-                onOpenFollowUp={() => {
-                  setFollowUpContact(null);
-                  setIsFollowUpModalOpen(true);
-                }}
               />
 
               <EmailLogSection
