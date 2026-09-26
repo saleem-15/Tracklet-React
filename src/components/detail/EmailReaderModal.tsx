@@ -24,6 +24,19 @@ export interface EmailReaderModalProps {
   onDelete?: (emailId: string) => void;
 }
 
+function formatEmailTime(timestamp?: string): string | null {
+  if (!timestamp || !timestamp.includes('T')) return null;
+  const timePart = timestamp.split('T')[1]?.slice(0, 8);
+  if (!timePart || timePart.startsWith('00:00:00')) return null;
+  try {
+    const d = new Date(timestamp);
+    if (isNaN(d.getTime())) return null;
+    return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  } catch {
+    return null;
+  }
+}
+
 export const EmailReaderModal: React.FC<EmailReaderModalProps> = ({
   email,
   isOpen,
@@ -66,6 +79,8 @@ export const EmailReaderModal: React.FC<EmailReaderModalProps> = ({
     email.subject.startsWith('Re:') ? email.subject : `Re: ${email.subject}`
   )}`;
 
+  const formattedTime = formatEmailTime(email.timestamp);
+
   return (
     <div
       role="dialog"
@@ -105,6 +120,11 @@ export const EmailReaderModal: React.FC<EmailReaderModalProps> = ({
               <span className="text-xs text-slate-500 font-mono flex items-center gap-1">
                 <Calendar className="w-3 h-3 text-slate-400" />
                 {email.date}
+                {formattedTime && (
+                  <span className="text-slate-400 font-normal">
+                    • {formattedTime}
+                  </span>
+                )}
               </span>
             </div>
 

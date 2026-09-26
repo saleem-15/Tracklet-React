@@ -53,6 +53,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const emailCounterpartyLabel = document.getElementById('email-counterparty-label');
   const counterpartyLabelText = document.getElementById('counterparty-label-text');
   const emailDateInput = document.getElementById('email-date');
+  const emailTimeInput = document.getElementById('email-time');
   const emailBodyInput = document.getElementById('email-body');
   const headerModeChip = document.getElementById('header-mode-chip');
   const headerModeText = document.getElementById('header-mode-text');
@@ -804,6 +805,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       // Populate basic email inputs
       emailSubjectInput.value = emailData.subject || '';
       emailDateInput.value = emailData.date || today;
+      if (emailTimeInput) {
+        if (emailData.timestamp && emailData.timestamp.includes('T')) {
+          const timePart = emailData.timestamp.split('T')[1].slice(0, 5);
+          emailTimeInput.value = timePart;
+        } else {
+          emailTimeInput.value = '';
+        }
+      }
       emailBodyInput.value = emailData.body || emailData.snippet || '';
       currentEmailUrl = emailData.emailUrl || tab.url || '';
       currentEmailTimestamp = emailData.timestamp || null;
@@ -1181,14 +1190,18 @@ document.addEventListener('DOMContentLoaded', async () => {
       sender: isOutbound ? (currentUserSession?.email || rawExtractedEmailData?.senderEmail || 'You') : counterparty,
       recipient: isOutbound ? counterparty : (currentUserSession?.email || rawExtractedEmailData?.recipientEmail || undefined),
       date: emailDateInput.value || today,
-      // Use the extracted timestamp only when its date portion still matches the
-      // current date field — if the user edited the date, derive midnight from it.
+      // Derive full timestamp from emailDateInput and emailTimeInput with local UTC offset
       timestamp: (() => {
         const activeDate = emailDateInput.value || today;
-        const tsDatePart = currentEmailTimestamp ? currentEmailTimestamp.slice(0, 10) : null;
-        return tsDatePart === activeDate
-          ? currentEmailTimestamp
-          : `${activeDate}T00:00:00`;
+        const activeTime = emailTimeInput?.value ? `${emailTimeInput.value}:00` : '00:00:00';
+        const now = new Date();
+        const offsetMin = -now.getTimezoneOffset();
+        const sign = offsetMin >= 0 ? '+' : '-';
+        const absMin = Math.abs(offsetMin);
+        const offH = String(Math.floor(absMin / 60)).padStart(2, '0');
+        const offM = String(absMin % 60).padStart(2, '0');
+        const offset = `${sign}${offH}:${offM}`;
+        return `${activeDate}T${activeTime}${offset}`;
       })(),
       direction: currentEmailDirection,
       snippet: emailBodyInput.value.trim().slice(0, 200),

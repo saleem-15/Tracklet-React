@@ -21,6 +21,19 @@ export interface EmailLogCardProps {
   onDelete?: (emailId: string) => void;
 }
 
+function formatEmailTime(timestamp?: string): string | null {
+  if (!timestamp || !timestamp.includes('T')) return null;
+  const timePart = timestamp.split('T')[1]?.slice(0, 8);
+  if (!timePart || timePart.startsWith('00:00:00')) return null;
+  try {
+    const d = new Date(timestamp);
+    if (isNaN(d.getTime())) return null;
+    return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  } catch {
+    return null;
+  }
+}
+
 export const EmailLogCard: React.FC<EmailLogCardProps> = ({
   email,
   onOpenReader,
@@ -45,6 +58,8 @@ export const EmailLogCard: React.FC<EmailLogCardProps> = ({
       // Clipboard write failed
     }
   };
+
+  const formattedTime = formatEmailTime(email.timestamp);
 
   return (
     <div className="p-3 sm:p-3.5 hover:bg-slate-50/70 transition-colors group">
@@ -71,7 +86,14 @@ export const EmailLogCard: React.FC<EmailLogCardProps> = ({
             )}
           </span>
 
-          <span className="text-[11px] font-mono text-slate-500">{email.date}</span>
+          <span className="text-[11px] font-mono text-slate-500">
+            {email.date}
+            {formattedTime && (
+              <span className="text-slate-400 ml-1.5 font-normal">
+                • {formattedTime}
+              </span>
+            )}
+          </span>
         </div>
 
         <div className="flex items-center gap-1.5">

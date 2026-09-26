@@ -56,19 +56,46 @@ function normalizeNumerals(str: string): string {
     .replace(/[۰-۹]/g, d => String(persianDigits.indexOf(d)));
 }
 
+const ARABIC_WEEKDAYS: Record<string, number> = {
+  'الأحد': 0, 'الاحد': 0,
+  'الاثنين': 1, 'الإثنين': 1,
+  'الثلاثاء': 2,
+  'الأربعاء': 3, 'الاربعاء': 3,
+  'الخميس': 4,
+  'الجمعة': 5,
+  'السبت': 6
+};
+
+function formatIsoWithTime(d: Date, hasTime = false): string {
+  const offsetMin = -d.getTimezoneOffset();
+  const sign = offsetMin >= 0 ? '+' : '-';
+  const absMin = Math.abs(offsetMin);
+  const offH = String(Math.floor(absMin / 60)).padStart(2, '0');
+  const offM = String(absMin % 60).padStart(2, '0');
+  const offset = `${sign}${offH}:${offM}`;
+
+  if (!hasTime) {
+    return `${formatDateParts(d)}T00:00:00${offset}`;
+  }
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mm = String(d.getMinutes()).padStart(2, '0');
+  const ss = String(d.getSeconds()).padStart(2, '0');
+  return `${formatDateParts(d)}T${hh}:${mm}:${ss}${offset}`;
+}
+
 function looksLikeDate(str: string): boolean {
   if (!str || typeof str !== 'string') return false;
   const s = str.trim();
   if (!s || s.length < 2) return false;
 
-  // Reject UI button labels, tooltips, or actions
-  if (/^(show details|reply|forward|more|details|star|not starred|labels|archive|delete|snooze|print|unread|mark as|to:|from:|cc:|bcc:)/i.test(s)) {
+  // Reject UI button labels, tooltips, or actions in English and Arabic
+  if (/^(show details|reply|forward|more|details|star|not starred|labels|archive|delete|snooze|print|unread|mark as|to:|from:|cc:|bcc:|رد|إعادة توجيه|اعادة توجيه|المزيد|تفاصيل|حذف|طباعة|أرشفة|ارشيف)/i.test(s)) {
     return false;
   }
 
   const norm = normalizeNumerals(s.toLowerCase());
 
-  // 1. Explicit 4-digit year (e.g. 2024..2035)
+  // 1. Explicit 4-digit year (e.g. 2024..2035) or YYYY/MM/DD
   if (/\b20\d{2}\b/.test(norm)) return true;
 
   // 2. Month keywords (English, French, Arabic Standard, Levant, North African)
@@ -76,96 +103,169 @@ function looksLikeDate(str: string): boolean {
     return true;
   }
 
-  // 3. Numeric calendar format: DD/MM/YYYY, MM/DD/YYYY, DD.MM.YYYY, YYYY-MM-DD
-  if (/\b\d{1,2}[./-]\d{1,2}(?:[./-]\d{2,4})?\b/.test(norm)) return true;
+  // 3. Numeric calendar format: DD/MM/YYYY, MM/DD/YYYY, DD.MM.YYYY, YYYY-MM-DD, YYYY/MM/DD
+  if (/\b(?:\d{1,2}[./-]\d{1,2}(?:[./-]\d{2,4})?|20\d{2}[./-]\d{1,2}[./-]\d{1,2})\b/.test(norm)) return true;
 
-  // 4. Relative expressions: "2 weeks ago", "25 days ago", "yesterday", "today"
-  if (/\b(\d+)\s*(days?|weeks?|months?|hours?|mins?|minutes?)\s*ago\b/i.test(norm) || /\b(yesterday|today)\b/i.test(norm)) {
+  // 4. Relative expressions: "2 weeks ago", "25 days ago", "yesterday", "today", "أمس", "اليوم", "منذ"
+  if (/\b(\d+)\s*(days?|weeks?|months?|hours?|mins?|minutes?)\s*ago\b/i.test(norm) || /\b(yesterday|today|أمس|امس|اليوم|منذ)\b/i.test(norm)) {
     return true;
   }
 
-  // 5. Weekday tokens: "Mon", "Tuesday", etc.
-  if (/\b(sun|mon|tue|wed|thu|fri|sat)[a-z]*\b/i.test(norm)) return true;
+  // 5. Weekday tokens: "Mon", "Tuesday", Arabic weekdays
+  if (/\b(sun|mon|tue|wed|thu|fri|sat)[a-z]*\b/i.test(norm) || /(الأحد|الاحد|الاثنين|الإثنين|الثلاثاء|الأربعاء|الاربعاء|الخميس|الجمعة|السبت)/i.test(norm)) {
+    return true;
+  }
 
-  // 6. Time tokens: "10:15 AM", "14:30"
-  if (/^\d{1,2}:\d{2}(?::\d{2})?(\s*(am|pm))?$/i.test(norm)) return true;
+  // 6. Time tokens: "10:15 AM", "14:30", "3:55 م", "3:55 ص"
+  if (/(?:(am|pm|ص|م|صباحا|صباحاً|مساء|مساءً)\s*)?\b\d{1,2}:\d{2}(?::\d{2})?(?:\s*(am|pm|ص|م|صباحا|صباحاً|مساء|مساءً))?/i.test(norm)) return true;
 
   return false;
 }
 
-function parseDateToIso(dateStr: string, refDate: Date = new Date()): string {
-  if (!dateStr) return formatDateParts(refDate);
+function parseDateAndTimestamp(dateStr: string, refDate: Date = new Date()): { date: string; timestamp: string } {
+  const fallback = { date: formatDateParts(refDate), timestamp: formatIsoWithTime(refDate, true) };
+  if (!dateStr) return fallback;
 
-  // 1. Sanitize string: normalize Eastern/Persian digits, strip zero-width marks (\u200E, \u200F, BOM)
+  // 1. Sanitize: normalize Eastern/Persian digits, strip invisible bidi Unicode marks, normalize Arabic comma
   let raw = normalizeNumerals(
     String(dateStr)
-      .replace(/[\u200B-\u200D\uFEFF\u200E\u200F]/g, '')
+      .replace(/[\u200B-\u200F\u202A-\u202E\u2066-\u2069\uFEFF\u061C]/g, '')
       .replace(/[\u00A0\u202F\u2000-\u200A]/g, ' ')
+      .replace(/\u060C/g, ', ')
   ).trim();
-  if (!raw) return formatDateParts(refDate);
+  if (!raw) return fallback;
 
-  // 2. Unix numeric timestamp (10-digit seconds or 13-digit milliseconds)
+  // 2. Unix numeric timestamp
   if (/^\d{10,13}$/.test(raw)) {
     const ts = Number(raw.length === 10 ? raw + '000' : raw);
     const d = new Date(ts);
     if (!isNaN(d.getTime())) {
-      return formatDateParts(d);
+      return { date: formatDateParts(d), timestamp: formatIsoWithTime(d, true) };
     }
   }
 
-  // 3. Clean string: strip parenthesized annotations (e.g. '(25 days ago)', '(2 days ago)', '(UTC+3)'), prefixes, 'at'
+  // 3. Clean string
   let clean = raw
     .replace(/\s*\([^)]*\)/g, ' ')
-    .replace(/\s+at\s+/i, ' ')
-    .replace(/^(received|date|sent|on):\s*/i, '')
     .replace(/\s+/g, ' ')
     .trim();
 
-  // 4. Relative keywords (days ago, weeks ago, months ago, yesterday, today)
-  const lower = clean.toLowerCase();
-  if (lower === 'today' || /^\d{1,2}:\d{2}(?::\d{2})?(\s*(?:am|pm))?$/i.test(lower)) {
-    return formatDateParts(refDate);
+  // 4. Extract time component (English AM/PM or Arabic م / ص / مساءً / صباحاً)
+  const timeRegex = /(?:(am|pm|ص|م|صباحا|صباحاً|مساء|مساءً|\b[ap]\.?m\.?)\s*)?(\d{1,2}):(\d{2})(?::(\d{2}))?(?:\s*(am|pm|ص|م|صباحا|صباحاً|مساء|مساءً|\b[ap]\.?m\.?))?/i;
+  const timeMatch = clean.match(timeRegex);
+  let timeH = 0, timeM = 0, timeS = 0, hasTimeInStr = false;
+  let datePartStr = clean;
+
+  if (timeMatch) {
+    const mer = (timeMatch[5] || timeMatch[1] || '').toLowerCase().trim();
+    timeH = parseInt(timeMatch[2], 10);
+    timeM = parseInt(timeMatch[3], 10);
+    timeS = parseInt(timeMatch[4] || '0', 10);
+    const isPm = mer === 'pm' || mer === 'م' || mer.startsWith('مساء') || mer.startsWith('p');
+    const isAm = mer === 'am' || mer === 'ص' || mer.startsWith('صباح') || mer.startsWith('a');
+    if (isPm && timeH < 12) timeH += 12;
+    if (isAm && timeH === 12) timeH = 0;
+    hasTimeInStr = true;
+
+    datePartStr = clean.replace(timeRegex, ' ')
+      .replace(/\s+(?:at|في|الساعة|بتاريخ|on)\s+/gi, ' ')
+      .replace(/^[,\s]+|[,\s]+$/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
   }
-  if (lower.startsWith('yesterday')) {
+
+  // 5. Try native Date.parse for standard RFC/ISO/weekday formats (e.g. 'Thu 9/10/2026 2:30 PM')
+  const hasExplicitYear = /\b20\d{2}\b/.test(clean);
+  const isPurelyNumericDate = /^\d{1,2}[./\-]\d{1,2}[./\-]\d{2,4}$/.test(clean.trim());
+  if (hasExplicitYear && !isPurelyNumericDate) {
+    const nativeParse = new Date(clean);
+    if (!isNaN(nativeParse.getTime())) {
+      const yr = nativeParse.getFullYear();
+      if (yr >= 2000 && yr <= 2100) {
+        return { date: formatDateParts(nativeParse), timestamp: formatIsoWithTime(nativeParse, hasTimeInStr) };
+      }
+    }
+  }
+
+  if (!datePartStr || datePartStr === 'today' || datePartStr === 'اليوم') {
+    const d = new Date(refDate);
+    d.setHours(timeH, timeM, timeS, 0);
+    return { date: formatDateParts(d), timestamp: formatIsoWithTime(d, hasTimeInStr) };
+  }
+
+  const lowerDate = datePartStr.toLowerCase();
+
+  // 6. Relative day keywords
+  if (lowerDate.startsWith('yesterday') || lowerDate === 'أمس' || lowerDate === 'امس') {
     const d = new Date(refDate.getTime() - 86400000);
-    return formatDateParts(d);
+    d.setHours(timeH, timeM, timeS, 0);
+    return { date: formatDateParts(d), timestamp: formatIsoWithTime(d, hasTimeInStr) };
   }
-  const daysAgoMatch = lower.match(/^(\d+)\s+days?\s+ago/);
+  const daysAgoEn = lowerDate.match(/^(\d+)\s+days?\s+ago/);
+  const daysAgoAr = lowerDate.match(/^(?:منذ\s+)?(\d+)\s+(?:أيام|ايام|يوم|يوما)/);
+  const daysAgoMatch = daysAgoEn || daysAgoAr;
   if (daysAgoMatch) {
     const days = parseInt(daysAgoMatch[1], 10);
     const d = new Date(refDate.getTime() - days * 86400000);
-    return formatDateParts(d);
+    d.setHours(timeH, timeM, timeS, 0);
+    return { date: formatDateParts(d), timestamp: formatIsoWithTime(d, hasTimeInStr) };
   }
-  const weeksAgoMatch = lower.match(/^(\d+)\s+weeks?\s+ago/);
+  const weeksAgoMatch = lowerDate.match(/^(\d+)\s+weeks?\s+ago/);
   if (weeksAgoMatch) {
-    const weeks = parseInt(weeksAgoMatch[1], 10);
-    const d = new Date(refDate.getTime() - weeks * 7 * 86400000);
-    return formatDateParts(d);
+    const d = new Date(refDate.getTime() - parseInt(weeksAgoMatch[1], 10) * 7 * 86400000);
+    d.setHours(timeH, timeM, timeS, 0);
+    return { date: formatDateParts(d), timestamp: formatIsoWithTime(d, hasTimeInStr) };
   }
-  const monthsAgoMatch = lower.match(/^(\d+)\s+months?\s+ago/);
+  const monthsAgoMatch = lowerDate.match(/^(\d+)\s+months?\s+ago/);
   if (monthsAgoMatch) {
-    const months = parseInt(monthsAgoMatch[1], 10);
-    const d = new Date(refDate.getTime() - months * 30 * 86400000);
-    return formatDateParts(d);
+    const d = new Date(refDate.getTime() - parseInt(monthsAgoMatch[1], 10) * 30 * 86400000);
+    d.setHours(timeH, timeM, timeS, 0);
+    return { date: formatDateParts(d), timestamp: formatIsoWithTime(d, hasTimeInStr) };
   }
 
-  // 5. Weekday names within the past 7 days (e.g., 'Thu', 'Thursday', 'Thu 11:30 AM')
+  // 6. Weekdays (English & Arabic)
   const weekdayMap: Record<string, number> = { sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6 };
-  const weekdayMatch = lower.match(/^(sun|mon|tue|wed|thu|fri|sat)[a-z]*(\s+\d{1,2}:\d{2}(\s*(?:am|pm))?)?$/i);
-  if (weekdayMatch) {
-    const targetDay = weekdayMap[weekdayMatch[1].toLowerCase().slice(0, 3)];
-    let diff = refDate.getDay() - targetDay;
-    if (diff <= 0) diff += 7;
-    const d = new Date(refDate.getTime() - diff * 86400000);
-    return formatDateParts(d);
+  let targetDay: number | null = null;
+  const enWeekdayMatch = lowerDate.match(/^(sun|mon|tue|wed|thu|fri|sat)[a-z]*/i);
+  if (enWeekdayMatch) {
+    targetDay = weekdayMap[enWeekdayMatch[1].toLowerCase().slice(0, 3)];
+  } else {
+    for (const [arDay, dayIdx] of Object.entries(ARABIC_WEEKDAYS)) {
+      if (datePartStr.includes(arDay)) {
+        targetDay = dayIdx;
+        break;
+      }
+    }
+  }
+  if (targetDay !== null) {
+    const hasYear = /\b20\d{2}\b/.test(datePartStr);
+    const hasMonthWord = Object.keys(MONTH_MAP).some(m => datePartStr.toLowerCase().includes(m));
+    if (!hasYear && !hasMonthWord) {
+      let diff = refDate.getDay() - targetDay;
+      if (diff <= 0) diff += 7;
+      const d = new Date(refDate.getTime() - diff * 86400000);
+      d.setHours(timeH, timeM, timeS, 0);
+      return { date: formatDateParts(d), timestamp: formatIsoWithTime(d, hasTimeInStr) };
+    }
   }
 
-  // 6. Non-English and English month names (with or without year/time)
-  const yearMatch = clean.match(/\b(20\d{2})\b/);
-  const explicitYear = yearMatch ? parseInt(yearMatch[1], 10) : null;
+  // 7. Explicit YYYY/MM/DD or YYYY-MM-DD
+  const ymdMatch = datePartStr.match(/(?:^|\D)(\d{4})[-/](\d{1,2})[-/](\d{1,2})(?:\D|$)/);
+  if (ymdMatch) {
+    const yr = parseInt(ymdMatch[1], 10);
+    const mo = parseInt(ymdMatch[2], 10);
+    const dy = parseInt(ymdMatch[3], 10);
+    if (yr >= 2000 && yr <= 2100 && mo >= 1 && mo <= 12 && dy >= 1 && dy <= 31) {
+      const d = new Date(yr, mo - 1, dy, timeH, timeM, timeS);
+      return { date: formatDateParts(d), timestamp: formatIsoWithTime(d, hasTimeInStr) };
+    }
+  }
 
-  // Match month word then day: "September 1", "Sep 1, 2026", "أيلول 1", "سبتمبر 1"
-  const m1 = clean.match(/(?:^|\s)([a-zA-Z\u0600-\u06FF\s]+?)[.,]?\s+(\d{1,2})(?:st|nd|rd|th)?(?:\s*,\s*|\s+|$)/i);
+  // 8. Named months (Arabic, English, French)
+  const explicitYearMatch = datePartStr.match(/\b(20\d{2})\b/);
+  const explicitYear = explicitYearMatch ? parseInt(explicitYearMatch[1], 10) : null;
+
+  const m1 = datePartStr.match(/(?:^|\s)([a-zA-Z\u0600-\u06FF\s]+?)[.,]?\s+(\d{1,2})(?:st|nd|rd|th)?(?:\s*,\s*|\s+|$)/i);
   if (m1) {
     const key = m1[1].trim().toLowerCase();
     const month = MONTH_MAP[key] || MONTH_MAP[key.slice(0, 3)];
@@ -174,16 +274,14 @@ function parseDateToIso(dateStr: string, refDate: Date = new Date()): string {
       let year = explicitYear || refDate.getFullYear();
       if (!explicitYear) {
         const testD = new Date(year, month - 1, day);
-        if (testD.getTime() > refDate.getTime() + 86400000 * 2) {
-          year -= 1;
-        }
+        if (testD.getTime() > refDate.getTime() + 86400000 * 2) year -= 1;
       }
-      return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const d = new Date(year, month - 1, day, timeH, timeM, timeS);
+      return { date: formatDateParts(d), timestamp: formatIsoWithTime(d, hasTimeInStr) };
     }
   }
 
-  // Match day then month word: "1 September", "1 Sep 2026", "1 أيلول 2026", "1 سبتمبر"
-  const m2 = clean.match(/(?:^|\s)(\d{1,2})(?:st|nd|rd|th)?\s+([a-zA-Z\u0600-\u06FF\s]+?)[.,]?(?:\s*,\s*|\s+|$)/i);
+  const m2 = datePartStr.match(/(?:^|\s)(\d{1,2})(?:st|nd|rd|th)?\s+([a-zA-Z\u0600-\u06FF\s]+?)[.,]?(?:\s*,\s*|\s+|$)/i);
   if (m2) {
     const key = m2[2].trim().toLowerCase();
     const month = MONTH_MAP[key] || MONTH_MAP[key.slice(0, 3)];
@@ -192,52 +290,44 @@ function parseDateToIso(dateStr: string, refDate: Date = new Date()): string {
       let year = explicitYear || refDate.getFullYear();
       if (!explicitYear) {
         const testD = new Date(year, month - 1, day);
-        if (testD.getTime() > refDate.getTime() + 86400000 * 2) {
-          year -= 1;
-        }
+        if (testD.getTime() > refDate.getTime() + 86400000 * 2) year -= 1;
       }
-      return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const d = new Date(year, month - 1, day, timeH, timeM, timeS);
+      return { date: formatDateParts(d), timestamp: formatIsoWithTime(d, hasTimeInStr) };
     }
   }
 
-  // 7. Dot-separated dates (DD.MM.YYYY) or day-first slashes (25/09/2026)
-  const dotMatch = clean.match(/(?:^|\s)(\d{1,2})\.(\d{1,2})\.(\d{2,4})(?:$|\s)/);
-  if (dotMatch) {
-    let day = parseInt(dotMatch[1], 10);
-    let month = parseInt(dotMatch[2], 10);
-    let year = parseInt(dotMatch[3], 10);
-    if (year < 100) year += 2000;
-    if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
-      return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  // 9. Slash/Dot calendar formats: DD/MM/YYYY, DD.MM.YYYY
+  const dmyMatch = datePartStr.match(/(?:^|\D)(\d{1,2})[./\-](\d{1,2})[./\-](\d{2,4})(?:\D|$)/);
+  if (dmyMatch) {
+    let p1 = parseInt(dmyMatch[1], 10);
+    let p2 = parseInt(dmyMatch[2], 10);
+    let yr = parseInt(dmyMatch[3], 10);
+    if (yr < 100) yr += 2000;
+    let day: number | null = null, month: number | null = null;
+    if (p1 > 12) { day = p1; month = p2; }
+    else if (p2 > 12) { month = p1; day = p2; }
+    else { day = p1; month = p2; } // Default international day-first
+    if (month >= 1 && month <= 12 && day >= 1 && day <= 31 && yr >= 2000 && yr <= 2100) {
+      const d = new Date(yr, month - 1, day, timeH, timeM, timeS);
+      return { date: formatDateParts(d), timestamp: formatIsoWithTime(d, hasTimeInStr) };
     }
   }
 
-  const slashMatch = clean.match(/(?:^|\s)(\d{1,2})[-/](\d{1,2})[-/](\d{2,4})(?:$|\s)/);
-  if (slashMatch) {
-    let p1 = parseInt(slashMatch[1], 10);
-    let p2 = parseInt(slashMatch[2], 10);
-    let year = parseInt(slashMatch[3], 10);
-    if (year < 100) year += 2000;
-    let day = null, month = null;
-    if (p1 > 12) {
-      day = p1;
-      month = p2;
-    } else if (p2 > 12) {
-      month = p1;
-      day = p2;
-    }
-    if (day !== null && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
-      return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  // 10. Native Date fallback
+  const nativeParse = new Date(clean);
+  if (!isNaN(nativeParse.getTime())) {
+    const yr = nativeParse.getFullYear();
+    if (yr >= 2000 && yr <= 2100) {
+      return { date: formatDateParts(nativeParse), timestamp: formatIsoWithTime(nativeParse, hasTimeInStr) };
     }
   }
 
-  // 8. Standard date fallback
-  const d = new Date(clean);
-  if (!isNaN(d.getTime())) {
-    return formatDateParts(d);
-  }
+  return fallback;
+}
 
-  return formatDateParts(refDate);
+function parseDateToIso(dateStr: string, refDate: Date = new Date()): string {
+  return parseDateAndTimestamp(dateStr, refDate).date;
 }
 
 function cleanHtmlBody(htmlContent: string): { body: string; snippet: string } {
@@ -922,11 +1012,64 @@ describe('Webmail Companion Engine', () => {
       expect(looksLikeDate('Labels: Inbox')).toBe(false);
       expect(looksLikeDate('Not starred')).toBe(false);
       expect(looksLikeDate('More options')).toBe(false);
+      expect(looksLikeDate('رد')).toBe(false);
+      expect(looksLikeDate('إعادة توجيه')).toBe(false);
+      expect(looksLikeDate('المزيد')).toBe(false);
+      expect(looksLikeDate('حذف')).toBe(false);
       expect(looksLikeDate('Sep 1, 2026, 10:15 AM')).toBe(true);
       expect(looksLikeDate('١ أيلول ٢٠٢٦')).toBe(true);
       expect(looksLikeDate('2 weeks ago')).toBe(true);
       expect(looksLikeDate('2026-09-01T10:15:00Z')).toBe(true);
       expect(looksLikeDate('Sep 1')).toBe(true);
+      expect(looksLikeDate('3:55 م، 2026/09/08')).toBe(true);
+      expect(looksLikeDate('3:55 م')).toBe(true);
+      expect(looksLikeDate('٣:٥٥ م')).toBe(true);
+      expect(looksLikeDate('2026/09/08')).toBe(true);
+    });
+
+    it('parses Arabic Gmail date and time strings accurately (e.g. Canonical email screenshot)', () => {
+      // Test the user's exact email screenshot: "3:55 م، 2026/09/08"
+      const userEmail = parseDateAndTimestamp('3:55 م، 2026/09/08', refDate);
+      expect(userEmail.date).toBe('2026-09-08');
+      expect(userEmail.timestamp).toContain('2026-09-08T15:55:00');
+
+      // Test reverse order: "2026/09/08، 3:55 م"
+      const reversed = parseDateAndTimestamp('2026/09/08، 3:55 م', refDate);
+      expect(reversed.date).toBe('2026-09-08');
+      expect(reversed.timestamp).toContain('2026-09-08T15:55:00');
+
+      // Test Eastern Arabic numerals: "٣:٥٥ م، ٢٠٢٦/٠٩/٠٨"
+      const eastern = parseDateAndTimestamp('٣:٥٥ م، ٢٠٢٦/٠٩/٠٨', refDate);
+      expect(eastern.date).toBe('2026-09-08');
+      expect(eastern.timestamp).toContain('2026-09-08T15:55:00');
+
+      // Test Arabic named month with time: "8 سبتمبر 2026 في 3:55 م"
+      const namedArabic = parseDateAndTimestamp('8 سبتمبر 2026 في 3:55 م', refDate);
+      expect(namedArabic.date).toBe('2026-09-08');
+      expect(namedArabic.timestamp).toContain('2026-09-08T15:55:00');
+
+      // Test with Arabic weekday: "الثلاثاء، 8 سبتمبر 2026 في 3:55 م"
+      const withWeekday = parseDateAndTimestamp('الثلاثاء، 8 سبتمبر 2026 في 3:55 م', refDate);
+      expect(withWeekday.date).toBe('2026-09-08');
+      expect(withWeekday.timestamp).toContain('2026-09-08T15:55:00');
+
+      // Test same-day Arabic PM & AM
+      const sameDayPm = parseDateAndTimestamp('3:55 م', refDate);
+      expect(sameDayPm.date).toBe('2026-09-12');
+      expect(sameDayPm.timestamp).toContain('2026-09-12T15:55:00');
+
+      const sameDayAm = parseDateAndTimestamp('3:55 ص', refDate);
+      expect(sameDayAm.date).toBe('2026-09-12');
+      expect(sameDayAm.timestamp).toContain('2026-09-12T03:55:00');
+
+      // Test international DD/MM/YYYY with both numbers <= 12
+      const dmy = parseDateAndTimestamp('08/09/2026', refDate);
+      expect(dmy.date).toBe('2026-09-08');
+
+      // Test yesterday in Arabic
+      const yestAr = parseDateAndTimestamp('أمس 3:55 م', refDate);
+      expect(yestAr.date).toBe('2026-09-11');
+      expect(yestAr.timestamp).toContain('2026-09-11T15:55:00');
     });
   });
 
