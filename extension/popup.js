@@ -803,7 +803,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       // Populate basic email inputs
       emailSubjectInput.value = emailData.subject || '';
-      emailCounterpartyInput.value = emailData.counterparty || '';
       emailDateInput.value = emailData.date || today;
       emailBodyInput.value = emailData.body || emailData.snippet || '';
       currentEmailUrl = emailData.emailUrl || tab.url || '';
@@ -816,6 +815,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       // Direction
       setEmailDirection(emailData.direction || 'inbound');
+
+      // Populate counterparty ensuring outbound never leaks user email
+      if ((emailData.direction || 'inbound') === 'outbound') {
+        const userEmails = [currentUserSession?.email, emailData.senderEmail].filter(Boolean).map(e => e.toLowerCase().trim());
+        let safeParty = emailData.counterparty || emailData.recipientEmail || emailData.recipientName || '';
+        if (userEmails.includes(safeParty.toLowerCase().trim())) {
+          safeParty = emailData.recipientEmail || emailData.recipientName || '';
+        }
+        emailCounterpartyInput.value = safeParty;
+      } else {
+        emailCounterpartyInput.value = emailData.counterparty || '';
+      }
 
       // Match to application
       const { bestMatch } = matchEmailToApplications(emailData, allKnownAppsList);
@@ -891,10 +902,34 @@ document.addEventListener('DOMContentLoaded', async () => {
       dirOutboundBtn.classList.add('active');
       dirInboundBtn.classList.remove('active');
       counterpartyLabelText.textContent = 'To (Recruiter / Contact)';
+
+      // Auto-update counterparty input if it currently matches the user's email or sender
+      if (rawExtractedEmailData) {
+        const userEmails = [
+          currentUserSession?.email,
+          rawExtractedEmailData.senderEmail
+        ].filter(Boolean).map(e => e.toLowerCase().trim());
+
+        const currentVal = (emailCounterpartyInput.value || '').toLowerCase().trim();
+        if (!currentVal || userEmails.includes(currentVal)) {
+          emailCounterpartyInput.value = rawExtractedEmailData.recipientEmail || rawExtractedEmailData.recipientName || '';
+        }
+        discoveredRecruiterName = rawExtractedEmailData.recipientName || rawExtractedEmailData.counterpartyName || '';
+        discoveredRecruiterEmail = rawExtractedEmailData.recipientEmail || rawExtractedEmailData.counterpartyEmail || '';
+      }
     } else {
       dirInboundBtn.classList.add('active');
       dirOutboundBtn.classList.remove('active');
       counterpartyLabelText.textContent = 'From (Recruiter / Company)';
+
+      if (rawExtractedEmailData) {
+        const currentVal = (emailCounterpartyInput.value || '').toLowerCase().trim();
+        if (!currentVal || currentVal === (rawExtractedEmailData.recipientEmail || '').toLowerCase().trim()) {
+          emailCounterpartyInput.value = rawExtractedEmailData.senderEmail || rawExtractedEmailData.senderName || '';
+        }
+        discoveredRecruiterName = rawExtractedEmailData.senderName || '';
+        discoveredRecruiterEmail = rawExtractedEmailData.senderEmail || '';
+      }
     }
   }
 
@@ -1143,8 +1178,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const emailLogPayload = {
       id: `email-${Date.now()}`,
       subject,
-      sender: isOutbound ? (currentUserSession?.email || 'You') : counterparty,
-      recipient: isOutbound ? counterparty : (currentUserSession?.email || undefined),
+      sender: isOutbound ? (currentUserSession?.email || rawExtractedEmailData?.senderEmail || 'You') : counterparty,
+      recipient: isOutbound ? counterparty : (currentUserSession?.email || rawExtractedEmailData?.recipientEmail || undefined),
       date: emailDateInput.value || today,
       // Use the extracted timestamp only when its date portion still matches the
       // current date field — if the user edited the date, derive midnight from it.

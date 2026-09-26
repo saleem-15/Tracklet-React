@@ -647,8 +647,161 @@ function cleanEmailBody(bodyNode) {
   return { body: text, snippet };
 }
 
+// Detect the active user's email address directly from the webmail DOM/environment
+function detectWebmailAccountEmail() {
+  const host = window.location.hostname.toLowerCase();
+
+  if (host.includes('mail.google.com')) {
+    // 1. From document.title: e.g. "Sent Mail - user@gmail.com - Gmail" or "Subject - user@gmail.com - Gmail"
+    const titleMatch = (document.title || '').match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})\s*-\s*Gmail/i);
+    if (titleMatch) return titleMatch[1].toLowerCase().trim();
+
+    // 2. From top-right Google Account button / profile badge
+    const accountSelectors = [
+      'header a[aria-label*="@"]',
+      'header div[aria-label*="@"]',
+      'a[href*="SignOutOptions"]',
+      '[aria-label*="Google Account"]',
+      '.gb_A[aria-label*="@"]',
+      '.gb_d[aria-label*="@"]',
+      'div[data-ogpc] [aria-label*="@"]'
+    ];
+    for (const sel of accountSelectors) {
+      const el = document.querySelector(sel);
+      if (el) {
+        const text = (el.getAttribute('aria-label') || el.getAttribute('title') || el.textContent || '');
+        const match = text.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
+        if (match) return match[1].toLowerCase().trim();
+      }
+    }
+  } else if (host.includes('outlook.')) {
+    const outlookSelectors = [
+      'button[aria-label*="@"]',
+      '#O365_MainLink_Me[aria-label*="@"]',
+      'div[data-testid="persona"]',
+      '#meControl'
+    ];
+    for (const sel of outlookSelectors) {
+      const el = document.querySelector(sel);
+      if (el) {
+        const text = el.getAttribute('aria-label') || el.getAttribute('title') || el.textContent || '';
+        const match = text.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
+        if (match) return match[1].toLowerCase().trim();
+      }
+    }
+  }
+
+  return '';
+}
+
+// Robust recipient extraction for Gmail messages
+function extractGmailRecipient(activeMessage, senderEmail, userEmail) {
+  let recipientName = '';
+  let recipientEmail = '';
+
+  const excluded = [senderEmail, userEmail].filter(Boolean).map(e => e.toLowerCase().trim());
+
+  // Priority 1: Check known Gmail recipient elements inside active message
+  const selectors = [
+    '.g2[email]',
+    '.g2',
+    '.qu[email]',
+    '.qu',
+    '.gI [email]',
+    '.gI [data-hovercard-id]',
+    '.gI',
+    '.hb span[email]',
+    '.hb span[data-hovercard-id]',
+    'span[email]:not(.gD)',
+    'span[data-hovercard-id]:not(.gD)',
+    'td.eV span[email]',
+    'table.cf.gJ tr span[email]'
+  ];
+
+  for (const sel of selectors) {
+    const el = activeMessage ? activeMessage.querySelector(sel) : null;
+    if (el) {
+      const em = el.getAttribute('email') || el.getAttribute('data-hovercard-id') || extractEmailAddress(el.getAttribute('title') || el.textContent);
+      if (em && !excluded.includes(em.toLowerCase().trim())) {
+        recipientEmail = em.trim();
+        recipientName = cleanText(el.getAttribute('name') || el.textContent.replace(/<[^>]+>/g, '') || '');
+        break;
+      } else if (!recipientName && el.textContent) {
+        const cleaned = cleanText(el.textContent.replace(/<[^>]+>/g, ''));
+        if (cleaned && cleaned.toLowerCase() !== 'me' && !cleaned.toLowerCase().startsWith('to me')) {
+          recipientName = cleaned.replace(/^to\s+/i, '').trim();
+        }
+      }
+    }
+  }
+
+  // Priority 2: Check any element in activeMessage with email/hovercard that isn't the sender
+  if (!recipientEmail && activeMessage) {
+    const candidates = Array.from(activeMessage.querySelectorAll('[email], [data-hovercard-id]'));
+    for (const el of candidates) {
+      if (el.classList.contains('gD')) continue;
+      const em = el.getAttribute('email') || el.getAttribute('data-hovercard-id') || extractEmailAddress(el.textContent);
+      if (em && !excluded.includes(em.toLowerCase().trim())) {
+        recipientEmail = em.trim();
+        if (!recipientName) {
+          recipientName = cleanText(el.getAttribute('name') || el.textContent.replace(/<[^>]+>/g, '') || '');
+        }
+        break;
+      }
+    }
+  }
+
+  // Priority 3: Details table rows (To:)
+  if (!recipientEmail && activeMessage) {
+    const rows = Array.from(activeMessage.querySelectorAll('table.cf.gJ tr, table[role="presentation"] tr'));
+    for (const tr of rows) {
+      const text = tr.textContent.trim().toLowerCase();
+      if (text.startsWith('to:') || text.startsWith('to ') || tr.querySelector('td[id*=":to"]')) {
+        const emEl = tr.querySelector('[email], [data-hovercard-id]');
+        if (emEl) {
+          const em = emEl.getAttribute('email') || emEl.getAttribute('data-hovercard-id') || extractEmailAddress(emEl.textContent);
+          if (em && !excluded.includes(em.toLowerCase().trim())) {
+            recipientEmail = em.trim();
+            if (!recipientName) recipientName = cleanText(emEl.getAttribute('name') || emEl.textContent.replace(/<[^>]+>/g, '') || '');
+            break;
+          }
+        }
+        const rawEm = extractEmailAddress(tr.textContent);
+        if (rawEm && !excluded.includes(rawEm.toLowerCase().trim())) {
+          recipientEmail = rawEm.trim();
+          break;
+        }
+      }
+    }
+  }
+
+  // Priority 4: Search for any email address in the message header area (.gE, .adn, .ajA) that isn't the user's
+  if (!recipientEmail && activeMessage) {
+    const headerEl = activeMessage.querySelector('.gE, .adn, .ajA');
+    if (headerEl) {
+      const match = (headerEl.innerText || headerEl.textContent || '').match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g);
+      if (match) {
+        for (const em of match) {
+          if (!excluded.includes(em.toLowerCase().trim())) {
+            recipientEmail = em.trim();
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  // Clean up recipientName if it has "to " prefix
+  recipientName = recipientName.replace(/^to\s+/i, '').trim();
+
+  return { recipientName, recipientEmail };
+}
+
 // Parse active Gmail email thread
 function parseGmailThread(currentUserEmail) {
+  const detectedUserEmail = detectWebmailAccountEmail();
+  const effectiveUserEmail = (currentUserEmail || detectedUserEmail || '').toLowerCase().trim();
+
   // 1. Subject extraction
   let subject = '';
   const subjectEl = document.querySelector('h2.hP, h2[data-thread-perm-id], div[role="main"] h2');
@@ -674,8 +827,6 @@ function parseGmailThread(currentUserEmail) {
 
   let senderName = '';
   let senderEmail = '';
-  let recipientName = '';
-  let recipientEmail = '';
   let rawDate = '';
   let bodyText = '';
   let snippetText = '';
@@ -685,13 +836,6 @@ function parseGmailThread(currentUserEmail) {
     if (senderEl) {
       senderEmail = senderEl.getAttribute('email') || senderEl.getAttribute('data-hovercard-id') || extractEmailAddress(senderEl.textContent);
       senderName = senderEl.getAttribute('name') || cleanText(senderEl.textContent.replace(/<[^>]+>/g, ''));
-    }
-
-    const recipientEl = activeMessage.querySelector('.gI, .hb, span[email]:not(.gD), span[data-hovercard-id]:not(.gD)') ||
-                        document.querySelector('div[role="main"] .g2, div[role="main"] .hb, div[role="main"] span[email]:not(.gD)');
-    if (recipientEl) {
-      recipientEmail = recipientEl.getAttribute('email') || recipientEl.getAttribute('data-hovercard-id') || extractEmailAddress(recipientEl.textContent);
-      recipientName = cleanText(recipientEl.textContent.replace(/<[^>]+>/g, ''));
     }
 
     // Extract date string candidate
@@ -752,21 +896,56 @@ function parseGmailThread(currentUserEmail) {
     }
   }
 
-  // Direction: if sender matches current user or 'me', or URL is sent
+  // Extract Recipient robustly
+  const { recipientName, recipientEmail } = extractGmailRecipient(activeMessage, senderEmail, effectiveUserEmail);
+
+  // Direction: Outbound vs Inbound
   const urlHash = (window.location.hash || '').toLowerCase();
   const urlPath = (window.location.pathname || '').toLowerCase();
-  const isSentFolder = /^#sent(?:\/|$)/.test(urlHash) || /(?:^|\/)sentitems(?:\/|$)/.test(urlPath);
-  const isSenderMe = senderName.toLowerCase() === 'me' || (senderName === '' && senderEmail.toLowerCase() === 'me');
-  const isCurrentUser = Boolean(
-    currentUserEmail && 
+  const isSentFolder = /^#sent(?:\/|$)/.test(urlHash) || 
+                       /(?:^|\/)sentitems(?:\/|$)/.test(urlPath) ||
+                       urlHash.includes('sent') ||
+                       urlPath.includes('sent');
+
+  const isSenderMe = senderName.toLowerCase() === 'me' || 
+                     senderEmail.toLowerCase() === 'me' ||
+                     /^me$/i.test(senderName.trim()) ||
+                     senderName.toLowerCase().startsWith('me,');
+
+  const isSenderUser = Boolean(
+    effectiveUserEmail && 
     senderEmail && 
-    senderEmail.toLowerCase().trim() === currentUserEmail.toLowerCase().trim()
+    senderEmail.toLowerCase().trim() === effectiveUserEmail
   );
-  const isOutbound = isCurrentUser || isSenderMe || isSentFolder;
+
+  const isRecipientMe = recipientName.toLowerCase() === 'me' ||
+                        recipientName.toLowerCase() === 'to me' ||
+                        (effectiveUserEmail && recipientEmail && recipientEmail.toLowerCase().trim() === effectiveUserEmail);
+
+  const isOutbound = isSentFolder || isSenderMe || isSenderUser || (!isRecipientMe && (isSenderMe || isSenderUser));
   const direction = isOutbound ? 'outbound' : 'inbound';
-  const counterparty = isOutbound ? (recipientEmail || recipientName || senderEmail || senderName) : (senderEmail || senderName);
-  const counterpartyName = isOutbound ? (recipientName || senderName) : senderName;
-  const counterpartyEmail = isOutbound ? (recipientEmail || senderEmail) : senderEmail;
+
+  // For outbound emails the counterparty is strictly the recipient, never the sender
+  let counterparty = '';
+  let counterpartyName = '';
+  let counterpartyEmail = '';
+
+  if (isOutbound) {
+    counterpartyEmail = recipientEmail || '';
+    counterpartyName = recipientName || '';
+    counterparty = recipientEmail || recipientName || '';
+
+    // Safety guard: if counterpartyEmail matches user or sender, discard it!
+    const userEmails = [effectiveUserEmail, senderEmail].filter(Boolean).map(e => e.toLowerCase().trim());
+    if (userEmails.includes((counterpartyEmail || '').toLowerCase().trim())) {
+      counterpartyEmail = '';
+      counterparty = recipientName || '';
+    }
+  } else {
+    counterpartyEmail = senderEmail || '';
+    counterpartyName = senderName || '';
+    counterparty = senderEmail || senderName || '';
+  }
 
   // Extract counterparty domain
   let counterpartyDomain = '';
@@ -803,6 +982,9 @@ function parseGmailThread(currentUserEmail) {
 
 // Parse active Outlook Web email thread
 function parseOutlookThread(currentUserEmail) {
+  const detectedUserEmail = detectWebmailAccountEmail();
+  const effectiveUserEmail = (currentUserEmail || detectedUserEmail || '').toLowerCase().trim();
+
   // 1. Subject extraction
   let subject = '';
   const subjectEl = document.querySelector('div[role="heading"][aria-level="2"], div[aria-label*="Subject"]');
@@ -867,23 +1049,42 @@ function parseOutlookThread(currentUserEmail) {
   }
 
   const isSentFolder = window.location.href.toLowerCase().includes('sentitems');
-  const isOutbound = Boolean(
-    (currentUserEmail && senderEmail && senderEmail.toLowerCase().trim() === currentUserEmail.toLowerCase().trim()) ||
-    isSentFolder
+  const isSenderMe = senderName.toLowerCase() === 'me' || (senderName === '' && senderEmail.toLowerCase() === 'me');
+  const isSenderUser = Boolean(
+    effectiveUserEmail && 
+    senderEmail && 
+    senderEmail.toLowerCase().trim() === effectiveUserEmail
   );
+  const isOutbound = isSentFolder || isSenderMe || isSenderUser;
   const direction = isOutbound ? 'outbound' : 'inbound';
-  const counterparty = isOutbound ? (recipientEmail || recipientName || senderEmail || senderName) : (senderEmail || senderName);
-  const counterpartyName = isOutbound ? (recipientName || senderName) : senderName;
-  const counterpartyEmail = isOutbound ? (recipientEmail || senderEmail) : senderEmail;
+
+  let counterparty = '';
+  let counterpartyName = '';
+  let counterpartyEmail = '';
+
+  if (isOutbound) {
+    counterpartyEmail = recipientEmail || '';
+    counterpartyName = recipientName || '';
+    counterparty = recipientEmail || recipientName || '';
+
+    const userEmails = [effectiveUserEmail, senderEmail].filter(Boolean).map(e => e.toLowerCase().trim());
+    if (userEmails.includes((counterpartyEmail || '').toLowerCase().trim())) {
+      counterpartyEmail = '';
+      counterparty = recipientName || '';
+    }
+  } else {
+    counterpartyEmail = senderEmail || '';
+    counterpartyName = senderName || '';
+    counterparty = senderEmail || senderName || '';
+  }
+
   let counterpartyDomain = '';
   if (counterpartyEmail && counterpartyEmail.includes('@')) {
     counterpartyDomain = counterpartyEmail.split('@')[1].toLowerCase().trim();
   }
-  // ATS Disambiguation: exact-domain or dot-suffix matching via isAtsHost
   const isAts = isAtsHost(counterpartyDomain) ||
     isAtsHost(domainFromEmail(senderEmail)) ||
     isAtsHost(domainFromEmail(recipientEmail));
-
 
   return {
     provider: 'outlook',
@@ -891,6 +1092,9 @@ function parseOutlookThread(currentUserEmail) {
     sender: senderName ? `${senderName} <${senderEmail}>` : senderEmail,
     senderEmail,
     senderName,
+    recipient: recipientName ? `${recipientName} <${recipientEmail}>` : recipientEmail,
+    recipientEmail,
+    recipientName,
     counterparty,
     counterpartyName,
     counterpartyEmail,
@@ -903,6 +1107,7 @@ function parseOutlookThread(currentUserEmail) {
     emailUrl: window.location.href,
   };
 }
+
 
 function extractEmailData(currentUserEmail) {
   const host = window.location.hostname.toLowerCase();

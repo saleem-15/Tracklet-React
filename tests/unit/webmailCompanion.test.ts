@@ -933,6 +933,7 @@ describe('Webmail Companion Engine', () => {
   describe('Webmail Counterparty & Direction Resolution', () => {
     function resolveCounterpartyAndDirection({
       currentUserEmail,
+      detectedUserEmail,
       senderName,
       senderEmail,
       recipientName,
@@ -940,25 +941,48 @@ describe('Webmail Companion Engine', () => {
       isSentFolder = false,
     }: {
       currentUserEmail?: string;
+      detectedUserEmail?: string;
       senderName?: string;
       senderEmail?: string;
       recipientName?: string;
       recipientEmail?: string;
       isSentFolder?: boolean;
     }) {
-      const isSenderMe = (senderName || '').toLowerCase() === 'me' || (senderEmail || '').toLowerCase() === 'me';
-      const isCurrentUser = Boolean(
-        currentUserEmail &&
+      const effectiveUserEmail = (currentUserEmail || detectedUserEmail || '').toLowerCase().trim();
+      const isSenderMe = (senderName || '').toLowerCase() === 'me' || 
+                         (senderEmail || '').toLowerCase() === 'me' ||
+                         /^me$/i.test((senderName || '').trim());
+      const isSenderUser = Boolean(
+        effectiveUserEmail &&
         senderEmail &&
-        senderEmail.toLowerCase().trim() === currentUserEmail.toLowerCase().trim()
+        senderEmail.toLowerCase().trim() === effectiveUserEmail
       );
-      const isOutbound = isCurrentUser || isSenderMe || isSentFolder;
+      const isRecipientMe = (recipientName || '').toLowerCase() === 'me' ||
+                            (recipientName || '').toLowerCase() === 'to me' ||
+                            (effectiveUserEmail && recipientEmail && recipientEmail.toLowerCase().trim() === effectiveUserEmail);
+
+      const isOutbound = isSentFolder || isSenderMe || isSenderUser || (!isRecipientMe && (isSenderMe || isSenderUser));
       const direction = isOutbound ? 'outbound' : 'inbound';
-      const counterparty = isOutbound
-        ? (recipientEmail || recipientName || senderEmail || senderName || '')
-        : (senderEmail || senderName || '');
-      const counterpartyName = isOutbound ? (recipientName || senderName || '') : (senderName || '');
-      const counterpartyEmail = isOutbound ? (recipientEmail || senderEmail || '') : (senderEmail || '');
+
+      let counterparty = '';
+      let counterpartyName = '';
+      let counterpartyEmail = '';
+
+      if (isOutbound) {
+        counterpartyEmail = recipientEmail || '';
+        counterpartyName = recipientName || '';
+        counterparty = recipientEmail || recipientName || '';
+
+        const userEmails = [effectiveUserEmail, senderEmail].filter(Boolean).map(e => (e as string).toLowerCase().trim());
+        if (userEmails.includes((counterpartyEmail || '').toLowerCase().trim())) {
+          counterpartyEmail = '';
+          counterparty = recipientName || '';
+        }
+      } else {
+        counterpartyEmail = senderEmail || '';
+        counterpartyName = senderName || '';
+        counterparty = senderEmail || senderName || '';
+      }
 
       return { direction, counterparty, counterpartyName, counterpartyEmail };
     }
@@ -1020,6 +1044,52 @@ describe('Webmail Companion Engine', () => {
       expect(res.counterparty).toBe('david@company.com');
       expect(res.counterpartyName).toBe('David Hiring Manager');
       expect(res.counterpartyEmail).toBe('david@company.com');
+    });
+    it('does NOT fall back to the sender\'s own email when capturing an outbound email with missing recipient metadata', () => {
+      // Regression: Gmail sometimes fails to parse the To: address on sent emails.
+      // The field must be empty rather than the user\'s own address.
+      const res = resolveCounterpartyAndDirection({
+        currentUserEmail: 'user@gmail.com',
+        senderName: 'User',
+        senderEmail: 'user@gmail.com',
+        recipientName: '',
+        recipientEmail: ''
+      });
+
+      expect(res.direction).toBe('outbound');
+      // Must be empty - NOT 'user@gmail.com'
+      expect(res.counterparty).toBe('');
+      expect(res.counterpartyName).toBe('');
+      expect(res.counterpartyEmail).toBe('');
+    });
+
+    it('identifies outbound sent email via detected page user account even without Tracklet currentUserEmail', () => {
+      const res = resolveCounterpartyAndDirection({
+        detectedUserEmail: 'saleem@gmail.com',
+        senderName: 'Saleem Dev',
+        senderEmail: 'saleem@gmail.com',
+        recipientName: 'Sarah Recruiter',
+        recipientEmail: 'sarah@stripe.com'
+      });
+
+      expect(res.direction).toBe('outbound');
+      expect(res.counterparty).toBe('sarah@stripe.com');
+      expect(res.counterpartyName).toBe('Sarah Recruiter');
+      expect(res.counterpartyEmail).toBe('sarah@stripe.com');
+    });
+
+    it('safeguards against setting counterparty to sender email on outbound when recipient is empty', () => {
+      const res = resolveCounterpartyAndDirection({
+        detectedUserEmail: 'saleem@gmail.com',
+        senderName: 'Saleem Dev',
+        senderEmail: 'saleem@gmail.com',
+        recipientName: '',
+        recipientEmail: ''
+      });
+
+      expect(res.direction).toBe('outbound');
+      expect(res.counterparty).toBe('');
+      expect(res.counterpartyEmail).toBe('');
     });
   });
 });
