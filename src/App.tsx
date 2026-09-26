@@ -429,16 +429,24 @@ function TrackletAppContent() {
 
     const normUrl = clippedApp.jobLink ? normalizeJobUrl(clippedApp.jobLink) : '';
 
-    setApplications((prev) => {
-      const existingIdx = prev.findIndex((a) => 
-        a.id === clippedApp.id || 
-        (normUrl && a.jobLink && normalizeJobUrl(a.jobLink) === normUrl) ||
-        (a.company.trim().toLowerCase() === clippedApp.company.trim().toLowerCase() && a.role.trim().toLowerCase() === clippedApp.role.trim().toLowerCase())
-      );
+    let isUpdate = false;
+    let finalApp = clippedApp;
+    let nextApplicationsState: Application[] = [];
 
-      let next: Application[];
-      let finalApp = clippedApp;
-      const isUpdate = existingIdx >= 0;
+    setApplications((prev) => {
+      const existingIdx = prev.findIndex((a) => {
+        const existingNormUrl = a.jobLink ? normalizeJobUrl(a.jobLink) : '';
+        if (normUrl && existingNormUrl) {
+          return normUrl === existingNormUrl;
+        }
+        return (
+          a.id === clippedApp.id ||
+          (a.company.trim().toLowerCase() === clippedApp.company.trim().toLowerCase() &&
+           a.role.trim().toLowerCase() === clippedApp.role.trim().toLowerCase())
+        );
+      });
+
+      isUpdate = existingIdx >= 0;
 
       if (isUpdate) {
         const existingApp = prev[existingIdx];
@@ -469,46 +477,47 @@ function TrackletAppContent() {
           history: clippedApp.history || existingApp.history,
           updatedAt: new Date().toISOString(),
         };
-        next = [...prev];
+        const next = [...prev];
         next[existingIdx] = finalApp;
-
-        // Persist update to Firestore if user is authenticated
-        if (user?.emailVerified) {
-          ApplicationRepository.updateApplication(existingApp.id, finalApp, user.uid).catch((err) => {
-            console.error('Failed to update application in Firestore:', err);
-          });
-        }
-
-        addToast(
-          'success',
-          'Updated via Tracklet Extension',
-          `Updated "${finalApp.role}" at ${finalApp.company}`
-        );
+        nextApplicationsState = next;
+        return next;
       } else {
-        next = [finalApp, ...prev];
-
-        // If clipped while offline/guest and now authenticated with verified email, add to Firestore
-        if (user?.emailVerified && !persistedToCloud) {
-          ApplicationRepository.addApplication(finalApp, user.uid).then((created) => {
-            setApplications((curr) => curr.map((a) => a.id === finalApp.id ? created : a));
-          }).catch((err) => {
-            console.error('Failed to add unpersisted application to Firestore:', err);
-          });
-        }
-
-        addToast(
-          'success',
-          'Clipped via Tracklet Extension',
-          `Saved "${finalApp.role}" at ${finalApp.company}`
-        );
+        const next = [finalApp, ...prev];
+        nextApplicationsState = next;
+        return next;
       }
-
-      // In guest mode, immediately persist to localStorage so data is NEVER lost on tab close/refresh
-      if (!user?.emailVerified) {
-        ApplicationRepository.saveGuestApplications(next);
-      }
-      return next;
     });
+
+    // Side effects performed strictly outside setApplications updater
+    if (isUpdate) {
+      if (user?.emailVerified) {
+        ApplicationRepository.updateApplication(finalApp.id, finalApp, user.uid).catch((err) => {
+          console.error('Failed to update application in Firestore:', err);
+        });
+      }
+      addToast(
+        'success',
+        'Updated via Tracklet Extension',
+        `Updated "${finalApp.role}" at ${finalApp.company}`
+      );
+    } else {
+      if (user?.emailVerified && !persistedToCloud) {
+        ApplicationRepository.addApplication(finalApp, user.uid).then((created) => {
+          setApplications((curr) => curr.map((a) => (a.id === finalApp.id ? created : a)));
+        }).catch((err) => {
+          console.error('Failed to add unpersisted application to Firestore:', err);
+        });
+      }
+      addToast(
+        'success',
+        'Clipped via Tracklet Extension',
+        `Saved "${finalApp.role}" at ${finalApp.company}`
+      );
+    }
+
+    if (!user?.emailVerified) {
+      ApplicationRepository.saveGuestApplications(nextApplicationsState);
+    }
   }, [user, addToast]);
 
   // Drain buffered incoming applications and emails once applications data loading completes
@@ -1188,10 +1197,7 @@ function TrackletAppContent() {
     broadcastDeletedApplication(id);
 
     // Purge from guest storage cache regardless of auth mode to prevent resurrection
-    const guestApps = ApplicationRepository.loadGuestApplications();
-    if (guestApps.some((a) => a.id === id)) {
-      ApplicationRepository.saveGuestApplications(guestApps.filter((a) => a.id !== id));
-    }
+    ApplicationRepository.purgeGuestApplications(id);
 
     setApplications((prev) => {
       const next = prev.filter((a) => a.id !== id);
@@ -1319,10 +1325,7 @@ function TrackletAppContent() {
     });
 
     // Purge from guest storage cache regardless of auth mode to prevent resurrection
-    const guestApps = ApplicationRepository.loadGuestApplications();
-    if (guestApps.some((a) => ids.includes(a.id))) {
-      ApplicationRepository.saveGuestApplications(guestApps.filter((a) => !ids.includes(a.id)));
-    }
+    ApplicationRepository.purgeGuestApplications(ids);
 
     setApplications((prev) => {
       const next = prev.filter((a) => !ids.includes(a.id));
@@ -1496,51 +1499,60 @@ function TrackletAppContent() {
   }, [duplicateGroups]);
 
   const handleMergeAllDuplicates = useCallback(async () => {
-    if (duplicateGroups.size === 0) return;
+    let purged: string[] = [];
+    let updatedSurvivors: Application[] = [];
+    let mergedResult: Application[] = [];
+    let survivorForSelected: string | null = null;
 
-    const { mergedApplications, purgedAppIds } = mergeAllDuplicateGroups(applications);
+    setApplications((prev) => {
+      const groups = findDuplicateApplications(prev);
+      const result = mergeAllDuplicateGroups(prev);
+      purged = result.purgedAppIds;
+      updatedSurvivors = result.updatedApplications;
+      mergedResult = result.mergedApplications;
+
+      if (selectedAppId && purged.includes(selectedAppId)) {
+        for (const group of groups.values()) {
+          if (group.some((a) => a.id === selectedAppId)) {
+            const survivor = group.find((a) => !purged.includes(a.id));
+            if (survivor) survivorForSelected = survivor.id;
+            break;
+          }
+        }
+      }
+
+      return result.mergedApplications;
+    });
+
+    if (purged.length === 0) return;
 
     // Clean up local drafts and notify extension for each purged duplicate
-    purgedAppIds.forEach((id) => {
+    purged.forEach((id) => {
       clearNoteDraft(id);
       broadcastDeletedApplication(id);
     });
 
-    // Update local state immediately
-    setApplications(mergedApplications);
-
     // If currently selected application was one of the purged duplicates, select surviving record
-    if (selectedAppId && purgedAppIds.includes(selectedAppId)) {
-      let survivorId: string | null = null;
-      for (const group of duplicateGroups.values()) {
-        if (group.some((a) => a.id === selectedAppId)) {
-          const survivor = group.find((a) => !purgedAppIds.includes(a.id));
-          if (survivor) survivorId = survivor.id;
-          break;
-        }
-      }
-      setSelectedAppId(survivorId);
+    if (selectedAppId && purged.includes(selectedAppId)) {
+      setSelectedAppId(survivorForSelected);
     }
 
     // Purge from guest storage cache regardless of auth mode
-    const guestApps = ApplicationRepository.loadGuestApplications();
-    if (guestApps.some((a) => purgedAppIds.includes(a.id))) {
-      ApplicationRepository.saveGuestApplications(guestApps.filter((a) => !purgedAppIds.includes(a.id)));
+    ApplicationRepository.purgeGuestApplications(purged);
+
+    // In guest mode, save merged result so guest storage includes updated survivor fields
+    if (!user?.emailVerified) {
+      ApplicationRepository.saveGuestApplications(mergedResult);
     }
 
     // Persist to Firestore if user is authenticated
     if (user?.emailVerified) {
       try {
-        await ApplicationRepository.batchDelete(purgedAppIds, user.uid);
-        for (const group of duplicateGroups.values()) {
-          const survivor = group.find((a) => !purgedAppIds.includes(a.id));
-          if (survivor) {
-            const updatedDoc = mergedApplications.find((a) => a.id === survivor.id);
-            if (updatedDoc) {
-              await ApplicationRepository.updateApplication(survivor.id, updatedDoc, user.uid);
-            }
-          }
+        // Save each surviving merged record before batchDelete so a failed update cannot delete the only copy of merged data
+        for (const survivor of updatedSurvivors) {
+          await ApplicationRepository.updateApplication(survivor.id, survivor, user.uid);
         }
+        await ApplicationRepository.batchDelete(purged, user.uid);
       } catch (err) {
         console.error('Failed to sync merged duplicates to Firestore:', err);
         addToast('error', 'Sync Failed', 'Merged locally, but failed to sync changes to cloud.');
@@ -1551,9 +1563,9 @@ function TrackletAppContent() {
     addToast(
       'success',
       'Duplicates Merged',
-      `Consolidated ${purgedAppIds.length} duplicate application${purgedAppIds.length === 1 ? '' : 's'}. Notes and pipeline stages preserved.`
+      `Consolidated ${purged.length} duplicate application${purged.length === 1 ? '' : 's'}. Notes and pipeline stages preserved.`
     );
-  }, [duplicateGroups, applications, selectedAppId, user, addToast]);
+  }, [selectedAppId, user, addToast]);
 
   // If authentication state is still loading
   if (authLoading) {

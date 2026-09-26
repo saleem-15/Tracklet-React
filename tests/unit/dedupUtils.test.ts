@@ -141,4 +141,46 @@ describe('Deduplication Utilities (dedupUtils)', () => {
     expect(updatedApplications[0].status).toBe('Applied');
     expect(updatedApplications[0].notes).toBe('job location - Australia, Poland, and etc.');
   });
+
+  it('keeps applications with different job links separate even if company and role match', () => {
+    const app1: Application = {
+      ...baseApp,
+      id: 'app-job-1',
+      company: 'Stripe',
+      role: 'Backend Engineer',
+      jobLink: 'https://stripe.com/jobs/1001',
+    };
+    const app2: Application = {
+      ...baseApp,
+      id: 'app-job-2',
+      company: 'Stripe',
+      role: 'Backend Engineer',
+      jobLink: 'https://stripe.com/jobs/1002',
+    };
+
+    const duplicates = findDuplicateApplications([app1, app2]);
+    expect(duplicates.size).toBe(0);
+  });
+
+  it('matches duplicates by normalized job link even if company formatting varies', () => {
+    const app1: Application = {
+      ...baseApp,
+      id: 'app-link-1',
+      company: 'Stripe Inc.',
+      role: 'Software Engineer, Payments',
+      jobLink: 'https://jobs.lever.co/stripe/abc-123?gh_src=linkedin',
+    };
+    const app2: Application = {
+      ...baseApp,
+      id: 'app-link-2',
+      company: 'Stripe',
+      role: 'Software Engineer - Payments',
+      jobLink: 'https://jobs.lever.co/stripe/abc-123?utm_source=feed',
+    };
+
+    const duplicates = findDuplicateApplications([app1, app2]);
+    expect(duplicates.size).toBe(1);
+    const group = Array.from(duplicates.values())[0];
+    expect(group.length).toBe(2);
+  });
 });

@@ -71,6 +71,19 @@ export class ApplicationRepository {
   }
 
   /**
+   * Purges one or more application IDs from guest localStorage cache.
+   */
+  static purgeGuestApplications(ids: string | string[]): void {
+    const idList = Array.isArray(ids) ? ids : [ids];
+    if (idList.length === 0) return;
+    const idSet = new Set(idList);
+    const guestApps = this.loadGuestApplications();
+    if (guestApps.some((a) => idSet.has(a.id))) {
+      this.saveGuestApplications(guestApps.filter((a) => !idSet.has(a.id)));
+    }
+  }
+
+  /**
    * Add a new application record to /users/{userId}/applications with embedded history.
    */
   static async addApplication(
@@ -109,15 +122,15 @@ export class ApplicationRepository {
         throw err;
       }
       createdApp = {
-        id: createdId,
-        userId,
         ...appData,
+        userId,
+        id: createdId,
       };
     } else {
       createdApp = {
-        id: `guest-${Date.now()}`,
-        userId: 'guest',
         ...appData,
+        userId: 'guest',
+        id: `guest-${Date.now()}`,
       };
     }
 

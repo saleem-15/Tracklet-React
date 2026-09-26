@@ -129,7 +129,7 @@ describe('Application Deduplication & Safe Deletion Suite', () => {
   });
 
   describe('Storage Synchronization on Deletion', () => {
-    it('purges deleted application from guest localStorage even if present in cache', () => {
+    it('purges deleted application from guest localStorage using ApplicationRepository.purgeGuestApplications', () => {
       // Simulate guest cache containing Everis records
       localStorage.setItem(
         LOCAL_STORAGE_KEYS.GUEST_APPS,
@@ -140,12 +140,8 @@ describe('Application Deduplication & Safe Deletion Suite', () => {
       const initialGuestApps = ApplicationRepository.loadGuestApplications();
       expect(initialGuestApps.length).toBe(3);
 
-      // Execute purge logic as done in handleDeleteApplication / handleBulkDelete
-      const deleteId = 'everis-saved-id-1';
-      const guestApps = ApplicationRepository.loadGuestApplications();
-      if (guestApps.some((a) => a.id === deleteId)) {
-        ApplicationRepository.saveGuestApplications(guestApps.filter((a) => a.id !== deleteId));
-      }
+      // Execute purge logic via helper
+      ApplicationRepository.purgeGuestApplications('everis-saved-id-1');
 
       // Check updated storage
       const updatedGuestApps = ApplicationRepository.loadGuestApplications();
@@ -155,17 +151,13 @@ describe('Application Deduplication & Safe Deletion Suite', () => {
       expect(updatedGuestApps.map((a) => a.id)).toContain('everis-saved-id-2');
     });
 
-    it('batch purges multiple duplicate application IDs from guest localStorage', () => {
+    it('batch purges multiple duplicate application IDs from guest localStorage via purgeGuestApplications', () => {
       localStorage.setItem(
         LOCAL_STORAGE_KEYS.GUEST_APPS,
         JSON.stringify([everisApplied, everisSaved1, everisSaved2])
       );
 
-      const purgedIds = ['everis-saved-id-1', 'everis-saved-id-2'];
-      const guestApps = ApplicationRepository.loadGuestApplications();
-      if (guestApps.some((a) => purgedIds.includes(a.id))) {
-        ApplicationRepository.saveGuestApplications(guestApps.filter((a) => !purgedIds.includes(a.id)));
-      }
+      ApplicationRepository.purgeGuestApplications(['everis-saved-id-1', 'everis-saved-id-2']);
 
       const updatedGuestApps = ApplicationRepository.loadGuestApplications();
       expect(updatedGuestApps.length).toBe(1);

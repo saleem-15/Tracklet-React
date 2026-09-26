@@ -738,6 +738,7 @@ function isTrackletOrigin() {
 
 // 2. Listen for auth session and applications index sync from Tracklet web app window
 window.addEventListener('message', (event) => {
+  if (event.source !== window || !isTrackletOrigin()) return;
   if (!event.data || typeof event.data !== 'object') return;
 
   if (event.data.type === 'TRACKLET_WEB_AUTH_SYNC') {

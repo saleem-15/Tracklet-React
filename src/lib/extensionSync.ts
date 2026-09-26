@@ -130,7 +130,7 @@ export function setupExtensionSync(callbacks: ExtensionSyncCallbacks): () => voi
 
       if (event.data.type === 'TRACKLET_EXT_ADD_APPLICATION') {
         const app: Application = event.data.payload;
-        if (!app?.id || !isDuplicateAppEvent(app.id, app.updatedAt)) {
+        if (app?.id && !isDuplicateAppEvent(app.id, app.updatedAt)) {
           const persistedToCloud: boolean = Boolean(event.data.persistedToCloud);
           callbacks.onApplicationReceived(app, persistedToCloud);
         }
@@ -166,7 +166,7 @@ export function setupExtensionSync(callbacks: ExtensionSyncCallbacks): () => voi
     if (event.source !== window) return;
     if (event.data && event.data.type === 'TRACKLET_EXT_ADD_APPLICATION') {
       const app: Application = event.data.payload;
-      if (!app?.id || !isDuplicateAppEvent(app.id, app.updatedAt)) {
+      if (app?.id && !isDuplicateAppEvent(app.id, app.updatedAt)) {
         const persistedToCloud: boolean = Boolean(event.data.persistedToCloud);
         callbacks.onApplicationReceived(app, persistedToCloud);
       }
@@ -249,7 +249,7 @@ export function normalizeJobUrl(url: string): string {
   try {
     const u = new URL(url);
     const pathname = u.pathname.replace(/\/+$/, '');
-    const trackingParams = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'refid', 'trackingid', 'position', 'pagenum', 'trk', 'ref', 'source'];
+    const trackingParams = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'refid', 'trackingid', 'position', 'pagenum', 'trk', 'ref', 'source', 'gh_src', 'lever-origin', 'lever-source'];
     Array.from(u.searchParams.keys()).forEach((key) => {
       if (trackingParams.includes(key.toLowerCase())) {
         u.searchParams.delete(key);
