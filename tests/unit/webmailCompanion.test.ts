@@ -151,7 +151,7 @@ function parseDateAndTimestamp(dateStr: string, refDate: Date = new Date()): { d
     .trim();
 
   // 4. Extract time component (English AM/PM or Arabic م / ص / مساءً / صباحاً)
-  const timeRegex = /(?:(am|pm|ص|م|صباحا|صباحاً|مساء|مساءً|\b[ap]\.?m\.?)\s*)?(\d{1,2}):(\d{2})(?::(\d{2}))?(?:\s*(am|pm|ص|م|صباحا|صباحاً|مساء|مساءً|\b[ap]\.?m\.?))?/i;
+  const timeRegex = /(?:(?<![a-zA-Z\u0600-\u06FF])(am|pm|صباحاً|صباحا|صباح|مساءً|مساء|ص|م|\b[ap]\.?m\.?)\s*)?(\d{1,2}):(\d{2})(?::(\d{2}))?(?:\s*(?<![a-zA-Z\u0600-\u06FF])(am|pm|صباحاً|صباحا|صباح|مساءً|مساء|ص|م|\b[ap]\.?m\.?)(?![a-zA-Z\u0600-\u06FF]))?/i;
   const timeMatch = clean.match(timeRegex);
   let timeH = 0, timeM = 0, timeS = 0, hasTimeInStr = false;
   let datePartStr = clean;
@@ -174,10 +174,11 @@ function parseDateAndTimestamp(dateStr: string, refDate: Date = new Date()): { d
       .trim();
   }
 
-  // 5. Try native Date.parse for standard RFC/ISO/weekday formats (e.g. 'Thu 9/10/2026 2:30 PM')
+  // 5. Try native Date.parse for standard RFC/ISO/weekday formats (e.g. 'Thu, September 10, 2026 2:30 PM')
+  // Skip native parse whenever datePartStr contains numeric D/M/Y tokens to preserve day-first DMY logic
   const hasExplicitYear = /\b20\d{2}\b/.test(clean);
-  const isPurelyNumericDate = /^\d{1,2}[./\-]\d{1,2}[./\-]\d{2,4}$/.test(clean.trim());
-  if (hasExplicitYear && !isPurelyNumericDate) {
+  const hasNumericDmy = /\b\d{1,2}[./\-]\d{1,2}[./\-]\d{2,4}\b/.test(datePartStr);
+  if (hasExplicitYear && !hasNumericDmy) {
     const nativeParse = new Date(clean);
     if (!isNaN(nativeParse.getTime())) {
       const yr = nativeParse.getFullYear();
@@ -307,19 +308,36 @@ function parseDateAndTimestamp(dateStr: string, refDate: Date = new Date()): { d
     let day: number | null = null, month: number | null = null;
     if (p1 > 12) { day = p1; month = p2; }
     else if (p2 > 12) { month = p1; day = p2; }
-    else { day = p1; month = p2; } // Default international day-first
+    else {
+      // Disambiguate using weekday if present in datePartStr
+      if (targetDay !== null) {
+        const d1 = new Date(yr, p2 - 1, p1);
+        const d2 = new Date(yr, p1 - 1, p2);
+        if (d1.getDay() === targetDay && d2.getDay() !== targetDay) {
+          day = p1; month = p2;
+        } else if (d2.getDay() === targetDay && d1.getDay() !== targetDay) {
+          day = p2; month = p1;
+        } else {
+          day = p1; month = p2;
+        }
+      } else {
+        day = p1; month = p2; // Default international day-first
+      }
+    }
     if (month >= 1 && month <= 12 && day >= 1 && day <= 31 && yr >= 2000 && yr <= 2100) {
       const d = new Date(yr, month - 1, day, timeH, timeM, timeS);
       return { date: formatDateParts(d), timestamp: formatIsoWithTime(d, hasTimeInStr) };
     }
   }
 
-  // 10. Native Date fallback
-  const nativeParse = new Date(clean);
-  if (!isNaN(nativeParse.getTime())) {
-    const yr = nativeParse.getFullYear();
-    if (yr >= 2000 && yr <= 2100) {
-      return { date: formatDateParts(nativeParse), timestamp: formatIsoWithTime(nativeParse, hasTimeInStr) };
+  // 10. Native Date fallback (only for strings with explicit year to prevent month-first assumptions on numeric inputs)
+  if (hasExplicitYear) {
+    const nativeParse = new Date(clean);
+    if (!isNaN(nativeParse.getTime())) {
+      const yr = nativeParse.getFullYear();
+      if (yr >= 2000 && yr <= 2100) {
+        return { date: formatDateParts(nativeParse), timestamp: formatIsoWithTime(nativeParse, hasTimeInStr) };
+      }
     }
   }
 
@@ -1070,6 +1088,18 @@ describe('Webmail Companion Engine', () => {
       const yestAr = parseDateAndTimestamp('أمس 3:55 م', refDate);
       expect(yestAr.date).toBe('2026-09-11');
       expect(yestAr.timestamp).toContain('2026-09-11T15:55:00');
+
+      // Test numeric date with weekday disambiguates day/month (Sep 10, 2026 is Thursday)
+      const dmyWeekday = parseDateAndTimestamp('Thu 9/10/2026 2:30 PM', refDate);
+      expect(dmyWeekday.date).toBe('2026-09-10');
+      expect(dmyWeekday.timestamp).toContain('2026-09-10T14:30:00');
+
+      // Test word boundaries for Arabic meridiem markers
+      const arLongMarker = parseDateAndTimestamp('2026-09-12 10:15 صباحاً', refDate);
+      expect(arLongMarker.timestamp).toContain('2026-09-12T10:15:00');
+
+      const arEveningLong = parseDateAndTimestamp('2026-09-12 10:15 مساءً', refDate);
+      expect(arEveningLong.timestamp).toContain('2026-09-12T22:15:00');
     });
   });
 
@@ -1100,11 +1130,13 @@ describe('Webmail Companion Engine', () => {
         senderEmail &&
         senderEmail.toLowerCase().trim() === effectiveUserEmail
       );
-      const isRecipientMe = (recipientName || '').toLowerCase() === 'me' ||
-                            (recipientName || '').toLowerCase() === 'to me' ||
-                            (effectiveUserEmail && recipientEmail && recipientEmail.toLowerCase().trim() === effectiveUserEmail);
+      const isSenderExternal = Boolean(
+        effectiveUserEmail &&
+        senderEmail &&
+        senderEmail.toLowerCase().trim() !== effectiveUserEmail
+      );
 
-      const isOutbound = isSentFolder || isSenderMe || isSenderUser || (!isRecipientMe && (isSenderMe || isSenderUser));
+      const isOutbound = (isSenderMe || isSenderUser) || (isSentFolder && !isSenderExternal);
       const direction = isOutbound ? 'outbound' : 'inbound';
 
       let counterparty = '';
@@ -1233,6 +1265,22 @@ describe('Webmail Companion Engine', () => {
       expect(res.direction).toBe('outbound');
       expect(res.counterparty).toBe('');
       expect(res.counterpartyEmail).toBe('');
+    });
+
+    it('ensures sent folder alone cannot override a sender identified as someone other than the user', () => {
+      const res = resolveCounterpartyAndDirection({
+        currentUserEmail: 'candidate@gmail.com',
+        senderName: 'Sarah Recruiter',
+        senderEmail: 'sarah@stripe.com',
+        recipientName: 'Candidate Name',
+        recipientEmail: 'candidate@gmail.com',
+        isSentFolder: true
+      });
+
+      expect(res.direction).toBe('inbound');
+      expect(res.counterparty).toBe('sarah@stripe.com');
+      expect(res.counterpartyName).toBe('Sarah Recruiter');
+      expect(res.counterpartyEmail).toBe('sarah@stripe.com');
     });
   });
 });

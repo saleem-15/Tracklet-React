@@ -371,7 +371,7 @@ function looksLikeDate(str) {
   }
 
   // 6. Time tokens: "10:15 AM", "14:30", "3:55 م", "3:55 ص"
-  if (/(?:(am|pm|ص|م|صباحا|صباحاً|مساء|مساءً)\s*)?\b\d{1,2}:\d{2}(?::\d{2})?(?:\s*(am|pm|ص|م|صباحا|صباحاً|مساء|مساءً))?/i.test(norm)) return true;
+  if (/(?:(?<![a-zA-Z\u0600-\u06FF])(pm|am|\b[ap]\.?m\.?|صباحاً|صباحا|صباح|مساءً|مساء|ص|م)\s*)?\b\d{1,2}:\d{2}(?::\d{2})?(?:\s*(pm|am|\b[ap]\.?m\.?|صباحاً|صباحا|صباح|مساءً|مساء|ص|م)(?![a-zA-Z\u0600-\u06FF]))?/i.test(norm)) return true;
 
   return false;
 }
@@ -451,7 +451,8 @@ function parseDateToIso(dateStr, refDate = new Date()) {
 
   // 4. Extract time component (English AM/PM or Arabic م / ص / مساءً / صباحاً)
   // Handles '3:55 م', '3:55 PM', '15:55', 'م 3:55', '3:55م', 'في 3:55 م'
-  const timeRegex = /(?:(am|pm|ص|م|صباحا|صباحاً|مساء|مساءً|\b[ap]\.?m\.?)\s*)?(\d{1,2}):(\d{2})(?::(\d{2}))?(?:\s*(am|pm|ص|م|صباحا|صباحاً|مساء|مساءً|\b[ap]\.?m\.?))?/i;
+  // Longer patterns appear before single letters; lookaround assertions prevent prefix matching inside words.
+  const timeRegex = /(?:(?<![a-zA-Z\u0600-\u06FF])(pm|am|\b[ap]\.?m\.?|صباحاً|صباحا|صباح|مساءً|مساء|ص|م)\s*)?(\d{1,2}):(\d{2})(?::(\d{2}))?(?:\s*(pm|am|\b[ap]\.?m\.?|صباحاً|صباحا|صباح|مساءً|مساء|ص|م)(?![a-zA-Z\u0600-\u06FF]))?/i;
   const timeMatch = clean.match(timeRegex);
   let timeH = 0, timeM = 0, timeS = 0, hasTimeInStr = false;
   let datePartStr = clean;
@@ -475,10 +476,11 @@ function parseDateToIso(dateStr, refDate = new Date()) {
       .trim();
   }
 
-  // 5. Try native Date.parse for standard RFC/ISO/weekday formats (e.g. 'Thu 9/10/2026 2:30 PM', 'Thu, 25 Sep 2026')
+  // 5. Try native Date.parse for standard RFC/ISO/weekday formats (e.g. 'Thu, 25 Sep 2026')
+  // Skip native parsing whenever the date part contains numeric D/M/Y tokens to keep DMY day-first semantics consistent
   const hasExplicitYear = /\b20\d{2}\b/.test(clean);
-  const isPurelyNumericDate = /^\d{1,2}[./\-]\d{1,2}[./\-]\d{2,4}$/.test(clean.trim());
-  if (hasExplicitYear && !isPurelyNumericDate) {
+  const hasNumericDmy = /\b\d{1,2}[./\-]\d{1,2}[./\-]\d{2,4}\b/.test(datePartStr);
+  if (hasExplicitYear && !hasNumericDmy) {
     const nativeParse = new Date(clean);
     if (!isNaN(nativeParse.getTime())) {
       const yr = nativeParse.getFullYear();
@@ -611,19 +613,30 @@ function parseDateToIso(dateStr, refDate = new Date()) {
     let day = null, month = null;
     if (p1 > 12) { day = p1; month = p2; }
     else if (p2 > 12) { month = p1; day = p2; }
-    else { day = p1; month = p2; } // Default international day-first
+    else if (targetDay !== null) {
+      // Disambiguate via weekday token if present (e.g. 'Thu 9/10/2026')
+      const d1 = new Date(yr, p2 - 1, p1);
+      const d2 = new Date(yr, p1 - 1, p2);
+      if (d1.getDay() === targetDay) { day = p1; month = p2; }
+      else if (d2.getDay() === targetDay) { day = p2; month = p1; }
+      else { day = p1; month = p2; }
+    } else {
+      day = p1; month = p2; // Default international day-first
+    }
     if (month >= 1 && month <= 12 && day >= 1 && day <= 31 && yr >= 2000 && yr <= 2100) {
       const d = new Date(yr, month - 1, day, timeH, timeM, timeS);
       return { date: formatDateParts(d), timestamp: formatIsoWithTime(d, hasTimeInStr) };
     }
   }
 
-  // 10. Native Date fallback
-  const nativeParse = new Date(clean);
-  if (!isNaN(nativeParse.getTime())) {
-    const yr = nativeParse.getFullYear();
-    if (yr >= 2000 && yr <= 2100) {
-      return { date: formatDateParts(nativeParse), timestamp: formatIsoWithTime(nativeParse, hasTimeInStr) };
+  // 10. Native Date fallback (only for strings with an explicit 4-digit year)
+  if (hasExplicitYear) {
+    const nativeParse = new Date(clean);
+    if (!isNaN(nativeParse.getTime())) {
+      const yr = nativeParse.getFullYear();
+      if (yr >= 2000 && yr <= 2100) {
+        return { date: formatDateParts(nativeParse), timestamp: formatIsoWithTime(nativeParse, hasTimeInStr) };
+      }
     }
   }
 
@@ -702,9 +715,10 @@ function detectWebmailAccountEmail() {
     }
   } else if (host.includes('outlook.')) {
     const outlookSelectors = [
-      'button[aria-label*="@"]',
+      'header button[aria-label*="@"]',
+      'header [data-testid="persona"]',
       '#O365_MainLink_Me[aria-label*="@"]',
-      'div[data-testid="persona"]',
+      '#mectrl_main_trigger',
       '#meControl'
     ];
     for (const sel of outlookSelectors) {
@@ -929,9 +943,7 @@ function parseGmailThread(currentUserEmail) {
   const urlHash = (window.location.hash || '').toLowerCase();
   const urlPath = (window.location.pathname || '').toLowerCase();
   const isSentFolder = /^#sent(?:\/|$)/.test(urlHash) || 
-                       /(?:^|\/)sentitems(?:\/|$)/.test(urlPath) ||
-                       urlHash.includes('sent') ||
-                       urlPath.includes('sent');
+                       /(?:^|\/)sentitems(?:\/|$)/.test(urlPath);
 
   const isSenderMe = senderName.toLowerCase() === 'me' || 
                      senderEmail.toLowerCase() === 'me' ||
@@ -944,11 +956,13 @@ function parseGmailThread(currentUserEmail) {
     senderEmail.toLowerCase().trim() === effectiveUserEmail
   );
 
-  const isRecipientMe = recipientName.toLowerCase() === 'me' ||
-                        recipientName.toLowerCase() === 'to me' ||
-                        (effectiveUserEmail && recipientEmail && recipientEmail.toLowerCase().trim() === effectiveUserEmail);
+  const isSenderExternal = Boolean(
+    effectiveUserEmail &&
+    senderEmail &&
+    senderEmail.toLowerCase().trim() !== effectiveUserEmail
+  );
 
-  const isOutbound = isSentFolder || isSenderMe || isSenderUser || (!isRecipientMe && (isSenderMe || isSenderUser));
+  const isOutbound = (isSenderMe || isSenderUser) || (isSentFolder && !isSenderExternal);
   const direction = isOutbound ? 'outbound' : 'inbound';
 
   // For outbound emails the counterparty is strictly the recipient, never the sender
@@ -1074,14 +1088,20 @@ function parseOutlookThread(currentUserEmail) {
     snippetText = cleaned.snippet;
   }
 
-  const isSentFolder = window.location.href.toLowerCase().includes('sentitems');
+  const isSentFolder = /(?:^|\/)sentitems(?:\/|$)/.test(window.location.pathname.toLowerCase()) ||
+                       window.location.hash.toLowerCase().includes('sentitems');
   const isSenderMe = senderName.toLowerCase() === 'me' || (senderName === '' && senderEmail.toLowerCase() === 'me');
   const isSenderUser = Boolean(
     effectiveUserEmail && 
     senderEmail && 
     senderEmail.toLowerCase().trim() === effectiveUserEmail
   );
-  const isOutbound = isSentFolder || isSenderMe || isSenderUser;
+  const isSenderExternal = Boolean(
+    effectiveUserEmail &&
+    senderEmail &&
+    senderEmail.toLowerCase().trim() !== effectiveUserEmail
+  );
+  const isOutbound = (isSenderMe || isSenderUser) || (isSentFolder && !isSenderExternal);
   const direction = isOutbound ? 'outbound' : 'inbound';
 
   let counterparty = '';

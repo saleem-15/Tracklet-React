@@ -26,15 +26,17 @@ export interface EmailReaderModalProps {
 
 function formatEmailTime(timestamp?: string): string | null {
   if (!timestamp || !timestamp.includes('T')) return null;
-  const timePart = timestamp.split('T')[1]?.slice(0, 8);
-  if (!timePart || timePart.startsWith('00:00:00')) return null;
-  try {
-    const d = new Date(timestamp);
-    if (isNaN(d.getTime())) return null;
-    return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-  } catch {
-    return null;
-  }
+  const timeMatch = timestamp.match(/T(\d{2}):(\d{2})(?::(\d{2}))?/);
+  if (!timeMatch) return null;
+  const hours = parseInt(timeMatch[1], 10);
+  const minutes = timeMatch[2];
+  const seconds = timeMatch[3] || '00';
+  if (hours === 0 && minutes === '00' && seconds === '00') return null;
+  if (isNaN(hours) || hours < 0 || hours > 23) return null;
+
+  const period = hours >= 12 ? 'PM' : 'AM';
+  const hour12 = hours % 12 || 12;
+  return `${hour12}:${minutes} ${period}`;
 }
 
 export const EmailReaderModal: React.FC<EmailReaderModalProps> = ({

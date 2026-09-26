@@ -799,6 +799,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 2. Request active email data from content script
     let hasAttemptedInjection = false;
 
+    function updateContactDiscoveryUI() {
+      const isKnownContact = selectedEmailMatchedApp?.contactEmails?.includes((discoveredRecruiterEmail || '').toLowerCase());
+      if (discoveredRecruiterName && !isKnownContact && discoveredRecruiterName !== 'You' && discoveredRecruiterName.length > 1) {
+        if (milestoneBox) milestoneBox.style.display = 'block';
+        addContactOption.style.display = 'flex';
+        addContactLabel.textContent = `Add "${discoveredRecruiterName}" as recruiter contact`;
+        addContactCheckbox.checked = true;
+      } else {
+        if (milestoneBox) milestoneBox.style.display = 'none';
+        addContactOption.style.display = 'none';
+        addContactCheckbox.checked = false;
+      }
+    }
+
     function applyExtractedEmailData(emailData) {
       rawExtractedEmailData = emailData;
 
@@ -848,16 +862,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       // Contact Discovery
       discoveredRecruiterName = emailData.counterpartyName || '';
       discoveredRecruiterEmail = emailData.counterpartyEmail || '';
-      const isKnownContact = selectedEmailMatchedApp?.contactEmails?.includes(discoveredRecruiterEmail.toLowerCase());
-      if (discoveredRecruiterName && !isKnownContact && discoveredRecruiterName !== 'You' && discoveredRecruiterName.length > 1) {
-        if (milestoneBox) milestoneBox.style.display = 'block';
-        addContactOption.style.display = 'flex';
-        addContactLabel.textContent = `Add "${discoveredRecruiterName}" as recruiter contact`;
-        addContactCheckbox.checked = true;
-      } else {
-        if (milestoneBox) milestoneBox.style.display = 'none';
-        addContactOption.style.display = 'none';
-      }
+      updateContactDiscoveryUI();
     }
 
     function requestEmailExtraction() {
@@ -940,6 +945,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         discoveredRecruiterEmail = rawExtractedEmailData.senderEmail || '';
       }
     }
+    updateContactDiscoveryUI();
   }
 
   function renderMatchedApp(app) {
@@ -983,6 +989,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         emailMatchedAvatar.style.borderColor = '#cbd5e1';
       }
     }
+    updateContactDiscoveryUI();
   }
 
   let highlightedAppIndex = -1;
@@ -1194,8 +1201,15 @@ document.addEventListener('DOMContentLoaded', async () => {
       timestamp: (() => {
         const activeDate = emailDateInput.value || today;
         const activeTime = emailTimeInput?.value ? `${emailTimeInput.value}:00` : '00:00:00';
-        const now = new Date();
-        const offsetMin = -now.getTimezoneOffset();
+
+        // Preserve extracted timestamp if its date and time remain unchanged
+        if (currentEmailTimestamp && currentEmailTimestamp.startsWith(`${activeDate}T${activeTime.slice(0, 5)}`)) {
+          return currentEmailTimestamp;
+        }
+
+        const localTarget = new Date(`${activeDate}T${activeTime}`);
+        const targetDate = isNaN(localTarget.getTime()) ? new Date() : localTarget;
+        const offsetMin = -targetDate.getTimezoneOffset();
         const sign = offsetMin >= 0 ? '+' : '-';
         const absMin = Math.abs(offsetMin);
         const offH = String(Math.floor(absMin / 60)).padStart(2, '0');
