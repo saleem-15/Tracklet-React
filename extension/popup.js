@@ -246,7 +246,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     platformSelectContainer.classList.remove('open');
     stageSelectorContainer.classList.remove('open');
     if (appSelectorPopover && appSelectorPopover.style.display !== 'none') {
-      if (!appSelectorPopover.contains(e.target) && e.target !== changeAppBtn && !changeAppBtn.contains(e.target)) {
+      // Do not close if the click came from inside the popover, from changeAppBtn,
+      // or from logEmailBtn (that button opens the popover when no app is selected).
+      const fromPopover = appSelectorPopover.contains(e.target);
+      const fromChangeBtn = e.target === changeAppBtn || changeAppBtn.contains(e.target);
+      const fromLogBtn = logEmailBtn && (e.target === logEmailBtn || logEmailBtn.contains(e.target));
+      if (!fromPopover && !fromChangeBtn && !fromLogBtn) {
         appSelectorPopover.style.display = 'none';
       }
     }
@@ -426,7 +431,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // 3. "Jane Doe at Stripe" or "Jane Doe from Stripe"
-    const atFromMatch = name.match(/(?:at|from)\s+([A-Z0-9a-z\s&'-]+)$/i);
+    // \b before at/from ensures we don't match inside names like "Fromberg" or "Strathmore"
+    const atFromMatch = name.match(/\b(?:at|from)\s+([A-Z0-9a-z\s&'-]+)$/i);
     if (atFromMatch && atFromMatch[1].trim()) {
       const candidate = atFromMatch[1].trim();
       if (!isGenericRecruitingWord(candidate)) return candidate;
@@ -1140,8 +1146,15 @@ document.addEventListener('DOMContentLoaded', async () => {
       sender: isOutbound ? (currentUserSession?.email || 'You') : counterparty,
       recipient: isOutbound ? counterparty : (currentUserSession?.email || undefined),
       date: emailDateInput.value || today,
-      // Carry full timestamp if available; derive from date input as midnight fallback
-      timestamp: currentEmailTimestamp || `${emailDateInput.value || today}T00:00:00`,
+      // Use the extracted timestamp only when its date portion still matches the
+      // current date field — if the user edited the date, derive midnight from it.
+      timestamp: (() => {
+        const activeDate = emailDateInput.value || today;
+        const tsDatePart = currentEmailTimestamp ? currentEmailTimestamp.slice(0, 10) : null;
+        return tsDatePart === activeDate
+          ? currentEmailTimestamp
+          : `${activeDate}T00:00:00`;
+      })(),
       direction: currentEmailDirection,
       snippet: emailBodyInput.value.trim().slice(0, 200),
       body: emailBodyInput.value.trim(),

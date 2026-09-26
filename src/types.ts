@@ -67,7 +67,7 @@ export interface EmailLog {
   sender: string;
   recipient?: string;
   date: string;        // YYYY-MM-DD — for display and backward compat
-  timestamp?: string;  // ISO 8601 with time e.g. "2026-09-25T14:35:10" — for analytics
+  timestamp?: string;  // ISO 8601 with offset e.g. "2026-09-25T14:35:10+03:00" — for analytics
   direction?: 'inbound' | 'outbound';
   snippet?: string;
   body?: string;

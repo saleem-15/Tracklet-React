@@ -377,7 +377,8 @@ function extractCompanyFromAts(senderName?: string, senderEmail?: string, subjec
   }
 
   // 3. "Jane Doe at Stripe" or "Jane Doe from Stripe"
-  const atFromMatch = name.match(/(?:at|from)\s+([A-Z0-9a-z\s&'-]+)$/i);
+  // \b before at/from ensures we don't match inside names like "Fromberg" or "Strathmore"
+  const atFromMatch = name.match(/\b(?:at|from)\s+([A-Z0-9a-z\s&'-]+)$/i);
   if (atFromMatch && atFromMatch[1].trim()) {
     const candidate = atFromMatch[1].trim();
     if (!isGenericRecruitingWord(candidate)) return candidate;

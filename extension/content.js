@@ -241,6 +241,20 @@ const ATS_DOMAINS = [
   'jazzhr.com', 'icims.com'
 ];
 
+// Checks whether a bare domain string (no path, no @) belongs to an ATS.
+// Uses exact equality or dot-bounded suffix so "notgreenhouse.io" does not match.
+function isAtsHost(host) {
+  if (!host) return false;
+  const h = host.toLowerCase().trim();
+  return ATS_DOMAINS.some(ats => h === ats || h.endsWith('.' + ats));
+}
+
+// Extract the ATS host from an email address string (the part after @).
+function domainFromEmail(emailStr) {
+  if (!emailStr || !emailStr.includes('@')) return '';
+  return emailStr.split('@')[1].toLowerCase().trim();
+}
+
 function isWebmailUrl(urlStr) {
   try {
     const host = new URL(urlStr).hostname.toLowerCase();
@@ -290,16 +304,26 @@ function formatDateParts(d) {
   return `${y}-${m}-${day}`;
 }
 
-// Returns a full ISO 8601 string (local timezone) when time info is known,
-// falling back to YYYY-MM-DDT00:00:00 so callers always get a complete datetime.
+// Returns a full ISO 8601 string with local UTC offset when time info is known,
+// e.g. "2026-09-25T14:35:10+03:00". This preserves the represented instant when
+// the string is parsed in a different timezone. When only a date is known the
+// offset is still appended so the format stays consistent.
 function formatIsoWithTime(d, hasTime = false) {
+  // Build ±HH:MM offset string from the host's local timezone
+  const offsetMin = -d.getTimezoneOffset(); // getTimezoneOffset returns minutes WEST, negate for ±
+  const sign = offsetMin >= 0 ? '+' : '-';
+  const absMin = Math.abs(offsetMin);
+  const offH = String(Math.floor(absMin / 60)).padStart(2, '0');
+  const offM = String(absMin % 60).padStart(2, '0');
+  const offset = `${sign}${offH}:${offM}`;
+
   if (!hasTime) {
-    return `${formatDateParts(d)}T00:00:00`;
+    return `${formatDateParts(d)}T00:00:00${offset}`;
   }
   const hh = String(d.getHours()).padStart(2, '0');
   const mm = String(d.getMinutes()).padStart(2, '0');
   const ss = String(d.getSeconds()).padStart(2, '0');
-  return `${formatDateParts(d)}T${hh}:${mm}:${ss}`;
+  return `${formatDateParts(d)}T${hh}:${mm}:${ss}${offset}`;
 }
 
 // Validates whether an attribute or text string looks like an email timestamp rather than a button tooltip
@@ -414,16 +438,21 @@ function parseDateToIso(dateStr, refDate = new Date()) {
     .replace(/\s+/g, ' ')
     .trim();
 
-  // 4. Try native Date.parse first — it handles ISO 8601 with time precisely
+  // 4. Try native Date.parse first — handles RFC-2822, ISO-8601, and rich locale strings
   //    e.g. "Thu, 25 Sep 2026 14:35:10 +0300", "2026-09-25T14:35:10Z", "Sep 25, 2026, 2:35 PM"
-  const nativeParse = new Date(clean);
-  if (!isNaN(nativeParse.getTime())) {
-    // Only trust if year is plausible (not JS epoch default 2001 etc.)
-    const yr = nativeParse.getFullYear();
-    if (yr >= 2000 && yr <= 2100) {
-      // Determine if time info was likely embedded vs just midnight
-      const hasTime = /\d{1,2}:\d{2}/.test(clean);
-      return { date: formatDateParts(nativeParse), timestamp: formatIsoWithTime(nativeParse, hasTime) };
+  //    Guard: only accept if the string contains an explicit 4-digit year AND is not a
+  //    purely numeric date like "25/09/2026" (those are ambiguous locale-dependent; let
+  //    the slash/dot branches below handle them with correct day-first semantics).
+  const hasExplicitYear = /\b20\d{2}\b/.test(clean);
+  const isPurelyNumericDate = /^\d{1,2}[./\-]\d{1,2}[./\-]\d{2,4}$/.test(clean.trim());
+  if (hasExplicitYear && !isPurelyNumericDate) {
+    const nativeParse = new Date(clean);
+    if (!isNaN(nativeParse.getTime())) {
+      const yr = nativeParse.getFullYear();
+      if (yr >= 2000 && yr <= 2100) {
+        const hasTime = /\d{1,2}:\d{2}/.test(clean);
+        return { date: formatDateParts(nativeParse), timestamp: formatIsoWithTime(nativeParse, hasTime) };
+      }
     }
   }
 
@@ -745,12 +774,10 @@ function parseGmailThread(currentUserEmail) {
     counterpartyDomain = counterpartyEmail.split('@')[1].toLowerCase().trim();
   }
 
-  // ATS Disambiguation: if counterparty, sender, or recipient domain is an ATS domain
-  const isAts = ATS_DOMAINS.some(ats => 
-    (counterpartyDomain && counterpartyDomain.includes(ats)) ||
-    (senderEmail && senderEmail.toLowerCase().includes(ats)) ||
-    (recipientEmail && recipientEmail.toLowerCase().includes(ats))
-  );
+  // ATS Disambiguation: exact-domain or dot-suffix matching via isAtsHost
+  const isAts = isAtsHost(counterpartyDomain) ||
+    isAtsHost(domainFromEmail(senderEmail)) ||
+    isAtsHost(domainFromEmail(recipientEmail));
 
   return {
     provider: 'gmail',
@@ -852,11 +879,11 @@ function parseOutlookThread(currentUserEmail) {
   if (counterpartyEmail && counterpartyEmail.includes('@')) {
     counterpartyDomain = counterpartyEmail.split('@')[1].toLowerCase().trim();
   }
-  const isAts = ATS_DOMAINS.some(ats => 
-    (counterpartyDomain && counterpartyDomain.includes(ats)) ||
-    (senderEmail && senderEmail.toLowerCase().includes(ats)) ||
-    (recipientEmail && recipientEmail.toLowerCase().includes(ats))
-  );
+  // ATS Disambiguation: exact-domain or dot-suffix matching via isAtsHost
+  const isAts = isAtsHost(counterpartyDomain) ||
+    isAtsHost(domainFromEmail(senderEmail)) ||
+    isAtsHost(domainFromEmail(recipientEmail));
+
 
   return {
     provider: 'outlook',
