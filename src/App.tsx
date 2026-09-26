@@ -61,6 +61,8 @@ function TrackletAppContent() {
   const { user, loading: authLoading, openAuthModal, signOut } = useAuth();
 
   const [applications, setApplications] = useState<Application[]>([]);
+  const applicationsRef = useRef<Application[]>(applications);
+  applicationsRef.current = applications;
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [activeTab, setActiveTabState] = useState<ActiveTab>(() => getTabFromPath(window.location.pathname));
   const [dataLoading, setDataLoading] = useState(true);
@@ -428,67 +430,63 @@ function TrackletAppContent() {
     }
 
     const normUrl = clippedApp.jobLink ? normalizeJobUrl(clippedApp.jobLink) : '';
+    const currentApps = applicationsRef.current;
 
-    let isUpdate = false;
-    let finalApp = clippedApp;
-    let nextApplicationsState: Application[] = [];
-
-    setApplications((prev) => {
-      const existingIdx = prev.findIndex((a) => {
-        const existingNormUrl = a.jobLink ? normalizeJobUrl(a.jobLink) : '';
-        if (normUrl && existingNormUrl) {
-          return normUrl === existingNormUrl;
-        }
-        return (
-          a.id === clippedApp.id ||
-          (a.company.trim().toLowerCase() === clippedApp.company.trim().toLowerCase() &&
-           a.role.trim().toLowerCase() === clippedApp.role.trim().toLowerCase())
-        );
-      });
-
-      isUpdate = existingIdx >= 0;
-
-      if (isUpdate) {
-        const existingApp = prev[existingIdx];
-
-        // Safe preservation of user progress:
-        // 1. If existing status is advanced (e.g. Applied) and clipped app is Saved, preserve user's stage
-        const shouldPreserveStatus = existingApp.status !== 'Saved' && clippedApp.status === 'Saved';
-        const resolvedStatus = shouldPreserveStatus ? existingApp.status : (clippedApp.status || existingApp.status);
-        const resolvedStageUpdatedAt = shouldPreserveStatus ? existingApp.stageUpdatedAt : (clippedApp.stageUpdatedAt || existingApp.stageUpdatedAt);
-
-        // 2. If existing application has non-empty notes and incoming has none/whitespace, preserve existing notes
-        const resolvedNotes = (existingApp.notes && existingApp.notes.trim().length > 0)
-          ? ((!clippedApp.notes || !clippedApp.notes.trim()) ? existingApp.notes : clippedApp.notes)
-          : (clippedApp.notes || '');
-
-        finalApp = {
-          ...existingApp,
-          ...clippedApp,
-          id: existingApp.id, // Preserve existing application ID
-          status: resolvedStatus,
-          stageUpdatedAt: resolvedStageUpdatedAt,
-          notes: resolvedNotes,
-          location: clippedApp.location || existingApp.location || '',
-          workLocation: clippedApp.workLocation || existingApp.workLocation,
-          employmentType: clippedApp.employmentType || existingApp.employmentType,
-          contacts: existingApp.contacts && existingApp.contacts.length > 0 ? existingApp.contacts : (clippedApp.contacts || []),
-          emails: existingApp.emails && existingApp.emails.length > 0 ? existingApp.emails : (clippedApp.emails || []),
-          history: clippedApp.history || existingApp.history,
-          updatedAt: new Date().toISOString(),
-        };
-        const next = [...prev];
-        next[existingIdx] = finalApp;
-        nextApplicationsState = next;
-        return next;
-      } else {
-        const next = [finalApp, ...prev];
-        nextApplicationsState = next;
-        return next;
+    const existingIdx = currentApps.findIndex((a) => {
+      const existingNormUrl = a.jobLink ? normalizeJobUrl(a.jobLink) : '';
+      if (normUrl && existingNormUrl) {
+        return normUrl === existingNormUrl;
       }
+      return (
+        a.id === clippedApp.id ||
+        (a.company.trim().toLowerCase() === clippedApp.company.trim().toLowerCase() &&
+         a.role.trim().toLowerCase() === clippedApp.role.trim().toLowerCase())
+      );
     });
 
-    // Side effects performed strictly outside setApplications updater
+    const isUpdate = existingIdx >= 0;
+    let finalApp = clippedApp;
+    let next: Application[];
+
+    if (isUpdate) {
+      const existingApp = currentApps[existingIdx];
+
+      // Safe preservation of user progress:
+      // 1. If existing status is advanced (e.g. Applied) and clipped app is Saved, preserve user's stage
+      const shouldPreserveStatus = existingApp.status !== 'Saved' && clippedApp.status === 'Saved';
+      const resolvedStatus = shouldPreserveStatus ? existingApp.status : (clippedApp.status || existingApp.status);
+      const resolvedStageUpdatedAt = shouldPreserveStatus ? existingApp.stageUpdatedAt : (clippedApp.stageUpdatedAt || existingApp.stageUpdatedAt);
+
+      // 2. If existing application has non-empty notes and incoming has none/whitespace, preserve existing notes
+      const resolvedNotes = (existingApp.notes && existingApp.notes.trim().length > 0)
+        ? ((!clippedApp.notes || !clippedApp.notes.trim()) ? existingApp.notes : clippedApp.notes)
+        : (clippedApp.notes || '');
+
+      finalApp = {
+        ...existingApp,
+        ...clippedApp,
+        id: existingApp.id, // Preserve existing application ID
+        status: resolvedStatus,
+        stageUpdatedAt: resolvedStageUpdatedAt,
+        notes: resolvedNotes,
+        location: clippedApp.location || existingApp.location || '',
+        workLocation: clippedApp.workLocation || existingApp.workLocation,
+        employmentType: clippedApp.employmentType || existingApp.employmentType,
+        contacts: existingApp.contacts && existingApp.contacts.length > 0 ? existingApp.contacts : (clippedApp.contacts || []),
+        emails: existingApp.emails && existingApp.emails.length > 0 ? existingApp.emails : (clippedApp.emails || []),
+        history: clippedApp.history || existingApp.history,
+        updatedAt: new Date().toISOString(),
+      };
+      next = [...currentApps];
+      next[existingIdx] = finalApp;
+    } else {
+      next = [finalApp, ...currentApps];
+    }
+
+    applicationsRef.current = next;
+    setApplications(next);
+
+    // Side effects performed strictly outside setApplications with computed values
     if (isUpdate) {
       if (user?.emailVerified) {
         ApplicationRepository.updateApplication(finalApp.id, finalApp, user.uid).catch((err) => {
@@ -503,7 +501,8 @@ function TrackletAppContent() {
     } else {
       if (user?.emailVerified && !persistedToCloud) {
         ApplicationRepository.addApplication(finalApp, user.uid).then((created) => {
-          setApplications((curr) => curr.map((a) => (a.id === finalApp.id ? created : a)));
+          applicationsRef.current = applicationsRef.current.map((a) => (a.id === finalApp.id ? created : a));
+          setApplications(applicationsRef.current);
         }).catch((err) => {
           console.error('Failed to add unpersisted application to Firestore:', err);
         });
@@ -516,7 +515,7 @@ function TrackletAppContent() {
     }
 
     if (!user?.emailVerified) {
-      ApplicationRepository.saveGuestApplications(nextApplicationsState);
+      ApplicationRepository.saveGuestApplications(next);
     }
   }, [user, addToast]);
 
@@ -1499,60 +1498,51 @@ function TrackletAppContent() {
   }, [duplicateGroups]);
 
   const handleMergeAllDuplicates = useCallback(async () => {
-    let purged: string[] = [];
-    let updatedSurvivors: Application[] = [];
-    let mergedResult: Application[] = [];
-    let survivorForSelected: string | null = null;
+    const currentApps = applicationsRef.current;
+    const groups = findDuplicateApplications(currentApps);
+    const { mergedApplications, purgedAppIds, updatedApplications } = mergeAllDuplicateGroups(currentApps);
 
-    setApplications((prev) => {
-      const groups = findDuplicateApplications(prev);
-      const result = mergeAllDuplicateGroups(prev);
-      purged = result.purgedAppIds;
-      updatedSurvivors = result.updatedApplications;
-      mergedResult = result.mergedApplications;
-
-      if (selectedAppId && purged.includes(selectedAppId)) {
-        for (const group of groups.values()) {
-          if (group.some((a) => a.id === selectedAppId)) {
-            const survivor = group.find((a) => !purged.includes(a.id));
-            if (survivor) survivorForSelected = survivor.id;
-            break;
-          }
-        }
-      }
-
-      return result.mergedApplications;
-    });
-
-    if (purged.length === 0) return;
+    if (purgedAppIds.length === 0) return;
 
     // Clean up local drafts and notify extension for each purged duplicate
-    purged.forEach((id) => {
+    purgedAppIds.forEach((id) => {
       clearNoteDraft(id);
       broadcastDeletedApplication(id);
     });
 
     // If currently selected application was one of the purged duplicates, select surviving record
-    if (selectedAppId && purged.includes(selectedAppId)) {
-      setSelectedAppId(survivorForSelected);
+    if (selectedAppId && purgedAppIds.includes(selectedAppId)) {
+      let survivorId: string | null = null;
+      for (const group of groups.values()) {
+        if (group.some((a) => a.id === selectedAppId)) {
+          const survivor = group.find((a) => !purgedAppIds.includes(a.id));
+          if (survivor) survivorId = survivor.id;
+          break;
+        }
+      }
+      setSelectedAppId(survivorId);
     }
 
+    // Update state and ref synchronously
+    applicationsRef.current = mergedApplications;
+    setApplications(mergedApplications);
+
     // Purge from guest storage cache regardless of auth mode
-    ApplicationRepository.purgeGuestApplications(purged);
+    ApplicationRepository.purgeGuestApplications(purgedAppIds);
 
     // In guest mode, save merged result so guest storage includes updated survivor fields
     if (!user?.emailVerified) {
-      ApplicationRepository.saveGuestApplications(mergedResult);
+      ApplicationRepository.saveGuestApplications(mergedApplications);
     }
 
     // Persist to Firestore if user is authenticated
     if (user?.emailVerified) {
       try {
         // Save each surviving merged record before batchDelete so a failed update cannot delete the only copy of merged data
-        for (const survivor of updatedSurvivors) {
+        for (const survivor of updatedApplications) {
           await ApplicationRepository.updateApplication(survivor.id, survivor, user.uid);
         }
-        await ApplicationRepository.batchDelete(purged, user.uid);
+        await ApplicationRepository.batchDelete(purgedAppIds, user.uid);
       } catch (err) {
         console.error('Failed to sync merged duplicates to Firestore:', err);
         addToast('error', 'Sync Failed', 'Merged locally, but failed to sync changes to cloud.');
@@ -1563,7 +1553,7 @@ function TrackletAppContent() {
     addToast(
       'success',
       'Duplicates Merged',
-      `Consolidated ${purged.length} duplicate application${purged.length === 1 ? '' : 's'}. Notes and pipeline stages preserved.`
+      `Consolidated ${purgedAppIds.length} duplicate application${purgedAppIds.length === 1 ? '' : 's'}. Notes and pipeline stages preserved.`
     );
   }, [selectedAppId, user, addToast]);
 

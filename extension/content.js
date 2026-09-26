@@ -729,7 +729,7 @@ function isTrackletOrigin() {
     if (hostname === 'tracklet.app' || hostname.endsWith('.tracklet.app')) return true;
     if (/^tracklet(-[a-z0-9-]+)?\.web\.app$/.test(hostname)) return true;
     if (/^tracklet(-[a-z0-9-]+)?\.firebaseapp\.com$/.test(hostname)) return true;
-    if (/^tracklet(-[a-z0-9-]+)?\.vercel\.app$/.test(hostname)) return true;
+    if (hostname === 'tracklet-eight.vercel.app') return true;
     return false;
   } catch {
     return false;
