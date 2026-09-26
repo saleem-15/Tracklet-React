@@ -38,51 +38,44 @@ export function getApplicationDedupKey(app: Pick<Application, 'company' | 'role'
  * Only returns groups that contain 2 or more applications.
  */
 export function findDuplicateApplications(applications: Application[]): Map<string, Application[]> {
-  const groups: Application[][] = [];
+  const groups = new Map<string, Application[]>();
 
   for (const app of applications) {
-    const appNormUrl = app.jobLink ? normalizeJobUrl(app.jobLink) : '';
-    const appComp = normalizeText(app.company);
-    const appRole = normalizeText(app.role);
+    // Check match by direct dedup key
+    const primaryKey = getApplicationDedupKey(app);
+    
+    // Also check company + role key if primary key was url
+    const compRoleKey = `comp_role:${normalizeText(app.company)}:::${normalizeText(app.role)}`;
 
-    let matchedGroup: Application[] | null = null;
+    let matchedGroupKey: string | null = null;
 
-    for (const group of groups) {
-      const isMatch = group.some((existing) => {
-        const existingNormUrl = existing.jobLink ? normalizeJobUrl(existing.jobLink) : '';
-        const existingComp = normalizeText(existing.company);
-        const existingRole = normalizeText(existing.role);
-
-        // When both applications have job links, match strictly if the normalized URLs are identical.
-        // If URLs are both present but different, they are distinct job postings (never duplicates).
-        if (appNormUrl && existingNormUrl) {
-          return appNormUrl === existingNormUrl;
-        }
-
-        // When at least one application lacks a job link, fall back to company-and-role matching
-        return Boolean(appComp && appRole && appComp === existingComp && appRole === existingRole);
+    const normUrl = app.jobLink ? normalizeJobUrl(app.jobLink) : '';
+    for (const [key, list] of groups) {
+      const hit = list.some((o) => {
+        const oUrl = o.jobLink ? normalizeJobUrl(o.jobLink) : '';
+        if (normUrl && oUrl) return normUrl === oUrl;
+        return `comp_role:${normalizeText(o.company)}:::${normalizeText(o.role)}` === compRoleKey
+          && Boolean(normalizeText(app.company) && normalizeText(app.role));
       });
-
-      if (isMatch) {
-        matchedGroup = group;
-        break;
-      }
+      if (hit) { matchedGroupKey = key; break; }
     }
 
-    if (matchedGroup) {
-      matchedGroup.push(app);
+    if (matchedGroupKey) {
+      groups.get(matchedGroupKey)!.push(app);
     } else {
-      groups.push([app]);
+      // Store under compRoleKey if no url, otherwise primaryKey
+      const keyToUse = compRoleKey.includes(':::') && normalizeText(app.company) && normalizeText(app.role)
+        ? compRoleKey
+        : primaryKey;
+      groups.set(keyToUse, [app]);
     }
   }
 
   // Filter to only groups with duplicates
   const duplicatesOnly = new Map<string, Application[]>();
-  for (const group of groups) {
-    if (group.length > 1) {
-      const primaryKey = getApplicationDedupKey(group[0]);
-      const uniqueKey = duplicatesOnly.has(primaryKey) ? `${primaryKey}__${duplicatesOnly.size}` : primaryKey;
-      duplicatesOnly.set(uniqueKey, group);
+  for (const [key, list] of groups.entries()) {
+    if (list.length > 1) {
+      duplicatesOnly.set(key, list);
     }
   }
 
