@@ -47,9 +47,10 @@ export class TemplateRepository {
 
         const docsData: FollowUpTemplate[] = [];
         querySnapshot.forEach((docSnap) => {
+          const data = docSnap.data() as Omit<FollowUpTemplate, 'id'>;
           docsData.push({
+            ...data,
             id: docSnap.id,
-            ...(docSnap.data() as Omit<FollowUpTemplate, 'id'>),
           });
         });
 

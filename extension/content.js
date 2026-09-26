@@ -773,6 +773,20 @@ window.addEventListener('message', (event) => {
         }
       });
     }
+  } else if (event.data.type === 'TRACKLET_EXT_DELETE_APPLICATION') {
+    const deletedId = event.data.payload?.id;
+    if (deletedId && typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+      chrome.storage.local.get(['tracklet_pending_apps', 'tracklet_guest_apps_v1', 'tracklet_apps_index'], (res) => {
+        const pending = (res?.tracklet_pending_apps || []).filter((a) => a?.id !== deletedId);
+        const guestApps = (res?.tracklet_guest_apps_v1 || []).filter((a) => a?.id !== deletedId);
+        const appsIndex = (res?.tracklet_apps_index || []).filter((a) => a?.id !== deletedId);
+        chrome.storage.local.set({
+          tracklet_pending_apps: pending,
+          tracklet_guest_apps_v1: guestApps,
+          tracklet_apps_index: appsIndex,
+        });
+      });
+    }
   }
 });
 

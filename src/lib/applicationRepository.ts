@@ -26,9 +26,10 @@ export class ApplicationRepository {
         const querySnapshot = await getDocs(userAppCol);
         const docsData: Application[] = [];
         querySnapshot.forEach((docSnap) => {
+          const data = docSnap.data() as Omit<Application, 'id'>;
           docsData.push({
-            id: docSnap.id,
-            ...(docSnap.data() as Omit<Application, 'id'>),
+            ...data,
+            id: docSnap.id, // Firestore document ID is ALWAYS authoritative
           });
         });
 
@@ -96,8 +97,9 @@ export class ApplicationRepository {
     if (userId) {
       let createdId = '';
       try {
+        const { id: _ignoredId, ...restOfAppData } = appData as unknown as Record<string, unknown>;
         const payload = sanitizeForFirestore({
-          ...appData,
+          ...restOfAppData,
           userId,
         });
         const docRef = await addDoc(collection(db, 'users', userId, 'applications'), payload);
@@ -137,15 +139,17 @@ export class ApplicationRepository {
     if (userId) {
       try {
         const docRef = doc(db, 'users', userId, 'applications', id);
+        const { id: _ignoreUpdateId, ...restOfUpdates } = cleanUpdates as unknown as Record<string, unknown>;
         if (fullApp) {
+          const { id: _ignoreFullId, ...restOfFullApp } = fullApp as unknown as Record<string, unknown>;
           const payload = sanitizeForFirestore({
-            ...fullApp,
-            ...cleanUpdates,
+            ...restOfFullApp,
+            ...restOfUpdates,
             userId,
           });
           await setDoc(docRef, payload, { merge: true });
         } else {
-          const updatedFields = sanitizeForFirestore(cleanUpdates);
+          const updatedFields = sanitizeForFirestore(restOfUpdates);
           await updateDoc(docRef, updatedFields);
         }
       } catch (err) {

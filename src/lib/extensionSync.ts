@@ -20,6 +20,7 @@ export interface ExtensionSyncCallbacks {
   onApplicationReceived: (app: Application, persistedToCloud?: boolean) => void;
   onApplicationUpdated?: (app: Application) => void;
   onEmailReceived?: (payload: IncomingEmailPayload) => void;
+  onApplicationDeleted?: (appId: string) => void;
 }
 
 export interface SyncedAppIndexItem {
@@ -109,6 +110,17 @@ export async function syncAuthSessionToExtension(user: User | null): Promise<voi
  * Initializes listeners for extension events (BroadcastChannel & postMessage)
  */
 export function setupExtensionSync(callbacks: ExtensionSyncCallbacks): () => void {
+  // Deduplication cache to prevent dual-delivery between BroadcastChannel and postMessage
+  const processedAppEvents = new Set<string>();
+  const isDuplicateAppEvent = (appId: string, timestamp?: string): boolean => {
+    if (!appId) return false;
+    const key = `${appId}:::${timestamp || ''}`;
+    if (processedAppEvents.has(key)) return true;
+    processedAppEvents.add(key);
+    setTimeout(() => processedAppEvents.delete(key), 8000);
+    return false;
+  };
+
   // 1. BroadcastChannel Listener (Cross-tab messaging)
   let channel: BroadcastChannel | null = null;
   try {
@@ -118,8 +130,15 @@ export function setupExtensionSync(callbacks: ExtensionSyncCallbacks): () => voi
 
       if (event.data.type === 'TRACKLET_EXT_ADD_APPLICATION') {
         const app: Application = event.data.payload;
-        const persistedToCloud: boolean = Boolean(event.data.persistedToCloud);
-        callbacks.onApplicationReceived(app, persistedToCloud);
+        if (!app?.id || !isDuplicateAppEvent(app.id, app.updatedAt)) {
+          const persistedToCloud: boolean = Boolean(event.data.persistedToCloud);
+          callbacks.onApplicationReceived(app, persistedToCloud);
+        }
+      } else if (event.data.type === 'TRACKLET_EXT_DELETE_APPLICATION') {
+        const appId = event.data.payload?.id;
+        if (appId) {
+          callbacks.onApplicationDeleted?.(appId);
+        }
       } else if (event.data.type === 'TRACKLET_EXT_ADD_EMAIL') {
         callbacks.onEmailReceived?.(event.data.payload);
       } else if (event.data.type === 'REQUEST_TRACKLET_AUTH') {
@@ -147,8 +166,15 @@ export function setupExtensionSync(callbacks: ExtensionSyncCallbacks): () => voi
     if (event.source !== window) return;
     if (event.data && event.data.type === 'TRACKLET_EXT_ADD_APPLICATION') {
       const app: Application = event.data.payload;
-      const persistedToCloud: boolean = Boolean(event.data.persistedToCloud);
-      callbacks.onApplicationReceived(app, persistedToCloud);
+      if (!app?.id || !isDuplicateAppEvent(app.id, app.updatedAt)) {
+        const persistedToCloud: boolean = Boolean(event.data.persistedToCloud);
+        callbacks.onApplicationReceived(app, persistedToCloud);
+      }
+    } else if (event.data && event.data.type === 'TRACKLET_EXT_DELETE_APPLICATION') {
+      const appId = event.data.payload?.id;
+      if (appId) {
+        callbacks.onApplicationDeleted?.(appId);
+      }
     } else if (event.data && event.data.type === 'TRACKLET_EXT_ADD_EMAIL') {
       callbacks.onEmailReceived?.(event.data.payload);
     }
@@ -294,4 +320,34 @@ export function syncApplicationsToExtension(applications: Application[]): void {
     });
   }
 }
+
+/**
+ * Broadcasts application deletion across tabs and notifies the extension to purge it from its queues.
+ */
+export function broadcastDeletedApplication(appId: string): void {
+  if (!appId) return;
+
+  // 1. Post to window for extension content script
+  try {
+    window.postMessage({
+      type: 'TRACKLET_EXT_DELETE_APPLICATION',
+      payload: { id: appId }
+    }, window.location.origin);
+  } catch {
+    // ignore
+  }
+
+  // 2. BroadcastChannel across all same-origin tabs
+  try {
+    const channel = new BroadcastChannel(BROADCAST_CHANNEL_NAME);
+    channel.postMessage({
+      type: 'TRACKLET_EXT_DELETE_APPLICATION',
+      payload: { id: appId }
+    });
+    channel.close();
+  } catch {
+    // ignore
+  }
+}
+
 
