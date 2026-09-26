@@ -69,6 +69,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   let discoveredRecruiterName = '';
   let discoveredRecruiterEmail = '';
   let currentEmailUrl = '';
+  let currentEmailTimestamp = null; // Full ISO 8601 string e.g. "2026-09-25T14:35:10"
   let isWebmailMode = false;
   let rawExtractedEmailData = null;
 
@@ -800,6 +801,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       emailDateInput.value = emailData.date || today;
       emailBodyInput.value = emailData.body || emailData.snippet || '';
       currentEmailUrl = emailData.emailUrl || tab.url || '';
+      currentEmailTimestamp = emailData.timestamp || null;
 
       if (headerModeChip && headerModeText) {
         headerModeChip.style.display = 'inline-flex';
@@ -1138,6 +1140,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       sender: isOutbound ? (currentUserSession?.email || 'You') : counterparty,
       recipient: isOutbound ? counterparty : (currentUserSession?.email || undefined),
       date: emailDateInput.value || today,
+      // Carry full timestamp if available; derive from date input as midnight fallback
+      timestamp: currentEmailTimestamp || `${emailDateInput.value || today}T00:00:00`,
       direction: currentEmailDirection,
       snippet: emailBodyInput.value.trim().slice(0, 200),
       body: emailBodyInput.value.trim(),

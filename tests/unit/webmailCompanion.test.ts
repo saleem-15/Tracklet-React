@@ -39,17 +39,69 @@ const MONTH_MAP: Record<string, number> = {
   oct: 10, october: 10, octobre: 10,
   nov: 11, november: 11, novembre: 11,
   dec: 12, december: 12, decembre: 12,
-  'يناير': 1, 'فبراير': 2, 'مارس': 3, 'أبريل': 4, 'ابريل': 4, 'مايو': 5, 'يونيو': 6, 'يوليو': 7, 'أغسطس': 8, 'اغسطس': 8, 'سبتمبر': 9, 'أكتوبر': 10, 'اكتوبر': 10, 'نوفمبر': 11, 'ديسمبر': 12
+  // Standard & Egyptian Arabic
+  'يناير': 1, 'فبراير': 2, 'مارس': 3, 'أبريل': 4, 'ابريل': 4, 'مايو': 5, 'يونيو': 6, 'يوليو': 7, 'أغسطس': 8, 'اغسطس': 8, 'سبتمبر': 9, 'أكتوبر': 10, 'اكتوبر': 10, 'نوفمبر': 11, 'ديسمبر': 12,
+  // Levant & Mesopotamian Arabic (Jordan, Palestine, Syria, Lebanon, Iraq)
+  'كانون الثاني': 1, 'شباط': 2, 'آذار': 3, 'اذار': 3, 'نيسان': 4, 'أيار': 5, 'ايار': 5, 'حزيران': 6, 'تموز': 7, 'آب': 8, 'اب': 8, 'أيلول': 9, 'ايلول': 9, 'تشرين الأول': 10, 'تشرين الاول': 10, 'تشرين الثاني': 11, 'كانون الأول': 12, 'كانون الاول': 12,
+  // North African Arabic
+  'جانفي': 1, 'فيفري': 2, 'أفريل': 4, 'افريل': 4, 'ماي': 5, 'جوان': 6, 'جويلية': 7, 'أوت': 8, 'اوت': 8
 };
+
+function normalizeNumerals(str: string): string {
+  if (!str) return '';
+  const easternDigits = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+  const persianDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+  return String(str)
+    .replace(/[٠-٩]/g, d => String(easternDigits.indexOf(d)))
+    .replace(/[۰-۹]/g, d => String(persianDigits.indexOf(d)));
+}
+
+function looksLikeDate(str: string): boolean {
+  if (!str || typeof str !== 'string') return false;
+  const s = str.trim();
+  if (!s || s.length < 2) return false;
+
+  // Reject UI button labels, tooltips, or actions
+  if (/^(show details|reply|forward|more|details|star|not starred|labels|archive|delete|snooze|print|unread|mark as|to:|from:|cc:|bcc:)/i.test(s)) {
+    return false;
+  }
+
+  const norm = normalizeNumerals(s.toLowerCase());
+
+  // 1. Explicit 4-digit year (e.g. 2024..2035)
+  if (/\b20\d{2}\b/.test(norm)) return true;
+
+  // 2. Month keywords (English, French, Arabic Standard, Levant, North African)
+  if (/(jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec|يناير|فبراير|مارس|أبريل|ابريل|مايو|يونيو|يوليو|أغسطس|اغسطس|سبتمبر|أكتوبر|اكتوبر|نوفمبر|ديسمبر|كانون|شباط|آذار|اذار|نيسان|أيار|ايار|حزيران|تموز|آب|اب|أيلول|ايلول|تشرين|جانفي|فيفري|أفريل|افريل|ماي|جوان|جويلية|أوت|اوت)/i.test(norm)) {
+    return true;
+  }
+
+  // 3. Numeric calendar format: DD/MM/YYYY, MM/DD/YYYY, DD.MM.YYYY, YYYY-MM-DD
+  if (/\b\d{1,2}[./-]\d{1,2}(?:[./-]\d{2,4})?\b/.test(norm)) return true;
+
+  // 4. Relative expressions: "2 weeks ago", "25 days ago", "yesterday", "today"
+  if (/\b(\d+)\s*(days?|weeks?|months?|hours?|mins?|minutes?)\s*ago\b/i.test(norm) || /\b(yesterday|today)\b/i.test(norm)) {
+    return true;
+  }
+
+  // 5. Weekday tokens: "Mon", "Tuesday", etc.
+  if (/\b(sun|mon|tue|wed|thu|fri|sat)[a-z]*\b/i.test(norm)) return true;
+
+  // 6. Time tokens: "10:15 AM", "14:30"
+  if (/^\d{1,2}:\d{2}(?::\d{2})?(\s*(am|pm))?$/i.test(norm)) return true;
+
+  return false;
+}
 
 function parseDateToIso(dateStr: string, refDate: Date = new Date()): string {
   if (!dateStr) return formatDateParts(refDate);
 
-  // 1. Sanitize string: strip zero-width and bidirectional formatting marks (\u200E, \u200F, BOM)
-  let raw = String(dateStr)
-    .replace(/[\u200B-\u200D\uFEFF\u200E\u200F]/g, '')
-    .replace(/[\u00A0\u202F\u2000-\u200A]/g, ' ')
-    .trim();
+  // 1. Sanitize string: normalize Eastern/Persian digits, strip zero-width marks (\u200E, \u200F, BOM)
+  let raw = normalizeNumerals(
+    String(dateStr)
+      .replace(/[\u200B-\u200D\uFEFF\u200E\u200F]/g, '')
+      .replace(/[\u00A0\u202F\u2000-\u200A]/g, ' ')
+  ).trim();
   if (!raw) return formatDateParts(refDate);
 
   // 2. Unix numeric timestamp (10-digit seconds or 13-digit milliseconds)
@@ -61,7 +113,7 @@ function parseDateToIso(dateStr: string, refDate: Date = new Date()): string {
     }
   }
 
-  // 3. Clean string: strip parenthesized annotations (e.g. '(2 days ago)', '(UTC+3)'), prefixes, 'at'
+  // 3. Clean string: strip parenthesized annotations (e.g. '(25 days ago)', '(2 days ago)', '(UTC+3)'), prefixes, 'at'
   let clean = raw
     .replace(/\s*\([^)]*\)/g, ' ')
     .replace(/\s+at\s+/i, ' ')
@@ -69,7 +121,7 @@ function parseDateToIso(dateStr: string, refDate: Date = new Date()): string {
     .replace(/\s+/g, ' ')
     .trim();
 
-  // 4. Relative keywords
+  // 4. Relative keywords (days ago, weeks ago, months ago, yesterday, today)
   const lower = clean.toLowerCase();
   if (lower === 'today' || /^\d{1,2}:\d{2}(?::\d{2})?(\s*(?:am|pm))?$/i.test(lower)) {
     return formatDateParts(refDate);
@@ -82,6 +134,18 @@ function parseDateToIso(dateStr: string, refDate: Date = new Date()): string {
   if (daysAgoMatch) {
     const days = parseInt(daysAgoMatch[1], 10);
     const d = new Date(refDate.getTime() - days * 86400000);
+    return formatDateParts(d);
+  }
+  const weeksAgoMatch = lower.match(/^(\d+)\s+weeks?\s+ago/);
+  if (weeksAgoMatch) {
+    const weeks = parseInt(weeksAgoMatch[1], 10);
+    const d = new Date(refDate.getTime() - weeks * 7 * 86400000);
+    return formatDateParts(d);
+  }
+  const monthsAgoMatch = lower.match(/^(\d+)\s+months?\s+ago/);
+  if (monthsAgoMatch) {
+    const months = parseInt(monthsAgoMatch[1], 10);
+    const d = new Date(refDate.getTime() - months * 30 * 86400000);
     return formatDateParts(d);
   }
 
@@ -100,9 +164,10 @@ function parseDateToIso(dateStr: string, refDate: Date = new Date()): string {
   const yearMatch = clean.match(/\b(20\d{2})\b/);
   const explicitYear = yearMatch ? parseInt(yearMatch[1], 10) : null;
 
-  const m1 = clean.match(/(?:^|\s)([a-zA-Z\u0600-\u06FF]+)[.,]?\s+(\d{1,2})(?:st|nd|rd|th)?(?:\s*,\s*|\s+|$)/i);
+  // Match month word then day: "September 1", "Sep 1, 2026", "أيلول 1", "سبتمبر 1"
+  const m1 = clean.match(/(?:^|\s)([a-zA-Z\u0600-\u06FF\s]+?)[.,]?\s+(\d{1,2})(?:st|nd|rd|th)?(?:\s*,\s*|\s+|$)/i);
   if (m1) {
-    const key = m1[1].toLowerCase();
+    const key = m1[1].trim().toLowerCase();
     const month = MONTH_MAP[key] || MONTH_MAP[key.slice(0, 3)];
     if (month) {
       const day = parseInt(m1[2], 10);
@@ -117,9 +182,10 @@ function parseDateToIso(dateStr: string, refDate: Date = new Date()): string {
     }
   }
 
-  const m2 = clean.match(/(?:^|\s)(\d{1,2})(?:st|nd|rd|th)?\s+([a-zA-Z\u0600-\u06FF]+)[.,]?(?:\s*,\s*|\s+|$)/i);
+  // Match day then month word: "1 September", "1 Sep 2026", "1 أيلول 2026", "1 سبتمبر"
+  const m2 = clean.match(/(?:^|\s)(\d{1,2})(?:st|nd|rd|th)?\s+([a-zA-Z\u0600-\u06FF\s]+?)[.,]?(?:\s*,\s*|\s+|$)/i);
   if (m2) {
-    const key = m2[2].toLowerCase();
+    const key = m2[2].trim().toLowerCase();
     const month = MONTH_MAP[key] || MONTH_MAP[key.slice(0, 3)];
     if (month) {
       const day = parseInt(m2[1], 10);
@@ -830,6 +896,36 @@ describe('Webmail Companion Engine', () => {
       expect(parseDateToIso('10 Sept 2026', refDate)).toBe('2026-09-10');
       expect(parseDateToIso('10 سبتمبر 2026', refDate)).toBe('2026-09-10');
       expect(parseDateToIso('سبتمبر 10', refDate)).toBe('2026-09-10');
+    });
+
+    it('handles Eastern Arabic numerals and Levant Arabic months (e.g. أيلول for September)', () => {
+      expect(parseDateToIso('١ سبتمبر ٢٠٢٦', refDate)).toBe('2026-09-01');
+      expect(parseDateToIso('١ أيلول ٢٠٢٦', refDate)).toBe('2026-09-01');
+      expect(parseDateToIso('1 أيلول 2026', refDate)).toBe('2026-09-01');
+      expect(parseDateToIso('أيلول 1, 2026', refDate)).toBe('2026-09-01');
+    });
+
+    it('handles relative week and day expressions from older emails (e.g. 2 weeks ago, 25 days ago)', () => {
+      const sept26 = new Date('2026-09-26T12:00:00Z');
+      expect(parseDateToIso('2 weeks ago', sept26)).toBe('2026-09-12');
+      expect(parseDateToIso('3 weeks ago', sept26)).toBe('2026-09-05');
+      expect(parseDateToIso('25 days ago', sept26)).toBe('2026-09-01');
+      expect(parseDateToIso('Sep 1, 2026, 10:15 AM (25 days ago)', sept26)).toBe('2026-09-01');
+      expect(parseDateToIso('Sep 1', sept26)).toBe('2026-09-01');
+      expect(parseDateToIso('Tuesday, September 1, 2026 at 10:15:32 AM GMT+3', sept26)).toBe('2026-09-01');
+    });
+
+    it('looksLikeDate correctly identifies valid dates and rejects UI button tooltips', () => {
+      expect(looksLikeDate('Show details')).toBe(false);
+      expect(looksLikeDate('Reply to: John Doe')).toBe(false);
+      expect(looksLikeDate('Labels: Inbox')).toBe(false);
+      expect(looksLikeDate('Not starred')).toBe(false);
+      expect(looksLikeDate('More options')).toBe(false);
+      expect(looksLikeDate('Sep 1, 2026, 10:15 AM')).toBe(true);
+      expect(looksLikeDate('١ أيلول ٢٠٢٦')).toBe(true);
+      expect(looksLikeDate('2 weeks ago')).toBe(true);
+      expect(looksLikeDate('2026-09-01T10:15:00Z')).toBe(true);
+      expect(looksLikeDate('Sep 1')).toBe(true);
     });
   });
 
