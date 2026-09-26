@@ -230,13 +230,15 @@ function extractPageData() {
 // --- Webmail Detection & Extraction Engine ---
 
 const ATS_DOMAINS = [
-  'greenhouse.io', 'greenhouse-mail.io',
+  'greenhouse.io', 'greenhouse-mail.io', 'gh-mail.io',
   'lever.co', 'hire.lever.co',
   'ashbyhq.com', 'ashby-mail.com',
   'smartrecruiters.com',
-  'workday.com', 'myworkday.com',
+  'workday.com', 'myworkday.com', 'workdayjobs.com',
   'jobvite.com', 'recruitee.com',
-  'rippling.com', 'bamboohr.com'
+  'rippling.com', 'bamboohr.com',
+  'breezy.hr', 'pinpointhq.com',
+  'jazzhr.com', 'icims.com'
 ];
 
 function isWebmailUrl(urlStr) {
@@ -564,8 +566,12 @@ function parseGmailThread(currentUserEmail) {
     counterpartyDomain = counterpartyEmail.split('@')[1].toLowerCase().trim();
   }
 
-  // ATS Disambiguation: if counterparty domain is an ATS domain
-  const isAts = ATS_DOMAINS.some(ats => counterpartyDomain.includes(ats));
+  // ATS Disambiguation: if counterparty, sender, or recipient domain is an ATS domain
+  const isAts = ATS_DOMAINS.some(ats => 
+    (counterpartyDomain && counterpartyDomain.includes(ats)) ||
+    (senderEmail && senderEmail.toLowerCase().includes(ats)) ||
+    (recipientEmail && recipientEmail.toLowerCase().includes(ats))
+  );
 
   return {
     provider: 'gmail',
@@ -655,7 +661,11 @@ function parseOutlookThread(currentUserEmail) {
   if (counterpartyEmail && counterpartyEmail.includes('@')) {
     counterpartyDomain = counterpartyEmail.split('@')[1].toLowerCase().trim();
   }
-  const isAts = ATS_DOMAINS.some(ats => counterpartyDomain.includes(ats));
+  const isAts = ATS_DOMAINS.some(ats => 
+    (counterpartyDomain && counterpartyDomain.includes(ats)) ||
+    (senderEmail && senderEmail.toLowerCase().includes(ats)) ||
+    (recipientEmail && recipientEmail.toLowerCase().includes(ats))
+  );
 
   return {
     provider: 'outlook',

@@ -4,7 +4,7 @@
  * for browser extension clipped applications.
  */
 
-import { Application, ApplicationStatus, EmailLog } from '../types';
+import { Application, ApplicationStatus, Contact, EmailLog } from '../types';
 import { User } from './firebase';
 
 declare const chrome: any;
@@ -262,9 +262,24 @@ export function normalizeJobUrl(url: string): string {
 }
 
 /**
- * Syncs the current list of saved applications to the extension for instant duplicate detection and email matching
+ * Syncs the current list of saved applications and contacts to the extension for instant duplicate detection and email matching
  */
-export function syncApplicationsToExtension(applications: Application[]): void {
+export function syncApplicationsToExtension(applications: Application[], contacts?: Contact[]): void {
+  const contactsByAppId = new Map<string, string[]>();
+  if (contacts && Array.isArray(contacts)) {
+    contacts.forEach((c) => {
+      const email = c.email?.toLowerCase().trim();
+      if (email && c.applicationIds && Array.isArray(c.applicationIds)) {
+        c.applicationIds.forEach((appId) => {
+          if (!contactsByAppId.has(appId)) {
+            contactsByAppId.set(appId, []);
+          }
+          contactsByAppId.get(appId)!.push(email);
+        });
+      }
+    });
+  }
+
   const index: SyncedAppIndexItem[] = applications.map((a) => {
     const contactEmailsSet = new Set<string>();
     if (a.contactEmail) {
@@ -274,6 +289,10 @@ export function syncApplicationsToExtension(applications: Application[]): void {
       a.contacts.forEach((c) => {
         if (c.email) contactEmailsSet.add(c.email.toLowerCase().trim());
       });
+    }
+    const standaloneEmails = contactsByAppId.get(a.id);
+    if (standaloneEmails) {
+      standaloneEmails.forEach((email) => contactEmailsSet.add(email));
     }
 
     return {

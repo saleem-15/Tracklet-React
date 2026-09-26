@@ -208,9 +208,144 @@ interface ApplicationSummary {
   company: string;
   role: string;
   status: string;
+  jobLink?: string;
   companyDomain?: string;
   contactEmail?: string;
   contactEmails?: string[];
+}
+
+function normalizeCompanyName(name: string): string {
+  if (!name) return '';
+  return name
+    .toLowerCase()
+    .replace(/\b(inc|incorporated|llc|ltd|limited|corp|corporation|technologies|technology|solutions|group|holdings|services|gmbh|co|sa|ag|pty|pte)\b/gi, ' ')
+    .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function extractDomainFromUrl(url?: string): string {
+  if (!url) return '';
+  try {
+    const parsed = new URL(url.startsWith('http') ? url : `https://${url}`);
+    let host = parsed.hostname.toLowerCase().replace(/^www\./, '');
+    if (/linkedin|indeed|glassdoor|monster|ziprecruiter|simplyhired/.test(host)) {
+      return '';
+    }
+    if (ATS_DOMAINS.some(ats => host.includes(ats))) {
+      return '';
+    }
+    return host;
+  } catch {
+    return '';
+  }
+}
+
+function extractAtsSlugFromUrl(url?: string): string {
+  if (!url) return '';
+  try {
+    const parsed = new URL(url.startsWith('http') ? url : `https://${url}`);
+    const host = parsed.hostname.toLowerCase().replace(/^www\./, '');
+    const pathname = parsed.pathname.toLowerCase();
+
+    // boards.greenhouse.io/{slug} or job-boards.greenhouse.io/{slug}
+    if (host.includes('greenhouse.io')) {
+      const match = pathname.match(/^\/(?:embed\/job_board\/|boards\/|job-boards\/)?([a-z0-9-]+)/);
+      if (match && !['jobs', 'search', 'embed'].includes(match[1])) return match[1];
+    }
+    // jobs.lever.co/{slug}
+    if (host.includes('lever.co')) {
+      const match = pathname.match(/^\/([a-z0-9-]+)/);
+      if (match && !['jobs', 'apply'].includes(match[1])) return match[1];
+    }
+    // jobs.ashbyhq.com/{slug}
+    if (host.includes('ashbyhq.com')) {
+      const match = pathname.match(/^\/([a-z0-9-]+)/);
+      if (match && !['jobs'].includes(match[1])) return match[1];
+    }
+    // {slug}.workdayjobs.com or {slug}.recruitee.com
+    const subMatch = host.match(/^([a-z0-9-]+)\.(?:workdayjobs|greenhouse|lever|recruitee)\./);
+    if (subMatch && !['jobs', 'boards', 'www'].includes(subMatch[1])) return subMatch[1];
+
+    return '';
+  } catch {
+    return '';
+  }
+}
+
+function cleanDomain(d?: string): string {
+  if (!d) return '';
+  return d.toLowerCase()
+    .replace(/^https?:\/\//, '')
+    .replace(/^www\./, '')
+    .replace(/\/.*$/, '')
+    .trim();
+}
+
+function isGenericRecruitingWord(word?: string): boolean {
+  const w = (word || '').toLowerCase().trim();
+  return [
+    'recruiting', 'recruitment', 'talent', 'careers', 'hiring', 'team',
+    'greenhouse', 'lever', 'ashby', 'workday', 'jobvite', 'smartrecruiters',
+    'interview', 'interviews', 'hr', 'people', 'human resources'
+  ].includes(w) || w.length < 2;
+}
+
+function extractCompanyFromAts(senderName?: string, senderEmail?: string, subject?: string): string {
+  const name = (senderName || '').trim();
+  const subj = (subject || '').trim();
+  const text = `${name} ${subj}`;
+
+  // 1. "[Company] via [ATS]" (e.g. "Stripe via Greenhouse", "Figma via Lever")
+  const viaMatch = text.match(/([A-Z0-9a-z\s&'-]+?)\s+(?:via|by|through)\s+(?:greenhouse|lever|ashby|smartrecruiters|workday|jobvite|recruitee|rippling|bamboohr|icims|jazzhr)/i);
+  if (viaMatch && viaMatch[1].trim()) {
+    const candidate = viaMatch[1].trim();
+    if (!isGenericRecruitingWord(candidate)) return candidate;
+  }
+
+  // 2. Parentheses or brackets in sender name: "Jane Doe (Stripe)" or "Jane Doe [Stripe]"
+  const parenMatch = name.match(/[\(\[]([A-Z0-9a-z\s&'-]+)[\)\]]/);
+  if (parenMatch && parenMatch[1].trim()) {
+    const candidate = parenMatch[1].trim();
+    if (!isGenericRecruitingWord(candidate)) return candidate;
+  }
+
+  // 3. "Jane Doe at Stripe" or "Jane Doe from Stripe"
+  const atFromMatch = name.match(/(?:at|from)\s+([A-Z0-9a-z\s&'-]+)$/i);
+  if (atFromMatch && atFromMatch[1].trim()) {
+    const candidate = atFromMatch[1].trim();
+    if (!isGenericRecruitingWord(candidate)) return candidate;
+  }
+
+  // 4. "[Company] Recruiting" or "[Company] Talent" or "[Company] Careers" or "[Company] Team"
+  const teamMatch = name.match(/^([A-Z0-9a-z\s&'-]+?)\s+(?:recruiting|recruitment|talent|careers|hiring|team)\b/i);
+  if (teamMatch && teamMatch[1].trim()) {
+    const candidate = teamMatch[1].trim();
+    if (!isGenericRecruitingWord(candidate)) return candidate;
+  }
+
+  // 5. Subject patterns: "Thank you for applying to [Company]" or "Application to [Company]" or "Interview with [Company]"
+  const subjActionMatch = subj.match(/(?:applying to|application to|interview with|welcome to|next steps with)\s+([A-Z0-9a-z\s&'-]+?)(?:[:,\.\?!]|\s+for\b|\s+as\b|$)/i);
+  if (subjActionMatch && subjActionMatch[1].trim()) {
+    const candidate = subjActionMatch[1].trim();
+    if (!isGenericRecruitingWord(candidate)) return candidate;
+  }
+
+  // 6. Subdomain or prefix in sender email e.g. "company@ashby-mail.com" or "company.greenhouse.io"
+  if (senderEmail) {
+    const emailDomain = senderEmail.includes('@') ? senderEmail.split('@')[1].toLowerCase() : senderEmail.toLowerCase();
+    const emailPrefix = senderEmail.includes('@') ? senderEmail.split('@')[0].toLowerCase() : '';
+    const subMatch = emailDomain.match(/^([a-z0-9-]+)\.(?:greenhouse\.io|lever\.co|smartrecruiters\.com|workday\.com|recruitee\.com)/i);
+    if (subMatch && subMatch[1] && !['no-reply', 'mail', 'hire', 'jobs', 'notifications'].includes(subMatch[1])) {
+      return subMatch[1];
+    }
+    if ((emailDomain.includes('ashby-mail') || emailDomain.includes('greenhouse-mail') || emailDomain.includes('gh-mail')) && 
+        emailPrefix && !['no-reply', 'notifications', 'interviews', 'jobs', 'mailer', 'talent'].includes(emailPrefix)) {
+      return emailPrefix;
+    }
+  }
+
+  return '';
 }
 
 function matchEmailToApplications(
@@ -220,6 +355,9 @@ function matchEmailToApplications(
     counterpartyDomain?: string;
     subject?: string;
     senderName?: string;
+    sender?: string;
+    body?: string;
+    snippet?: string;
     isAts?: boolean;
   },
   allKnownApps: ApplicationSummary[]
@@ -228,16 +366,24 @@ function matchEmailToApplications(
 
   const senderEmail = (emailData.senderEmail || '').toLowerCase().trim();
   const recipientEmail = (emailData.recipientEmail || '').toLowerCase().trim();
-  const domain = (emailData.counterpartyDomain || '').toLowerCase().trim();
+  const domain = cleanDomain(emailData.counterpartyDomain);
   const subject = (emailData.subject || '').toLowerCase().trim();
   const senderName = (emailData.senderName || '').toLowerCase().trim();
+  const bodyText = (emailData.body || emailData.snippet || '').toLowerCase().trim();
+  const snippetText = (emailData.snippet || '').toLowerCase().trim();
+
+  const isEmailDomainAts = Boolean(emailData.isAts) || ATS_DOMAINS.some(ats => domain.includes(ats));
+  const atsCompanyCandidate = normalizeCompanyName(extractCompanyFromAts(senderName, senderEmail, subject));
 
   const scored = allKnownApps.map(app => {
     let score = 0;
-    const appCompany = (app.company || '').toLowerCase().trim();
-    const appDomain = (app.companyDomain || '').toLowerCase().trim();
+    const rawAppCompany = (app.company || '').trim();
+    const normAppCompany = normalizeCompanyName(rawAppCompany);
+    const appDomain = cleanDomain(app.companyDomain) || extractDomainFromUrl(app.jobLink);
+    const atsJobSlug = extractAtsSlugFromUrl(app.jobLink);
     const contactEmail = (app.contactEmail || '').toLowerCase().trim();
     const contactEmails = (app.contactEmails || []).map(e => e.toLowerCase().trim());
+    const normRole = (app.role || '').toLowerCase().trim();
 
     // Tier 1: Direct Contact Match (100 pts)
     if (senderEmail && (senderEmail === contactEmail || contactEmails.includes(senderEmail))) {
@@ -247,27 +393,92 @@ function matchEmailToApplications(
     }
 
     // Tier 2: Company Domain Match (80 pts)
-    if (domain && appDomain && (domain === appDomain || domain.endsWith('.' + appDomain))) {
-      score += 80;
-    } else if (domain && appCompany && (domain.includes(appCompany) || appCompany.includes(domain.split('.')[0]))) {
-      score += 70;
+    // Never award generic ATS domain match unless the company itself is the ATS
+    if (domain && appDomain && (!isEmailDomainAts || normAppCompany.includes(domain.split('.')[0]))) {
+      if (domain === appDomain || domain.endsWith('.' + appDomain) || appDomain.endsWith('.' + domain)) {
+        score += 80;
+      }
     }
-
-    // Tier 3: ATS Disambiguation / Sender Display Name (60 pts)
-    if (emailData.isAts && appCompany) {
-      if (senderName && senderName.includes(appCompany)) {
+    
+    // Clean company domain slug match (e.g. domain is 'stripe.com' and company is 'Stripe')
+    if (domain && !isEmailDomainAts && normAppCompany && normAppCompany.length >= 3) {
+      const domainSlug = domain.split('.')[0];
+      if (domainSlug === normAppCompany) {
+        score += 75;
+      } else if (domainSlug.startsWith(normAppCompany) || normAppCompany.startsWith(domainSlug)) {
         score += 65;
       }
-      if (subject && subject.includes(appCompany)) {
-        score += 60;
+    }
+
+    // Match ATS slug from app's jobLink (e.g. boards.greenhouse.io/stripe/jobs/123 -> stripe)
+    if (atsJobSlug && atsJobSlug.length >= 3) {
+      if (domain && !isEmailDomainAts && domain.split('.')[0] === atsJobSlug) {
+        score += 75;
+      }
+      if (atsCompanyCandidate && (atsCompanyCandidate === atsJobSlug || atsJobSlug.includes(atsCompanyCandidate))) {
+        score += 70;
       }
     }
 
-    // Tier 4: Subject Mentions (40 pts)
-    if (appCompany && appCompany.length >= 3) {
-      const regex = new RegExp(`\\b${appCompany.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
-      if (regex.test(subject)) {
-        score += 45;
+    // Tier 3: ATS Disambiguation / Sender Display Name (70 pts)
+    if (isEmailDomainAts || /greenhouse|lever|ashby|smartrecruiters|workday/.test(domain)) {
+      if (atsCompanyCandidate && normAppCompany && (atsCompanyCandidate === normAppCompany || atsCompanyCandidate.includes(normAppCompany) || normAppCompany.includes(atsCompanyCandidate))) {
+        score += 70;
+      } else if (senderName && normAppCompany && normAppCompany.length >= 3) {
+        const nameRegex = new RegExp(`\\b${normAppCompany.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+        if (nameRegex.test(senderName)) {
+          score += 65;
+        }
+      }
+    }
+
+    // Tier 4: Subject Mentions (Word-Bounded, 50 pts)
+    const isShortStopWord = normAppCompany.length <= 2 || ['box', 'and', 'the', 'for', 'all', 'one', 'new', 'top', 'in', 'on', 'at', 'to', 'up', 'do'].includes(normAppCompany);
+    if (normAppCompany && normAppCompany.length >= 2) {
+      const escaped = normAppCompany.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      if (isShortStopWord) {
+        // Require contextual phrasing like "at Company" or "Company Team" for short names / stop words
+        const contextRegex = new RegExp(`(?:\\bat|\\bwith|\\bfor|\\bjoining|\\bteam)\\s+${escaped}\\b|\\b${escaped}\\s+(?:team|careers|recruiting|technologies|solutions)\\b`, 'i');
+        if (contextRegex.test(subject)) {
+          score += 50;
+        }
+      } else {
+        const subjRegex = new RegExp(`\\b${escaped}\\b`, 'i');
+        if (subjRegex.test(subject)) {
+          score += 50;
+        }
+      }
+    }
+
+    // Tier 5: Email Body & Snippet Mentions (Word-Bounded, 45-50 pts)
+    if (normAppCompany && normAppCompany.length >= 3 && bodyText) {
+      const isCommonWord = ['box', 'and', 'the', 'for', 'all', 'one', 'new', 'top', 'run', 'get'].includes(normAppCompany);
+      const escaped = normAppCompany.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      if (isCommonWord) {
+        const contextRegex = new RegExp(`(?:\\bat|\\bwith|\\bfor|\\bjoining|\\bteam)\\s+${escaped}\\b|\\b${escaped}\\s+(?:team|careers|recruiting|technologies|solutions)\\b`, 'i');
+        if (contextRegex.test(bodyText)) {
+          score += 45;
+        }
+      } else {
+        const bodyRegex = new RegExp(`\\b${escaped}\\b`, 'i');
+        if (bodyRegex.test(bodyText)) {
+          if (snippetText && bodyRegex.test(snippetText)) {
+            score += 50;
+          } else {
+            score += 45;
+          }
+        }
+      }
+    }
+
+    // Tier 6: Role / Title Mention in Subject or Body (+15-25 pts)
+    if (normRole && normRole.length >= 4) {
+      const escapedRole = normRole.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const roleRegex = new RegExp(`\\b${escapedRole}\\b`, 'i');
+      if (roleRegex.test(subject)) {
+        score += 25;
+      } else if (bodyText && roleRegex.test(bodyText)) {
+        score += 15;
       }
     }
 
@@ -275,10 +486,10 @@ function matchEmailToApplications(
   });
 
   const ranked = scored
-    .filter(item => item.score > 0)
+    .filter(item => item.score >= 40)
     .sort((a, b) => b.score - a.score);
 
-  const bestMatch = ranked.length > 0 ? ranked[0].app : null;
+  const bestMatch = (ranked.length > 0 && ranked[0].score >= 45) ? ranked[0].app : null;
   return { bestMatch, ranked: ranked.map(r => r.app) };
 }
 
@@ -407,6 +618,143 @@ describe('Webmail Companion Engine', () => {
 
       expect(match.bestMatch).toBeNull();
       expect(match.ranked.length).toBe(0);
+    });
+
+    it('normalizes legal suffixes in company names', () => {
+      expect(normalizeCompanyName('Stripe, Inc.')).toBe('stripe');
+      expect(normalizeCompanyName('Deliveroo Ltd.')).toBe('deliveroo');
+      expect(normalizeCompanyName('GitLab Inc.')).toBe('gitlab');
+      expect(normalizeCompanyName('Siemens AG')).toBe('siemens');
+      expect(normalizeCompanyName('Acme Technologies LLC')).toBe('acme');
+    });
+
+    it('extracts company name candidate from diverse ATS patterns', () => {
+      expect(extractCompanyFromAts('Figma via Lever', 'no-reply@lever.co', 'Your application')).toBe('Figma');
+      expect(extractCompanyFromAts('Sarah Chen (Stripe)', 'sarah@recruiting.com', 'Interview details')).toBe('Stripe');
+      expect(extractCompanyFromAts('Alex at Datadog', 'recruiting@external.com', 'Call tomorrow')).toBe('Datadog');
+      expect(extractCompanyFromAts('OpenAI Recruiting', 'no-reply@greenhouse.io', 'Update')).toBe('OpenAI');
+      expect(extractCompanyFromAts('Recruiting Team', 'no-reply@greenhouse.io', 'Interview with Linear')).toBe('Linear');
+      expect(extractCompanyFromAts('no-reply', 'stripe.greenhouse.io', 'Next steps')).toBe('stripe');
+      expect(extractCompanyFromAts('interviews', 'figma@ashby-mail.com', 'Schedule interview')).toBe('figma');
+    });
+
+    it('prevents generic ATS domains from false-matching unrelated applications', () => {
+      const appsWithAtsLinks: ApplicationSummary[] = [
+        {
+          id: 'app-stripe',
+          company: 'Stripe',
+          role: 'Engineer',
+          status: 'Applied',
+          jobLink: 'https://boards.greenhouse.io/stripe/jobs/123'
+        },
+        {
+          id: 'app-datadog',
+          company: 'Datadog',
+          role: 'Engineer',
+          status: 'Applied',
+          jobLink: 'https://boards.greenhouse.io/datadog/jobs/456'
+        }
+      ];
+
+      // Generic email from Greenhouse with no company name in text should NOT match either application
+      const match = matchEmailToApplications({
+        senderEmail: 'no-reply@greenhouse.io',
+        counterpartyDomain: 'greenhouse.io',
+        subject: 'General ATS Maintenance Notification',
+        isAts: true
+      }, appsWithAtsLinks);
+
+      expect(match.bestMatch).toBeNull();
+    });
+
+    it('matches application from ATS jobLink slug fallback when companyDomain is empty', () => {
+      const appsWithoutDomain: ApplicationSummary[] = [
+        {
+          id: 'app-stripe-ats',
+          company: 'Stripe',
+          role: 'Backend Engineer',
+          status: 'Applied',
+          jobLink: 'https://boards.greenhouse.io/stripe/jobs/98765'
+        }
+      ];
+
+      const match = matchEmailToApplications({
+        senderEmail: 'recruiting@stripe.com',
+        counterpartyDomain: 'stripe.com',
+        subject: 'Quick chat'
+      }, appsWithoutDomain);
+
+      expect(match.bestMatch?.id).toBe('app-stripe-ats');
+    });
+
+    it('matches Tier 5: body and snippet keywords when subject is generic', () => {
+      const match = matchEmailToApplications({
+        senderEmail: 'hr-generic@unknownmail.com',
+        counterpartyDomain: 'unknownmail.com',
+        subject: 'Follow up from our call yesterday',
+        body: 'Thank you for your time chatting about the Product Designer opportunity at Figma. We would like to move you to the next round!',
+        snippet: 'Thank you for your time chatting about the Product Designer opportunity at Figma.'
+      }, mockApps);
+
+      expect(match.bestMatch?.id).toBe('app-figma');
+    });
+
+    it('prevents stop-word collisions for short company names', () => {
+      const stopWordApps: ApplicationSummary[] = [
+        {
+          id: 'app-in',
+          company: 'In',
+          role: 'Software Engineer',
+          status: 'Applied',
+          companyDomain: 'in.inc'
+        }
+      ];
+
+      // Preposition "in" should NOT trigger a match
+      const falseMatch = matchEmailToApplications({
+        senderEmail: 'newsletter@linkedin.com',
+        counterpartyDomain: 'linkedin.com',
+        subject: 'You appeared in 14 searches this week',
+        body: 'See who looked at your profile in the past 7 days'
+      }, stopWordApps);
+
+      expect(falseMatch.bestMatch).toBeNull();
+
+      // Contextual phrase "at In" or "Joining In" SHOULD match
+      const trueMatch = matchEmailToApplications({
+        senderEmail: 'recruiter@external.com',
+        counterpartyDomain: 'external.com',
+        subject: 'Joining In as Senior Engineer'
+      }, stopWordApps);
+
+      expect(trueMatch.bestMatch?.id).toBe('app-in');
+    });
+
+    it('uses role mention for disambiguation between applications at the same company', () => {
+      const multiRoleApps: ApplicationSummary[] = [
+        {
+          id: 'app-frontend',
+          company: 'Acme Corp',
+          role: 'Frontend Engineer',
+          status: 'Applied',
+          companyDomain: 'acme.com'
+        },
+        {
+          id: 'app-backend',
+          company: 'Acme Corp',
+          role: 'Backend Engineer',
+          status: 'Applied',
+          companyDomain: 'acme.com'
+        }
+      ];
+
+      const match = matchEmailToApplications({
+        senderEmail: 'recruiting@acme.com',
+        counterpartyDomain: 'acme.com',
+        subject: 'Interview for Frontend Engineer position at Acme Corp'
+      }, multiRoleApps);
+
+      expect(match.bestMatch?.id).toBe('app-frontend');
     });
   });
 
