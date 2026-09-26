@@ -53,9 +53,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   const emailCounterpartyLabel = document.getElementById('email-counterparty-label');
   const counterpartyLabelText = document.getElementById('counterparty-label-text');
   const emailDateInput = document.getElementById('email-date');
-  const emailThreadLinkChip = document.getElementById('email-thread-link-chip');
-  const emailThreadLinkText = document.getElementById('email-thread-link-text');
   const emailBodyInput = document.getElementById('email-body');
+  const headerModeChip = document.getElementById('header-mode-chip');
+  const headerModeText = document.getElementById('header-mode-text');
   const milestoneBox = document.getElementById('milestone-box');
   const addContactOption = document.getElementById('add-contact-option');
   const addContactCheckbox = document.getElementById('add-contact-checkbox');
@@ -69,6 +69,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   let discoveredRecruiterName = '';
   let discoveredRecruiterEmail = '';
   let currentEmailUrl = '';
+  let currentEmailTimestamp = null; // Full ISO 8601 string e.g. "2026-09-25T14:35:10"
   let isWebmailMode = false;
   let rawExtractedEmailData = null;
 
@@ -240,10 +241,31 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  // Close dropdowns on outside click
-  document.addEventListener('click', () => {
+  // Close dropdowns & popovers on outside click
+  document.addEventListener('click', (e) => {
     platformSelectContainer.classList.remove('open');
     stageSelectorContainer.classList.remove('open');
+    if (appSelectorPopover && appSelectorPopover.style.display !== 'none') {
+      // Do not close if the click came from inside the popover, from changeAppBtn,
+      // or from logEmailBtn (that button opens the popover when no app is selected).
+      const fromPopover = appSelectorPopover.contains(e.target);
+      const fromChangeBtn = e.target === changeAppBtn || changeAppBtn.contains(e.target);
+      const fromLogBtn = logEmailBtn && (e.target === logEmailBtn || logEmailBtn.contains(e.target));
+      if (!fromPopover && !fromChangeBtn && !fromLogBtn) {
+        appSelectorPopover.style.display = 'none';
+      }
+    }
+  });
+
+  // Global Escape key listener (Rule 3.B.3)
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      platformSelectContainer.classList.remove('open');
+      stageSelectorContainer.classList.remove('open');
+      if (appSelectorPopover && appSelectorPopover.style.display !== 'none') {
+        appSelectorPopover.style.display = 'none';
+      }
+    }
   });
 
   // Avatar Preview Update Handler with dual-tier fallback (Clearbit -> Google Favicon -> Initial)
@@ -295,21 +317,181 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
+  const ATS_DOMAINS = [
+    'greenhouse.io', 'greenhouse-mail.io', 'gh-mail.io',
+    'lever.co', 'hire.lever.co',
+    'ashbyhq.com', 'ashby-mail.com',
+    'smartrecruiters.com',
+    'workday.com', 'myworkday.com', 'workdayjobs.com',
+    'jobvite.com', 'recruitee.com',
+    'rippling.com', 'bamboohr.com',
+    'breezy.hr', 'pinpointhq.com',
+    'jazzhr.com', 'icims.com'
+  ];
+
+  // Helper to normalize company name (strips legal suffixes, punctuation, extra spaces)
+  function normalizeCompanyName(name) {
+    if (!name) return '';
+    return name
+      .toLowerCase()
+      .replace(/\b(inc|incorporated|llc|ltd|limited|corp|corporation|technologies|technology|solutions|group|holdings|services|gmbh|co|sa|ag|pty|pte)\b/gi, ' ')
+      .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  // Helper to sanitize domains (strips protocol, www, paths)
+  function cleanDomain(d) {
+    if (!d) return '';
+    return d.toLowerCase()
+      .replace(/^https?:\/\//, '')
+      .replace(/^www\./, '')
+      .replace(/\/.*$/, '')
+      .trim();
+  }
+
+  // Helper to extract non-aggregator domain from URL
+  function extractDomainFromUrl(url) {
+    if (!url) return '';
+    try {
+      const parsed = new URL(url.startsWith('http') ? url : `https://${url}`);
+      let host = parsed.hostname.toLowerCase().replace(/^www\./, '');
+      if (/linkedin|indeed|glassdoor|monster|ziprecruiter|simplyhired/.test(host)) {
+        return '';
+      }
+      if (ATS_DOMAINS.some(ats => host.includes(ats))) {
+        return '';
+      }
+      return host;
+    } catch {
+      return '';
+    }
+  }
+
+  // Helper to extract ATS company slug from ATS job posting URLs
+  function extractAtsSlugFromUrl(url) {
+    if (!url) return '';
+    try {
+      const parsed = new URL(url.startsWith('http') ? url : `https://${url}`);
+      const host = parsed.hostname.toLowerCase().replace(/^www\./, '');
+      const pathname = parsed.pathname.toLowerCase();
+
+      // boards.greenhouse.io/{slug} or job-boards.greenhouse.io/{slug}
+      if (host.includes('greenhouse.io')) {
+        const match = pathname.match(/^\/(?:embed\/job_board\/|boards\/|job-boards\/)?([a-z0-9-]+)/);
+        if (match && !['jobs', 'search', 'embed'].includes(match[1])) return match[1];
+      }
+      // jobs.lever.co/{slug}
+      if (host.includes('lever.co')) {
+        const match = pathname.match(/^\/([a-z0-9-]+)/);
+        if (match && !['jobs', 'apply'].includes(match[1])) return match[1];
+      }
+      // jobs.ashbyhq.com/{slug}
+      if (host.includes('ashbyhq.com')) {
+        const match = pathname.match(/^\/([a-z0-9-]+)/);
+        if (match && !['jobs'].includes(match[1])) return match[1];
+      }
+      // {slug}.workdayjobs.com or {slug}.recruitee.com
+      const subMatch = host.match(/^([a-z0-9-]+)\.(?:workdayjobs|greenhouse|lever|recruitee)\./);
+      if (subMatch && !['jobs', 'boards', 'www'].includes(subMatch[1])) return subMatch[1];
+
+      return '';
+    } catch {
+      return '';
+    }
+  }
+
+  function isGenericRecruitingWord(word) {
+    const w = (word || '').toLowerCase().trim();
+    return [
+      'recruiting', 'recruitment', 'talent', 'careers', 'hiring', 'team',
+      'greenhouse', 'lever', 'ashby', 'workday', 'jobvite', 'smartrecruiters',
+      'interview', 'interviews', 'hr', 'people', 'human resources'
+    ].includes(w) || w.length < 2;
+  }
+
+  // Extract company name candidate from ATS headers or display names
+  function extractCompanyFromAts(senderName, senderEmail, subject) {
+    const name = (senderName || '').trim();
+    const subj = (subject || '').trim();
+    const text = `${name} ${subj}`;
+
+    // 1. "[Company] via [ATS]" (e.g. "Stripe via Greenhouse", "Figma via Lever")
+    const viaMatch = text.match(/([A-Z0-9a-z\s&'-]+?)\s+(?:via|by|through)\s+(?:greenhouse|lever|ashby|smartrecruiters|workday|jobvite|recruitee|rippling|bamboohr|icims|jazzhr)/i);
+    if (viaMatch && viaMatch[1].trim()) {
+      const candidate = viaMatch[1].trim();
+      if (!isGenericRecruitingWord(candidate)) return candidate;
+    }
+
+    // 2. Parentheses or brackets in sender name: "Jane Doe (Stripe)" or "Jane Doe [Stripe]"
+    const parenMatch = name.match(/[\(\[]([A-Z0-9a-z\s&'-]+)[\)\]]/);
+    if (parenMatch && parenMatch[1].trim()) {
+      const candidate = parenMatch[1].trim();
+      if (!isGenericRecruitingWord(candidate)) return candidate;
+    }
+
+    // 3. "Jane Doe at Stripe" or "Jane Doe from Stripe"
+    // \b before at/from ensures we don't match inside names like "Fromberg" or "Strathmore"
+    const atFromMatch = name.match(/\b(?:at|from)\s+([A-Z0-9a-z\s&'-]+)$/i);
+    if (atFromMatch && atFromMatch[1].trim()) {
+      const candidate = atFromMatch[1].trim();
+      if (!isGenericRecruitingWord(candidate)) return candidate;
+    }
+
+    // 4. "[Company] Recruiting" or "[Company] Talent" or "[Company] Careers" or "[Company] Team"
+    const teamMatch = name.match(/^([A-Z0-9a-z\s&'-]+?)\s+(?:recruiting|recruitment|talent|careers|hiring|team)\b/i);
+    if (teamMatch && teamMatch[1].trim()) {
+      const candidate = teamMatch[1].trim();
+      if (!isGenericRecruitingWord(candidate)) return candidate;
+    }
+
+    // 5. Subject patterns: "Thank you for applying to [Company]" or "Application to [Company]" or "Interview with [Company]"
+    const subjActionMatch = subj.match(/(?:applying to|application to|interview with|welcome to|next steps with)\s+([A-Z0-9a-z\s&'-]+?)(?:[:,\.\?!]|\s+for\b|\s+as\b|$)/i);
+    if (subjActionMatch && subjActionMatch[1].trim()) {
+      const candidate = subjActionMatch[1].trim();
+      if (!isGenericRecruitingWord(candidate)) return candidate;
+    }
+
+    // 6. Subdomain or prefix in sender email e.g. "company@ashby-mail.com" or "company.greenhouse.io"
+    if (senderEmail) {
+      const emailDomain = senderEmail.includes('@') ? senderEmail.split('@')[1].toLowerCase() : senderEmail.toLowerCase();
+      const emailPrefix = senderEmail.includes('@') ? senderEmail.split('@')[0].toLowerCase() : '';
+      const subMatch = emailDomain.match(/^([a-z0-9-]+)\.(?:greenhouse\.io|lever\.co|smartrecruiters\.com|workday\.com|recruitee\.com)/i);
+      if (subMatch && subMatch[1] && !['no-reply', 'mail', 'hire', 'jobs', 'notifications'].includes(subMatch[1])) {
+        return subMatch[1];
+      }
+      if ((emailDomain.includes('ashby-mail') || emailDomain.includes('greenhouse-mail') || emailDomain.includes('gh-mail')) && 
+          emailPrefix && !['no-reply', 'notifications', 'interviews', 'jobs', 'mailer', 'talent'].includes(emailPrefix)) {
+        return emailPrefix;
+      }
+    }
+
+    return '';
+  }
+
   function matchEmailToApplications(emailData, allKnownApps) {
     if (!allKnownApps || allKnownApps.length === 0) return { bestMatch: null, ranked: [] };
 
     const senderEmail = (emailData.senderEmail || '').toLowerCase().trim();
     const recipientEmail = (emailData.recipientEmail || '').toLowerCase().trim();
-    const domain = (emailData.counterpartyDomain || '').toLowerCase().trim();
+    const domain = cleanDomain(emailData.counterpartyDomain);
     const subject = (emailData.subject || '').toLowerCase().trim();
     const senderName = (emailData.senderName || '').toLowerCase().trim();
+    const bodyText = (emailData.body || emailData.snippet || '').toLowerCase().trim();
+    const snippetText = (emailData.snippet || '').toLowerCase().trim();
+
+    const isEmailDomainAts = Boolean(emailData.isAts) || ATS_DOMAINS.some(ats => domain.includes(ats));
+    const atsCompanyCandidate = normalizeCompanyName(extractCompanyFromAts(senderName, senderEmail, subject));
 
     const scored = allKnownApps.map(app => {
       let score = 0;
-      const appCompany = (app.company || '').toLowerCase().trim();
-      const appDomain = (app.companyDomain || '').toLowerCase().trim();
+      const rawAppCompany = (app.company || '').trim();
+      const normAppCompany = normalizeCompanyName(rawAppCompany);
+      const appDomain = cleanDomain(app.companyDomain) || extractDomainFromUrl(app.jobLink);
+      const atsJobSlug = extractAtsSlugFromUrl(app.jobLink);
       const contactEmail = (app.contactEmail || '').toLowerCase().trim();
       const contactEmails = (app.contactEmails || []).map(e => e.toLowerCase().trim());
+      const normRole = (app.role || '').toLowerCase().trim();
 
       // Tier 1: Direct Contact Match (100 pts)
       if (senderEmail && (senderEmail === contactEmail || contactEmails.includes(senderEmail))) {
@@ -319,27 +501,92 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
 
       // Tier 2: Company Domain Match (80 pts)
-      if (domain && appDomain && (domain === appDomain || domain.endsWith('.' + appDomain))) {
-        score += 80;
-      } else if (domain && appCompany && (domain.includes(appCompany) || appCompany.includes(domain.split('.')[0]))) {
-        score += 70;
+      // Never award generic ATS domain match unless the company itself is the ATS
+      if (domain && appDomain && (!isEmailDomainAts || normAppCompany.includes(domain.split('.')[0]))) {
+        if (domain === appDomain || domain.endsWith('.' + appDomain) || appDomain.endsWith('.' + domain)) {
+          score += 80;
+        }
       }
-
-      // Tier 3: ATS Disambiguation / Sender Display Name (60 pts)
-      if (emailData.isAts && appCompany) {
-        if (senderName && senderName.includes(appCompany)) {
+      
+      // Clean company domain slug match (e.g. domain is 'stripe.com' and company is 'Stripe')
+      if (domain && !isEmailDomainAts && normAppCompany && normAppCompany.length >= 3) {
+        const domainSlug = domain.split('.')[0];
+        if (domainSlug === normAppCompany) {
+          score += 75;
+        } else if (domainSlug.startsWith(normAppCompany) || normAppCompany.startsWith(domainSlug)) {
           score += 65;
         }
-        if (subject && subject.includes(appCompany)) {
-          score += 60;
+      }
+
+      // Match ATS slug from app's jobLink (e.g. boards.greenhouse.io/stripe/jobs/123 -> stripe)
+      if (atsJobSlug && atsJobSlug.length >= 3) {
+        if (domain && !isEmailDomainAts && domain.split('.')[0] === atsJobSlug) {
+          score += 75;
+        }
+        if (atsCompanyCandidate && (atsCompanyCandidate === atsJobSlug || atsJobSlug.includes(atsCompanyCandidate))) {
+          score += 70;
         }
       }
 
-      // Tier 4: Subject Mentions (40 pts)
-      if (appCompany && appCompany.length >= 3) {
-        const regex = new RegExp(`\\b${appCompany.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
-        if (regex.test(subject)) {
-          score += 45;
+      // Tier 3: ATS Disambiguation / Sender Display Name (70 pts)
+      if (isEmailDomainAts || /greenhouse|lever|ashby|smartrecruiters|workday/.test(domain)) {
+        if (atsCompanyCandidate && normAppCompany && (atsCompanyCandidate === normAppCompany || atsCompanyCandidate.includes(normAppCompany) || normAppCompany.includes(atsCompanyCandidate))) {
+          score += 70;
+        } else if (senderName && normAppCompany && normAppCompany.length >= 3) {
+          const nameRegex = new RegExp(`\\b${normAppCompany.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+          if (nameRegex.test(senderName)) {
+            score += 65;
+          }
+        }
+      }
+
+      // Tier 4: Subject Mentions (Word-Bounded, 50 pts)
+      const isShortStopWord = normAppCompany.length <= 2 || ['box', 'and', 'the', 'for', 'all', 'one', 'new', 'top', 'in', 'on', 'at', 'to', 'up', 'do'].includes(normAppCompany);
+      if (normAppCompany && normAppCompany.length >= 2) {
+        const escaped = normAppCompany.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        if (isShortStopWord) {
+          // Require contextual phrasing like "at Company" or "Company Team" for short names / stop words
+          const contextRegex = new RegExp(`(?:\\bat|\\bwith|\\bfor|\\bjoining|\\bteam)\\s+${escaped}\\b|\\b${escaped}\\s+(?:team|careers|recruiting|technologies|solutions)\\b`, 'i');
+          if (contextRegex.test(subject)) {
+            score += 50;
+          }
+        } else {
+          const subjRegex = new RegExp(`\\b${escaped}\\b`, 'i');
+          if (subjRegex.test(subject)) {
+            score += 50;
+          }
+        }
+      }
+
+      // Tier 5: Email Body & Snippet Mentions (Word-Bounded, 45-50 pts)
+      if (normAppCompany && normAppCompany.length >= 3 && bodyText) {
+        const isCommonWord = ['box', 'and', 'the', 'for', 'all', 'one', 'new', 'top', 'run', 'get'].includes(normAppCompany);
+        const escaped = normAppCompany.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        if (isCommonWord) {
+          const contextRegex = new RegExp(`(?:\\bat|\\bwith|\\bfor|\\bjoining|\\bteam)\\s+${escaped}\\b|\\b${escaped}\\s+(?:team|careers|recruiting|technologies|solutions)\\b`, 'i');
+          if (contextRegex.test(bodyText)) {
+            score += 45;
+          }
+        } else {
+          const bodyRegex = new RegExp(`\\b${escaped}\\b`, 'i');
+          if (bodyRegex.test(bodyText)) {
+            if (snippetText && bodyRegex.test(snippetText)) {
+              score += 50;
+            } else {
+              score += 45;
+            }
+          }
+        }
+      }
+
+      // Tier 6: Role / Title Mention in Subject or Body (+15-25 pts)
+      if (normRole && normRole.length >= 4) {
+        const escapedRole = normRole.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const roleRegex = new RegExp(`\\b${escapedRole}\\b`, 'i');
+        if (roleRegex.test(subject)) {
+          score += 25;
+        } else if (bodyText && roleRegex.test(bodyText)) {
+          score += 15;
         }
       }
 
@@ -347,10 +594,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     const ranked = scored
-      .filter(item => item.score > 0)
+      .filter(item => item.score >= 40)
       .sort((a, b) => b.score - a.score);
 
-    const bestMatch = ranked.length > 0 ? ranked[0].app : null;
+    const bestMatch = (ranked.length > 0 && ranked[0].score >= 45) ? ranked[0].app : null;
     return { bestMatch, ranked: ranked.map(r => r.app) };
   }
 
@@ -560,10 +807,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       emailDateInput.value = emailData.date || today;
       emailBodyInput.value = emailData.body || emailData.snippet || '';
       currentEmailUrl = emailData.emailUrl || tab.url || '';
+      currentEmailTimestamp = emailData.timestamp || null;
 
-      if (emailThreadLinkChip) {
-        emailThreadLinkChip.href = currentEmailUrl;
-        emailThreadLinkText.textContent = emailData.provider === 'gmail' ? 'Open in Gmail' : 'Open in Outlook';
+      if (headerModeChip && headerModeText) {
+        headerModeChip.style.display = 'inline-flex';
+        headerModeText.textContent = emailData.provider === 'gmail' ? 'Gmail' : 'Outlook';
       }
 
       // Direction
@@ -573,8 +821,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       const { bestMatch } = matchEmailToApplications(emailData, allKnownAppsList);
       if (bestMatch) {
         renderMatchedApp(bestMatch, true);
-      } else if (allKnownAppsList.length > 0) {
-        renderMatchedApp(allKnownAppsList[0], false);
       } else {
         renderMatchedApp(null, false);
       }
@@ -652,13 +898,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  function renderMatchedApp(app, isExactMatch = true) {
+  function renderMatchedApp(app) {
     selectedEmailMatchedApp = app;
-    const matchedStatusLabel = document.getElementById('matched-status-label');
+    const matchedAppCard = document.getElementById('matched-app-card');
 
     if (app) {
-      if (matchedStatusLabel) {
-        matchedStatusLabel.textContent = isExactMatch ? 'Matched Job' : 'Select Job';
+      if (changeAppBtn) {
+        changeAppBtn.innerHTML = '<span>Switch Job</span> <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>';
+      }
+      if (matchedAppCard) {
+        matchedAppCard.classList.remove('unmatched-warning');
+        matchedAppCard.classList.remove('input-error');
       }
       emailMatchedCompany.textContent = app.company;
       emailMatchedRole.textContent = app.role;
@@ -673,24 +923,38 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       updateCompanyAvatar(app.company, app.companyDomain, emailMatchedAvatar);
     } else {
-      if (matchedStatusLabel) {
-        matchedStatusLabel.textContent = 'No Applications';
+      if (changeAppBtn) {
+        changeAppBtn.innerHTML = '<span>Choose Job</span> <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>';
       }
-      emailMatchedCompany.textContent = 'No Applications Saved';
-      emailMatchedRole.textContent = 'Save as new job below';
+      if (matchedAppCard) {
+        matchedAppCard.classList.add('unmatched-warning');
+      }
+      emailMatchedCompany.textContent = 'Select Target Application';
+      emailMatchedRole.textContent = 'Choose which application to log this email to';
       emailMatchedStagePill.style.display = 'none';
-      emailMatchedAvatar.textContent = '?';
+      if (emailMatchedAvatar) {
+        emailMatchedAvatar.textContent = '?';
+        emailMatchedAvatar.style.backgroundColor = '#f1f5f9';
+        emailMatchedAvatar.style.color = '#64748b';
+        emailMatchedAvatar.style.borderColor = '#cbd5e1';
+      }
     }
   }
+
+  let highlightedAppIndex = -1;
 
   function renderAppSelectorList(filter = '') {
     const cleanFilter = filter.toLowerCase().trim();
     appSelectorList.innerHTML = '';
+    highlightedAppIndex = -1;
 
     const filtered = allKnownAppsList.filter(a => 
       !cleanFilter || 
       a.company.toLowerCase().includes(cleanFilter) || 
-      a.role.toLowerCase().includes(cleanFilter)
+      a.role.toLowerCase().includes(cleanFilter) ||
+      (a.companyDomain && a.companyDomain.toLowerCase().includes(cleanFilter)) ||
+      (a.contactEmail && a.contactEmail.toLowerCase().includes(cleanFilter)) ||
+      (a.contactEmails && a.contactEmails.some(e => e.toLowerCase().includes(cleanFilter)))
     );
 
     if (filtered.length === 0) {
@@ -698,9 +962,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       return;
     }
 
-    filtered.forEach(app => {
+    filtered.forEach((app, idx) => {
       const item = document.createElement('div');
       item.className = 'app-selector-item' + (selectedEmailMatchedApp?.id === app.id ? ' selected' : '');
+      item.setAttribute('data-app-id', app.id);
       
       const textContainer = document.createElement('div');
       textContainer.className = 'app-selector-item-text';
@@ -716,6 +981,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       textContainer.appendChild(companySpan);
       textContainer.appendChild(roleSpan);
 
+      const config = STAGE_CONFIG[app.status] || STAGE_CONFIG['Applied'];
       const stageDot = document.createElement('span');
       stageDot.className = 'stage-dot';
       stageDot.style.backgroundColor = config.dot;
@@ -727,11 +993,22 @@ document.addEventListener('DOMContentLoaded', async () => {
       item.appendChild(stageDot);
 
       item.addEventListener('click', () => {
-        renderMatchedApp(app, true);
+        renderMatchedApp(app, false);
         appSelectorPopover.style.display = 'none';
       });
 
       appSelectorList.appendChild(item);
+    });
+  }
+
+  function updateHighlightedItem(items) {
+    items.forEach((item, idx) => {
+      if (idx === highlightedAppIndex) {
+        item.classList.add('highlighted');
+        item.scrollIntoView({ block: 'nearest' });
+      } else {
+        item.classList.remove('highlighted');
+      }
     });
   }
 
@@ -752,6 +1029,33 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
+  if (appSelectorPopover) {
+    appSelectorPopover.addEventListener('click', (e) => {
+      e.stopPropagation();
+    });
+  }
+
+  appSearchInput.addEventListener('keydown', (e) => {
+    const items = appSelectorList.querySelectorAll('.app-selector-item');
+    if (items.length === 0) return;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      highlightedAppIndex = (highlightedAppIndex + 1) % items.length;
+      updateHighlightedItem(items);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      highlightedAppIndex = (highlightedAppIndex - 1 + items.length) % items.length;
+      updateHighlightedItem(items);
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      const targetIndex = highlightedAppIndex >= 0 ? highlightedAppIndex : 0;
+      if (items[targetIndex]) {
+        items[targetIndex].click();
+      }
+    }
+  });
+
   appSearchInput.addEventListener('input', () => {
     renderAppSelectorList(appSearchInput.value);
   });
@@ -762,8 +1066,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     emailLogView.style.display = 'none';
     mainFormView.style.display = 'block';
     if (rawExtractedEmailData) {
-      companyInput.value = rawExtractedEmailData.counterpartyName || rawExtractedEmailData.counterpartyDomain || '';
-      notesInput.value = rawExtractedEmailData.snippet || '';
+      const guessedCompany = extractCompanyFromAts(
+        rawExtractedEmailData.senderName,
+        rawExtractedEmailData.senderEmail,
+        rawExtractedEmailData.subject
+      ) || rawExtractedEmailData.counterpartyName || '';
+      companyInput.value = guessedCompany;
+      
+      const cleanSubject = (rawExtractedEmailData.subject || '').replace(/^(?:re|fwd?|invitation):\s*/gi, '');
+      roleInput.value = cleanSubject;
+      
+      selectedStage = 'Interview';
+      updateStagePill('Interview');
+
+      notesInput.value = rawExtractedEmailData.snippet ? `Logged from email:\n"${rawExtractedEmailData.snippet}"` : '';
+      if (rawExtractedEmailData.emailUrl) {
+        jobLinkInput.value = rawExtractedEmailData.emailUrl;
+      }
     }
     companyInput.focus();
     validateInputs();
@@ -791,8 +1110,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (isLoggingEmail) return;
 
     if (!selectedEmailMatchedApp) {
-      emailMatchedCompany.classList.add('input-error');
-      setTimeout(() => emailMatchedCompany.classList.remove('input-error'), 1500);
+      const matchedAppCard = document.getElementById('matched-app-card');
+      if (matchedAppCard) {
+        matchedAppCard.classList.add('input-error');
+        setTimeout(() => matchedAppCard.classList.remove('input-error'), 1500);
+      }
+      renderAppSelectorList();
+      appSelectorPopover.style.display = 'flex';
+      appSearchInput.value = '';
+      appSearchInput.focus();
       return;
     }
 
@@ -820,6 +1146,15 @@ document.addEventListener('DOMContentLoaded', async () => {
       sender: isOutbound ? (currentUserSession?.email || 'You') : counterparty,
       recipient: isOutbound ? counterparty : (currentUserSession?.email || undefined),
       date: emailDateInput.value || today,
+      // Use the extracted timestamp only when its date portion still matches the
+      // current date field — if the user edited the date, derive midnight from it.
+      timestamp: (() => {
+        const activeDate = emailDateInput.value || today;
+        const tsDatePart = currentEmailTimestamp ? currentEmailTimestamp.slice(0, 10) : null;
+        return tsDatePart === activeDate
+          ? currentEmailTimestamp
+          : `${activeDate}T00:00:00`;
+      })(),
       direction: currentEmailDirection,
       snippet: emailBodyInput.value.trim().slice(0, 200),
       body: emailBodyInput.value.trim(),

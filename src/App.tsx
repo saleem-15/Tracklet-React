@@ -294,12 +294,12 @@ function TrackletAppContent() {
     return () => clearInterval(interval);
   }, [user]);
 
-  // Sync applications index to Chrome Extension for instant duplicate detection
+  // Sync applications and contacts index to Chrome Extension for instant duplicate detection and email matching
   useEffect(() => {
     if (applications.length >= 0) {
-      syncApplicationsToExtension(applications);
+      syncApplicationsToExtension(applications, contacts);
     }
-  }, [applications]);
+  }, [applications, contacts]);
 
   // Buffer for incoming emails and applications received before applications data load completes
   const pendingEmailPayloadsRef = useRef<IncomingEmailPayload[]>([]);

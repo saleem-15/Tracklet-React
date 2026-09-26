@@ -39,17 +39,69 @@ const MONTH_MAP: Record<string, number> = {
   oct: 10, october: 10, octobre: 10,
   nov: 11, november: 11, novembre: 11,
   dec: 12, december: 12, decembre: 12,
-  'يناير': 1, 'فبراير': 2, 'مارس': 3, 'أبريل': 4, 'ابريل': 4, 'مايو': 5, 'يونيو': 6, 'يوليو': 7, 'أغسطس': 8, 'اغسطس': 8, 'سبتمبر': 9, 'أكتوبر': 10, 'اكتوبر': 10, 'نوفمبر': 11, 'ديسمبر': 12
+  // Standard & Egyptian Arabic
+  'يناير': 1, 'فبراير': 2, 'مارس': 3, 'أبريل': 4, 'ابريل': 4, 'مايو': 5, 'يونيو': 6, 'يوليو': 7, 'أغسطس': 8, 'اغسطس': 8, 'سبتمبر': 9, 'أكتوبر': 10, 'اكتوبر': 10, 'نوفمبر': 11, 'ديسمبر': 12,
+  // Levant & Mesopotamian Arabic (Jordan, Palestine, Syria, Lebanon, Iraq)
+  'كانون الثاني': 1, 'شباط': 2, 'آذار': 3, 'اذار': 3, 'نيسان': 4, 'أيار': 5, 'ايار': 5, 'حزيران': 6, 'تموز': 7, 'آب': 8, 'اب': 8, 'أيلول': 9, 'ايلول': 9, 'تشرين الأول': 10, 'تشرين الاول': 10, 'تشرين الثاني': 11, 'كانون الأول': 12, 'كانون الاول': 12,
+  // North African Arabic
+  'جانفي': 1, 'فيفري': 2, 'أفريل': 4, 'افريل': 4, 'ماي': 5, 'جوان': 6, 'جويلية': 7, 'أوت': 8, 'اوت': 8
 };
+
+function normalizeNumerals(str: string): string {
+  if (!str) return '';
+  const easternDigits = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+  const persianDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+  return String(str)
+    .replace(/[٠-٩]/g, d => String(easternDigits.indexOf(d)))
+    .replace(/[۰-۹]/g, d => String(persianDigits.indexOf(d)));
+}
+
+function looksLikeDate(str: string): boolean {
+  if (!str || typeof str !== 'string') return false;
+  const s = str.trim();
+  if (!s || s.length < 2) return false;
+
+  // Reject UI button labels, tooltips, or actions
+  if (/^(show details|reply|forward|more|details|star|not starred|labels|archive|delete|snooze|print|unread|mark as|to:|from:|cc:|bcc:)/i.test(s)) {
+    return false;
+  }
+
+  const norm = normalizeNumerals(s.toLowerCase());
+
+  // 1. Explicit 4-digit year (e.g. 2024..2035)
+  if (/\b20\d{2}\b/.test(norm)) return true;
+
+  // 2. Month keywords (English, French, Arabic Standard, Levant, North African)
+  if (/(jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec|يناير|فبراير|مارس|أبريل|ابريل|مايو|يونيو|يوليو|أغسطس|اغسطس|سبتمبر|أكتوبر|اكتوبر|نوفمبر|ديسمبر|كانون|شباط|آذار|اذار|نيسان|أيار|ايار|حزيران|تموز|آب|اب|أيلول|ايلول|تشرين|جانفي|فيفري|أفريل|افريل|ماي|جوان|جويلية|أوت|اوت)/i.test(norm)) {
+    return true;
+  }
+
+  // 3. Numeric calendar format: DD/MM/YYYY, MM/DD/YYYY, DD.MM.YYYY, YYYY-MM-DD
+  if (/\b\d{1,2}[./-]\d{1,2}(?:[./-]\d{2,4})?\b/.test(norm)) return true;
+
+  // 4. Relative expressions: "2 weeks ago", "25 days ago", "yesterday", "today"
+  if (/\b(\d+)\s*(days?|weeks?|months?|hours?|mins?|minutes?)\s*ago\b/i.test(norm) || /\b(yesterday|today)\b/i.test(norm)) {
+    return true;
+  }
+
+  // 5. Weekday tokens: "Mon", "Tuesday", etc.
+  if (/\b(sun|mon|tue|wed|thu|fri|sat)[a-z]*\b/i.test(norm)) return true;
+
+  // 6. Time tokens: "10:15 AM", "14:30"
+  if (/^\d{1,2}:\d{2}(?::\d{2})?(\s*(am|pm))?$/i.test(norm)) return true;
+
+  return false;
+}
 
 function parseDateToIso(dateStr: string, refDate: Date = new Date()): string {
   if (!dateStr) return formatDateParts(refDate);
 
-  // 1. Sanitize string: strip zero-width and bidirectional formatting marks (\u200E, \u200F, BOM)
-  let raw = String(dateStr)
-    .replace(/[\u200B-\u200D\uFEFF\u200E\u200F]/g, '')
-    .replace(/[\u00A0\u202F\u2000-\u200A]/g, ' ')
-    .trim();
+  // 1. Sanitize string: normalize Eastern/Persian digits, strip zero-width marks (\u200E, \u200F, BOM)
+  let raw = normalizeNumerals(
+    String(dateStr)
+      .replace(/[\u200B-\u200D\uFEFF\u200E\u200F]/g, '')
+      .replace(/[\u00A0\u202F\u2000-\u200A]/g, ' ')
+  ).trim();
   if (!raw) return formatDateParts(refDate);
 
   // 2. Unix numeric timestamp (10-digit seconds or 13-digit milliseconds)
@@ -61,7 +113,7 @@ function parseDateToIso(dateStr: string, refDate: Date = new Date()): string {
     }
   }
 
-  // 3. Clean string: strip parenthesized annotations (e.g. '(2 days ago)', '(UTC+3)'), prefixes, 'at'
+  // 3. Clean string: strip parenthesized annotations (e.g. '(25 days ago)', '(2 days ago)', '(UTC+3)'), prefixes, 'at'
   let clean = raw
     .replace(/\s*\([^)]*\)/g, ' ')
     .replace(/\s+at\s+/i, ' ')
@@ -69,7 +121,7 @@ function parseDateToIso(dateStr: string, refDate: Date = new Date()): string {
     .replace(/\s+/g, ' ')
     .trim();
 
-  // 4. Relative keywords
+  // 4. Relative keywords (days ago, weeks ago, months ago, yesterday, today)
   const lower = clean.toLowerCase();
   if (lower === 'today' || /^\d{1,2}:\d{2}(?::\d{2})?(\s*(?:am|pm))?$/i.test(lower)) {
     return formatDateParts(refDate);
@@ -82,6 +134,18 @@ function parseDateToIso(dateStr: string, refDate: Date = new Date()): string {
   if (daysAgoMatch) {
     const days = parseInt(daysAgoMatch[1], 10);
     const d = new Date(refDate.getTime() - days * 86400000);
+    return formatDateParts(d);
+  }
+  const weeksAgoMatch = lower.match(/^(\d+)\s+weeks?\s+ago/);
+  if (weeksAgoMatch) {
+    const weeks = parseInt(weeksAgoMatch[1], 10);
+    const d = new Date(refDate.getTime() - weeks * 7 * 86400000);
+    return formatDateParts(d);
+  }
+  const monthsAgoMatch = lower.match(/^(\d+)\s+months?\s+ago/);
+  if (monthsAgoMatch) {
+    const months = parseInt(monthsAgoMatch[1], 10);
+    const d = new Date(refDate.getTime() - months * 30 * 86400000);
     return formatDateParts(d);
   }
 
@@ -100,9 +164,10 @@ function parseDateToIso(dateStr: string, refDate: Date = new Date()): string {
   const yearMatch = clean.match(/\b(20\d{2})\b/);
   const explicitYear = yearMatch ? parseInt(yearMatch[1], 10) : null;
 
-  const m1 = clean.match(/(?:^|\s)([a-zA-Z\u0600-\u06FF]+)[.,]?\s+(\d{1,2})(?:st|nd|rd|th)?(?:\s*,\s*|\s+|$)/i);
+  // Match month word then day: "September 1", "Sep 1, 2026", "أيلول 1", "سبتمبر 1"
+  const m1 = clean.match(/(?:^|\s)([a-zA-Z\u0600-\u06FF\s]+?)[.,]?\s+(\d{1,2})(?:st|nd|rd|th)?(?:\s*,\s*|\s+|$)/i);
   if (m1) {
-    const key = m1[1].toLowerCase();
+    const key = m1[1].trim().toLowerCase();
     const month = MONTH_MAP[key] || MONTH_MAP[key.slice(0, 3)];
     if (month) {
       const day = parseInt(m1[2], 10);
@@ -117,9 +182,10 @@ function parseDateToIso(dateStr: string, refDate: Date = new Date()): string {
     }
   }
 
-  const m2 = clean.match(/(?:^|\s)(\d{1,2})(?:st|nd|rd|th)?\s+([a-zA-Z\u0600-\u06FF]+)[.,]?(?:\s*,\s*|\s+|$)/i);
+  // Match day then month word: "1 September", "1 Sep 2026", "1 أيلول 2026", "1 سبتمبر"
+  const m2 = clean.match(/(?:^|\s)(\d{1,2})(?:st|nd|rd|th)?\s+([a-zA-Z\u0600-\u06FF\s]+?)[.,]?(?:\s*,\s*|\s+|$)/i);
   if (m2) {
-    const key = m2[2].toLowerCase();
+    const key = m2[2].trim().toLowerCase();
     const month = MONTH_MAP[key] || MONTH_MAP[key.slice(0, 3)];
     if (month) {
       const day = parseInt(m2[1], 10);
@@ -208,9 +274,145 @@ interface ApplicationSummary {
   company: string;
   role: string;
   status: string;
+  jobLink?: string;
   companyDomain?: string;
   contactEmail?: string;
   contactEmails?: string[];
+}
+
+function normalizeCompanyName(name: string): string {
+  if (!name) return '';
+  return name
+    .toLowerCase()
+    .replace(/\b(inc|incorporated|llc|ltd|limited|corp|corporation|technologies|technology|solutions|group|holdings|services|gmbh|co|sa|ag|pty|pte)\b/gi, ' ')
+    .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function extractDomainFromUrl(url?: string): string {
+  if (!url) return '';
+  try {
+    const parsed = new URL(url.startsWith('http') ? url : `https://${url}`);
+    let host = parsed.hostname.toLowerCase().replace(/^www\./, '');
+    if (/linkedin|indeed|glassdoor|monster|ziprecruiter|simplyhired/.test(host)) {
+      return '';
+    }
+    if (ATS_DOMAINS.some(ats => host.includes(ats))) {
+      return '';
+    }
+    return host;
+  } catch {
+    return '';
+  }
+}
+
+function extractAtsSlugFromUrl(url?: string): string {
+  if (!url) return '';
+  try {
+    const parsed = new URL(url.startsWith('http') ? url : `https://${url}`);
+    const host = parsed.hostname.toLowerCase().replace(/^www\./, '');
+    const pathname = parsed.pathname.toLowerCase();
+
+    // boards.greenhouse.io/{slug} or job-boards.greenhouse.io/{slug}
+    if (host.includes('greenhouse.io')) {
+      const match = pathname.match(/^\/(?:embed\/job_board\/|boards\/|job-boards\/)?([a-z0-9-]+)/);
+      if (match && !['jobs', 'search', 'embed'].includes(match[1])) return match[1];
+    }
+    // jobs.lever.co/{slug}
+    if (host.includes('lever.co')) {
+      const match = pathname.match(/^\/([a-z0-9-]+)/);
+      if (match && !['jobs', 'apply'].includes(match[1])) return match[1];
+    }
+    // jobs.ashbyhq.com/{slug}
+    if (host.includes('ashbyhq.com')) {
+      const match = pathname.match(/^\/([a-z0-9-]+)/);
+      if (match && !['jobs'].includes(match[1])) return match[1];
+    }
+    // {slug}.workdayjobs.com or {slug}.recruitee.com
+    const subMatch = host.match(/^([a-z0-9-]+)\.(?:workdayjobs|greenhouse|lever|recruitee)\./);
+    if (subMatch && !['jobs', 'boards', 'www'].includes(subMatch[1])) return subMatch[1];
+
+    return '';
+  } catch {
+    return '';
+  }
+}
+
+function cleanDomain(d?: string): string {
+  if (!d) return '';
+  return d.toLowerCase()
+    .replace(/^https?:\/\//, '')
+    .replace(/^www\./, '')
+    .replace(/\/.*$/, '')
+    .trim();
+}
+
+function isGenericRecruitingWord(word?: string): boolean {
+  const w = (word || '').toLowerCase().trim();
+  return [
+    'recruiting', 'recruitment', 'talent', 'careers', 'hiring', 'team',
+    'greenhouse', 'lever', 'ashby', 'workday', 'jobvite', 'smartrecruiters',
+    'interview', 'interviews', 'hr', 'people', 'human resources'
+  ].includes(w) || w.length < 2;
+}
+
+function extractCompanyFromAts(senderName?: string, senderEmail?: string, subject?: string): string {
+  const name = (senderName || '').trim();
+  const subj = (subject || '').trim();
+  const text = `${name} ${subj}`;
+
+  // 1. "[Company] via [ATS]" (e.g. "Stripe via Greenhouse", "Figma via Lever")
+  const viaMatch = text.match(/([A-Z0-9a-z\s&'-]+?)\s+(?:via|by|through)\s+(?:greenhouse|lever|ashby|smartrecruiters|workday|jobvite|recruitee|rippling|bamboohr|icims|jazzhr)/i);
+  if (viaMatch && viaMatch[1].trim()) {
+    const candidate = viaMatch[1].trim();
+    if (!isGenericRecruitingWord(candidate)) return candidate;
+  }
+
+  // 2. Parentheses or brackets in sender name: "Jane Doe (Stripe)" or "Jane Doe [Stripe]"
+  const parenMatch = name.match(/[\(\[]([A-Z0-9a-z\s&'-]+)[\)\]]/);
+  if (parenMatch && parenMatch[1].trim()) {
+    const candidate = parenMatch[1].trim();
+    if (!isGenericRecruitingWord(candidate)) return candidate;
+  }
+
+  // 3. "Jane Doe at Stripe" or "Jane Doe from Stripe"
+  // \b before at/from ensures we don't match inside names like "Fromberg" or "Strathmore"
+  const atFromMatch = name.match(/\b(?:at|from)\s+([A-Z0-9a-z\s&'-]+)$/i);
+  if (atFromMatch && atFromMatch[1].trim()) {
+    const candidate = atFromMatch[1].trim();
+    if (!isGenericRecruitingWord(candidate)) return candidate;
+  }
+
+  // 4. "[Company] Recruiting" or "[Company] Talent" or "[Company] Careers" or "[Company] Team"
+  const teamMatch = name.match(/^([A-Z0-9a-z\s&'-]+?)\s+(?:recruiting|recruitment|talent|careers|hiring|team)\b/i);
+  if (teamMatch && teamMatch[1].trim()) {
+    const candidate = teamMatch[1].trim();
+    if (!isGenericRecruitingWord(candidate)) return candidate;
+  }
+
+  // 5. Subject patterns: "Thank you for applying to [Company]" or "Application to [Company]" or "Interview with [Company]"
+  const subjActionMatch = subj.match(/(?:applying to|application to|interview with|welcome to|next steps with)\s+([A-Z0-9a-z\s&'-]+?)(?:[:,\.\?!]|\s+for\b|\s+as\b|$)/i);
+  if (subjActionMatch && subjActionMatch[1].trim()) {
+    const candidate = subjActionMatch[1].trim();
+    if (!isGenericRecruitingWord(candidate)) return candidate;
+  }
+
+  // 6. Subdomain or prefix in sender email e.g. "company@ashby-mail.com" or "company.greenhouse.io"
+  if (senderEmail) {
+    const emailDomain = senderEmail.includes('@') ? senderEmail.split('@')[1].toLowerCase() : senderEmail.toLowerCase();
+    const emailPrefix = senderEmail.includes('@') ? senderEmail.split('@')[0].toLowerCase() : '';
+    const subMatch = emailDomain.match(/^([a-z0-9-]+)\.(?:greenhouse\.io|lever\.co|smartrecruiters\.com|workday\.com|recruitee\.com)/i);
+    if (subMatch && subMatch[1] && !['no-reply', 'mail', 'hire', 'jobs', 'notifications'].includes(subMatch[1])) {
+      return subMatch[1];
+    }
+    if ((emailDomain.includes('ashby-mail') || emailDomain.includes('greenhouse-mail') || emailDomain.includes('gh-mail')) && 
+        emailPrefix && !['no-reply', 'notifications', 'interviews', 'jobs', 'mailer', 'talent'].includes(emailPrefix)) {
+      return emailPrefix;
+    }
+  }
+
+  return '';
 }
 
 function matchEmailToApplications(
@@ -220,6 +422,9 @@ function matchEmailToApplications(
     counterpartyDomain?: string;
     subject?: string;
     senderName?: string;
+    sender?: string;
+    body?: string;
+    snippet?: string;
     isAts?: boolean;
   },
   allKnownApps: ApplicationSummary[]
@@ -228,16 +433,24 @@ function matchEmailToApplications(
 
   const senderEmail = (emailData.senderEmail || '').toLowerCase().trim();
   const recipientEmail = (emailData.recipientEmail || '').toLowerCase().trim();
-  const domain = (emailData.counterpartyDomain || '').toLowerCase().trim();
+  const domain = cleanDomain(emailData.counterpartyDomain);
   const subject = (emailData.subject || '').toLowerCase().trim();
   const senderName = (emailData.senderName || '').toLowerCase().trim();
+  const bodyText = (emailData.body || emailData.snippet || '').toLowerCase().trim();
+  const snippetText = (emailData.snippet || '').toLowerCase().trim();
+
+  const isEmailDomainAts = Boolean(emailData.isAts) || ATS_DOMAINS.some(ats => domain.includes(ats));
+  const atsCompanyCandidate = normalizeCompanyName(extractCompanyFromAts(senderName, senderEmail, subject));
 
   const scored = allKnownApps.map(app => {
     let score = 0;
-    const appCompany = (app.company || '').toLowerCase().trim();
-    const appDomain = (app.companyDomain || '').toLowerCase().trim();
+    const rawAppCompany = (app.company || '').trim();
+    const normAppCompany = normalizeCompanyName(rawAppCompany);
+    const appDomain = cleanDomain(app.companyDomain) || extractDomainFromUrl(app.jobLink);
+    const atsJobSlug = extractAtsSlugFromUrl(app.jobLink);
     const contactEmail = (app.contactEmail || '').toLowerCase().trim();
     const contactEmails = (app.contactEmails || []).map(e => e.toLowerCase().trim());
+    const normRole = (app.role || '').toLowerCase().trim();
 
     // Tier 1: Direct Contact Match (100 pts)
     if (senderEmail && (senderEmail === contactEmail || contactEmails.includes(senderEmail))) {
@@ -247,27 +460,92 @@ function matchEmailToApplications(
     }
 
     // Tier 2: Company Domain Match (80 pts)
-    if (domain && appDomain && (domain === appDomain || domain.endsWith('.' + appDomain))) {
-      score += 80;
-    } else if (domain && appCompany && (domain.includes(appCompany) || appCompany.includes(domain.split('.')[0]))) {
-      score += 70;
+    // Never award generic ATS domain match unless the company itself is the ATS
+    if (domain && appDomain && (!isEmailDomainAts || normAppCompany.includes(domain.split('.')[0]))) {
+      if (domain === appDomain || domain.endsWith('.' + appDomain) || appDomain.endsWith('.' + domain)) {
+        score += 80;
+      }
     }
-
-    // Tier 3: ATS Disambiguation / Sender Display Name (60 pts)
-    if (emailData.isAts && appCompany) {
-      if (senderName && senderName.includes(appCompany)) {
+    
+    // Clean company domain slug match (e.g. domain is 'stripe.com' and company is 'Stripe')
+    if (domain && !isEmailDomainAts && normAppCompany && normAppCompany.length >= 3) {
+      const domainSlug = domain.split('.')[0];
+      if (domainSlug === normAppCompany) {
+        score += 75;
+      } else if (domainSlug.startsWith(normAppCompany) || normAppCompany.startsWith(domainSlug)) {
         score += 65;
       }
-      if (subject && subject.includes(appCompany)) {
-        score += 60;
+    }
+
+    // Match ATS slug from app's jobLink (e.g. boards.greenhouse.io/stripe/jobs/123 -> stripe)
+    if (atsJobSlug && atsJobSlug.length >= 3) {
+      if (domain && !isEmailDomainAts && domain.split('.')[0] === atsJobSlug) {
+        score += 75;
+      }
+      if (atsCompanyCandidate && (atsCompanyCandidate === atsJobSlug || atsJobSlug.includes(atsCompanyCandidate))) {
+        score += 70;
       }
     }
 
-    // Tier 4: Subject Mentions (40 pts)
-    if (appCompany && appCompany.length >= 3) {
-      const regex = new RegExp(`\\b${appCompany.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
-      if (regex.test(subject)) {
-        score += 45;
+    // Tier 3: ATS Disambiguation / Sender Display Name (70 pts)
+    if (isEmailDomainAts || /greenhouse|lever|ashby|smartrecruiters|workday/.test(domain)) {
+      if (atsCompanyCandidate && normAppCompany && (atsCompanyCandidate === normAppCompany || atsCompanyCandidate.includes(normAppCompany) || normAppCompany.includes(atsCompanyCandidate))) {
+        score += 70;
+      } else if (senderName && normAppCompany && normAppCompany.length >= 3) {
+        const nameRegex = new RegExp(`\\b${normAppCompany.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+        if (nameRegex.test(senderName)) {
+          score += 65;
+        }
+      }
+    }
+
+    // Tier 4: Subject Mentions (Word-Bounded, 50 pts)
+    const isShortStopWord = normAppCompany.length <= 2 || ['box', 'and', 'the', 'for', 'all', 'one', 'new', 'top', 'in', 'on', 'at', 'to', 'up', 'do'].includes(normAppCompany);
+    if (normAppCompany && normAppCompany.length >= 2) {
+      const escaped = normAppCompany.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      if (isShortStopWord) {
+        // Require contextual phrasing like "at Company" or "Company Team" for short names / stop words
+        const contextRegex = new RegExp(`(?:\\bat|\\bwith|\\bfor|\\bjoining|\\bteam)\\s+${escaped}\\b|\\b${escaped}\\s+(?:team|careers|recruiting|technologies|solutions)\\b`, 'i');
+        if (contextRegex.test(subject)) {
+          score += 50;
+        }
+      } else {
+        const subjRegex = new RegExp(`\\b${escaped}\\b`, 'i');
+        if (subjRegex.test(subject)) {
+          score += 50;
+        }
+      }
+    }
+
+    // Tier 5: Email Body & Snippet Mentions (Word-Bounded, 45-50 pts)
+    if (normAppCompany && normAppCompany.length >= 3 && bodyText) {
+      const isCommonWord = ['box', 'and', 'the', 'for', 'all', 'one', 'new', 'top', 'run', 'get'].includes(normAppCompany);
+      const escaped = normAppCompany.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      if (isCommonWord) {
+        const contextRegex = new RegExp(`(?:\\bat|\\bwith|\\bfor|\\bjoining|\\bteam)\\s+${escaped}\\b|\\b${escaped}\\s+(?:team|careers|recruiting|technologies|solutions)\\b`, 'i');
+        if (contextRegex.test(bodyText)) {
+          score += 45;
+        }
+      } else {
+        const bodyRegex = new RegExp(`\\b${escaped}\\b`, 'i');
+        if (bodyRegex.test(bodyText)) {
+          if (snippetText && bodyRegex.test(snippetText)) {
+            score += 50;
+          } else {
+            score += 45;
+          }
+        }
+      }
+    }
+
+    // Tier 6: Role / Title Mention in Subject or Body (+15-25 pts)
+    if (normRole && normRole.length >= 4) {
+      const escapedRole = normRole.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const roleRegex = new RegExp(`\\b${escapedRole}\\b`, 'i');
+      if (roleRegex.test(subject)) {
+        score += 25;
+      } else if (bodyText && roleRegex.test(bodyText)) {
+        score += 15;
       }
     }
 
@@ -275,10 +553,10 @@ function matchEmailToApplications(
   });
 
   const ranked = scored
-    .filter(item => item.score > 0)
+    .filter(item => item.score >= 40)
     .sort((a, b) => b.score - a.score);
 
-  const bestMatch = ranked.length > 0 ? ranked[0].app : null;
+  const bestMatch = (ranked.length > 0 && ranked[0].score >= 45) ? ranked[0].app : null;
   return { bestMatch, ranked: ranked.map(r => r.app) };
 }
 
@@ -408,6 +686,143 @@ describe('Webmail Companion Engine', () => {
       expect(match.bestMatch).toBeNull();
       expect(match.ranked.length).toBe(0);
     });
+
+    it('normalizes legal suffixes in company names', () => {
+      expect(normalizeCompanyName('Stripe, Inc.')).toBe('stripe');
+      expect(normalizeCompanyName('Deliveroo Ltd.')).toBe('deliveroo');
+      expect(normalizeCompanyName('GitLab Inc.')).toBe('gitlab');
+      expect(normalizeCompanyName('Siemens AG')).toBe('siemens');
+      expect(normalizeCompanyName('Acme Technologies LLC')).toBe('acme');
+    });
+
+    it('extracts company name candidate from diverse ATS patterns', () => {
+      expect(extractCompanyFromAts('Figma via Lever', 'no-reply@lever.co', 'Your application')).toBe('Figma');
+      expect(extractCompanyFromAts('Sarah Chen (Stripe)', 'sarah@recruiting.com', 'Interview details')).toBe('Stripe');
+      expect(extractCompanyFromAts('Alex at Datadog', 'recruiting@external.com', 'Call tomorrow')).toBe('Datadog');
+      expect(extractCompanyFromAts('OpenAI Recruiting', 'no-reply@greenhouse.io', 'Update')).toBe('OpenAI');
+      expect(extractCompanyFromAts('Recruiting Team', 'no-reply@greenhouse.io', 'Interview with Linear')).toBe('Linear');
+      expect(extractCompanyFromAts('no-reply', 'stripe.greenhouse.io', 'Next steps')).toBe('stripe');
+      expect(extractCompanyFromAts('interviews', 'figma@ashby-mail.com', 'Schedule interview')).toBe('figma');
+    });
+
+    it('prevents generic ATS domains from false-matching unrelated applications', () => {
+      const appsWithAtsLinks: ApplicationSummary[] = [
+        {
+          id: 'app-stripe',
+          company: 'Stripe',
+          role: 'Engineer',
+          status: 'Applied',
+          jobLink: 'https://boards.greenhouse.io/stripe/jobs/123'
+        },
+        {
+          id: 'app-datadog',
+          company: 'Datadog',
+          role: 'Engineer',
+          status: 'Applied',
+          jobLink: 'https://boards.greenhouse.io/datadog/jobs/456'
+        }
+      ];
+
+      // Generic email from Greenhouse with no company name in text should NOT match either application
+      const match = matchEmailToApplications({
+        senderEmail: 'no-reply@greenhouse.io',
+        counterpartyDomain: 'greenhouse.io',
+        subject: 'General ATS Maintenance Notification',
+        isAts: true
+      }, appsWithAtsLinks);
+
+      expect(match.bestMatch).toBeNull();
+    });
+
+    it('matches application from ATS jobLink slug fallback when companyDomain is empty', () => {
+      const appsWithoutDomain: ApplicationSummary[] = [
+        {
+          id: 'app-stripe-ats',
+          company: 'Stripe',
+          role: 'Backend Engineer',
+          status: 'Applied',
+          jobLink: 'https://boards.greenhouse.io/stripe/jobs/98765'
+        }
+      ];
+
+      const match = matchEmailToApplications({
+        senderEmail: 'recruiting@stripe.com',
+        counterpartyDomain: 'stripe.com',
+        subject: 'Quick chat'
+      }, appsWithoutDomain);
+
+      expect(match.bestMatch?.id).toBe('app-stripe-ats');
+    });
+
+    it('matches Tier 5: body and snippet keywords when subject is generic', () => {
+      const match = matchEmailToApplications({
+        senderEmail: 'hr-generic@unknownmail.com',
+        counterpartyDomain: 'unknownmail.com',
+        subject: 'Follow up from our call yesterday',
+        body: 'Thank you for your time chatting about the Product Designer opportunity at Figma. We would like to move you to the next round!',
+        snippet: 'Thank you for your time chatting about the Product Designer opportunity at Figma.'
+      }, mockApps);
+
+      expect(match.bestMatch?.id).toBe('app-figma');
+    });
+
+    it('prevents stop-word collisions for short company names', () => {
+      const stopWordApps: ApplicationSummary[] = [
+        {
+          id: 'app-in',
+          company: 'In',
+          role: 'Software Engineer',
+          status: 'Applied',
+          companyDomain: 'in.inc'
+        }
+      ];
+
+      // Preposition "in" should NOT trigger a match
+      const falseMatch = matchEmailToApplications({
+        senderEmail: 'newsletter@linkedin.com',
+        counterpartyDomain: 'linkedin.com',
+        subject: 'You appeared in 14 searches this week',
+        body: 'See who looked at your profile in the past 7 days'
+      }, stopWordApps);
+
+      expect(falseMatch.bestMatch).toBeNull();
+
+      // Contextual phrase "at In" or "Joining In" SHOULD match
+      const trueMatch = matchEmailToApplications({
+        senderEmail: 'recruiter@external.com',
+        counterpartyDomain: 'external.com',
+        subject: 'Joining In as Senior Engineer'
+      }, stopWordApps);
+
+      expect(trueMatch.bestMatch?.id).toBe('app-in');
+    });
+
+    it('uses role mention for disambiguation between applications at the same company', () => {
+      const multiRoleApps: ApplicationSummary[] = [
+        {
+          id: 'app-frontend',
+          company: 'Acme Corp',
+          role: 'Frontend Engineer',
+          status: 'Applied',
+          companyDomain: 'acme.com'
+        },
+        {
+          id: 'app-backend',
+          company: 'Acme Corp',
+          role: 'Backend Engineer',
+          status: 'Applied',
+          companyDomain: 'acme.com'
+        }
+      ];
+
+      const match = matchEmailToApplications({
+        senderEmail: 'recruiting@acme.com',
+        counterpartyDomain: 'acme.com',
+        subject: 'Interview for Frontend Engineer position at Acme Corp'
+      }, multiRoleApps);
+
+      expect(match.bestMatch?.id).toBe('app-frontend');
+    });
   });
 
 
@@ -482,6 +897,36 @@ describe('Webmail Companion Engine', () => {
       expect(parseDateToIso('10 Sept 2026', refDate)).toBe('2026-09-10');
       expect(parseDateToIso('10 سبتمبر 2026', refDate)).toBe('2026-09-10');
       expect(parseDateToIso('سبتمبر 10', refDate)).toBe('2026-09-10');
+    });
+
+    it('handles Eastern Arabic numerals and Levant Arabic months (e.g. أيلول for September)', () => {
+      expect(parseDateToIso('١ سبتمبر ٢٠٢٦', refDate)).toBe('2026-09-01');
+      expect(parseDateToIso('١ أيلول ٢٠٢٦', refDate)).toBe('2026-09-01');
+      expect(parseDateToIso('1 أيلول 2026', refDate)).toBe('2026-09-01');
+      expect(parseDateToIso('أيلول 1, 2026', refDate)).toBe('2026-09-01');
+    });
+
+    it('handles relative week and day expressions from older emails (e.g. 2 weeks ago, 25 days ago)', () => {
+      const sept26 = new Date('2026-09-26T12:00:00Z');
+      expect(parseDateToIso('2 weeks ago', sept26)).toBe('2026-09-12');
+      expect(parseDateToIso('3 weeks ago', sept26)).toBe('2026-09-05');
+      expect(parseDateToIso('25 days ago', sept26)).toBe('2026-09-01');
+      expect(parseDateToIso('Sep 1, 2026, 10:15 AM (25 days ago)', sept26)).toBe('2026-09-01');
+      expect(parseDateToIso('Sep 1', sept26)).toBe('2026-09-01');
+      expect(parseDateToIso('Tuesday, September 1, 2026 at 10:15:32 AM GMT+3', sept26)).toBe('2026-09-01');
+    });
+
+    it('looksLikeDate correctly identifies valid dates and rejects UI button tooltips', () => {
+      expect(looksLikeDate('Show details')).toBe(false);
+      expect(looksLikeDate('Reply to: John Doe')).toBe(false);
+      expect(looksLikeDate('Labels: Inbox')).toBe(false);
+      expect(looksLikeDate('Not starred')).toBe(false);
+      expect(looksLikeDate('More options')).toBe(false);
+      expect(looksLikeDate('Sep 1, 2026, 10:15 AM')).toBe(true);
+      expect(looksLikeDate('١ أيلول ٢٠٢٦')).toBe(true);
+      expect(looksLikeDate('2 weeks ago')).toBe(true);
+      expect(looksLikeDate('2026-09-01T10:15:00Z')).toBe(true);
+      expect(looksLikeDate('Sep 1')).toBe(true);
     });
   });
 

@@ -230,14 +230,30 @@ function extractPageData() {
 // --- Webmail Detection & Extraction Engine ---
 
 const ATS_DOMAINS = [
-  'greenhouse.io', 'greenhouse-mail.io',
+  'greenhouse.io', 'greenhouse-mail.io', 'gh-mail.io',
   'lever.co', 'hire.lever.co',
   'ashbyhq.com', 'ashby-mail.com',
   'smartrecruiters.com',
-  'workday.com', 'myworkday.com',
+  'workday.com', 'myworkday.com', 'workdayjobs.com',
   'jobvite.com', 'recruitee.com',
-  'rippling.com', 'bamboohr.com'
+  'rippling.com', 'bamboohr.com',
+  'breezy.hr', 'pinpointhq.com',
+  'jazzhr.com', 'icims.com'
 ];
+
+// Checks whether a bare domain string (no path, no @) belongs to an ATS.
+// Uses exact equality or dot-bounded suffix so "notgreenhouse.io" does not match.
+function isAtsHost(host) {
+  if (!host) return false;
+  const h = host.toLowerCase().trim();
+  return ATS_DOMAINS.some(ats => h === ats || h.endsWith('.' + ats));
+}
+
+// Extract the ATS host from an email address string (the part after @).
+function domainFromEmail(emailStr) {
+  if (!emailStr || !emailStr.includes('@')) return '';
+  return emailStr.split('@')[1].toLowerCase().trim();
+}
 
 function isWebmailUrl(urlStr) {
   try {
@@ -264,8 +280,22 @@ const MONTH_MAP = {
   oct: 10, october: 10, octobre: 10,
   nov: 11, november: 11, novembre: 11,
   dec: 12, december: 12, decembre: 12,
-  'يناير': 1, 'فبراير': 2, 'مارس': 3, 'أبريل': 4, 'ابريل': 4, 'مايو': 5, 'يونيو': 6, 'يوليو': 7, 'أغسطس': 8, 'اغسطس': 8, 'سبتمبر': 9, 'أكتوبر': 10, 'اكتوبر': 10, 'نوفمبر': 11, 'ديسمبر': 12
+  // Standard & Egyptian Arabic
+  'يناير': 1, 'فبراير': 2, 'مارس': 3, 'أبريل': 4, 'ابريل': 4, 'مايو': 5, 'يونيو': 6, 'يوليو': 7, 'أغسطس': 8, 'اغسطس': 8, 'سبتمبر': 9, 'أكتوبر': 10, 'اكتوبر': 10, 'نوفمبر': 11, 'ديسمبر': 12,
+  // Levant & Mesopotamian Arabic (Jordan, Palestine, Syria, Lebanon, Iraq)
+  'كانون الثاني': 1, 'شباط': 2, 'آذار': 3, 'اذار': 3, 'نيسان': 4, 'أيار': 5, 'ايار': 5, 'حزيران': 6, 'تموز': 7, 'آب': 8, 'اب': 8, 'أيلول': 9, 'ايلول': 9, 'تشرين الأول': 10, 'تشرين الاول': 10, 'تشرين الثاني': 11, 'كانون الأول': 12, 'كانون الاول': 12,
+  // North African Arabic
+  'جانفي': 1, 'فيفري': 2, 'أفريل': 4, 'افريل': 4, 'ماي': 5, 'جوان': 6, 'جويلية': 7, 'أوت': 8, 'اوت': 8
 };
+
+function normalizeNumerals(str) {
+  if (!str) return '';
+  const easternDigits = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+  const persianDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+  return String(str)
+    .replace(/[٠-٩]/g, d => easternDigits.indexOf(d))
+    .replace(/[۰-۹]/g, d => persianDigits.indexOf(d));
+}
 
 function formatDateParts(d) {
   const y = d.getFullYear();
@@ -274,27 +304,133 @@ function formatDateParts(d) {
   return `${y}-${m}-${day}`;
 }
 
-// Convert various webmail date formats (Unix timestamps, relative strings, localized dates) into YYYY-MM-DD
+// Returns a full ISO 8601 string with local UTC offset when time info is known,
+// e.g. "2026-09-25T14:35:10+03:00". This preserves the represented instant when
+// the string is parsed in a different timezone. When only a date is known the
+// offset is still appended so the format stays consistent.
+function formatIsoWithTime(d, hasTime = false) {
+  // Build ±HH:MM offset string from the host's local timezone
+  const offsetMin = -d.getTimezoneOffset(); // getTimezoneOffset returns minutes WEST, negate for ±
+  const sign = offsetMin >= 0 ? '+' : '-';
+  const absMin = Math.abs(offsetMin);
+  const offH = String(Math.floor(absMin / 60)).padStart(2, '0');
+  const offM = String(absMin % 60).padStart(2, '0');
+  const offset = `${sign}${offH}:${offM}`;
+
+  if (!hasTime) {
+    return `${formatDateParts(d)}T00:00:00${offset}`;
+  }
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mm = String(d.getMinutes()).padStart(2, '0');
+  const ss = String(d.getSeconds()).padStart(2, '0');
+  return `${formatDateParts(d)}T${hh}:${mm}:${ss}${offset}`;
+}
+
+// Validates whether an attribute or text string looks like an email timestamp rather than a button tooltip
+function looksLikeDate(str) {
+  if (!str || typeof str !== 'string') return false;
+  const s = str.trim();
+  if (!s || s.length < 2) return false;
+
+  // Reject UI button labels, tooltips, or actions
+  if (/^(show details|reply|forward|more|details|star|not starred|labels|archive|delete|snooze|print|unread|mark as|to:|from:|cc:|bcc:)/i.test(s)) {
+    return false;
+  }
+
+  const norm = normalizeNumerals(s.toLowerCase());
+
+  // 1. Explicit 4-digit year (e.g. 2024..2035)
+  if (/\b20\d{2}\b/.test(norm)) return true;
+
+  // 2. Month keywords (English, French, Arabic Standard, Levant, North African)
+  if (/(jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec|يناير|فبراير|مارس|أبريل|ابريل|مايو|يونيو|يوليو|أغسطس|اغسطس|سبتمبر|أكتوبر|اكتوبر|نوفمبر|ديسمبر|كانون|شباط|آذار|اذار|نيسان|أيار|ايار|حزيران|تموز|آب|اب|أيلول|ايلول|تشرين|جانفي|فيفري|أفريل|افريل|ماي|جوان|جويلية|أوت|اوت)/i.test(norm)) {
+    return true;
+  }
+
+  // 3. Numeric calendar format: DD/MM/YYYY, MM/DD/YYYY, DD.MM.YYYY, YYYY-MM-DD
+  if (/\b\d{1,2}[./-]\d{1,2}(?:[./-]\d{2,4})?\b/.test(norm)) return true;
+
+  // 4. Relative expressions: "2 weeks ago", "25 days ago", "yesterday", "today"
+  if (/\b(\d+)\s*(days?|weeks?|months?|hours?|mins?|minutes?)\s*ago\b/i.test(norm) || /\b(yesterday|today)\b/i.test(norm)) {
+    return true;
+  }
+
+  // 5. Weekday tokens: "Mon", "Tuesday", etc.
+  if (/\b(sun|mon|tue|wed|thu|fri|sat)[a-z]*\b/i.test(norm)) return true;
+
+  // 6. Time tokens: "10:15 AM", "14:30"
+  if (/^\d{1,2}:\d{2}(?::\d{2})?(\s*(am|pm))?$/i.test(norm)) return true;
+
+  return false;
+}
+
+// Safely extracts date string candidate from an element
+function extractDateStringFromElement(el) {
+  if (!el) return '';
+
+  // 1. Check data-timestamp attribute (Unix epoch ms or sec)
+  const tsAttr = el.getAttribute('data-timestamp') || el.getAttribute('data-time');
+  if (tsAttr && /^\d{10,13}$/.test(tsAttr.trim())) {
+    return tsAttr.trim();
+  }
+
+  // 2. Check datetime attribute (HTML5 <time datetime="...">)
+  const dtAttr = el.getAttribute('datetime');
+  if (dtAttr && looksLikeDate(dtAttr)) {
+    return dtAttr.trim();
+  }
+
+  // 3. Check title attribute (must validate with looksLikeDate)
+  const titleAttr = el.getAttribute('title');
+  if (titleAttr && looksLikeDate(titleAttr)) {
+    return titleAttr.trim();
+  }
+
+  // 4. Check alt attribute
+  const altAttr = el.getAttribute('alt');
+  if (altAttr && looksLikeDate(altAttr)) {
+    return altAttr.trim();
+  }
+
+  // 5. Check aria-label attribute
+  const ariaAttr = el.getAttribute('aria-label');
+  if (ariaAttr && looksLikeDate(ariaAttr)) {
+    return ariaAttr.trim();
+  }
+
+  // 6. Check visible text content
+  const text = (el.textContent || '').trim();
+  if (text && looksLikeDate(text)) {
+    return text;
+  }
+
+  return '';
+}
+
+// Convert various webmail date formats into a { date: 'YYYY-MM-DD', timestamp: 'YYYY-MM-DDTHH:MM:SS' } object.
+// `date` preserves backward compatibility; `timestamp` carries full precision for analytics.
 function parseDateToIso(dateStr, refDate = new Date()) {
-  if (!dateStr) return formatDateParts(refDate);
+  const fallback = { date: formatDateParts(refDate), timestamp: formatIsoWithTime(refDate, true) };
+  if (!dateStr) return fallback;
 
-  // 1. Sanitize string: strip zero-width and bidirectional formatting marks (\u200E, \u200F, BOM)
-  let raw = String(dateStr)
-    .replace(/[\u200B-\u200D\uFEFF\u200E\u200F]/g, '')
-    .replace(/[\u00A0\u202F\u2000-\u200A]/g, ' ')
-    .trim();
-  if (!raw) return formatDateParts(refDate);
+  // 1. Sanitize: normalize Eastern/Persian digits, strip invisible Unicode marks
+  let raw = normalizeNumerals(
+    String(dateStr)
+      .replace(/[\u200B-\u200D\uFEFF\u200E\u200F]/g, '')
+      .replace(/[\u00A0\u202F\u2000-\u200A]/g, ' ')
+  ).trim();
+  if (!raw) return fallback;
 
-  // 2. Unix numeric timestamp (10-digit seconds or 13-digit milliseconds)
+  // 2. Unix numeric timestamp (10-digit seconds or 13-digit milliseconds) — always has full time
   if (/^\d{10,13}$/.test(raw)) {
     const ts = Number(raw.length === 10 ? raw + '000' : raw);
     const d = new Date(ts);
     if (!isNaN(d.getTime())) {
-      return formatDateParts(d);
+      return { date: formatDateParts(d), timestamp: formatIsoWithTime(d, true) };
     }
   }
 
-  // 3. Clean string: strip parenthesized annotations (e.g. '(2 days ago)', '(UTC+3)'), prefixes, 'at'
+  // 3. Clean string: strip parenthesized annotations, prefixes, and 'at' conjunctions
   let clean = raw
     .replace(/\s*\([^)]*\)/g, ' ')
     .replace(/\s+at\s+/i, ' ')
@@ -302,72 +438,141 @@ function parseDateToIso(dateStr, refDate = new Date()) {
     .replace(/\s+/g, ' ')
     .trim();
 
-  // 4. Relative keywords
-  const lower = clean.toLowerCase();
-  if (lower === 'today' || /^\d{1,2}:\d{2}(?::\d{2})?(\s*(?:am|pm))?$/i.test(lower)) {
-    return formatDateParts(refDate);
+  // 4. Try native Date.parse first — handles RFC-2822, ISO-8601, and rich locale strings
+  //    e.g. "Thu, 25 Sep 2026 14:35:10 +0300", "2026-09-25T14:35:10Z", "Sep 25, 2026, 2:35 PM"
+  //    Guard: only accept if the string contains an explicit 4-digit year AND is not a
+  //    purely numeric date like "25/09/2026" (those are ambiguous locale-dependent; let
+  //    the slash/dot branches below handle them with correct day-first semantics).
+  const hasExplicitYear = /\b20\d{2}\b/.test(clean);
+  const isPurelyNumericDate = /^\d{1,2}[./\-]\d{1,2}[./\-]\d{2,4}$/.test(clean.trim());
+  if (hasExplicitYear && !isPurelyNumericDate) {
+    const nativeParse = new Date(clean);
+    if (!isNaN(nativeParse.getTime())) {
+      const yr = nativeParse.getFullYear();
+      if (yr >= 2000 && yr <= 2100) {
+        const hasTime = /\d{1,2}:\d{2}/.test(clean);
+        return { date: formatDateParts(nativeParse), timestamp: formatIsoWithTime(nativeParse, hasTime) };
+      }
+    }
   }
+
+  // 5. Relative keywords (days ago, weeks ago, months ago, yesterday, today, bare time)
+  const lower = clean.toLowerCase();
+
+  // Bare time token (e.g. "10:35 AM") → today
+  const bareTimeMatch = lower.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(am|pm)?$/i);
+  if (bareTimeMatch || lower === 'today') {
+    if (bareTimeMatch) {
+      let h = parseInt(bareTimeMatch[1], 10);
+      const m = parseInt(bareTimeMatch[2], 10);
+      const s = parseInt(bareTimeMatch[3] || '0', 10);
+      const meridiem = (bareTimeMatch[4] || '').toLowerCase();
+      if (meridiem === 'pm' && h < 12) h += 12;
+      if (meridiem === 'am' && h === 12) h = 0;
+      const d = new Date(refDate);
+      d.setHours(h, m, s, 0);
+      return { date: formatDateParts(d), timestamp: formatIsoWithTime(d, true) };
+    }
+    return { date: formatDateParts(refDate), timestamp: formatIsoWithTime(refDate, false) };
+  }
+
   if (lower.startsWith('yesterday')) {
     const d = new Date(refDate.getTime() - 86400000);
-    return formatDateParts(d);
+    return { date: formatDateParts(d), timestamp: formatIsoWithTime(d, false) };
   }
   const daysAgoMatch = lower.match(/^(\d+)\s+days?\s+ago/);
   if (daysAgoMatch) {
-    const days = parseInt(daysAgoMatch[1], 10);
-    const d = new Date(refDate.getTime() - days * 86400000);
-    return formatDateParts(d);
+    const d = new Date(refDate.getTime() - parseInt(daysAgoMatch[1], 10) * 86400000);
+    return { date: formatDateParts(d), timestamp: formatIsoWithTime(d, false) };
+  }
+  const weeksAgoMatch = lower.match(/^(\d+)\s+weeks?\s+ago/);
+  if (weeksAgoMatch) {
+    const d = new Date(refDate.getTime() - parseInt(weeksAgoMatch[1], 10) * 7 * 86400000);
+    return { date: formatDateParts(d), timestamp: formatIsoWithTime(d, false) };
+  }
+  const monthsAgoMatch = lower.match(/^(\d+)\s+months?\s+ago/);
+  if (monthsAgoMatch) {
+    const d = new Date(refDate.getTime() - parseInt(monthsAgoMatch[1], 10) * 30 * 86400000);
+    return { date: formatDateParts(d), timestamp: formatIsoWithTime(d, false) };
   }
 
-  // 5. Weekday names within the past 7 days (e.g., 'Thu', 'Thursday', 'Thu 11:30 AM')
+  // 6. Weekday names within the past 7 days (e.g. 'Thu', 'Thursday', 'Thu 11:30 AM')
   const weekdayMap = { sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6 };
-  const weekdayMatch = lower.match(/^(sun|mon|tue|wed|thu|fri|sat)[a-z]*(\s+\d{1,2}:\d{2}(\s*(?:am|pm))?)?$/i);
+  const weekdayMatch = lower.match(/^(sun|mon|tue|wed|thu|fri|sat)[a-z]*(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(am|pm)?)?$/i);
   if (weekdayMatch) {
     const targetDay = weekdayMap[weekdayMatch[1].toLowerCase().slice(0, 3)];
     let diff = refDate.getDay() - targetDay;
     if (diff <= 0) diff += 7;
     const d = new Date(refDate.getTime() - diff * 86400000);
-    return formatDateParts(d);
+    let hasTime = false;
+    if (weekdayMatch[2]) {
+      let h = parseInt(weekdayMatch[2], 10);
+      const m = parseInt(weekdayMatch[3], 10);
+      const s = parseInt(weekdayMatch[4] || '0', 10);
+      const meridiem = (weekdayMatch[5] || '').toLowerCase();
+      if (meridiem === 'pm' && h < 12) h += 12;
+      if (meridiem === 'am' && h === 12) h = 0;
+      d.setHours(h, m, s, 0);
+      hasTime = true;
+    }
+    return { date: formatDateParts(d), timestamp: formatIsoWithTime(d, hasTime) };
   }
 
-  // 6. Non-English and English month names (with or without year/time)
+  // 7. Non-English and English month names (with optional time component)
   const yearMatch = clean.match(/\b(20\d{2})\b/);
   const explicitYear = yearMatch ? parseInt(yearMatch[1], 10) : null;
 
-  const m1 = clean.match(/(?:^|\s)([a-zA-Z\u0600-\u06FF]+)[.,]?\s+(\d{1,2})(?:st|nd|rd|th)?(?:\s*,\s*|\s+|$)/i);
+  // Extract time component from string if present (e.g. "Sep 25, 2026 2:35 PM")
+  const timeMatch = clean.match(/(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(am|pm)?/i);
+  let timeH = 0, timeM = 0, timeS = 0, hasTimeInStr = false;
+  if (timeMatch) {
+    timeH = parseInt(timeMatch[1], 10);
+    timeM = parseInt(timeMatch[2], 10);
+    timeS = parseInt(timeMatch[3] || '0', 10);
+    const mer = (timeMatch[4] || '').toLowerCase();
+    if (mer === 'pm' && timeH < 12) timeH += 12;
+    if (mer === 'am' && timeH === 12) timeH = 0;
+    hasTimeInStr = true;
+  }
+
+  // Strip time portion before matching month/day so regexes aren't confused
+  const cleanNoTime = clean.replace(/(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(am|pm)?/gi, '').trim();
+
+  // Match month word then day: "September 1", "Sep 1, 2026", "أيلول 1", "سبتمبر 1"
+  const m1 = cleanNoTime.match(/(?:^|\s)([a-zA-Z\u0600-\u06FF\s]+?)[.,]?\s+(\d{1,2})(?:st|nd|rd|th)?(?:\s*,\s*|\s+|$)/i);
   if (m1) {
-    const key = m1[1].toLowerCase();
+    const key = m1[1].trim().toLowerCase();
     const month = MONTH_MAP[key] || MONTH_MAP[key.slice(0, 3)];
     if (month) {
       const day = parseInt(m1[2], 10);
       let year = explicitYear || refDate.getFullYear();
       if (!explicitYear) {
         const testD = new Date(year, month - 1, day);
-        if (testD.getTime() > refDate.getTime() + 86400000 * 2) {
-          year -= 1;
-        }
+        if (testD.getTime() > refDate.getTime() + 86400000 * 2) year -= 1;
       }
-      return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const d = new Date(year, month - 1, day, timeH, timeM, timeS);
+      return { date: formatDateParts(d), timestamp: formatIsoWithTime(d, hasTimeInStr) };
     }
   }
 
-  const m2 = clean.match(/(?:^|\s)(\d{1,2})(?:st|nd|rd|th)?\s+([a-zA-Z\u0600-\u06FF]+)[.,]?(?:\s*,\s*|\s+|$)/i);
+  // Match day then month word: "1 September", "1 Sep 2026", "1 أيلول 2026", "1 سبتمبر"
+  const m2 = cleanNoTime.match(/(?:^|\s)(\d{1,2})(?:st|nd|rd|th)?\s+([a-zA-Z\u0600-\u06FF\s]+?)[.,]?(?:\s*,\s*|\s+|$)/i);
   if (m2) {
-    const key = m2[2].toLowerCase();
+    const key = m2[2].trim().toLowerCase();
     const month = MONTH_MAP[key] || MONTH_MAP[key.slice(0, 3)];
     if (month) {
       const day = parseInt(m2[1], 10);
       let year = explicitYear || refDate.getFullYear();
       if (!explicitYear) {
         const testD = new Date(year, month - 1, day);
-        if (testD.getTime() > refDate.getTime() + 86400000 * 2) {
-          year -= 1;
-        }
+        if (testD.getTime() > refDate.getTime() + 86400000 * 2) year -= 1;
       }
-      return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const d = new Date(year, month - 1, day, timeH, timeM, timeS);
+      return { date: formatDateParts(d), timestamp: formatIsoWithTime(d, hasTimeInStr) };
     }
   }
 
-  // 7. Dot-separated dates (DD.MM.YYYY) or day-first slashes (25/09/2026)
+  // 8. Dot-separated dates (DD.MM.YYYY)
   const dotMatch = clean.match(/(?:^|\s)(\d{1,2})\.(\d{1,2})\.(\d{2,4})(?:$|\s)/);
   if (dotMatch) {
     let day = parseInt(dotMatch[1], 10);
@@ -375,10 +580,12 @@ function parseDateToIso(dateStr, refDate = new Date()) {
     let year = parseInt(dotMatch[3], 10);
     if (year < 100) year += 2000;
     if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
-      return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const d = new Date(year, month - 1, day, timeH, timeM, timeS);
+      return { date: formatDateParts(d), timestamp: formatIsoWithTime(d, hasTimeInStr) };
     }
   }
 
+  // 9. Slash-separated dates (DD/MM/YYYY or MM/DD/YYYY)
   const slashMatch = clean.match(/(?:^|\s)(\d{1,2})[-/](\d{1,2})[-/](\d{2,4})(?:$|\s)/);
   if (slashMatch) {
     let p1 = parseInt(slashMatch[1], 10);
@@ -386,25 +593,15 @@ function parseDateToIso(dateStr, refDate = new Date()) {
     let year = parseInt(slashMatch[3], 10);
     if (year < 100) year += 2000;
     let day = null, month = null;
-    if (p1 > 12) {
-      day = p1;
-      month = p2;
-    } else if (p2 > 12) {
-      month = p1;
-      day = p2;
-    }
+    if (p1 > 12) { day = p1; month = p2; }
+    else if (p2 > 12) { month = p1; day = p2; }
     if (day !== null && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
-      return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const d = new Date(year, month - 1, day, timeH, timeM, timeS);
+      return { date: formatDateParts(d), timestamp: formatIsoWithTime(d, hasTimeInStr) };
     }
   }
 
-  // 8. Standard date fallback
-  const d = new Date(clean);
-  if (!isNaN(d.getTime())) {
-    return formatDateParts(d);
-  }
-
-  return formatDateParts(refDate);
+  return fallback;
 }
 
 // Extract email address inside angle brackets or quotes
@@ -497,40 +694,53 @@ function parseGmailThread(currentUserEmail) {
       recipientName = cleanText(recipientEl.textContent.replace(/<[^>]+>/g, ''));
     }
 
-    // Extract date element
-    let dateEl = (activeMessage && activeMessage.querySelector('.g3, .bi4, td.gH .gK span, td.gH span, [data-timestamp], span.mI, td.g3, .date')) || null;
+    // Extract date string candidate
+    const candidateDateSelectors = [
+      'td.gH span.g3',
+      'td.gH [title]',
+      'td.gH .gK span',
+      'td.gH span',
+      '.gK span.g3',
+      'span.g3',
+      'span.bi4',
+      'span.mI',
+      '[data-timestamp]',
+      'time',
+      '[datetime]',
+      'table.cf.gJ td.gH *',
+      '.gE [title]',
+      '.adn [title]'
+    ];
 
-    if (!dateEl && activeMessage) {
-      dateEl = activeMessage.querySelector('[title*="202"], [title*=":"], [aria-label*="202"], [aria-label*=":"], td.gH, .gK');
-    }
-
-    if (!dateEl) {
-      const allDateEls = document.querySelectorAll('div[role="main"] td.gH span, div[role="main"] .g3, div[role="main"] .bi4, div[role="main"] [data-timestamp], div[role="main"] td.g3');
-      if (allDateEls.length > 0) {
-        dateEl = allDateEls[allDateEls.length - 1];
+    for (const sel of candidateDateSelectors) {
+      const el = activeMessage ? activeMessage.querySelector(sel) : null;
+      const extracted = extractDateStringFromElement(el);
+      if (extracted) {
+        rawDate = extracted;
+        break;
       }
     }
 
-    if (dateEl) {
-      const titleAttr = dateEl.getAttribute('title');
-      const hasDigitInTitle = titleAttr && /\d/.test(titleAttr);
-      const ariaAttr = dateEl.getAttribute('aria-label');
-      const hasDigitInAria = ariaAttr && /\d/.test(ariaAttr);
-
-      rawDate = (hasDigitInTitle ? titleAttr : '') ||
-                dateEl.getAttribute('data-timestamp') ||
-                dateEl.getAttribute('datetime') ||
-                (hasDigitInAria ? ariaAttr : '') ||
-                dateEl.getAttribute('alt') ||
-                dateEl.textContent;
-    }
-
-    // If rawDate is still empty or is purely a time token (e.g. "11:30 AM"), search header parent or container for full date attribute
-    const isOnlyTime = !rawDate || /^\s*[\u200e\u200f]*\d{1,2}:\d{2}(?::\d{2})?(\s*(?:am|pm))?\s*$/i.test(String(rawDate).trim());
-    if (isOnlyTime && activeMessage) {
-      const parentWithTitle = activeMessage.querySelector('.gE [title*="202"], .gH [title*="202"], table.cf [title*="202"], [title*="202"]');
-      if (parentWithTitle) {
-        rawDate = parentWithTitle.getAttribute('title');
+    // Fallback across document if activeMessage didn't yield a valid date
+    if (!rawDate) {
+      const globalSelectors = [
+        'div[role="main"] td.gH span[title]',
+        'div[role="main"] td.gH span',
+        'div[role="main"] span.g3',
+        'div[role="main"] span.bi4',
+        'div[role="main"] [data-timestamp]',
+        'div[role="main"] time'
+      ];
+      for (const sel of globalSelectors) {
+        const els = Array.from(document.querySelectorAll(sel));
+        for (let i = els.length - 1; i >= 0; i--) {
+          const extracted = extractDateStringFromElement(els[i]);
+          if (extracted) {
+            rawDate = extracted;
+            break;
+          }
+        }
+        if (rawDate) break;
       }
     }
 
@@ -564,8 +774,10 @@ function parseGmailThread(currentUserEmail) {
     counterpartyDomain = counterpartyEmail.split('@')[1].toLowerCase().trim();
   }
 
-  // ATS Disambiguation: if counterparty domain is an ATS domain
-  const isAts = ATS_DOMAINS.some(ats => counterpartyDomain.includes(ats));
+  // ATS Disambiguation: exact-domain or dot-suffix matching via isAtsHost
+  const isAts = isAtsHost(counterpartyDomain) ||
+    isAtsHost(domainFromEmail(senderEmail)) ||
+    isAtsHost(domainFromEmail(recipientEmail));
 
   return {
     provider: 'gmail',
@@ -581,7 +793,7 @@ function parseGmailThread(currentUserEmail) {
     counterpartyEmail,
     counterpartyDomain,
     isAts,
-    date: parseDateToIso(rawDate) || formatDateParts(new Date()),
+    ...(() => { const p = parseDateToIso(rawDate); return { date: p.date, timestamp: p.timestamp }; })(),
     direction,
     body: bodyText,
     snippet: snippetText,
@@ -624,12 +836,24 @@ function parseOutlookThread(currentUserEmail) {
 
   // 3. Date
   let rawDate = '';
-  const dateEl = document.querySelector('div[role="main"] time, div[role="main"] [aria-label*="Received"], div[role="main"] [aria-label*="Date"], div[role="main"] span[title*="202"], div[data-testid="readingPane"] time, div[data-testid="readingPane"] span[title*="202"], time, div[aria-label*="Received"], div[aria-label*="Date"]');
-  if (dateEl) {
-    rawDate = dateEl.getAttribute('datetime') || 
-              dateEl.getAttribute('title') || 
-              dateEl.getAttribute('aria-label') || 
-              dateEl.textContent;
+  const outlookDateSelectors = [
+    'div[role="main"] time',
+    'div[data-testid="readingPane"] time',
+    'time',
+    'div[role="main"] [aria-label*="Received"]',
+    'div[role="main"] [aria-label*="Date"]',
+    'div[role="main"] span[title*="202"]',
+    'div[data-testid="readingPane"] span[title*="202"]',
+    '[datetime]'
+  ];
+
+  for (const sel of outlookDateSelectors) {
+    const el = document.querySelector(sel);
+    const extracted = extractDateStringFromElement(el);
+    if (extracted) {
+      rawDate = extracted;
+      break;
+    }
   }
 
   // 4. Body
@@ -655,7 +879,11 @@ function parseOutlookThread(currentUserEmail) {
   if (counterpartyEmail && counterpartyEmail.includes('@')) {
     counterpartyDomain = counterpartyEmail.split('@')[1].toLowerCase().trim();
   }
-  const isAts = ATS_DOMAINS.some(ats => counterpartyDomain.includes(ats));
+  // ATS Disambiguation: exact-domain or dot-suffix matching via isAtsHost
+  const isAts = isAtsHost(counterpartyDomain) ||
+    isAtsHost(domainFromEmail(senderEmail)) ||
+    isAtsHost(domainFromEmail(recipientEmail));
+
 
   return {
     provider: 'outlook',
@@ -668,7 +896,7 @@ function parseOutlookThread(currentUserEmail) {
     counterpartyEmail,
     counterpartyDomain,
     isAts,
-    date: parseDateToIso(rawDate) || formatDateParts(new Date()),
+    ...(() => { const p = parseDateToIso(rawDate); return { date: p.date, timestamp: p.timestamp }; })(),
     direction,
     body: bodyText,
     snippet: snippetText,
