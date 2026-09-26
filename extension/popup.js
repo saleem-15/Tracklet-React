@@ -53,6 +53,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const emailCounterpartyLabel = document.getElementById('email-counterparty-label');
   const counterpartyLabelText = document.getElementById('counterparty-label-text');
   const emailDateInput = document.getElementById('email-date');
+  const emailTimeInput = document.getElementById('email-time');
   const emailBodyInput = document.getElementById('email-body');
   const headerModeChip = document.getElementById('header-mode-chip');
   const headerModeText = document.getElementById('header-mode-text');
@@ -798,13 +799,34 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 2. Request active email data from content script
     let hasAttemptedInjection = false;
 
+    function updateContactDiscoveryUI() {
+      const isKnownContact = selectedEmailMatchedApp?.contactEmails?.includes((discoveredRecruiterEmail || '').toLowerCase());
+      if (discoveredRecruiterName && !isKnownContact && discoveredRecruiterName !== 'You' && discoveredRecruiterName.length > 1) {
+        if (milestoneBox) milestoneBox.style.display = 'block';
+        addContactOption.style.display = 'flex';
+        addContactLabel.textContent = `Add "${discoveredRecruiterName}" as recruiter contact`;
+        addContactCheckbox.checked = true;
+      } else {
+        if (milestoneBox) milestoneBox.style.display = 'none';
+        addContactOption.style.display = 'none';
+        addContactCheckbox.checked = false;
+      }
+    }
+
     function applyExtractedEmailData(emailData) {
       rawExtractedEmailData = emailData;
 
       // Populate basic email inputs
       emailSubjectInput.value = emailData.subject || '';
-      emailCounterpartyInput.value = emailData.counterparty || '';
       emailDateInput.value = emailData.date || today;
+      if (emailTimeInput) {
+        if (emailData.timestamp && emailData.timestamp.includes('T')) {
+          const timePart = emailData.timestamp.split('T')[1].slice(0, 5);
+          emailTimeInput.value = timePart;
+        } else {
+          emailTimeInput.value = '';
+        }
+      }
       emailBodyInput.value = emailData.body || emailData.snippet || '';
       currentEmailUrl = emailData.emailUrl || tab.url || '';
       currentEmailTimestamp = emailData.timestamp || null;
@@ -817,6 +839,18 @@ document.addEventListener('DOMContentLoaded', async () => {
       // Direction
       setEmailDirection(emailData.direction || 'inbound');
 
+      // Populate counterparty ensuring outbound never leaks user email
+      if ((emailData.direction || 'inbound') === 'outbound') {
+        const userEmails = [currentUserSession?.email, emailData.senderEmail].filter(Boolean).map(e => e.toLowerCase().trim());
+        let safeParty = emailData.counterparty || emailData.recipientEmail || emailData.recipientName || '';
+        if (userEmails.includes(safeParty.toLowerCase().trim())) {
+          safeParty = emailData.recipientEmail || emailData.recipientName || '';
+        }
+        emailCounterpartyInput.value = safeParty;
+      } else {
+        emailCounterpartyInput.value = emailData.counterparty || '';
+      }
+
       // Match to application
       const { bestMatch } = matchEmailToApplications(emailData, allKnownAppsList);
       if (bestMatch) {
@@ -828,16 +862,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       // Contact Discovery
       discoveredRecruiterName = emailData.counterpartyName || '';
       discoveredRecruiterEmail = emailData.counterpartyEmail || '';
-      const isKnownContact = selectedEmailMatchedApp?.contactEmails?.includes(discoveredRecruiterEmail.toLowerCase());
-      if (discoveredRecruiterName && !isKnownContact && discoveredRecruiterName !== 'You' && discoveredRecruiterName.length > 1) {
-        if (milestoneBox) milestoneBox.style.display = 'block';
-        addContactOption.style.display = 'flex';
-        addContactLabel.textContent = `Add "${discoveredRecruiterName}" as recruiter contact`;
-        addContactCheckbox.checked = true;
-      } else {
-        if (milestoneBox) milestoneBox.style.display = 'none';
-        addContactOption.style.display = 'none';
-      }
+      updateContactDiscoveryUI();
     }
 
     function requestEmailExtraction() {
@@ -891,11 +916,36 @@ document.addEventListener('DOMContentLoaded', async () => {
       dirOutboundBtn.classList.add('active');
       dirInboundBtn.classList.remove('active');
       counterpartyLabelText.textContent = 'To (Recruiter / Contact)';
+
+      // Auto-update counterparty input if it currently matches the user's email or sender
+      if (rawExtractedEmailData) {
+        const userEmails = [
+          currentUserSession?.email,
+          rawExtractedEmailData.senderEmail
+        ].filter(Boolean).map(e => e.toLowerCase().trim());
+
+        const currentVal = (emailCounterpartyInput.value || '').toLowerCase().trim();
+        if (!currentVal || userEmails.includes(currentVal)) {
+          emailCounterpartyInput.value = rawExtractedEmailData.recipientEmail || rawExtractedEmailData.recipientName || '';
+        }
+        discoveredRecruiterName = rawExtractedEmailData.recipientName || rawExtractedEmailData.counterpartyName || '';
+        discoveredRecruiterEmail = rawExtractedEmailData.recipientEmail || rawExtractedEmailData.counterpartyEmail || '';
+      }
     } else {
       dirInboundBtn.classList.add('active');
       dirOutboundBtn.classList.remove('active');
       counterpartyLabelText.textContent = 'From (Recruiter / Company)';
+
+      if (rawExtractedEmailData) {
+        const currentVal = (emailCounterpartyInput.value || '').toLowerCase().trim();
+        if (!currentVal || currentVal === (rawExtractedEmailData.recipientEmail || '').toLowerCase().trim()) {
+          emailCounterpartyInput.value = rawExtractedEmailData.senderEmail || rawExtractedEmailData.senderName || '';
+        }
+        discoveredRecruiterName = rawExtractedEmailData.senderName || '';
+        discoveredRecruiterEmail = rawExtractedEmailData.senderEmail || '';
+      }
     }
+    updateContactDiscoveryUI();
   }
 
   function renderMatchedApp(app) {
@@ -939,6 +989,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         emailMatchedAvatar.style.borderColor = '#cbd5e1';
       }
     }
+    updateContactDiscoveryUI();
   }
 
   let highlightedAppIndex = -1;
@@ -1143,17 +1194,28 @@ document.addEventListener('DOMContentLoaded', async () => {
     const emailLogPayload = {
       id: `email-${Date.now()}`,
       subject,
-      sender: isOutbound ? (currentUserSession?.email || 'You') : counterparty,
-      recipient: isOutbound ? counterparty : (currentUserSession?.email || undefined),
+      sender: isOutbound ? (currentUserSession?.email || rawExtractedEmailData?.senderEmail || 'You') : counterparty,
+      recipient: isOutbound ? counterparty : (currentUserSession?.email || rawExtractedEmailData?.recipientEmail || undefined),
       date: emailDateInput.value || today,
-      // Use the extracted timestamp only when its date portion still matches the
-      // current date field — if the user edited the date, derive midnight from it.
+      // Derive full timestamp from emailDateInput and emailTimeInput with local UTC offset
       timestamp: (() => {
         const activeDate = emailDateInput.value || today;
-        const tsDatePart = currentEmailTimestamp ? currentEmailTimestamp.slice(0, 10) : null;
-        return tsDatePart === activeDate
-          ? currentEmailTimestamp
-          : `${activeDate}T00:00:00`;
+        const activeTime = emailTimeInput?.value ? `${emailTimeInput.value}:00` : '00:00:00';
+
+        // Preserve extracted timestamp if its date and time remain unchanged
+        if (currentEmailTimestamp && currentEmailTimestamp.startsWith(`${activeDate}T${activeTime.slice(0, 5)}`)) {
+          return currentEmailTimestamp;
+        }
+
+        const localTarget = new Date(`${activeDate}T${activeTime}`);
+        const targetDate = isNaN(localTarget.getTime()) ? new Date() : localTarget;
+        const offsetMin = -targetDate.getTimezoneOffset();
+        const sign = offsetMin >= 0 ? '+' : '-';
+        const absMin = Math.abs(offsetMin);
+        const offH = String(Math.floor(absMin / 60)).padStart(2, '0');
+        const offM = String(absMin % 60).padStart(2, '0');
+        const offset = `${sign}${offH}:${offM}`;
+        return `${activeDate}T${activeTime}${offset}`;
       })(),
       direction: currentEmailDirection,
       snippet: emailBodyInput.value.trim().slice(0, 200),
