@@ -31,10 +31,20 @@ import { AuthModal } from './components/AuthModal';
 import { EmailVerificationGate } from './components/EmailVerificationGate';
 import { GuestMigrationModal } from './components/GuestMigrationModal';
 import { loadExpirySettings, saveExpirySettings } from './lib/expiryUtils';
-import { setupExtensionSync, syncAuthSessionToExtension, syncApplicationsToExtension, normalizeJobUrl, IncomingEmailPayload } from './lib/extensionSync';
+import { 
+  setupExtensionSync, 
+  syncAuthSessionToExtension, 
+  syncApplicationsToExtension, 
+  broadcastDeletedApplication,
+  normalizeJobUrl, 
+  IncomingEmailPayload 
+} from './lib/extensionSync';
+import { clearNoteDraft } from './lib/editor/noteDrafts';
+import { findDuplicateApplications, mergeAllDuplicateGroups } from './lib/dedupUtils';
 import { LOCAL_STORAGE_KEYS } from './lib/constants';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ToastContainer, ToastMessage } from './components/Toast';
+import { AlertTriangle, X } from 'lucide-react';
 
 import {
   getTabFromPath,
@@ -51,6 +61,8 @@ function TrackletAppContent() {
   const { user, loading: authLoading, openAuthModal, signOut } = useAuth();
 
   const [applications, setApplications] = useState<Application[]>([]);
+  const applicationsRef = useRef<Application[]>(applications);
+  applicationsRef.current = applications;
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [activeTab, setActiveTabState] = useState<ActiveTab>(() => getTabFromPath(window.location.pathname));
   const [dataLoading, setDataLoading] = useState(true);
@@ -79,6 +91,7 @@ function TrackletAppContent() {
     () => _initialUrlState.isAddModalOpen
   );
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState<boolean>(false);
+  const [isDuplicateBannerDismissed, setIsDuplicateBannerDismissed] = useState<boolean>(false);
 
   // ── URL-aware tab setter ──
   const setActiveTab = (tab: ActiveTab) => {
@@ -288,8 +301,9 @@ function TrackletAppContent() {
     }
   }, [applications]);
 
-  // Buffer for incoming emails received before applications load
+  // Buffer for incoming emails and applications received before applications data load completes
   const pendingEmailPayloadsRef = useRef<IncomingEmailPayload[]>([]);
+  const pendingAppPayloadsRef = useRef<{ clippedApp: Application; persistedToCloud?: boolean }[]>([]);
   const dataLoadingRef = useRef(dataLoading);
   useEffect(() => {
     dataLoadingRef.current = dataLoading;
@@ -403,88 +417,133 @@ function TrackletAppContent() {
     }
   }, [user, addToast]);
 
-  // Drain buffered incoming emails once applications data loading completes
-  useEffect(() => {
-    if (!dataLoading && pendingEmailPayloadsRef.current.length > 0) {
-      const queue = [...pendingEmailPayloadsRef.current];
-      pendingEmailPayloadsRef.current = [];
-      queue.forEach((payload) => {
-        processIncomingEmail(payload);
-      });
+  const processIncomingApplication = useCallback(async (clippedApp: Application, persistedToCloud?: boolean) => {
+    // Multi-account guard: if tab is logged in and clipped item is explicitly for another user, skip
+    if (user && clippedApp.userId && clippedApp.userId !== 'guest' && clippedApp.userId !== user.uid) {
+      return;
     }
-  }, [dataLoading, processIncomingEmail]);
+
+    // Buffer if applications data is still loading from repository to prevent false duplicates
+    if (dataLoadingRef.current) {
+      pendingAppPayloadsRef.current.push({ clippedApp, persistedToCloud });
+      return;
+    }
+
+    const normUrl = clippedApp.jobLink ? normalizeJobUrl(clippedApp.jobLink) : '';
+    const currentApps = applicationsRef.current;
+
+    const existingIdx = currentApps.findIndex((a) => {
+      const existingNormUrl = a.jobLink ? normalizeJobUrl(a.jobLink) : '';
+      if (normUrl && existingNormUrl) {
+        return normUrl === existingNormUrl;
+      }
+      return (
+        a.id === clippedApp.id ||
+        (a.company.trim().toLowerCase() === clippedApp.company.trim().toLowerCase() &&
+         a.role.trim().toLowerCase() === clippedApp.role.trim().toLowerCase())
+      );
+    });
+
+    const isUpdate = existingIdx >= 0;
+    let finalApp = clippedApp;
+    let next: Application[];
+
+    if (isUpdate) {
+      const existingApp = currentApps[existingIdx];
+
+      // Safe preservation of user progress:
+      // 1. If existing status is advanced (e.g. Applied) and clipped app is Saved, preserve user's stage
+      const shouldPreserveStatus = existingApp.status !== 'Saved' && clippedApp.status === 'Saved';
+      const resolvedStatus = shouldPreserveStatus ? existingApp.status : (clippedApp.status || existingApp.status);
+      const resolvedStageUpdatedAt = shouldPreserveStatus ? existingApp.stageUpdatedAt : (clippedApp.stageUpdatedAt || existingApp.stageUpdatedAt);
+
+      // 2. If existing application has non-empty notes and incoming has none/whitespace, preserve existing notes
+      const resolvedNotes = (existingApp.notes && existingApp.notes.trim().length > 0)
+        ? ((!clippedApp.notes || !clippedApp.notes.trim()) ? existingApp.notes : clippedApp.notes)
+        : (clippedApp.notes || '');
+
+      finalApp = {
+        ...existingApp,
+        ...clippedApp,
+        id: existingApp.id, // Preserve existing application ID
+        status: resolvedStatus,
+        stageUpdatedAt: resolvedStageUpdatedAt,
+        notes: resolvedNotes,
+        location: clippedApp.location || existingApp.location || '',
+        workLocation: clippedApp.workLocation || existingApp.workLocation,
+        employmentType: clippedApp.employmentType || existingApp.employmentType,
+        contacts: existingApp.contacts && existingApp.contacts.length > 0 ? existingApp.contacts : (clippedApp.contacts || []),
+        emails: existingApp.emails && existingApp.emails.length > 0 ? existingApp.emails : (clippedApp.emails || []),
+        history: clippedApp.history || existingApp.history,
+        updatedAt: new Date().toISOString(),
+      };
+      next = [...currentApps];
+      next[existingIdx] = finalApp;
+    } else {
+      next = [finalApp, ...currentApps];
+    }
+
+    applicationsRef.current = next;
+    setApplications(next);
+
+    // Side effects performed strictly outside setApplications with computed values
+    if (isUpdate) {
+      if (user?.emailVerified) {
+        ApplicationRepository.updateApplication(finalApp.id, finalApp, user.uid).catch((err) => {
+          console.error('Failed to update application in Firestore:', err);
+        });
+      }
+      addToast(
+        'success',
+        'Updated via Tracklet Extension',
+        `Updated "${finalApp.role}" at ${finalApp.company}`
+      );
+    } else {
+      if (user?.emailVerified && !persistedToCloud) {
+        ApplicationRepository.addApplication(finalApp, user.uid).then((created) => {
+          applicationsRef.current = applicationsRef.current.map((a) => (a.id === finalApp.id ? created : a));
+          setApplications(applicationsRef.current);
+        }).catch((err) => {
+          console.error('Failed to add unpersisted application to Firestore:', err);
+        });
+      }
+      addToast(
+        'success',
+        'Clipped via Tracklet Extension',
+        `Saved "${finalApp.role}" at ${finalApp.company}`
+      );
+    }
+
+    if (!user?.emailVerified) {
+      ApplicationRepository.saveGuestApplications(next);
+    }
+  }, [user, addToast]);
+
+  // Drain buffered incoming applications and emails once applications data loading completes
+  useEffect(() => {
+    if (!dataLoading) {
+      if (pendingAppPayloadsRef.current.length > 0) {
+        const appQueue = [...pendingAppPayloadsRef.current];
+        pendingAppPayloadsRef.current = [];
+        appQueue.forEach(({ clippedApp, persistedToCloud }) => {
+          processIncomingApplication(clippedApp, persistedToCloud);
+        });
+      }
+      if (pendingEmailPayloadsRef.current.length > 0) {
+        const emailQueue = [...pendingEmailPayloadsRef.current];
+        pendingEmailPayloadsRef.current = [];
+        emailQueue.forEach((payload) => {
+          processIncomingEmail(payload);
+        });
+      }
+    }
+  }, [dataLoading, processIncomingApplication, processIncomingEmail]);
 
   // Browser Extension Sync Listener
   useEffect(() => {
     const cleanup = setupExtensionSync({
-      onApplicationReceived: async (clippedApp, persistedToCloud) => {
-        // Multi-account guard: if tab is logged in and clipped item is explicitly for another user, skip
-        if (user && clippedApp.userId && clippedApp.userId !== 'guest' && clippedApp.userId !== user.uid) {
-          return;
-        }
-
-        const normUrl = clippedApp.jobLink ? normalizeJobUrl(clippedApp.jobLink) : '';
-
-        setApplications((prev) => {
-          const existingIdx = prev.findIndex((a) => 
-            a.id === clippedApp.id || 
-            (normUrl && a.jobLink && normalizeJobUrl(a.jobLink) === normUrl) ||
-            (a.company.trim().toLowerCase() === clippedApp.company.trim().toLowerCase() && a.role.trim().toLowerCase() === clippedApp.role.trim().toLowerCase())
-          );
-
-          let next: Application[];
-          let finalApp = clippedApp;
-          const isUpdate = existingIdx >= 0;
-
-          if (isUpdate) {
-            const existingApp = prev[existingIdx];
-            finalApp = {
-              ...existingApp,
-              ...clippedApp,
-              id: existingApp.id, // Preserve existing application ID
-              history: clippedApp.history || existingApp.history,
-              updatedAt: new Date().toISOString(),
-            };
-            next = [...prev];
-            next[existingIdx] = finalApp;
-
-            // If clipped while offline/guest and now authenticated with verified email, persist update to Firestore
-            if (user?.emailVerified && !persistedToCloud) {
-              ApplicationRepository.updateApplication(existingApp.id, finalApp, user.uid).catch((err) => {
-                console.error('Failed to update application in Firestore:', err);
-              });
-            }
-
-            addToast(
-              'success',
-              'Updated via Tracklet Extension',
-              `Updated "${finalApp.role}" at ${finalApp.company}`
-            );
-          } else {
-            next = [finalApp, ...prev];
-
-            // If clipped while offline/guest and now authenticated with verified email, add to Firestore
-            if (user?.emailVerified && !persistedToCloud) {
-              ApplicationRepository.addApplication(finalApp, user.uid).then((created) => {
-                setApplications((curr) => curr.map((a) => a.id === finalApp.id ? created : a));
-              }).catch((err) => {
-                console.error('Failed to add unpersisted application to Firestore:', err);
-              });
-            }
-
-            addToast(
-              'success',
-              'Clipped via Tracklet Extension',
-              `Saved "${finalApp.role}" at ${finalApp.company}`
-            );
-          }
-
-          // In guest mode, immediately persist to localStorage so data is NEVER lost on tab close/refresh
-          if (!user?.emailVerified) {
-            ApplicationRepository.saveGuestApplications(next);
-          }
-          return next;
-        });
+      onApplicationReceived: (clippedApp, persistedToCloud) => {
+        processIncomingApplication(clippedApp, persistedToCloud);
       },
       onEmailReceived: (payload) => {
         processIncomingEmail(payload);
@@ -492,7 +551,7 @@ function TrackletAppContent() {
     });
 
     return () => cleanup();
-  }, [user, addToast, processIncomingEmail]);
+  }, [processIncomingApplication, processIncomingEmail]);
 
   // Synchronize URL on auth transitions
   useEffect(() => {
@@ -1129,6 +1188,16 @@ function TrackletAppContent() {
   // Delete Application
   const handleDeleteApplication = async (id: string) => {
     const targetApp = applications.find((a) => a.id === id);
+
+    // Clear any local note draft for this application
+    clearNoteDraft(id);
+
+    // Notify extension to purge from its pending/sync storage
+    broadcastDeletedApplication(id);
+
+    // Purge from guest storage cache regardless of auth mode to prevent resurrection
+    ApplicationRepository.purgeGuestApplications(id);
+
     setApplications((prev) => {
       const next = prev.filter((a) => a.id !== id);
       if (!user?.emailVerified) ApplicationRepository.saveGuestApplications(next);
@@ -1247,6 +1316,15 @@ function TrackletAppContent() {
   const handleBulkDelete = async (ids: string[]) => {
     const deletedApps = applications.filter((a) => ids.includes(a.id));
     const count = ids.length;
+
+    // Clear note drafts and notify extension for each deleted application
+    ids.forEach((id) => {
+      clearNoteDraft(id);
+      broadcastDeletedApplication(id);
+    });
+
+    // Purge from guest storage cache regardless of auth mode to prevent resurrection
+    ApplicationRepository.purgeGuestApplications(ids);
 
     setApplications((prev) => {
       const next = prev.filter((a) => !ids.includes(a.id));
@@ -1409,6 +1487,76 @@ function TrackletAppContent() {
     return contacts.find((c) => c.id === selectedContactId) || null;
   }, [contacts, selectedContactId]);
 
+  // Deduplication analysis across applications
+  const duplicateGroups = useMemo(() => findDuplicateApplications(applications), [applications]);
+  const duplicateCount = useMemo(() => {
+    let count = 0;
+    for (const group of duplicateGroups.values()) {
+      count += (group.length - 1);
+    }
+    return count;
+  }, [duplicateGroups]);
+
+  const handleMergeAllDuplicates = useCallback(async () => {
+    const currentApps = applicationsRef.current;
+    const groups = findDuplicateApplications(currentApps);
+    const { mergedApplications, purgedAppIds, updatedApplications } = mergeAllDuplicateGroups(currentApps);
+
+    if (purgedAppIds.length === 0) return;
+
+    // Clean up local drafts and notify extension for each purged duplicate
+    purgedAppIds.forEach((id) => {
+      clearNoteDraft(id);
+      broadcastDeletedApplication(id);
+    });
+
+    // If currently selected application was one of the purged duplicates, select surviving record
+    if (selectedAppId && purgedAppIds.includes(selectedAppId)) {
+      let survivorId: string | null = null;
+      for (const group of groups.values()) {
+        if (group.some((a) => a.id === selectedAppId)) {
+          const survivor = group.find((a) => !purgedAppIds.includes(a.id));
+          if (survivor) survivorId = survivor.id;
+          break;
+        }
+      }
+      setSelectedAppId(survivorId);
+    }
+
+    // Update state and ref synchronously
+    applicationsRef.current = mergedApplications;
+    setApplications(mergedApplications);
+
+    // Purge from guest storage cache regardless of auth mode
+    ApplicationRepository.purgeGuestApplications(purgedAppIds);
+
+    // In guest mode, save merged result so guest storage includes updated survivor fields
+    if (!user?.emailVerified) {
+      ApplicationRepository.saveGuestApplications(mergedApplications);
+    }
+
+    // Persist to Firestore if user is authenticated
+    if (user?.emailVerified) {
+      try {
+        // Save each surviving merged record before batchDelete so a failed update cannot delete the only copy of merged data
+        for (const survivor of updatedApplications) {
+          await ApplicationRepository.updateApplication(survivor.id, survivor, user.uid);
+        }
+        await ApplicationRepository.batchDelete(purgedAppIds, user.uid);
+      } catch (err) {
+        console.error('Failed to sync merged duplicates to Firestore:', err);
+        addToast('error', 'Sync Failed', 'Merged locally, but failed to sync changes to cloud.');
+        return;
+      }
+    }
+
+    addToast(
+      'success',
+      'Duplicates Merged',
+      `Consolidated ${purgedAppIds.length} duplicate application${purgedAppIds.length === 1 ? '' : 's'}. Notes and pipeline stages preserved.`
+    );
+  }, [selectedAppId, user, addToast]);
+
   // If authentication state is still loading
   if (authLoading) {
     return (
@@ -1499,6 +1647,40 @@ function TrackletAppContent() {
           </div>
         ) : (
           <main className="flex-1 flex flex-col min-h-0 overflow-hidden relative">
+            {/* Duplicate Applications Detected Banner */}
+            {(activeTab === 'all' || activeTab === 'pipeline') && duplicateCount > 0 && !isDuplicateBannerDismissed && (
+              <div
+                role="status"
+                aria-live="polite"
+                className="shrink-0 mx-4 md:mx-6 mt-3 px-3.5 py-2.5 bg-amber-50/95 border border-amber-200/80 rounded-lg flex items-center justify-between gap-3 text-xs text-amber-900 shadow-2xs animate-in fade-in slide-in-from-top-1 duration-200 motion-reduce:animate-none z-10"
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" aria-hidden="true" />
+                  <p className="truncate">
+                    <span className="font-semibold text-amber-950">Duplicate applications detected:</span>{' '}
+                    <span>{duplicateCount} duplicate instance{duplicateCount === 1 ? '' : 's'} found across your pipeline.</span>
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={handleMergeAllDuplicates}
+                    className="px-2.5 py-1 text-xs font-medium rounded-md bg-amber-600 text-white hover:bg-amber-700 active:bg-amber-800 transition-colors shadow-2xs focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-amber-600 cursor-pointer"
+                  >
+                    Merge All
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsDuplicateBannerDismissed(true)}
+                    aria-label="Dismiss duplicate notice"
+                    className="p-1 text-amber-600 hover:text-amber-800 rounded-md hover:bg-amber-100/60 active:bg-amber-200/60 transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-amber-600 cursor-pointer"
+                  >
+                    <X className="w-3.5 h-3.5" aria-hidden="true" />
+                  </button>
+                </div>
+              </div>
+            )}
+
             {activeTab === 'all' && (
               <AllApplicationsTable
                 applications={filteredAndSortedApplications}

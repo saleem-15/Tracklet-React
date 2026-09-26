@@ -729,7 +729,7 @@ function isTrackletOrigin() {
     if (hostname === 'tracklet.app' || hostname.endsWith('.tracklet.app')) return true;
     if (/^tracklet(-[a-z0-9-]+)?\.web\.app$/.test(hostname)) return true;
     if (/^tracklet(-[a-z0-9-]+)?\.firebaseapp\.com$/.test(hostname)) return true;
-    if (/^tracklet(-[a-z0-9-]+)?\.vercel\.app$/.test(hostname)) return true;
+    if (hostname === 'tracklet-eight.vercel.app') return true;
     return false;
   } catch {
     return false;
@@ -738,6 +738,7 @@ function isTrackletOrigin() {
 
 // 2. Listen for auth session and applications index sync from Tracklet web app window
 window.addEventListener('message', (event) => {
+  if (event.source !== window || !isTrackletOrigin()) return;
   if (!event.data || typeof event.data !== 'object') return;
 
   if (event.data.type === 'TRACKLET_WEB_AUTH_SYNC') {
@@ -771,6 +772,20 @@ window.addEventListener('message', (event) => {
             chrome.storage.local.set({ tracklet_pending_emails: remaining });
           }
         }
+      });
+    }
+  } else if (event.data.type === 'TRACKLET_EXT_DELETE_APPLICATION') {
+    const deletedId = event.data.payload?.id;
+    if (deletedId && typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+      chrome.storage.local.get(['tracklet_pending_apps', 'tracklet_guest_apps_v1', 'tracklet_apps_index'], (res) => {
+        const pending = (res?.tracklet_pending_apps || []).filter((a) => a?.id !== deletedId);
+        const guestApps = (res?.tracklet_guest_apps_v1 || []).filter((a) => a?.id !== deletedId);
+        const appsIndex = (res?.tracklet_apps_index || []).filter((a) => a?.id !== deletedId);
+        chrome.storage.local.set({
+          tracklet_pending_apps: pending,
+          tracklet_guest_apps_v1: guestApps,
+          tracklet_apps_index: appsIndex,
+        });
       });
     }
   }

@@ -28,9 +28,10 @@ export class ContactRepository {
         const querySnapshot = await getDocs(userContactCol);
         const docsData: Contact[] = [];
         querySnapshot.forEach((docSnap) => {
+          const data = docSnap.data() as Omit<Contact, 'id'>;
           docsData.push({
+            ...data,
             id: docSnap.id,
-            ...(docSnap.data() as Omit<Contact, 'id'>),
           });
         });
 

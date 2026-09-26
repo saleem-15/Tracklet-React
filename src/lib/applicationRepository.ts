@@ -26,9 +26,10 @@ export class ApplicationRepository {
         const querySnapshot = await getDocs(userAppCol);
         const docsData: Application[] = [];
         querySnapshot.forEach((docSnap) => {
+          const data = docSnap.data() as Omit<Application, 'id'>;
           docsData.push({
-            id: docSnap.id,
-            ...(docSnap.data() as Omit<Application, 'id'>),
+            ...data,
+            id: docSnap.id, // Firestore document ID is ALWAYS authoritative
           });
         });
 
@@ -70,6 +71,19 @@ export class ApplicationRepository {
   }
 
   /**
+   * Purges one or more application IDs from guest localStorage cache.
+   */
+  static purgeGuestApplications(ids: string | string[]): void {
+    const idList = Array.isArray(ids) ? ids : [ids];
+    if (idList.length === 0) return;
+    const idSet = new Set(idList);
+    const guestApps = this.loadGuestApplications();
+    if (guestApps.some((a) => idSet.has(a.id))) {
+      this.saveGuestApplications(guestApps.filter((a) => !idSet.has(a.id)));
+    }
+  }
+
+  /**
    * Add a new application record to /users/{userId}/applications with embedded history.
    */
   static async addApplication(
@@ -96,8 +110,9 @@ export class ApplicationRepository {
     if (userId) {
       let createdId = '';
       try {
+        const { id: _ignoredId, ...restOfAppData } = appData as unknown as Record<string, unknown>;
         const payload = sanitizeForFirestore({
-          ...appData,
+          ...restOfAppData,
           userId,
         });
         const docRef = await addDoc(collection(db, 'users', userId, 'applications'), payload);
@@ -107,15 +122,15 @@ export class ApplicationRepository {
         throw err;
       }
       createdApp = {
-        id: createdId,
-        userId,
         ...appData,
+        userId,
+        id: createdId,
       };
     } else {
       createdApp = {
-        id: `guest-${Date.now()}`,
-        userId: 'guest',
         ...appData,
+        userId: 'guest',
+        id: `guest-${Date.now()}`,
       };
     }
 
@@ -137,15 +152,17 @@ export class ApplicationRepository {
     if (userId) {
       try {
         const docRef = doc(db, 'users', userId, 'applications', id);
+        const { id: _ignoreUpdateId, ...restOfUpdates } = cleanUpdates as unknown as Record<string, unknown>;
         if (fullApp) {
+          const { id: _ignoreFullId, ...restOfFullApp } = fullApp as unknown as Record<string, unknown>;
           const payload = sanitizeForFirestore({
-            ...fullApp,
-            ...cleanUpdates,
+            ...restOfFullApp,
+            ...restOfUpdates,
             userId,
           });
           await setDoc(docRef, payload, { merge: true });
         } else {
-          const updatedFields = sanitizeForFirestore(cleanUpdates);
+          const updatedFields = sanitizeForFirestore(restOfUpdates);
           await updateDoc(docRef, updatedFields);
         }
       } catch (err) {
