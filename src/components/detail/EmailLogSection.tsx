@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Mail, Plus, Link2, ArrowDownLeft, ArrowUpRight, Check } from 'lucide-react';
 import { Contact, EmailLog } from '../../types';
 import { EmailLogCard } from './EmailLogCard';
@@ -29,6 +29,15 @@ export const EmailLogSection: React.FC<EmailLogSectionProps> = ({
 }) => {
   const [showAddEmail, setShowAddEmail] = useState(false);
   const [editingEmailId, setEditingEmailId] = useState<string | null>(null);
+
+  // Sort emails: newest at top, oldest at bottom (matches StatusHistoryTimeline order)
+  const sortedEmails = useMemo(() => {
+    return [...emails].sort((a, b) => {
+      const timeA = new Date(a.timestamp || a.date).getTime();
+      const timeB = new Date(b.timestamp || b.date).getTime();
+      return (isNaN(timeA) ? 0 : timeA) < (isNaN(timeB) ? 0 : timeB) ? 1 : -1;
+    });
+  }, [emails]);
 
   // Available candidate contacts to suggest as 1-click chips
   const relevantContacts = [
@@ -175,11 +184,11 @@ export const EmailLogSection: React.FC<EmailLogSectionProps> = ({
                 }}
                 className={`flex items-center gap-1 px-2 py-1 rounded-md transition-colors cursor-pointer ${
                   direction === 'inbound'
-                    ? 'bg-white text-blue-700 font-semibold shadow-2xs'
+                    ? 'bg-white text-sky-700 font-semibold shadow-2xs'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                <ArrowDownLeft className="w-3 h-3 text-blue-500" />
+                <ArrowDownLeft className="w-3 h-3 text-sky-600" />
                 Received
               </button>
               <button
@@ -190,11 +199,11 @@ export const EmailLogSection: React.FC<EmailLogSectionProps> = ({
                 }}
                 className={`flex items-center gap-1 px-2 py-1 rounded-md transition-colors cursor-pointer ${
                   direction === 'outbound'
-                    ? 'bg-white text-purple-700 font-semibold shadow-2xs'
+                    ? 'bg-white text-emerald-700 font-semibold shadow-2xs'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                <ArrowUpRight className="w-3 h-3 text-purple-500" />
+                <ArrowUpRight className="w-3 h-3 text-emerald-600" />
                 Sent
               </button>
             </div>
@@ -339,25 +348,57 @@ export const EmailLogSection: React.FC<EmailLogSectionProps> = ({
         </form>
       )}
 
-      {/* Emails List */}
-      {(emails.length > 0 || !showAddEmail) && (
-        <div className="rounded-xl border border-slate-200/80 divide-y divide-slate-100 overflow-hidden bg-white shadow-2xs">
-          {emails.length > 0 ? (
-            emails.map((email) => (
-              <EmailLogCard
-                key={email.id}
-                email={email}
-                onOpenReader={(targetEmail) => setReaderEmail(targetEmail)}
-                onEdit={handleStartEdit}
-                onDelete={onDeleteEmailLog}
-              />
-            ))
-          ) : (
-            <div className="text-slate-500 font-mono text-[11px] text-center py-5">
+      {/* Timeline Emails List */}
+      {sortedEmails.length > 0 ? (
+        <div className="relative pl-6 space-y-3 pt-1">
+          {/* Subtle vertical timeline spine */}
+          {sortedEmails.length > 1 && (
+            <div
+              className="absolute left-[7px] top-6 bottom-6 w-px bg-slate-200 pointer-events-none"
+              aria-hidden="true"
+            />
+          )}
+
+          {sortedEmails.map((email) => {
+            const isInbound = email.direction !== 'outbound' && email.sender.toLowerCase() !== 'you';
+            return (
+              <div key={email.id} className="relative">
+                {/* Timeline Node Marker */}
+                <div
+                  className="absolute left-[-24px] top-5 -translate-x-1/2 w-3.5 h-3.5 rounded-full border border-slate-300 bg-white flex items-center justify-center shadow-2xs z-10"
+                  aria-hidden="true"
+                >
+                  <div
+                    className={`w-1.5 h-1.5 rounded-full ${
+                      isInbound ? 'bg-sky-500' : 'bg-emerald-500'
+                    }`}
+                  />
+                </div>
+
+                <EmailLogCard
+                  email={email}
+                  contacts={[...(contacts || []), ...(allContacts || [])]}
+                  companyName={companyName}
+                  onOpenReader={(targetEmail) => setReaderEmail(targetEmail)}
+                  onEdit={handleStartEdit}
+                  onDelete={onDeleteEmailLog}
+                />
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        !showAddEmail && (
+          <div className="bg-white rounded-xl border border-slate-200/80 p-5 text-center shadow-2xs">
+            <Mail className="w-5 h-5 text-slate-400 mx-auto mb-1.5 opacity-60" />
+            <div className="text-slate-500 font-mono text-xs font-medium">
               No emails logged yet
             </div>
-          )}
-        </div>
+            <p className="text-[11px] text-slate-500 mt-1">
+              Click &ldquo;Log Email&rdquo; above or use the webmail companion extension to clip emails here.
+            </p>
+          </div>
+        )
       )}
 
       {/* Reader Modal */}

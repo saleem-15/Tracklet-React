@@ -66,6 +66,59 @@ export function formatTimestamp(isoString: string): string {
 }
 
 /**
+ * Parses time from an ISO timestamp string with 'T' and returns localized 12-hour format e.g. "2:32 PM".
+ * Returns null if no valid non-midnight time is found.
+ */
+export function formatEmailTime(timestamp?: string): string | null {
+  if (!timestamp || !timestamp.includes('T')) return null;
+  const timeMatch = timestamp.match(/T(\d{2}):(\d{2})(?::(\d{2}))?/);
+  if (!timeMatch) return null;
+  const hours = parseInt(timeMatch[1], 10);
+  const minutes = timeMatch[2];
+  const seconds = timeMatch[3] || '00';
+  if (hours === 0 && minutes === '00' && seconds === '00') return null;
+  if (isNaN(hours) || hours < 0 || hours > 23) return null;
+
+  const period = hours >= 12 ? 'PM' : 'AM';
+  const hour12 = hours % 12 || 12;
+  return `${hour12}:${minutes} ${period}`;
+}
+
+/**
+ * Formats an email date and optional timestamp into a clean, human-readable display e.g. "Sep 26, 2026 · 2:32 PM".
+ */
+export function formatEmailDateTime(dateStr?: string, timestamp?: string): string {
+  const time = formatEmailTime(timestamp);
+
+  // Format base date
+  let formattedDate = '';
+  const candidate = dateStr || (timestamp ? timestamp.split('T')[0] : '');
+
+  if (candidate) {
+    try {
+      const parts = candidate.split('-');
+      if (parts.length === 3) {
+        const year = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10) - 1;
+        const day = parseInt(parts[2], 10);
+        const d = new Date(year, month, day);
+        if (!isNaN(d.getTime())) {
+          formattedDate = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+      }
+    } catch {
+      // fallback to candidate
+    }
+  }
+
+  if (!formattedDate) {
+    formattedDate = candidate || 'Unknown date';
+  }
+
+  return time ? `${formattedDate} · ${time}` : formattedDate;
+}
+
+/**
  * Adds a specified number of business days (Monday-Friday) to a given date.
  * Returns ISO date string in YYYY-MM-DD format.
  */

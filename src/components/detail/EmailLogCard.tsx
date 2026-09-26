@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import {
   ExternalLink,
-  Copy,
-  Check,
   ChevronDown,
   ChevronUp,
   Maximize2,
@@ -11,232 +9,183 @@ import {
   ArrowDownLeft,
   ArrowUpRight,
 } from 'lucide-react';
-import { EmailLog } from '../../types';
+import { Contact, EmailLog } from '../../types';
 import { LinkifiedText } from '../LinkifiedText';
+import { formatEmailDateTime } from '../../lib/dateUtils';
+import { resolveEmailCounterparty } from '../../lib/emailCounterpartyUtils';
 
 export interface EmailLogCardProps {
   email: EmailLog;
+  contacts?: Contact[];
+  companyName?: string;
   onOpenReader: (email: EmailLog) => void;
   onEdit?: (email: EmailLog) => void;
   onDelete?: (emailId: string) => void;
 }
 
-function formatEmailTime(timestamp?: string): string | null {
-  if (!timestamp || !timestamp.includes('T')) return null;
-  const timeMatch = timestamp.match(/T(\d{2}):(\d{2})(?::(\d{2}))?/);
-  if (!timeMatch) return null;
-  const hours = parseInt(timeMatch[1], 10);
-  const minutes = timeMatch[2];
-  const seconds = timeMatch[3] || '00';
-  if (hours === 0 && minutes === '00' && seconds === '00') return null;
-  if (isNaN(hours) || hours < 0 || hours > 23) return null;
-
-  const period = hours >= 12 ? 'PM' : 'AM';
-  const hour12 = hours % 12 || 12;
-  return `${hour12}:${minutes} ${period}`;
-}
-
 export const EmailLogCard: React.FC<EmailLogCardProps> = ({
   email,
+  contacts = [],
+  companyName,
   onOpenReader,
   onEdit,
   onDelete,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [copied, setCopied] = useState(false);
 
   const isInbound = email.direction !== 'outbound' && email.sender.toLowerCase() !== 'you';
   const contentText = email.body || email.snippet || '';
   const isLong = contentText.length > 140 || contentText.includes('\n');
 
-  const handleCopy = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!contentText) return;
-    try {
-      await navigator.clipboard.writeText(contentText);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // Clipboard write failed
-    }
-  };
-
-  const formattedTime = formatEmailTime(email.timestamp);
+  const formattedDateTime = formatEmailDateTime(email.date, email.timestamp);
+  const { primaryLabel, secondaryEmail } = resolveEmailCounterparty({
+    isInbound,
+    sender: email.sender,
+    recipient: email.recipient,
+    contacts,
+    companyName,
+  });
 
   return (
-    <div className="p-3 sm:p-3.5 hover:bg-slate-50/70 transition-colors group">
-      {/* Top Meta Row: Direction, Date & Link */}
-      <div className="flex items-center justify-between gap-2 mb-1.5">
-        <div className="flex items-center gap-2">
-          <span
-            className={`inline-flex items-center gap-1 text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full border ${
-              isInbound
-                ? 'bg-blue-50 text-blue-700 border-blue-200/80'
-                : 'bg-purple-50 text-purple-700 border-purple-200/80'
-            }`}
-          >
-            {isInbound ? (
-              <>
-                <ArrowDownLeft className="w-2.5 h-2.5 text-blue-600" />
-                Received
-              </>
-            ) : (
-              <>
-                <ArrowUpRight className="w-2.5 h-2.5 text-purple-600" />
-                Sent
-              </>
-            )}
-          </span>
-
-          <span className="text-[11px] font-mono text-slate-500">
-            {email.date}
-            {formattedTime && (
-              <span className="text-slate-400 ml-1.5 font-normal">
-                • {formattedTime}
-              </span>
-            )}
-          </span>
+    <div className="bg-white rounded-xl border border-slate-200/80 p-3.5 sm:p-4 shadow-2xs hover:shadow-xs transition-shadow group relative">
+      <div className="flex items-start gap-3">
+        {/* Left Direction Indicator: 45° Diagonal Arrow inside circular accent */}
+        <div
+          className={`shrink-0 w-7 h-7 rounded-full flex items-center justify-center transition-colors ${
+            isInbound
+              ? 'bg-sky-50 text-sky-600'
+              : 'bg-emerald-50 text-emerald-600'
+          }`}
+          title={isInbound ? 'Received email' : 'Sent email'}
+        >
+          {isInbound ? (
+            <ArrowDownLeft className="w-3.5 h-3.5" />
+          ) : (
+            <ArrowUpRight className="w-3.5 h-3.5" />
+          )}
         </div>
 
-        <div className="flex items-center gap-1.5">
-          {email.emailUrl && (
-            <a
-              href={email.emailUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-[11px] font-mono font-medium px-2 py-0.5 rounded-md bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200/60 transition-colors"
-              title="Open email thread in webmail"
+        {/* Card Body */}
+        <div className="flex-1 min-w-0">
+          {/* Top Row: Subject + Date & Actions */}
+          <div className="flex items-baseline justify-between gap-3">
+            <h4
+              onClick={() => isLong && onOpenReader(email)}
+              className={`text-xs sm:text-[13px] font-semibold text-slate-900 leading-snug truncate ${
+                isLong ? 'hover:text-blue-600 cursor-pointer' : ''
+              }`}
+              title={email.subject}
             >
-              <span>Open</span>
-              <ExternalLink className="w-2.5 h-2.5" />
-            </a>
-          )}
+              {email.subject}
+            </h4>
 
-          {onEdit && (
-            <button
-              type="button"
-              onClick={() => onEdit(email)}
-              className="p-1 text-slate-500 hover:text-slate-700 hover:bg-slate-200/60 rounded transition-colors cursor-pointer"
-              title="Edit email log"
-              aria-label="Edit email log"
-            >
-              <Pencil className="w-3 h-3" />
-            </button>
-          )}
+            {/* Right meta & secondary action buttons */}
+            <div className="flex items-center gap-1.5 shrink-0">
+              <span className="text-[11px] font-mono text-slate-500 whitespace-nowrap">
+                {formattedDateTime}
+              </span>
 
-          {onDelete && (
-            <button
-              type="button"
-              onClick={() => onDelete(email.id)}
-              className="p-1 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors cursor-pointer"
-              title="Delete email log"
-              aria-label="Delete email log"
-            >
-              <Trash2 className="w-3 h-3" />
-            </button>
+              {/* Hover Actions: Webmail link, Edit, Delete */}
+              <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-150 flex items-center gap-1 ml-1">
+                {email.emailUrl && (
+                  <a
+                    href={email.emailUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-1 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                    title="Open thread in webmail"
+                    aria-label="Open thread in webmail"
+                  >
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                )}
+                {onEdit && (
+                  <button
+                    type="button"
+                    onClick={() => onEdit(email)}
+                    className="p-1 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded transition-colors cursor-pointer"
+                    title="Edit email log"
+                    aria-label="Edit email log"
+                  >
+                    <Pencil className="w-3 h-3" />
+                  </button>
+                )}
+                {onDelete && (
+                  <button
+                    type="button"
+                    onClick={() => onDelete(email.id)}
+                    className="p-1 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors cursor-pointer"
+                    title="Delete email log"
+                    aria-label="Delete email log"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* 2-Tier Sender / Recipient Metadata */}
+          <div className="mt-1">
+            <div className="text-xs font-medium text-slate-800 leading-snug">
+              {primaryLabel}
+            </div>
+            {secondaryEmail && (
+              <div className="text-[11px] font-mono text-slate-500 truncate mt-0.5" title={secondaryEmail}>
+                {secondaryEmail}
+              </div>
+            )}
+          </div>
+
+          {/* Unboxed Content Snippet (clean text, no nested gray container) */}
+          {contentText && (
+            <div className="mt-2">
+              {isExpanded ? (
+                <div className="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed">
+                  <LinkifiedText text={contentText} />
+                </div>
+              ) : (
+                <p className="text-xs text-slate-600 leading-relaxed line-clamp-2">
+                  {contentText}
+                </p>
+              )}
+
+              {/* Bottom bar: Read full email link + Copy / Reader controls */}
+              <div className="mt-2 flex items-center justify-between gap-3 pt-1">
+                {isLong ? (
+                  <button
+                    type="button"
+                    onClick={() => setIsExpanded(!isExpanded)}
+                    className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors cursor-pointer"
+                  >
+                    <span>{isExpanded ? 'Show less' : 'Read full email'}</span>
+                    {isExpanded ? (
+                      <ChevronUp className="w-3 h-3" />
+                    ) : (
+                      <ChevronDown className="w-3 h-3" />
+                    )}
+                  </button>
+                ) : (
+                  <div />
+                )}
+
+                {/* Secondary utility controls (Reader) */}
+                {isLong && (
+                  <button
+                    type="button"
+                    onClick={() => onOpenReader(email)}
+                    className="inline-flex items-center gap-1 text-[11px] font-mono text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
+                    title="Open in focused reader modal"
+                  >
+                    <Maximize2 className="w-3 h-3 text-slate-400" />
+                    <span>Reader</span>
+                  </button>
+                )}
+              </div>
+            </div>
           )}
         </div>
       </div>
-
-      {/* Subject */}
-      <h4
-        onClick={() => isLong && onOpenReader(email)}
-        className={`text-xs font-semibold text-slate-900 leading-snug ${
-          isLong ? 'hover:text-blue-600 cursor-pointer' : ''
-        }`}
-      >
-        {email.subject}
-      </h4>
-
-      {/* From / To Subtitle */}
-      <p className="text-[11px] text-slate-500 font-mono mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
-        {isInbound ? (
-          <>
-            <span>From: {email.sender}</span>
-            {email.recipient && email.recipient.toLowerCase() !== 'you' && (
-              <span>→ To: {email.recipient}</span>
-            )}
-          </>
-        ) : (
-          <>
-            <span>From: You</span>
-            {email.recipient && <span>→ To: {email.recipient}</span>}
-          </>
-        )}
-      </p>
-
-      {/* Body / Snippet */}
-      {contentText && (
-        <div className="mt-2 text-xs text-slate-700 bg-slate-50 border border-slate-200/60 rounded-lg p-2.5">
-          {isExpanded ? (
-            <div className="whitespace-pre-wrap leading-relaxed">
-              <LinkifiedText text={contentText} />
-            </div>
-          ) : (
-            <p className="line-clamp-2 italic leading-relaxed text-slate-600">
-              &ldquo;{contentText.length > 180 ? `${contentText.slice(0, 180)}…` : contentText}&rdquo;
-            </p>
-          )}
-
-          {/* Footer of the text snippet: Expand / Modal / Copy */}
-          <div className="mt-2 pt-1.5 border-t border-slate-200/50 flex items-center justify-between gap-2 text-[10px] font-mono">
-            <div>
-              {isLong && (
-                <button
-                  type="button"
-                  onClick={() => setIsExpanded(!isExpanded)}
-                  className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-700 font-semibold cursor-pointer"
-                >
-                  {isExpanded ? (
-                    <>
-                      <span>Show less</span>
-                      <ChevronUp className="w-3 h-3" />
-                    </>
-                  ) : (
-                    <>
-                      <span>Read full email</span>
-                      <ChevronDown className="w-3 h-3" />
-                    </>
-                  )}
-                </button>
-              )}
-            </div>
-
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={handleCopy}
-                className="inline-flex items-center gap-1 text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
-                title="Copy email text"
-              >
-                {copied ? (
-                  <>
-                    <Check className="w-3 h-3 text-emerald-600" />
-                    <span className="text-emerald-600 font-semibold">Copied</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy className="w-3 h-3 text-slate-400" />
-                    <span>Copy</span>
-                  </>
-                )}
-              </button>
-
-              {isLong && (
-                <button
-                  type="button"
-                  onClick={() => onOpenReader(email)}
-                  className="inline-flex items-center gap-1 text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
-                  title="Open in focused reader modal"
-                >
-                  <Maximize2 className="w-3 h-3 text-slate-400" />
-                  <span>Reader</span>
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
