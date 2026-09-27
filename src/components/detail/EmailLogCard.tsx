@@ -3,7 +3,6 @@ import {
   ExternalLink,
   ChevronDown,
   ChevronUp,
-  Maximize2,
   Pencil,
   Trash2,
   MoreHorizontal,
@@ -19,7 +18,6 @@ export interface EmailLogCardProps {
   email: EmailLog;
   contacts?: Contact[];
   companyName?: string;
-  onOpenReader: (email: EmailLog) => void;
   onEdit?: (email: EmailLog) => void;
   onDelete?: (emailId: string) => void;
 }
@@ -28,7 +26,6 @@ export const EmailLogCard: React.FC<EmailLogCardProps> = ({
   email,
   contacts = [],
   companyName,
-  onOpenReader,
   onEdit,
   onDelete,
 }) => {
@@ -101,10 +98,7 @@ export const EmailLogCard: React.FC<EmailLogCardProps> = ({
       {/* Top Row: Clean Subject + Date (Wraps naturally for long subjects) */}
       <div className="flex items-start justify-between gap-3">
         <h4
-          onClick={() => isLong && onOpenReader(email)}
-          className={`text-[13px] font-semibold text-slate-900 leading-snug break-words min-w-0 line-clamp-3 ${
-            isLong ? 'hover:text-blue-600 cursor-pointer' : ''
-          }`}
+          className="text-[13px] font-semibold text-slate-900 leading-snug break-words min-w-0 line-clamp-3 select-text"
           title={email.subject}
         >
           {email.subject}
@@ -182,20 +176,6 @@ export const EmailLogCard: React.FC<EmailLogCardProps> = ({
                 role="menu"
                 className="absolute right-0 bottom-full mb-1.5 w-36 bg-white rounded-xl shadow-lg border border-slate-200/90 py-1 z-30 animate-in fade-in zoom-in-95 duration-100"
               >
-                {isLong && (
-                  <button
-                    type="button"
-                    role="menuitem"
-                    onClick={() => {
-                      setIsMenuOpen(false);
-                      onOpenReader(email);
-                    }}
-                    className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 transition-colors text-left cursor-pointer"
-                  >
-                    <Maximize2 className="w-3.5 h-3.5 text-slate-400" />
-                    <span>Focused view</span>
-                  </button>
-                )}
 
                 {email.emailUrl && (
                   <a

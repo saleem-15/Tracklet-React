@@ -2,7 +2,6 @@ import React, { useState, useMemo } from 'react';
 import { Mail, Plus, Link2, ArrowDownLeft, ArrowUpRight, Check } from 'lucide-react';
 import { Contact, EmailLog } from '../../types';
 import { EmailLogCard } from './EmailLogCard';
-import { EmailReaderModal } from './EmailReaderModal';
 
 export interface EmailLogSectionProps {
   emails?: EmailLog[];
@@ -58,9 +57,6 @@ export const EmailLogSection: React.FC<EmailLogSectionProps> = ({
   const [body, setBody] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [editingTimestamp, setEditingTimestamp] = useState<string | undefined>(undefined);
-
-  // Reader Modal State
-  const [readerEmail, setReaderEmail] = useState<EmailLog | null>(null);
 
   const defaultParty = contactEmail || relevantContacts[0]?.email || relevantContacts[0]?.name || companyName || '';
 
@@ -405,7 +401,6 @@ export const EmailLogSection: React.FC<EmailLogSectionProps> = ({
                     email={email}
                     contacts={[...(contacts || []), ...(allContacts || [])]}
                     companyName={companyName}
-                    onOpenReader={(targetEmail) => setReaderEmail(targetEmail)}
                     onEdit={handleStartEdit}
                     onDelete={onDeleteEmailLog}
                   />
@@ -427,15 +422,6 @@ export const EmailLogSection: React.FC<EmailLogSectionProps> = ({
           </div>
         )
       )}
-
-      {/* Reader Modal */}
-      <EmailReaderModal
-        email={readerEmail}
-        isOpen={Boolean(readerEmail)}
-        onClose={() => setReaderEmail(null)}
-        onEdit={handleStartEdit}
-        onDelete={onDeleteEmailLog}
-      />
     </div>
   );
 };

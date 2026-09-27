@@ -8,7 +8,7 @@ Tracklet captures and logs job-related email communications (interview invitatio
 1. **Automated extraction**: Via the Chrome companion extension running against webmail clients (Gmail, Outlook).
 2. **Manual entry**: Via the web app's "+ Log Email" modal form or clipboard paste.
 
-When displaying these messages in the timeline card and the dedicated Reader modal, the system faced a foundational architectural question: **In what format should email message bodies be captured, stored in Firestore/localStorage, and rendered in the UI?**
+When displaying these messages in the timeline communication cards, the system faced a foundational architectural question: **In what format should email message bodies be captured, stored in Firestore/localStorage, and rendered in the UI?**
 
 Three technical approaches were evaluated:
 1. **Raw HTML Storage & Rendering**: Persisting full HTML payloads from webmail and rendering via `dangerouslySetInnerHTML`.
@@ -38,7 +38,7 @@ We adopt **The Normalized Markdown Bridge** architecture across the persistence 
 - **Universal Outbound Link Discipline**: All extracted URLs automatically render with `target="_blank" rel="noopener noreferrer"` per Rule 1 of Tracklet's UI/UX standards.
 - **Dual-Mode Visual Output**:
   - **Collapsed Card Mode (`isCollapsed`)**: Multi-line content is flattened into a clean 2-line snippet (`line-clamp-2`) with formatted inline bolding and links, with markdown syntax tokens cleanly hidden.
-  - **Expanded / Reader Modal Mode**: Structured blocks are rendered with dedicated Tailwind typography: styled bullet lists (`•`, `-`, `*`), numbered lists (`1.`), blockquotes (`>`), headings (`#`), and paragraphs.
+  - **Expanded Card Mode**: Structured blocks are rendered inline with dedicated Tailwind typography: styled bullet lists (`•`, `-`, `*`), numbered lists (`1.`), blockquotes (`>`), headings (`#`), and paragraphs with full viewport stability.
 - **HTML Paste Resilience**: If a user pastes raw HTML fragments into the manual web form, `normalizeEmailContent` runs `htmlToMarkdown` to sanitize the payload into canonical Markdown before rendering.
 
 ### 4. Domain Nomenclature Decoupling
@@ -52,7 +52,7 @@ We adopt **The Normalized Markdown Bridge** architecture across the persistence 
 ### Positive
 - **Guaranteed Layout Stability**: Email content inherits Tracklet's responsive Tailwind design tokens and modal bounds. Rigid `width="600"` desktop table layouts from third-party email clients can never break the UI or trigger modal overflow.
 - **Zero XSS Attack Surface**: Email text is parsed into typed tokens and rendered as pure React components without DOM injection.
-- **Preserved Recruiting Links**: Interview and schedule links remain interactive and accessible directly from the timeline card and reader modal.
+- **Preserved Recruiting Links**: Interview and schedule links remain interactive and accessible directly within the timeline card.
 - **Low Cloud Costs & Snappy Sync**: Storing small text payloads maximizes Firestore document packing efficiency and ensures lightning-fast offline cache hydration.
 
 ### Neutral / Trade-offs
