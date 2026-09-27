@@ -676,13 +676,40 @@ function cleanEmailBody(bodyNode) {
     }
   });
 
+  // Preserve hyperlinks before innerText strips them
+  clone.querySelectorAll('a[href]').forEach(a => {
+    const href = (a.getAttribute('href') || '').trim();
+    const label = (a.innerText || a.textContent || '').trim();
+    // Only preserve valid http/https or mailto links
+    if (href && !href.startsWith('javascript:') && label) {
+      if (label === href || href.startsWith('mailto:')) {
+        a.replaceWith(document.createTextNode(href.replace(/^mailto:/i, '')));
+      } else {
+        a.replaceWith(document.createTextNode(`[${label}](${href})`));
+      }
+    }
+  });
+
+  // Preserve bold formatting
+  clone.querySelectorAll('strong, b').forEach(el => {
+    const boldText = (el.innerText || el.textContent || '').trim();
+    if (boldText) {
+      el.replaceWith(document.createTextNode(`**${boldText}**`));
+    }
+  });
+
   // Convert line breaks and paragraph spacing
   let text = clone.innerText || clone.textContent || '';
   // Normalize whitespace
   text = text.replace(/\r\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
 
-  // Generate snippet
-  const snippet = text.slice(0, 200).replace(/\s+/g, ' ').trim();
+  // Generate snippet (strip markdown markers for clean snippet)
+  const snippet = text
+    .replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1')
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .slice(0, 200)
+    .replace(/\s+/g, ' ')
+    .trim();
   return { body: text, snippet };
 }
 

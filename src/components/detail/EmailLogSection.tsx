@@ -335,12 +335,12 @@ export const EmailLogSection: React.FC<EmailLogSectionProps> = ({
           {/* Body Content */}
           <div>
             <label className="block text-[11px] font-mono text-slate-500 mb-1">
-              Email Content / Notes <span className="text-slate-500 font-normal">(optional)</span>
+              Email Body <span className="text-slate-500 font-normal">(optional)</span>
             </label>
             <textarea
               value={body}
               onChange={(e) => setBody(e.target.value)}
-              placeholder="Email body or notes..."
+              placeholder="Paste or type email body..."
               rows={3}
               className="w-full bg-slate-50 text-slate-900 placeholder-slate-400 p-2.5 rounded-lg border border-slate-200 focus:outline-none focus:border-blue-500 focus:bg-white text-xs resize-y transition-colors leading-relaxed"
             />
