@@ -95,32 +95,46 @@ export const EmailLogCard: React.FC<EmailLogCardProps> = ({
 
   return (
     <div className="bg-white rounded-xl border border-slate-200/80 p-3 shadow-2xs hover:shadow-xs transition-shadow relative">
-      {/* Top Row: Clean Subject + Date (Wraps naturally for long subjects) */}
-      <div className="flex items-start justify-between gap-3">
-        <h4
-          className="text-[13px] font-semibold text-slate-900 leading-snug break-words min-w-0 line-clamp-3 select-text"
-          title={email.subject}
-        >
-          {email.subject}
-        </h4>
+      {/* Top Row: Full-Width Clean Subject (Max 2 lines when collapsed, unconstrained when expanded) */}
+      <h4
+        className={`text-[13px] font-semibold text-slate-900 leading-snug break-words select-text ${
+          isExpanded ? '' : 'line-clamp-2'
+        }`}
+        title={email.subject}
+      >
+        {email.subject}
+      </h4>
 
-        {/* Formatted Date & Time */}
-        <span className="text-[11px] font-mono text-slate-500 whitespace-nowrap shrink-0 text-right pt-0.5">
+      {/* Supporting Metadata: Primary Actor (Left) + Formatted Date & Time (Right) */}
+      <div className="mt-1.5 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 min-w-0">
+        <div className="text-xs text-slate-600 truncate min-w-0 flex items-baseline gap-1">
+          {isInbound ? (
+            <>
+              <span className="text-slate-500 font-normal shrink-0">From</span>
+              <span className="font-medium text-slate-700 truncate">{primaryLabel}</span>
+            </>
+          ) : (
+            <>
+              <span className="text-slate-500 font-normal shrink-0">To</span>
+              <span className="font-medium text-slate-700 truncate">
+                {primaryLabel.startsWith('To: ') ? primaryLabel.slice(4) : primaryLabel}
+              </span>
+            </>
+          )}
+        </div>
+
+        {/* Date & Time anchored with actor identity */}
+        <span className="text-[11px] font-mono text-slate-500 whitespace-nowrap shrink-0 text-right tabular-nums">
           {formattedDateTime}
         </span>
       </div>
 
-      {/* 2-Tier Stacked Sender / Recipient Metadata (Optimal scanability & hierarchy) */}
-      <div className="mt-1">
-        <div className="text-xs font-semibold text-slate-800 leading-snug truncate">
-          {primaryLabel}
+      {/* Secondary Email Handle (Directly below sender/recipient) */}
+      {secondaryEmail && (
+        <div className="text-[11px] font-mono text-slate-500 select-all truncate mt-0.5" title={secondaryEmail}>
+          {secondaryEmail}
         </div>
-        {secondaryEmail && (
-          <div className="text-[11px] font-mono text-slate-400 select-all truncate mt-0.5" title={secondaryEmail}>
-            {secondaryEmail}
-          </div>
-        )}
-      </div>
+      )}
 
       {/* Unboxed Content Snippet (clean formatted text, full horizontal width) */}
       {contentText && (
