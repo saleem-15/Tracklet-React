@@ -10,3 +10,4 @@ firebase-applet-config.json
 .worktrees/
 .firebase/
 promo.png
+graphify-out/cache/
