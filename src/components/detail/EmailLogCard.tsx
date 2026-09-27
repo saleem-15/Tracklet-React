@@ -1,239 +1,262 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   ExternalLink,
-  Copy,
-  Check,
   ChevronDown,
   ChevronUp,
-  Maximize2,
   Pencil,
   Trash2,
-  ArrowDownLeft,
-  ArrowUpRight,
+  MoreHorizontal,
+  Copy,
+  Check,
 } from 'lucide-react';
-import { EmailLog } from '../../types';
-import { LinkifiedText } from '../LinkifiedText';
+import { Contact, EmailLog } from '../../types';
+import { FormattedEmailBody } from './FormattedEmailBody';
+import { formatEmailDateTime } from '../../lib/dateUtils';
+import { resolveEmailCounterparty } from '../../lib/emailCounterpartyUtils';
 
 export interface EmailLogCardProps {
   email: EmailLog;
-  onOpenReader: (email: EmailLog) => void;
+  contacts?: Contact[];
+  companyName?: string;
   onEdit?: (email: EmailLog) => void;
   onDelete?: (emailId: string) => void;
 }
 
-function formatEmailTime(timestamp?: string): string | null {
-  if (!timestamp || !timestamp.includes('T')) return null;
-  const timeMatch = timestamp.match(/T(\d{2}):(\d{2})(?::(\d{2}))?/);
-  if (!timeMatch) return null;
-  const hours = parseInt(timeMatch[1], 10);
-  const minutes = timeMatch[2];
-  const seconds = timeMatch[3] || '00';
-  if (hours === 0 && minutes === '00' && seconds === '00') return null;
-  if (isNaN(hours) || hours < 0 || hours > 23) return null;
-
-  const period = hours >= 12 ? 'PM' : 'AM';
-  const hour12 = hours % 12 || 12;
-  return `${hour12}:${minutes} ${period}`;
-}
-
 export const EmailLogCard: React.FC<EmailLogCardProps> = ({
   email,
-  onOpenReader,
+  contacts = [],
+  companyName,
   onEdit,
   onDelete,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close menu on click outside and escape key
+  useEffect(() => {
+    if (!isMenuOpen) return;
+
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isMenuOpen]);
 
   const isInbound = email.direction !== 'outbound' && email.sender.toLowerCase() !== 'you';
   const contentText = email.body || email.snippet || '';
   const isLong = contentText.length > 140 || contentText.includes('\n');
 
-  const handleCopy = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!contentText) return;
+  const formattedDateTime = formatEmailDateTime(email.date, email.timestamp);
+  const { primaryLabel, secondaryEmail } = resolveEmailCounterparty({
+    isInbound,
+    sender: email.sender,
+    recipient: email.recipient,
+    contacts,
+    companyName,
+  });
+
+  const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(contentText);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      const parts = [
+        email.subject ? `Subject: ${email.subject}` : '',
+        primaryLabel ? (isInbound ? `From: ${primaryLabel}` : primaryLabel) : '',
+        secondaryEmail ? `<${secondaryEmail}>` : '',
+        '',
+        contentText,
+      ].filter(Boolean);
+      await navigator.clipboard.writeText(parts.join('\n'));
+      setIsCopied(true);
+      setTimeout(() => {
+        setIsCopied(false);
+        setIsMenuOpen(false);
+      }, 1000);
     } catch {
-      // Clipboard write failed
+      // Fallback ignore
     }
   };
 
-  const formattedTime = formatEmailTime(email.timestamp);
+  const hasAnyActions = Boolean(onEdit || onDelete || email.emailUrl || isLong || contentText);
 
   return (
-    <div className="p-3 sm:p-3.5 hover:bg-slate-50/70 transition-colors group">
-      {/* Top Meta Row: Direction, Date & Link */}
-      <div className="flex items-center justify-between gap-2 mb-1.5">
-        <div className="flex items-center gap-2">
-          <span
-            className={`inline-flex items-center gap-1 text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full border ${
-              isInbound
-                ? 'bg-blue-50 text-blue-700 border-blue-200/80'
-                : 'bg-purple-50 text-purple-700 border-purple-200/80'
-            }`}
-          >
-            {isInbound ? (
-              <>
-                <ArrowDownLeft className="w-2.5 h-2.5 text-blue-600" />
-                Received
-              </>
-            ) : (
-              <>
-                <ArrowUpRight className="w-2.5 h-2.5 text-purple-600" />
-                Sent
-              </>
-            )}
-          </span>
-
-          <span className="text-[11px] font-mono text-slate-500">
-            {email.date}
-            {formattedTime && (
-              <span className="text-slate-400 ml-1.5 font-normal">
-                • {formattedTime}
-              </span>
-            )}
-          </span>
-        </div>
-
-        <div className="flex items-center gap-1.5">
-          {email.emailUrl && (
-            <a
-              href={email.emailUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-[11px] font-mono font-medium px-2 py-0.5 rounded-md bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200/60 transition-colors"
-              title="Open email thread in webmail"
-            >
-              <span>Open</span>
-              <ExternalLink className="w-2.5 h-2.5" />
-            </a>
-          )}
-
-          {onEdit && (
-            <button
-              type="button"
-              onClick={() => onEdit(email)}
-              className="p-1 text-slate-500 hover:text-slate-700 hover:bg-slate-200/60 rounded transition-colors cursor-pointer"
-              title="Edit email log"
-              aria-label="Edit email log"
-            >
-              <Pencil className="w-3 h-3" />
-            </button>
-          )}
-
-          {onDelete && (
-            <button
-              type="button"
-              onClick={() => onDelete(email.id)}
-              className="p-1 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors cursor-pointer"
-              title="Delete email log"
-              aria-label="Delete email log"
-            >
-              <Trash2 className="w-3 h-3" />
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Subject */}
+    <div className="bg-white rounded-xl border border-slate-200/80 p-3 shadow-2xs hover:shadow-xs transition-shadow relative">
+      {/* Top Row: Full-Width Clean Subject (Max 2 lines when collapsed, unconstrained when expanded) */}
       <h4
-        onClick={() => isLong && onOpenReader(email)}
-        className={`text-xs font-semibold text-slate-900 leading-snug ${
-          isLong ? 'hover:text-blue-600 cursor-pointer' : ''
+        className={`text-[13px] font-semibold text-slate-900 leading-snug break-words select-text ${
+          isExpanded ? '' : 'line-clamp-2'
         }`}
+        title={email.subject}
       >
         {email.subject}
       </h4>
 
-      {/* From / To Subtitle */}
-      <p className="text-[11px] text-slate-500 font-mono mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
-        {isInbound ? (
-          <>
-            <span>From: {email.sender}</span>
-            {email.recipient && email.recipient.toLowerCase() !== 'you' && (
-              <span>→ To: {email.recipient}</span>
-            )}
-          </>
-        ) : (
-          <>
-            <span>From: You</span>
-            {email.recipient && <span>→ To: {email.recipient}</span>}
-          </>
-        )}
-      </p>
-
-      {/* Body / Snippet */}
-      {contentText && (
-        <div className="mt-2 text-xs text-slate-700 bg-slate-50 border border-slate-200/60 rounded-lg p-2.5">
-          {isExpanded ? (
-            <div className="whitespace-pre-wrap leading-relaxed">
-              <LinkifiedText text={contentText} />
-            </div>
+      {/* Supporting Metadata: Primary Actor (Left) + Formatted Date & Time (Right) */}
+      <div className="mt-1.5 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 min-w-0">
+        <div className="text-xs text-slate-600 truncate min-w-0 flex items-baseline gap-1">
+          {isInbound ? (
+            <>
+              <span className="text-slate-500 font-normal shrink-0">From</span>
+              <span className="font-medium text-slate-700 truncate">{primaryLabel}</span>
+            </>
           ) : (
-            <p className="line-clamp-2 italic leading-relaxed text-slate-600">
-              &ldquo;{contentText.length > 180 ? `${contentText.slice(0, 180)}…` : contentText}&rdquo;
-            </p>
+            <>
+              <span className="text-slate-500 font-normal shrink-0">To</span>
+              <span className="font-medium text-slate-700 truncate">
+                {primaryLabel.startsWith('To: ') ? primaryLabel.slice(4) : primaryLabel}
+              </span>
+            </>
+          )}
+        </div>
+
+        {/* Date & Time anchored with actor identity */}
+        <span className="text-[11px] font-mono text-slate-500 whitespace-nowrap shrink-0 text-right tabular-nums">
+          {formattedDateTime}
+        </span>
+      </div>
+
+      {/* Secondary Email Handle (Directly below sender/recipient) */}
+      {secondaryEmail && (
+        <div className="text-[11px] font-mono text-slate-500 select-all truncate mt-0.5" title={secondaryEmail}>
+          {secondaryEmail}
+        </div>
+      )}
+
+      {/* Unboxed Content Snippet (clean formatted text, full horizontal width) */}
+      {contentText && (
+        <div className="mt-1.5">
+          {isExpanded ? (
+            <FormattedEmailBody text={contentText} />
+          ) : (
+            <FormattedEmailBody text={contentText} isCollapsed />
+          )}
+        </div>
+      )}
+
+      {/* Bottom Action Surface: Read full email on left, ⋯ menu on right */}
+      {hasAnyActions && (
+        <div className="mt-2 flex items-center justify-between gap-2 pt-1.5 border-t border-slate-100">
+          {/* Left: Read full email link */}
+          {isLong ? (
+            <button
+              type="button"
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors cursor-pointer"
+            >
+              <span>{isExpanded ? 'Show less' : 'Read full email'}</span>
+              {isExpanded ? (
+                <ChevronUp className="w-3 h-3" />
+              ) : (
+                <ChevronDown className="w-3 h-3" />
+              )}
+            </button>
+          ) : (
+            <div />
           )}
 
-          {/* Footer of the text snippet: Expand / Modal / Copy */}
-          <div className="mt-2 pt-1.5 border-t border-slate-200/50 flex items-center justify-between gap-2 text-[10px] font-mono">
-            <div>
-              {isLong && (
-                <button
-                  type="button"
-                  onClick={() => setIsExpanded(!isExpanded)}
-                  className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-700 font-semibold cursor-pointer"
-                >
-                  {isExpanded ? (
-                    <>
-                      <span>Show less</span>
-                      <ChevronUp className="w-3 h-3" />
-                    </>
-                  ) : (
-                    <>
-                      <span>Read full email</span>
-                      <ChevronDown className="w-3 h-3" />
-                    </>
-                  )}
-                </button>
-              )}
-            </div>
+          {/* Right: Secondary Actions Menu (⋯) */}
+          <div className="relative" ref={menuRef}>
+            <button
+              type="button"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              aria-haspopup="true"
+              aria-expanded={isMenuOpen}
+              aria-label="More actions for this email"
+              className={`p-1 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer ${
+                isMenuOpen ? 'bg-slate-100 text-slate-800' : ''
+              }`}
+              title="More actions"
+            >
+              <MoreHorizontal className="w-3.5 h-3.5" />
+            </button>
 
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={handleCopy}
-                className="inline-flex items-center gap-1 text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
-                title="Copy email text"
+            {/* Dropdown Menu */}
+            {isMenuOpen && (
+              <div
+                role="menu"
+                className="absolute right-0 bottom-full mb-1.5 w-36 bg-white rounded-xl shadow-lg border border-slate-200/90 py-1 z-30 animate-in fade-in zoom-in-95 duration-100"
               >
-                {copied ? (
-                  <>
-                    <Check className="w-3 h-3 text-emerald-600" />
-                    <span className="text-emerald-600 font-semibold">Copied</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy className="w-3 h-3 text-slate-400" />
-                    <span>Copy</span>
-                  </>
-                )}
-              </button>
 
-              {isLong && (
-                <button
-                  type="button"
-                  onClick={() => onOpenReader(email)}
-                  className="inline-flex items-center gap-1 text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
-                  title="Open in focused reader modal"
-                >
-                  <Maximize2 className="w-3 h-3 text-slate-400" />
-                  <span>Reader</span>
-                </button>
-              )}
-            </div>
+                {email.emailUrl && (
+                  <a
+                    href={email.emailUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    role="menuitem"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 transition-colors text-left cursor-pointer"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
+                    <span>Open in webmail</span>
+                  </a>
+                )}
+
+                {contentText && (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={handleCopy}
+                    className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 transition-colors text-left cursor-pointer"
+                  >
+                    {isCopied ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 text-emerald-600" />
+                        <span className="text-emerald-700 font-medium">Copied!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3.5 h-3.5 text-slate-400" />
+                        <span>Copy text</span>
+                      </>
+                    )}
+                  </button>
+                )}
+
+                {onEdit && (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      onEdit(email);
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 transition-colors text-left cursor-pointer"
+                  >
+                    <Pencil className="w-3.5 h-3.5 text-slate-400" />
+                    <span>Edit email</span>
+                  </button>
+                )}
+
+                {onDelete && (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      onDelete(email.id);
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-slate-600 hover:text-rose-600 hover:bg-rose-50 transition-colors text-left cursor-pointer"
+                  >
+                    <Trash2 className="w-3.5 h-3.5 text-slate-400 hover:text-rose-600" />
+                    <span>Delete log</span>
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}

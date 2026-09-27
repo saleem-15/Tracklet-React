@@ -92,15 +92,6 @@ export const ApplicationQuickLinks: React.FC<ApplicationQuickLinksProps> = ({
             </div>
             <div className="flex items-center gap-1 shrink-0">
               <CopyIconButton onClick={handleCopyJobLink} isCopied={copiedJobLink} title="Copy link" />
-              <a
-                href={jobLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-1 rounded text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
-                title="Open job listing"
-              >
-                <ExternalLink className="w-3.5 h-3.5" />
-              </a>
             </div>
           </div>
         )}

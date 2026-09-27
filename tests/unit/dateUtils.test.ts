@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { calculateDaysInStage, formatAppDate, formatTimestamp, addBusinessDays } from '../../src/lib/dateUtils';
+import {
+  calculateDaysInStage,
+  formatAppDate,
+  formatTimestamp,
+  addBusinessDays,
+  formatEmailTime,
+  formatEmailDateTime,
+} from '../../src/lib/dateUtils';
 
 describe('dateUtils', () => {
   describe('calculateDaysInStage', () => {
@@ -56,6 +63,47 @@ describe('dateUtils', () => {
       expect(addBusinessDays('2026-09-07', 5)).toBe('2026-09-14');
       // Friday 2026-09-04 + 5 business days -> Friday 2026-09-11 (Mon, Tue, Wed, Thu, Fri)
       expect(addBusinessDays('2026-09-04', 5)).toBe('2026-09-11');
+    });
+  });
+
+  describe('formatEmailTime', () => {
+    it('returns formatted 12-hour time from ISO string', () => {
+      const d1 = new Date('2026-09-26T14:32:00Z');
+      const expected1 = d1.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+      expect(formatEmailTime('2026-09-26T14:32:00Z')).toBe(expected1);
+
+      const d2 = new Date('2026-09-26T09:05:00Z');
+      const expected2 = d2.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+      expect(formatEmailTime('2026-09-26T09:05:00Z')).toBe(expected2);
+    });
+
+    it('returns null for midnight default timestamp or missing string', () => {
+      expect(formatEmailTime('2026-09-26T00:00:00Z')).toBeNull();
+      expect(formatEmailTime('2026-09-26')).toBeNull();
+      expect(formatEmailTime(undefined)).toBeNull();
+    });
+  });
+
+  describe('formatEmailDateTime', () => {
+    it('formats date and time together when timestamp is provided', () => {
+      const d = new Date('2026-09-26T14:32:00Z');
+      const expectedDate = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      const expectedTime = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+      const result = formatEmailDateTime('2026-09-26', '2026-09-26T14:32:00Z');
+      expect(result).toBe(`${expectedDate} · ${expectedTime}`);
+    });
+
+    it('formats from ISO date string if timestamp is omitted', () => {
+      const d = new Date('2026-09-26T10:18:00Z');
+      const expectedDate = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      const expectedTime = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+      const result = formatEmailDateTime('2026-09-26T10:18:00Z');
+      expect(result).toBe(`${expectedDate} · ${expectedTime}`);
+    });
+
+    it('formats only date when timestamp has no time component', () => {
+      const result = formatEmailDateTime('2026-09-26');
+      expect(result).toBe('Sep 26, 2026');
     });
   });
 });

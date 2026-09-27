@@ -66,6 +66,88 @@ export function formatTimestamp(isoString: string): string {
 }
 
 /**
+ * Formats a Date object to YYYY-MM-DD in the local time zone.
+ */
+export function formatLocalDate(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+/**
+ * Parses time from an ISO timestamp string with 'T' and returns localized 12-hour format e.g. "2:32 PM"
+ * in the viewer's local time zone.
+ * Returns null if no valid non-midnight time is found.
+ */
+export function formatEmailTime(timestamp?: string): string | null {
+  if (!timestamp || !timestamp.includes('T')) return null;
+  const timeMatch = timestamp.match(/T(\d{2}):(\d{2})(?::(\d{2}))?/);
+  if (!timeMatch) return null;
+  const rawH = parseInt(timeMatch[1], 10);
+  const rawM = parseInt(timeMatch[2], 10);
+  const rawS = parseInt(timeMatch[3] || '0', 10);
+  // Default fallback zero timestamp
+  if (rawH === 0 && rawM === 0 && rawS === 0) return null;
+
+  const d = new Date(timestamp);
+  if (isNaN(d.getTime())) return null;
+
+  return d.toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  });
+}
+
+/**
+ * Formats an email date and optional timestamp into a clean, human-readable display e.g. "Sep 26, 2026 · 2:32 PM".
+ * For timestamps with Z or an explicit offset, derives the displayed date from that same instant.
+ */
+export function formatEmailDateTime(dateStr?: string, timestamp?: string): string {
+  const time = formatEmailTime(timestamp) || formatEmailTime(dateStr);
+
+  let formattedDate = '';
+
+  // 1. If timestamp is provided and has a valid parseable instant with timezone (Z or +/-)
+  if (timestamp && timestamp.includes('T')) {
+    const d = new Date(timestamp);
+    if (!isNaN(d.getTime())) {
+      // If it contains timezone information (Z, +, or - after the time), derive date from that instant in local time
+      if (/Z|[+-]\d{2}:?\d{2}$/.test(timestamp)) {
+        formattedDate = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      }
+    }
+  }
+
+  // 2. Otherwise fall back to dateStr or candidate YYYY-MM-DD
+  if (!formattedDate) {
+    const candidate = (dateStr ? dateStr.split('T')[0] : '') || (timestamp ? timestamp.split('T')[0] : '');
+    if (candidate) {
+      try {
+        const parts = candidate.split('-');
+        if (parts.length === 3) {
+          const year = parseInt(parts[0], 10);
+          const month = parseInt(parts[1], 10) - 1;
+          const day = parseInt(parts[2], 10);
+          const d = new Date(year, month, day);
+          if (!isNaN(d.getTime())) {
+            formattedDate = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+          }
+        }
+      } catch {
+        // fallback
+      }
+    }
+    if (!formattedDate) {
+      formattedDate = candidate || 'Unknown date';
+    }
+  }
+
+  return time ? `${formattedDate} · ${time}` : formattedDate;
+}
+
+/**
  * Adds a specified number of business days (Monday-Friday) to a given date.
  * Returns ISO date string in YYYY-MM-DD format.
  */
