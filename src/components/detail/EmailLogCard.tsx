@@ -11,7 +11,7 @@ import {
   Check,
 } from 'lucide-react';
 import { Contact, EmailLog } from '../../types';
-import { LinkifiedText } from '../LinkifiedText';
+import { FormattedEmailBody } from './FormattedEmailBody';
 import { formatEmailDateTime } from '../../lib/dateUtils';
 import { resolveEmailCounterparty } from '../../lib/emailCounterpartyUtils';
 
@@ -98,11 +98,11 @@ export const EmailLogCard: React.FC<EmailLogCardProps> = ({
 
   return (
     <div className="bg-white rounded-xl border border-slate-200/80 p-3 shadow-2xs hover:shadow-xs transition-shadow relative">
-      {/* Top Row: Clean Subject + Date ONLY (Full horizontal runway) */}
-      <div className="flex items-baseline justify-between gap-2.5">
+      {/* Top Row: Clean Subject + Date (Wraps naturally for long subjects) */}
+      <div className="flex items-start justify-between gap-3">
         <h4
           onClick={() => isLong && onOpenReader(email)}
-          className={`text-[13px] font-semibold text-slate-900 leading-snug truncate ${
+          className={`text-[13px] font-semibold text-slate-900 leading-snug break-words min-w-0 line-clamp-3 ${
             isLong ? 'hover:text-blue-600 cursor-pointer' : ''
           }`}
           title={email.subject}
@@ -111,7 +111,7 @@ export const EmailLogCard: React.FC<EmailLogCardProps> = ({
         </h4>
 
         {/* Formatted Date & Time */}
-        <span className="text-[11px] font-mono text-slate-500 whitespace-nowrap shrink-0">
+        <span className="text-[11px] font-mono text-slate-500 whitespace-nowrap shrink-0 text-right pt-0.5">
           {formattedDateTime}
         </span>
       </div>
@@ -128,17 +128,13 @@ export const EmailLogCard: React.FC<EmailLogCardProps> = ({
         )}
       </div>
 
-      {/* Unboxed Content Snippet (clean text, full horizontal width) */}
+      {/* Unboxed Content Snippet (clean formatted text, full horizontal width) */}
       {contentText && (
         <div className="mt-1.5">
           {isExpanded ? (
-            <div className="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed">
-              <LinkifiedText text={contentText} />
-            </div>
+            <FormattedEmailBody text={contentText} />
           ) : (
-            <p className="text-xs text-slate-600 leading-relaxed line-clamp-2">
-              {contentText}
-            </p>
+            <FormattedEmailBody text={contentText} isCollapsed />
           )}
         </div>
       )}

@@ -1,6 +1,7 @@
 import React from 'react';
 import { ExternalLink } from 'lucide-react';
 import { tokenizeTextWithLinks } from '../lib/linkUtils';
+import { renderInlineFormattedText } from '../lib/emailContentUtils';
 
 export interface LinkifiedTextProps {
   text?: string | null;
@@ -17,7 +18,8 @@ export interface LinkifiedTextProps {
 }
 
 /**
- * Renders text with automatic linkification of URLs and Markdown links.
+ * Renders text with automatic linkification of URLs and Markdown links,
+ * plus support for inline Markdown (bold, italic, code).
  * All links open safely in a new tab (target="_blank" rel="noopener noreferrer").
  */
 export const LinkifiedText: React.FC<LinkifiedTextProps> = ({
@@ -67,7 +69,11 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({
             </a>
           );
         }
-        return <React.Fragment key={idx}>{token.value}</React.Fragment>;
+        return (
+          <React.Fragment key={idx}>
+            {renderInlineFormattedText(token.value, { linkClassName, stopClickPropagation }, `lt-${idx}`)}
+          </React.Fragment>
+        );
       })}
     </span>
   );

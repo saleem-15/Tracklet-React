@@ -14,7 +14,7 @@ import {
   ArrowUpRight,
 } from 'lucide-react';
 import { EmailLog } from '../../types';
-import { LinkifiedText } from '../LinkifiedText';
+import { FormattedEmailBody } from './FormattedEmailBody';
 import { formatEmailDateTime } from '../../lib/dateUtils';
 
 export interface EmailReaderModalProps {
@@ -224,8 +224,8 @@ export const EmailReaderModal: React.FC<EmailReaderModalProps> = ({
         {/* Body Content */}
         <div className="p-4 sm:p-6 overflow-y-auto flex-1">
           {contentText ? (
-            <div className="text-xs sm:text-sm text-slate-800 font-normal leading-relaxed whitespace-pre-wrap break-words bg-slate-50/70 p-4 rounded-xl border border-slate-200/80">
-              <LinkifiedText text={contentText} />
+            <div className="text-xs sm:text-sm bg-slate-50/70 p-4 sm:p-5 rounded-xl border border-slate-200/80">
+              <FormattedEmailBody text={contentText} showLinkIcon />
             </div>
           ) : (
             <p className="text-xs text-slate-500 italic text-center py-8">
