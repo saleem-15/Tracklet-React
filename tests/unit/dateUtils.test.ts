@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { calculateDaysInStage, formatAppDate, formatTimestamp, addBusinessDays } from '../../src/lib/dateUtils';
+import {
+  calculateDaysInStage,
+  formatAppDate,
+  formatTimestamp,
+  addBusinessDays,
+  formatEmailTime,
+  formatEmailDateTime,
+} from '../../src/lib/dateUtils';
 
 describe('dateUtils', () => {
   describe('calculateDaysInStage', () => {
@@ -56,6 +63,36 @@ describe('dateUtils', () => {
       expect(addBusinessDays('2026-09-07', 5)).toBe('2026-09-14');
       // Friday 2026-09-04 + 5 business days -> Friday 2026-09-11 (Mon, Tue, Wed, Thu, Fri)
       expect(addBusinessDays('2026-09-04', 5)).toBe('2026-09-11');
+    });
+  });
+
+  describe('formatEmailTime', () => {
+    it('returns formatted 12-hour time from ISO string', () => {
+      expect(formatEmailTime('2026-09-26T14:32:00Z')).toBe('2:32 PM');
+      expect(formatEmailTime('2026-09-26T09:05:00Z')).toBe('9:05 AM');
+    });
+
+    it('returns null for midnight default timestamp or missing string', () => {
+      expect(formatEmailTime('2026-09-26T00:00:00Z')).toBeNull();
+      expect(formatEmailTime('2026-09-26')).toBeNull();
+      expect(formatEmailTime(undefined)).toBeNull();
+    });
+  });
+
+  describe('formatEmailDateTime', () => {
+    it('formats date and time together when timestamp is provided', () => {
+      const result = formatEmailDateTime('2026-09-26', '2026-09-26T14:32:00Z');
+      expect(result).toBe('Sep 26, 2026 · 2:32 PM');
+    });
+
+    it('formats from ISO date string if timestamp is omitted', () => {
+      const result = formatEmailDateTime('2026-09-26T10:18:00Z');
+      expect(result).toBe('Sep 26, 2026 · 10:18 AM');
+    });
+
+    it('formats only date when timestamp has no time component', () => {
+      const result = formatEmailDateTime('2026-09-26');
+      expect(result).toBe('Sep 26, 2026');
     });
   });
 });

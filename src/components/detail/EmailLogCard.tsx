@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   ExternalLink,
   ChevronDown,
@@ -6,8 +6,9 @@ import {
   Maximize2,
   Pencil,
   Trash2,
-  ArrowDownLeft,
-  ArrowUpRight,
+  MoreHorizontal,
+  Copy,
+  Check,
 } from 'lucide-react';
 import { Contact, EmailLog } from '../../types';
 import { LinkifiedText } from '../LinkifiedText';
@@ -32,6 +33,33 @@ export const EmailLogCard: React.FC<EmailLogCardProps> = ({
   onDelete,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close menu on click outside and escape key
+  useEffect(() => {
+    if (!isMenuOpen) return;
+
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isMenuOpen]);
 
   const isInbound = email.direction !== 'outbound' && email.sender.toLowerCase() !== 'you';
   const contentText = email.body || email.snippet || '';
@@ -46,146 +74,202 @@ export const EmailLogCard: React.FC<EmailLogCardProps> = ({
     companyName,
   });
 
+  const handleCopy = async () => {
+    try {
+      const parts = [
+        email.subject ? `Subject: ${email.subject}` : '',
+        primaryLabel ? (isInbound ? `From: ${primaryLabel}` : primaryLabel) : '',
+        secondaryEmail ? `<${secondaryEmail}>` : '',
+        '',
+        contentText,
+      ].filter(Boolean);
+      await navigator.clipboard.writeText(parts.join('\n'));
+      setIsCopied(true);
+      setTimeout(() => {
+        setIsCopied(false);
+        setIsMenuOpen(false);
+      }, 1000);
+    } catch {
+      // Fallback ignore
+    }
+  };
+
+  const hasAnyActions = Boolean(onEdit || onDelete || email.emailUrl || isLong || contentText);
+
   return (
-    <div className="bg-white rounded-xl border border-slate-200/80 p-3.5 sm:p-4 shadow-2xs hover:shadow-xs transition-shadow group relative">
-      <div className="flex items-start gap-3">
-        {/* Left Direction Indicator: 45° Diagonal Arrow inside circular accent */}
-        <div
-          className={`shrink-0 w-7 h-7 rounded-full flex items-center justify-center transition-colors ${
-            isInbound
-              ? 'bg-sky-50 text-sky-600'
-              : 'bg-emerald-50 text-emerald-600'
+    <div className="bg-white rounded-xl border border-slate-200/80 p-3 shadow-2xs hover:shadow-xs transition-shadow relative">
+      {/* Top Row: Clean Subject + Date ONLY (Full horizontal runway) */}
+      <div className="flex items-baseline justify-between gap-2.5">
+        <h4
+          onClick={() => isLong && onOpenReader(email)}
+          className={`text-[13px] font-semibold text-slate-900 leading-snug truncate ${
+            isLong ? 'hover:text-blue-600 cursor-pointer' : ''
           }`}
-          title={isInbound ? 'Received email' : 'Sent email'}
+          title={email.subject}
         >
-          {isInbound ? (
-            <ArrowDownLeft className="w-3.5 h-3.5" />
+          {email.subject}
+        </h4>
+
+        {/* Formatted Date & Time */}
+        <span className="text-[11px] font-mono text-slate-500 whitespace-nowrap shrink-0">
+          {formattedDateTime}
+        </span>
+      </div>
+
+      {/* 2-Tier Stacked Sender / Recipient Metadata (Optimal scanability & hierarchy) */}
+      <div className="mt-1">
+        <div className="text-xs font-semibold text-slate-800 leading-snug truncate">
+          {primaryLabel}
+        </div>
+        {secondaryEmail && (
+          <div className="text-[11px] font-mono text-slate-400 select-all truncate mt-0.5" title={secondaryEmail}>
+            {secondaryEmail}
+          </div>
+        )}
+      </div>
+
+      {/* Unboxed Content Snippet (clean text, full horizontal width) */}
+      {contentText && (
+        <div className="mt-1.5">
+          {isExpanded ? (
+            <div className="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed">
+              <LinkifiedText text={contentText} />
+            </div>
           ) : (
-            <ArrowUpRight className="w-3.5 h-3.5" />
+            <p className="text-xs text-slate-600 leading-relaxed line-clamp-2">
+              {contentText}
+            </p>
           )}
         </div>
+      )}
 
-        {/* Card Body */}
-        <div className="flex-1 min-w-0">
-          {/* Top Row: Subject + Date & Actions */}
-          <div className="flex items-baseline justify-between gap-3">
-            <h4
-              onClick={() => isLong && onOpenReader(email)}
-              className={`text-xs sm:text-[13px] font-semibold text-slate-900 leading-snug truncate ${
-                isLong ? 'hover:text-blue-600 cursor-pointer' : ''
-              }`}
-              title={email.subject}
+      {/* Bottom Action Surface: Read full email on left, ⋯ menu on right */}
+      {hasAnyActions && (
+        <div className="mt-2 flex items-center justify-between gap-2 pt-1.5 border-t border-slate-100">
+          {/* Left: Read full email link */}
+          {isLong ? (
+            <button
+              type="button"
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors cursor-pointer"
             >
-              {email.subject}
-            </h4>
+              <span>{isExpanded ? 'Show less' : 'Read full email'}</span>
+              {isExpanded ? (
+                <ChevronUp className="w-3 h-3" />
+              ) : (
+                <ChevronDown className="w-3 h-3" />
+              )}
+            </button>
+          ) : (
+            <div />
+          )}
 
-            {/* Right meta & secondary action buttons */}
-            <div className="flex items-center gap-1.5 shrink-0">
-              <span className="text-[11px] font-mono text-slate-500 whitespace-nowrap">
-                {formattedDateTime}
-              </span>
+          {/* Right: Secondary Actions Menu (⋯) */}
+          <div className="relative" ref={menuRef}>
+            <button
+              type="button"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              aria-haspopup="true"
+              aria-expanded={isMenuOpen}
+              aria-label="More actions for this email"
+              className={`p-1 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer ${
+                isMenuOpen ? 'bg-slate-100 text-slate-800' : ''
+              }`}
+              title="More actions"
+            >
+              <MoreHorizontal className="w-3.5 h-3.5" />
+            </button>
 
-              {/* Hover Actions: Webmail link, Edit, Delete */}
-              <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-150 flex items-center gap-1 ml-1">
+            {/* Dropdown Menu */}
+            {isMenuOpen && (
+              <div
+                role="menu"
+                className="absolute right-0 bottom-full mb-1.5 w-36 bg-white rounded-xl shadow-lg border border-slate-200/90 py-1 z-30 animate-in fade-in zoom-in-95 duration-100"
+              >
+                {isLong && (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      onOpenReader(email);
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 transition-colors text-left cursor-pointer"
+                  >
+                    <Maximize2 className="w-3.5 h-3.5 text-slate-400" />
+                    <span>Focused view</span>
+                  </button>
+                )}
+
                 {email.emailUrl && (
                   <a
                     href={email.emailUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="p-1 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                    title="Open thread in webmail"
-                    aria-label="Open thread in webmail"
+                    role="menuitem"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 transition-colors text-left cursor-pointer"
                   >
-                    <ExternalLink className="w-3 h-3" />
+                    <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
+                    <span>Open in webmail</span>
                   </a>
                 )}
+
+                {contentText && (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={handleCopy}
+                    className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 transition-colors text-left cursor-pointer"
+                  >
+                    {isCopied ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 text-emerald-600" />
+                        <span className="text-emerald-700 font-medium">Copied!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3.5 h-3.5 text-slate-400" />
+                        <span>Copy text</span>
+                      </>
+                    )}
+                  </button>
+                )}
+
                 {onEdit && (
                   <button
                     type="button"
-                    onClick={() => onEdit(email)}
-                    className="p-1 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded transition-colors cursor-pointer"
-                    title="Edit email log"
-                    aria-label="Edit email log"
+                    role="menuitem"
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      onEdit(email);
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 transition-colors text-left cursor-pointer"
                   >
-                    <Pencil className="w-3 h-3" />
+                    <Pencil className="w-3.5 h-3.5 text-slate-400" />
+                    <span>Edit email</span>
                   </button>
                 )}
+
                 {onDelete && (
                   <button
                     type="button"
-                    onClick={() => onDelete(email.id)}
-                    className="p-1 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors cursor-pointer"
-                    title="Delete email log"
-                    aria-label="Delete email log"
+                    role="menuitem"
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      onDelete(email.id);
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-slate-600 hover:text-rose-600 hover:bg-rose-50 transition-colors text-left cursor-pointer"
                   >
-                    <Trash2 className="w-3 h-3" />
+                    <Trash2 className="w-3.5 h-3.5 text-slate-400 hover:text-rose-600" />
+                    <span>Delete log</span>
                   </button>
                 )}
-              </div>
-            </div>
-          </div>
-
-          {/* 2-Tier Sender / Recipient Metadata */}
-          <div className="mt-1">
-            <div className="text-xs font-medium text-slate-800 leading-snug">
-              {primaryLabel}
-            </div>
-            {secondaryEmail && (
-              <div className="text-[11px] font-mono text-slate-500 truncate mt-0.5" title={secondaryEmail}>
-                {secondaryEmail}
               </div>
             )}
           </div>
-
-          {/* Unboxed Content Snippet (clean text, no nested gray container) */}
-          {contentText && (
-            <div className="mt-2">
-              {isExpanded ? (
-                <div className="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed">
-                  <LinkifiedText text={contentText} />
-                </div>
-              ) : (
-                <p className="text-xs text-slate-600 leading-relaxed line-clamp-2">
-                  {contentText}
-                </p>
-              )}
-
-              {/* Bottom bar: Read full email link + Copy / Reader controls */}
-              <div className="mt-2 flex items-center justify-between gap-3 pt-1">
-                {isLong ? (
-                  <button
-                    type="button"
-                    onClick={() => setIsExpanded(!isExpanded)}
-                    className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors cursor-pointer"
-                  >
-                    <span>{isExpanded ? 'Show less' : 'Read full email'}</span>
-                    {isExpanded ? (
-                      <ChevronUp className="w-3 h-3" />
-                    ) : (
-                      <ChevronDown className="w-3 h-3" />
-                    )}
-                  </button>
-                ) : (
-                  <div />
-                )}
-
-                {/* Secondary utility controls (Reader) */}
-                {isLong && (
-                  <button
-                    type="button"
-                    onClick={() => onOpenReader(email)}
-                    className="inline-flex items-center gap-1 text-[11px] font-mono text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
-                    title="Open in focused reader modal"
-                  >
-                    <Maximize2 className="w-3 h-3 text-slate-400" />
-                    <span>Reader</span>
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
         </div>
-      </div>
+      )}
     </div>
   );
 };

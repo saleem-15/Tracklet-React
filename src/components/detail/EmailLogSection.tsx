@@ -57,6 +57,7 @@ export const EmailLogSection: React.FC<EmailLogSectionProps> = ({
   const [emailUrl, setEmailUrl] = useState('');
   const [body, setBody] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [editingTimestamp, setEditingTimestamp] = useState<string | undefined>(undefined);
 
   // Reader Modal State
   const [readerEmail, setReaderEmail] = useState<EmailLog | null>(null);
@@ -71,6 +72,7 @@ export const EmailLogSection: React.FC<EmailLogSectionProps> = ({
     setEmailUrl('');
     setBody('');
     setEditingEmailId(null);
+    setEditingTimestamp(undefined);
     setShowAddEmail(false);
   };
 
@@ -82,6 +84,7 @@ export const EmailLogSection: React.FC<EmailLogSectionProps> = ({
   const handleStartEdit = (email: EmailLog) => {
     const isOutbound = email.direction === 'outbound' || email.sender.toLowerCase() === 'you';
     setEditingEmailId(email.id);
+    setEditingTimestamp(email.timestamp);
     setDirection(isOutbound ? 'outbound' : 'inbound');
     setSubject(email.subject);
     setCounterparty(isOutbound ? (email.recipient || '') : email.sender);
@@ -101,13 +104,26 @@ export const EmailLogSection: React.FC<EmailLogSectionProps> = ({
     try {
       const isOutbound = direction === 'outbound';
       const userLabel = currentUserEmail || 'You';
+      const now = new Date();
+
+      let computedTimestamp: string;
+      if (editingEmailId && editingTimestamp && (!date || editingTimestamp.startsWith(date))) {
+        computedTimestamp = editingTimestamp;
+      } else if (date) {
+        const [y, m, d] = date.split('-').map(Number);
+        const target = new Date(y, m - 1, d, now.getHours(), now.getMinutes(), now.getSeconds());
+        computedTimestamp = target.toISOString();
+      } else {
+        computedTimestamp = now.toISOString();
+      }
 
       const emailPayload: Omit<EmailLog, 'id'> = {
         subject: cleanSubject,
         sender: isOutbound ? userLabel : cleanParty,
         recipient: isOutbound ? cleanParty : userLabel,
         direction,
-        date: date || new Date().toISOString().split('T')[0],
+        date: date || now.toISOString().split('T')[0],
+        timestamp: computedTimestamp,
         emailUrl: emailUrl.trim() || undefined,
         body: body.trim() || undefined,
         snippet: body.trim() ? body.trim().slice(0, 160) : undefined,
@@ -129,8 +145,10 @@ export const EmailLogSection: React.FC<EmailLogSectionProps> = ({
       {/* Header */}
       <div className="flex items-center justify-between">
         <h3 className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-          <Mail className="w-3.5 h-3.5 text-blue-500" />
-          Email Log
+          <div className="w-5 flex items-center justify-center shrink-0">
+            <Mail className="w-3.5 h-3.5 text-blue-500" />
+          </div>
+          Emails
           {emails.length > 0 && <span className="ml-1 text-slate-500 font-normal">({emails.length})</span>}
         </h3>
         <div className="flex items-center gap-1.5">
@@ -350,39 +368,48 @@ export const EmailLogSection: React.FC<EmailLogSectionProps> = ({
 
       {/* Timeline Emails List */}
       {sortedEmails.length > 0 ? (
-        <div className="relative pl-6 space-y-3 pt-1">
-          {/* Subtle vertical timeline spine */}
-          {sortedEmails.length > 1 && (
-            <div
-              className="absolute left-[7px] top-6 bottom-6 w-px bg-slate-200 pointer-events-none"
-              aria-hidden="true"
-            />
-          )}
+        <div className="relative space-y-3 pt-1">
+          {/* Continuous vertical timeline spine: anchored at exactly 10px to match the 20px-wide node column */}
+          <div
+            className="absolute left-[10px] top-0 bottom-4 w-px bg-slate-200/60 pointer-events-none -translate-x-1/2"
+            aria-hidden="true"
+          />
 
           {sortedEmails.map((email) => {
             const isInbound = email.direction !== 'outbound' && email.sender.toLowerCase() !== 'you';
             return (
-              <div key={email.id} className="relative">
-                {/* Timeline Node Marker */}
-                <div
-                  className="absolute left-[-24px] top-5 -translate-x-1/2 w-3.5 h-3.5 rounded-full border border-slate-300 bg-white flex items-center justify-center shadow-2xs z-10"
-                  aria-hidden="true"
-                >
+              <div key={email.id} className="flex items-start gap-2 relative group">
+                {/* Timeline Node Column: 20px wide, center is at 10px */}
+                <div className="w-5 shrink-0 relative self-stretch">
+                  {/* Unified Directional Node directly on the timeline spine (vertically centered with the card's subject) */}
                   <div
-                    className={`w-1.5 h-1.5 rounded-full ${
-                      isInbound ? 'bg-sky-500' : 'bg-emerald-500'
+                    className={`absolute top-[20px] left-1/2 -translate-x-1/2 -translate-y-1/2 w-5 h-5 rounded-full border flex items-center justify-center shadow-2xs z-10 transition-colors ${
+                      isInbound
+                        ? 'bg-sky-50 border-sky-200/90 text-sky-600'
+                        : 'bg-emerald-50 border-emerald-200/90 text-emerald-600'
                     }`}
-                  />
+                    title={isInbound ? 'Received email' : 'Sent email'}
+                    aria-label={isInbound ? 'Received email' : 'Sent email'}
+                  >
+                    {isInbound ? (
+                      <ArrowDownLeft className="w-3 h-3" />
+                    ) : (
+                      <ArrowUpRight className="w-3 h-3" />
+                    )}
+                  </div>
                 </div>
 
-                <EmailLogCard
-                  email={email}
-                  contacts={[...(contacts || []), ...(allContacts || [])]}
-                  companyName={companyName}
-                  onOpenReader={(targetEmail) => setReaderEmail(targetEmail)}
-                  onEdit={handleStartEdit}
-                  onDelete={onDeleteEmailLog}
-                />
+                {/* Email Card */}
+                <div className="flex-1 min-w-0">
+                  <EmailLogCard
+                    email={email}
+                    contacts={[...(contacts || []), ...(allContacts || [])]}
+                    companyName={companyName}
+                    onOpenReader={(targetEmail) => setReaderEmail(targetEmail)}
+                    onEdit={handleStartEdit}
+                    onDelete={onDeleteEmailLog}
+                  />
+                </div>
               </div>
             );
           })}

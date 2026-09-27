@@ -88,11 +88,11 @@ export function formatEmailTime(timestamp?: string): string | null {
  * Formats an email date and optional timestamp into a clean, human-readable display e.g. "Sep 26, 2026 · 2:32 PM".
  */
 export function formatEmailDateTime(dateStr?: string, timestamp?: string): string {
-  const time = formatEmailTime(timestamp);
+  const time = formatEmailTime(timestamp) || formatEmailTime(dateStr);
 
   // Format base date
   let formattedDate = '';
-  const candidate = dateStr || (timestamp ? timestamp.split('T')[0] : '');
+  const candidate = (dateStr ? dateStr.split('T')[0] : '') || (timestamp ? timestamp.split('T')[0] : '');
 
   if (candidate) {
     try {
