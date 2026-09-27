@@ -680,13 +680,19 @@ function cleanEmailBody(bodyNode) {
   clone.querySelectorAll('a[href]').forEach(a => {
     const href = (a.getAttribute('href') || '').trim();
     const label = (a.innerText || a.textContent || '').trim();
-    // Only preserve valid http/https or mailto links
-    if (href && !href.startsWith('javascript:') && label) {
-      if (label === href || href.startsWith('mailto:')) {
-        a.replaceWith(document.createTextNode(href.replace(/^mailto:/i, '')));
+    if (!label) return;
+
+    if (/^https?:\/\//i.test(href)) {
+      if (label === href) {
+        a.replaceWith(document.createTextNode(href));
       } else {
         a.replaceWith(document.createTextNode(`[${label}](${href})`));
       }
+    } else if (/^mailto:/i.test(href)) {
+      a.replaceWith(document.createTextNode(href.replace(/^mailto:/i, '')));
+    } else {
+      // Leave unsupported-scheme anchors as their plain text labels
+      a.replaceWith(document.createTextNode(label));
     }
   });
 

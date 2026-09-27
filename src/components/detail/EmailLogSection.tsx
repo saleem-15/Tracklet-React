@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Mail, Plus, Link2, ArrowDownLeft, ArrowUpRight, Check } from 'lucide-react';
 import { Contact, EmailLog } from '../../types';
 import { EmailLogCard } from './EmailLogCard';
+import { formatLocalDate } from '../../lib/dateUtils';
 
 export interface EmailLogSectionProps {
   emails?: EmailLog[];
@@ -103,7 +104,8 @@ export const EmailLogSection: React.FC<EmailLogSectionProps> = ({
       const now = new Date();
 
       let computedTimestamp: string;
-      if (editingEmailId && editingTimestamp && (!date || editingTimestamp.startsWith(date))) {
+      const editingDate = editingTimestamp ? formatLocalDate(new Date(editingTimestamp)) : '';
+      if (editingEmailId && editingTimestamp && (!date || editingDate === date)) {
         computedTimestamp = editingTimestamp;
       } else if (date) {
         const [y, m, d] = date.split('-').map(Number);

@@ -68,8 +68,13 @@ describe('dateUtils', () => {
 
   describe('formatEmailTime', () => {
     it('returns formatted 12-hour time from ISO string', () => {
-      expect(formatEmailTime('2026-09-26T14:32:00Z')).toBe('2:32 PM');
-      expect(formatEmailTime('2026-09-26T09:05:00Z')).toBe('9:05 AM');
+      const d1 = new Date('2026-09-26T14:32:00Z');
+      const expected1 = d1.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+      expect(formatEmailTime('2026-09-26T14:32:00Z')).toBe(expected1);
+
+      const d2 = new Date('2026-09-26T09:05:00Z');
+      const expected2 = d2.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+      expect(formatEmailTime('2026-09-26T09:05:00Z')).toBe(expected2);
     });
 
     it('returns null for midnight default timestamp or missing string', () => {
@@ -81,13 +86,19 @@ describe('dateUtils', () => {
 
   describe('formatEmailDateTime', () => {
     it('formats date and time together when timestamp is provided', () => {
+      const d = new Date('2026-09-26T14:32:00Z');
+      const expectedDate = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      const expectedTime = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
       const result = formatEmailDateTime('2026-09-26', '2026-09-26T14:32:00Z');
-      expect(result).toBe('Sep 26, 2026 · 2:32 PM');
+      expect(result).toBe(`${expectedDate} · ${expectedTime}`);
     });
 
     it('formats from ISO date string if timestamp is omitted', () => {
+      const d = new Date('2026-09-26T10:18:00Z');
+      const expectedDate = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      const expectedTime = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
       const result = formatEmailDateTime('2026-09-26T10:18:00Z');
-      expect(result).toBe('Sep 26, 2026 · 10:18 AM');
+      expect(result).toBe(`${expectedDate} · ${expectedTime}`);
     });
 
     it('formats only date when timestamp has no time component', () => {
