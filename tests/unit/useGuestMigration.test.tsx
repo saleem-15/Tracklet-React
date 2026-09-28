@@ -135,4 +135,29 @@ describe('useGuestMigration hook', () => {
     expect(hookResult.isMigrationModalOpen).toBe(false);
     expect(hookResult.migrationApps.length).toBe(0);
   });
+
+  it('rejects applications with malformed contactIds and normalizes valid contactIds arrays', () => {
+    localStorage.setItem(
+      LOCAL_STORAGE_KEYS.GUEST_APPS,
+      JSON.stringify([
+        { id: 'app-bad-cids', company: 'BadCorp', contactIds: 'not-an-array' },
+        { id: 'app-good-cids', company: 'GoodCorp', contactIds: ['c1', ' ', 'c2'] },
+        { id: 'app-no-cids', company: 'NoCidsCorp' },
+      ])
+    );
+
+    mountHarness();
+
+    act(() => {
+      hookResult.checkAndPromptGuestMigration();
+    });
+
+    expect(hookResult.isMigrationModalOpen).toBe(true);
+    expect(hookResult.migrationApps.length).toBe(2);
+    expect(hookResult.migrationApps.find((a) => a.id === 'app-bad-cids')).toBeUndefined();
+    const goodApp = hookResult.migrationApps.find((a) => a.id === 'app-good-cids');
+    expect(goodApp?.contactIds).toEqual(['c1', 'c2']);
+    const noCidsApp = hookResult.migrationApps.find((a) => a.id === 'app-no-cids');
+    expect(noCidsApp).toBeDefined();
+  });
 });

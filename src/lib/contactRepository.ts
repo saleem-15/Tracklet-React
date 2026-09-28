@@ -2,6 +2,7 @@ import {
   db, 
   collection, 
   getDocs, 
+  getDoc,
   addDoc, 
   setDoc,
   updateDoc, 
@@ -14,7 +15,7 @@ import {
 } from './firebase';
 import { Contact, Application } from '../types';
 import { INITIAL_SAMPLE_CONTACTS } from './sampleData';
-import { LOCAL_STORAGE_KEYS } from './constants';
+import { LOCAL_STORAGE_KEYS, clearGuestMigrationMarkers } from './constants';
 import { sanitizeForFirestore, commitInChunks } from './firestoreUtils';
 
 export class ContactRepository {
@@ -67,6 +68,7 @@ export class ContactRepository {
   static saveGuestContacts(contacts: Contact[]): void {
     try {
       localStorage.setItem(LOCAL_STORAGE_KEYS.GUEST_CONTACTS, JSON.stringify(contacts));
+      clearGuestMigrationMarkers();
     } catch (e) {
       console.error('Failed to save contacts to localStorage:', e);
     }
@@ -234,6 +236,8 @@ export class ContactRepository {
 
   /**
    * Batch delete multiple contacts and cascade remove them from linked applications.
+   * Verifies existing application documents to prevent failures from stale links,
+   * and executes contact deletion and application cleanup atomically when within single batch limit.
    */
   static async batchDelete(
     ids: string[],
@@ -242,13 +246,45 @@ export class ContactRepository {
   ): Promise<void> {
     if (userId) {
       try {
+        // Verify which linked application documents still exist in Firestore before applying cascade updates
+        const validAppIds: string[] = [];
+        if (linkedAppIds.length > 0) {
+          const appChecks = await Promise.allSettled(
+            linkedAppIds.map((appId) => getDoc(doc(db, 'users', userId, 'applications', appId)))
+          );
+          for (let i = 0; i < appChecks.length; i++) {
+            const check = appChecks[i];
+            if (check.status === 'fulfilled' && check.value.exists()) {
+              validAppIds.push(linkedAppIds[i]);
+            }
+          }
+        }
+
+        // If total writes fit in a single batch (<= 450), commit contact deletions and application link cleanups atomically together
+        const totalOps = ids.length + validAppIds.length;
+        if (totalOps <= 450) {
+          const batch = writeBatch(db);
+          for (const id of ids) {
+            batch.delete(doc(db, 'users', userId, 'contacts', id));
+          }
+          const now = new Date().toISOString();
+          for (const appId of validAppIds) {
+            batch.update(doc(db, 'users', userId, 'applications', appId), {
+              contactIds: arrayRemove(...ids),
+              updatedAt: now,
+            });
+          }
+          await batch.commit();
+          return;
+        }
+
+        // If operations exceed a single batch, execute in chunks
         await commitInChunks(ids, (batch, id) => {
           batch.delete(doc(db, 'users', userId, 'contacts', id));
         });
 
-        // Cascade cleanup in linked applications in Firestore
-        if (linkedAppIds.length > 0 && ids.length > 0) {
-          await commitInChunks(linkedAppIds, (batch, appId) => {
+        if (validAppIds.length > 0 && ids.length > 0) {
+          await commitInChunks(validAppIds, (batch, appId) => {
             const appRef = doc(db, 'users', userId, 'applications', appId);
             batch.update(appRef, {
               contactIds: arrayRemove(...ids),

@@ -468,9 +468,24 @@ export function useApplications({
             if (user?.emailVerified) {
               try {
                 restoredApps = await ApplicationRepository.batchRestoreApplications(deletedApps, user.uid);
-              } catch (restoreErr) {
+              } catch (restoreErr: unknown) {
                 console.error('Failed to restore deleted applications to Firestore:', restoreErr);
-                addToast('error', 'Restore Failed', 'Could not restore applications to your account.');
+                const partiallyRestored: Application[] =
+                  restoreErr && typeof restoreErr === 'object' && 'restoredApplications' in restoreErr
+                    ? (restoreErr as { restoredApplications: Application[] }).restoredApplications
+                    : [];
+
+                if (partiallyRestored.length > 0) {
+                  setApplications((prev) => [...partiallyRestored, ...prev]);
+                  const failedCount = deletedApps.length - partiallyRestored.length;
+                  addToast(
+                    'warning',
+                    'Partial Restore',
+                    `Restored ${partiallyRestored.length} applications; ${failedCount} could not be restored.`
+                  );
+                } else {
+                  addToast('error', 'Restore Failed', 'Could not restore applications to your account.');
+                }
                 return;
               }
             }

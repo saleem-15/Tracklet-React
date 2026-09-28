@@ -23,6 +23,16 @@ export interface UseGuestMigrationReturn {
 }
 
 /**
+ * Generates a deterministic signature string for a guest applications + contacts dataset.
+ * Used to detect whether current localStorage data has already been migrated by the user.
+ */
+export function computeGuestSignature(apps: Application[], contacts: Contact[]): string {
+  const appIds = apps.map((a) => a.id).sort().join(',');
+  const contactIds = contacts.map((c) => c.id).sort().join(',');
+  return `${appIds}|${contactIds}`;
+}
+
+/**
  * useGuestMigration
  * 
  * Domain hook encapsulating guest data detection, modal prompt state,
@@ -39,17 +49,6 @@ export function useGuestMigration({
   const [isMigrationModalOpen, setIsMigrationModalOpen] = useState(false);
 
   const checkAndPromptGuestMigration = useCallback(() => {
-    // If the authenticated user has already completed or discarded guest migration in this browser, skip prompt
-    if (user) {
-      try {
-        if (localStorage.getItem(`${LOCAL_STORAGE_KEYS.GUEST_MIGRATED_PREFIX}${user.uid}`) === 'true') {
-          return;
-        }
-      } catch {
-        // Ignore storage access error
-      }
-    }
-
     let parsedGuestApps: Application[] = [];
     let parsedGuestContacts: Contact[] = [];
 
@@ -58,10 +57,36 @@ export function useGuestMigration({
       if (rawGuestApps) {
         const parsed = JSON.parse(rawGuestApps);
         if (Array.isArray(parsed)) {
-          parsedGuestApps = parsed.filter(
-            (item): item is Application =>
-              Boolean(item && typeof item === 'object' && 'id' in item && typeof item.id === 'string' && item.id.trim())
-          );
+          parsedGuestApps = parsed.reduce<Application[]>((acc, item) => {
+            if (
+              !item ||
+              typeof item !== 'object' ||
+              !('id' in item) ||
+              typeof item.id !== 'string' ||
+              !item.id.trim()
+            ) {
+              return acc;
+            }
+
+            // Normalize contactIds: accept missing/empty, filter valid arrays to string IDs, reject malformed non-arrays
+            let normalizedContactIds: string[] | undefined = undefined;
+            if ('contactIds' in item && item.contactIds !== undefined && item.contactIds !== null) {
+              if (Array.isArray(item.contactIds)) {
+                normalizedContactIds = item.contactIds.filter(
+                  (cid): cid is string => typeof cid === 'string' && Boolean(cid.trim())
+                );
+              } else {
+                // Reject malformed value so import cannot fail during contact mapping
+                return acc;
+              }
+            }
+
+            acc.push({
+              ...item,
+              ...(normalizedContactIds !== undefined ? { contactIds: normalizedContactIds } : {}),
+            });
+            return acc;
+          }, []);
         }
       }
     } catch {
@@ -73,21 +98,62 @@ export function useGuestMigration({
       if (rawGuestContacts) {
         const parsed = JSON.parse(rawGuestContacts);
         if (Array.isArray(parsed)) {
-          parsedGuestContacts = parsed.filter(
-            (item): item is Contact =>
-              Boolean(item && typeof item === 'object' && 'id' in item && typeof item.id === 'string' && item.id.trim())
-          );
+          parsedGuestContacts = parsed.reduce<Contact[]>((acc, item) => {
+            if (
+              !item ||
+              typeof item !== 'object' ||
+              !('id' in item) ||
+              typeof item.id !== 'string' ||
+              !item.id.trim()
+            ) {
+              return acc;
+            }
+
+            // Normalize applicationIds: accept missing/empty, filter valid arrays to string IDs, reject malformed non-arrays
+            let normalizedAppIds: string[] | undefined = undefined;
+            if ('applicationIds' in item && item.applicationIds !== undefined && item.applicationIds !== null) {
+              if (Array.isArray(item.applicationIds)) {
+                normalizedAppIds = item.applicationIds.filter(
+                  (aid): aid is string => typeof aid === 'string' && Boolean(aid.trim())
+                );
+              } else {
+                // Reject malformed value
+                return acc;
+              }
+            }
+
+            acc.push({
+              ...item,
+              ...(normalizedAppIds !== undefined ? { applicationIds: normalizedAppIds } : {}),
+            });
+            return acc;
+          }, []);
         }
       }
     } catch {
       // Ignore guest contacts parse error
     }
 
-    if (parsedGuestApps.length > 0 || parsedGuestContacts.length > 0) {
-      setMigrationApps(parsedGuestApps);
-      setMigrationContacts(parsedGuestContacts);
-      setIsMigrationModalOpen(true);
+    if (parsedGuestApps.length === 0 && parsedGuestContacts.length === 0) {
+      return;
     }
+
+    // If this exact dataset was already imported or discarded by this user, skip prompt
+    if (user) {
+      try {
+        const storedSignature = localStorage.getItem(`${LOCAL_STORAGE_KEYS.GUEST_MIGRATED_PREFIX}${user.uid}`);
+        const currentSignature = computeGuestSignature(parsedGuestApps, parsedGuestContacts);
+        if (storedSignature && storedSignature === currentSignature) {
+          return;
+        }
+      } catch {
+        // Ignore storage access error
+      }
+    }
+
+    setMigrationApps(parsedGuestApps);
+    setMigrationContacts(parsedGuestContacts);
+    setIsMigrationModalOpen(true);
   }, [user]);
 
   const handleImportGuestApps = useCallback(async () => {
@@ -106,7 +172,8 @@ export function useGuestMigration({
       // 2. Remap application contactIds using new contact Firestore IDs, then batch import
       if (migrationApps.length > 0) {
         const remappedApps = migrationApps.map((app) => {
-          const remappedContactIds = (app.contactIds || []).map((cId) => contactIdMap.get(cId) || cId);
+          const rawContactIds = Array.isArray(app.contactIds) ? app.contactIds : [];
+          const remappedContactIds = rawContactIds.map((cId) => contactIdMap.get(cId) || cId);
           return {
             ...app,
             contactIds: remappedContactIds,
@@ -127,7 +194,8 @@ export function useGuestMigration({
         // Remap application IDs on imported contacts and await all link updates
         if (appIdMap.size > 0 && importedContacts.length > 0) {
           importedContacts = importedContacts.map((c) => {
-            const remappedAppIds = (c.applicationIds || []).map((aId) => appIdMap.get(aId) || aId);
+            const rawAppIds = Array.isArray(c.applicationIds) ? c.applicationIds : [];
+            const remappedAppIds = rawAppIds.map((aId) => appIdMap.get(aId) || aId);
             return { ...c, applicationIds: remappedAppIds };
           });
           const updatePromises = importedContacts.map((c) =>
@@ -143,9 +211,10 @@ export function useGuestMigration({
         setContacts((prev) => [...importedContacts, ...prev]);
       }
 
-      // Mark migration as completed for this user to ensure idempotency even if localStorage clearing fails
+      // Tie completed migration marker to this exact dataset signature so future new guest data is not blocked
       try {
-        localStorage.setItem(`${LOCAL_STORAGE_KEYS.GUEST_MIGRATED_PREFIX}${user.uid}`, 'true');
+        const signature = computeGuestSignature(migrationApps, migrationContacts);
+        localStorage.setItem(`${LOCAL_STORAGE_KEYS.GUEST_MIGRATED_PREFIX}${user.uid}`, signature);
       } catch (markerErr) {
         console.warn('Could not set guest migration completed marker:', markerErr);
       }
@@ -172,7 +241,8 @@ export function useGuestMigration({
     let discardSuccess = true;
     if (user) {
       try {
-        localStorage.setItem(`${LOCAL_STORAGE_KEYS.GUEST_MIGRATED_PREFIX}${user.uid}`, 'true');
+        const signature = computeGuestSignature(migrationApps, migrationContacts);
+        localStorage.setItem(`${LOCAL_STORAGE_KEYS.GUEST_MIGRATED_PREFIX}${user.uid}`, signature);
       } catch (markerErr) {
         console.warn('Could not set guest migration marker on discard:', markerErr);
       }
@@ -192,7 +262,7 @@ export function useGuestMigration({
     } else {
       addToast('warning', 'Discard Incomplete', 'Could not access browser storage, but local state was cleared.');
     }
-  }, [user, addToast]);
+  }, [user, migrationApps, migrationContacts, addToast]);
 
   return {
     migrationApps,
