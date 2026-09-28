@@ -1500,8 +1500,8 @@
     "semantic_hash": "9dc5a586aabe1127d5d06602c7b0c7de"
   },
   "src/hooks/useApplications.ts": {
-    "mtime": 1790593191.3667493,
-    "ast_hash": "98de556edd214076485f279aeaa4de64",
+    "mtime": 1790596753.865606,
+    "ast_hash": "a8daa60df8479ef104877634749cd1cc",
     "semantic_hash": ""
   },
   "src/hooks/useContacts.ts": {
@@ -2330,23 +2330,23 @@
     "semantic_hash": ""
   },
   "src/hooks/useDataLoader.ts": {
-    "mtime": 1790594617.7835357,
-    "ast_hash": "d3397bcf6085a75f87844e12beafe320",
+    "mtime": 1790596745.1319053,
+    "ast_hash": "a50883cbd2fa4496666df4f1ae3c3d3a",
     "semantic_hash": ""
   },
   "docs/architecture/PHASE_1_DOMAIN_HOOKS.md": {
-    "mtime": 1790593870.523693,
-    "ast_hash": "cf0a404a89d3e0e6b6363b3f73a7c642",
+    "mtime": 1790596779.1344142,
+    "ast_hash": "36d3a52fd760176ef21a0c5aaae78ce1",
     "semantic_hash": ""
   },
   "docs/architecture/PHASE_2_PRESENTATION_LAYOUT.md": {
-    "mtime": 1790595121.4405742,
-    "ast_hash": "abf980f6bd423b1044b83d1bb9221687",
+    "mtime": 1790596793.0011916,
+    "ast_hash": "c460abc89a78c11a8097178df52904c0",
     "semantic_hash": ""
   },
   "docs/architecture/README.md": {
-    "mtime": 1790595137.7149293,
-    "ast_hash": "615d2ca2d13d03a21554e2e5615d5240",
+    "mtime": 1790596763.8693507,
+    "ast_hash": "6bf1c6d0f639a9e16cc3d4bc3a78d2b6",
     "semantic_hash": ""
   }
 }
