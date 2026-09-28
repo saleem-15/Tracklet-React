@@ -645,8 +645,8 @@
     "semantic_hash": "74e941086226dbc8c54afe7c9f1754c7"
   },
   "src/App.tsx": {
-    "mtime": 1790594990.3000848,
-    "ast_hash": "ae9f1b4b4c32081ff866ccff523d4bbb",
+    "mtime": 1790601598.34875,
+    "ast_hash": "733cff010223e2207295363069bbabfe",
     "semantic_hash": ""
   },
   "src/components/AccountSettingsCard.tsx": {
@@ -780,9 +780,9 @@
     "semantic_hash": "08d06d96a587ca7f8ce147d990b6870c"
   },
   "src/components/Sidebar.tsx": {
-    "mtime": 1788534901.2420716,
-    "ast_hash": "7a8e39e3c9b753744b709e83cebd9795",
-    "semantic_hash": "7a8e39e3c9b753744b709e83cebd9795"
+    "mtime": 1790601036.11522,
+    "ast_hash": "cdb10446540fab65955597447aae9671",
+    "semantic_hash": ""
   },
   "src/components/StageSelectorDropdown.tsx": {
     "mtime": 1787401903.1245313,
@@ -810,9 +810,9 @@
     "semantic_hash": "00df6c02348ebccb25ac2a1a1bc82212"
   },
   "src/components/TopBar.tsx": {
-    "mtime": 1787825035.5793595,
-    "ast_hash": "6651ed7a9083db540c2bf17657c07273",
-    "semantic_hash": "6651ed7a9083db540c2bf17657c07273"
+    "mtime": 1790600949.6767218,
+    "ast_hash": "b9d0ce94fd013d76c75fe3d74d5ae0d8",
+    "semantic_hash": ""
   },
   "src/components/WeeklyActivityWidget.tsx": {
     "mtime": 1787401903.1591728,
@@ -2310,23 +2310,23 @@
     "semantic_hash": ""
   },
   "src/components/layout/AppModals.tsx": {
-    "mtime": 1790595032.864715,
-    "ast_hash": "71eccdbf592a6087dffc775bbaa67265",
+    "mtime": 1790600794.405537,
+    "ast_hash": "6e07a4da5511b8f65f17bc1d6e78558b",
     "semantic_hash": ""
   },
   "src/components/layout/AppSlideOvers.tsx": {
-    "mtime": 1790595041.2251503,
-    "ast_hash": "ba6e6cc91a06a45be5ef1effd13638b0",
+    "mtime": 1790600762.7870667,
+    "ast_hash": "d61881af0b2a1aa0bdaadff39f6e9c6e",
     "semantic_hash": ""
   },
   "src/components/layout/AuthGate.tsx": {
-    "mtime": 1790595022.8149593,
-    "ast_hash": "dff8d417831f9775876ffa9151a1887e",
+    "mtime": 1790601082.8321495,
+    "ast_hash": "89dc16b1eecee53c2110279b14b932f5",
     "semantic_hash": ""
   },
   "src/components/layout/WorkspaceContent.tsx": {
-    "mtime": 1790595052.5644965,
-    "ast_hash": "5c532ea08fe9e78a801e76fb50e66198",
+    "mtime": 1790600745.2886305,
+    "ast_hash": "5a34d708b548b3e084afdce3894bd01c",
     "semantic_hash": ""
   },
   "src/hooks/useDataLoader.ts": {
@@ -2345,8 +2345,53 @@
     "semantic_hash": ""
   },
   "docs/architecture/README.md": {
-    "mtime": 1790596763.8693507,
-    "ast_hash": "6bf1c6d0f639a9e16cc3d4bc3a78d2b6",
+    "mtime": 1790600304.4416692,
+    "ast_hash": "0efab40d3fd55c6c0549a969e6c3e8c8",
+    "semantic_hash": ""
+  },
+  "src/context/AppProviders.tsx": {
+    "mtime": 1790600729.1104472,
+    "ast_hash": "504a6b4d5112bce4d02f6fe1ec3a479e",
+    "semantic_hash": ""
+  },
+  "src/context/ApplicationsContext.tsx": {
+    "mtime": 1790601228.0032275,
+    "ast_hash": "21da6732eeee54edff6c3f75a5d9b2bc",
+    "semantic_hash": ""
+  },
+  "src/context/ContactsContext.tsx": {
+    "mtime": 1790600710.639032,
+    "ast_hash": "ed7dd6ae287cecb5b25cab7bb7fc8f03",
+    "semantic_hash": ""
+  },
+  "src/context/NavigationContext.tsx": {
+    "mtime": 1790600644.5890176,
+    "ast_hash": "4d58b4e09253e033b741727902fd0a8b",
+    "semantic_hash": ""
+  },
+  "src/context/SettingsContext.tsx": {
+    "mtime": 1790600605.2226212,
+    "ast_hash": "f4374a96d0bd54a30b6b4b9dc3081a51",
+    "semantic_hash": ""
+  },
+  "src/context/ToastContext.tsx": {
+    "mtime": 1790600594.6409554,
+    "ast_hash": "35e372c491354a6fa4446064e5a42a67",
+    "semantic_hash": ""
+  },
+  "docs/architecture/PHASE_3_CONTEXT_PROVIDERS.md": {
+    "mtime": 1790600284.424026,
+    "ast_hash": "018a4b5c6d1daf38fb991da817407d7e",
+    "semantic_hash": ""
+  },
+  "src/components/layout/index.ts": {
+    "mtime": 1790601455.4981308,
+    "ast_hash": "601aa48ac0dad15fd10f6b1dd0d70348",
+    "semantic_hash": ""
+  },
+  "src/context/index.ts": {
+    "mtime": 1790601470.2633402,
+    "ast_hash": "3d18dff3747c9c3f8d062cbc1a324cc0",
     "semantic_hash": ""
   }
 }
