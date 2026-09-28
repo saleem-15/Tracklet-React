@@ -29,8 +29,9 @@ Phase 2: Presentation & Layout Modularization [COMPLETED]
     useDataLoader, AuthGate, WorkspaceContent, AppSlideOvers, AppModals.
     0 TS errors, 340/340 tests, clean production build.
 
-Phase 3: Context Providers & Feature Boundaries [UPCOMING]
+Phase 3: Context Providers & Feature Boundaries [IN PROGRESS]
 └── Group hooks and state into Feature Providers to eliminate prop-drilling.
+    Target App.tsx < 100 lines; eliminate 25+ drilled props.
 ```
 
 ---
@@ -41,3 +42,5 @@ Phase 3: Context Providers & Feature Boundaries [UPCOMING]
   *Detailed extraction of 7 domain hooks, reference stabilization, concurrency optimization, and test suites.*
 - **Phase 2 Blueprint**: [PHASE_2_PRESENTATION_LAYOUT.md](./PHASE_2_PRESENTATION_LAYOUT.md)  
   *Execution blueprint for decomposing App.tsx presentation into modular layout containers.*
+- **Phase 3 Blueprint**: [PHASE_3_CONTEXT_PROVIDERS.md](./PHASE_3_CONTEXT_PROVIDERS.md)  
+  *Architecture blueprint for eliminating prop-drilling via Scoped Feature Providers.*
