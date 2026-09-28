@@ -102,4 +102,37 @@ describe('useGuestMigration hook', () => {
     expect(localStorage.getItem(LOCAL_STORAGE_KEYS.GUEST_CONTACTS)).toBeNull();
     expect(mockAddToast).toHaveBeenCalledWith('info', 'Guest Data Discarded', expect.any(String));
   });
+
+  it('filters out corrupted or non-object entries before opening modal', () => {
+    localStorage.setItem(
+      LOCAL_STORAGE_KEYS.GUEST_APPS,
+      JSON.stringify([null, 'bad_entry', { noId: 'invalid' }, { id: 'valid-1', company: 'ValidCorp' }])
+    );
+
+    mountHarness();
+
+    act(() => {
+      hookResult.checkAndPromptGuestMigration();
+    });
+
+    expect(hookResult.isMigrationModalOpen).toBe(true);
+    expect(hookResult.migrationApps.length).toBe(1);
+    expect(hookResult.migrationApps[0].id).toBe('valid-1');
+  });
+
+  it('does not open modal if all stored entries are corrupted or invalid', () => {
+    localStorage.setItem(
+      LOCAL_STORAGE_KEYS.GUEST_APPS,
+      JSON.stringify([null, 42, { notAnId: true }])
+    );
+
+    mountHarness();
+
+    act(() => {
+      hookResult.checkAndPromptGuestMigration();
+    });
+
+    expect(hookResult.isMigrationModalOpen).toBe(false);
+    expect(hookResult.migrationApps.length).toBe(0);
+  });
 });

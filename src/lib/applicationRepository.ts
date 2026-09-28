@@ -138,6 +138,54 @@ export class ApplicationRepository {
   }
 
   /**
+   * Restores a deleted application preserving its authoritative original ID and timestamps (for Undo).
+   */
+  static async restoreApplication(
+    app: Application,
+    userId?: string
+  ): Promise<Application> {
+    if (userId) {
+      try {
+        const docRef = doc(db, 'users', userId, 'applications', app.id);
+        const payload = sanitizeForFirestore({
+          ...app,
+          userId,
+        });
+        await setDoc(docRef, payload, { merge: true });
+      } catch (err) {
+        console.error('Failed to restore application in Firestore:', err);
+        throw err;
+      }
+    }
+    return app;
+  }
+
+  /**
+   * Batch restores multiple deleted applications preserving their authoritative original IDs and timestamps (for Bulk Undo).
+   */
+  static async batchRestoreApplications(
+    apps: Application[],
+    userId?: string
+  ): Promise<Application[]> {
+    if (userId && apps.length > 0) {
+      try {
+        await commitInChunks(apps, (batch, app) => {
+          const docRef = doc(db, 'users', userId, 'applications', app.id);
+          const payload = sanitizeForFirestore({
+            ...app,
+            userId,
+          });
+          batch.set(docRef, payload, { merge: true });
+        });
+      } catch (err) {
+        console.error('Failed bulk restore applications in Firestore:', err);
+        throw err;
+      }
+    }
+    return apps;
+  }
+
+  /**
    * Update an existing application record at /users/{userId}/applications/{id}.
    */
   static async updateApplication(

@@ -39,6 +39,17 @@ export function useGuestMigration({
   const [isMigrationModalOpen, setIsMigrationModalOpen] = useState(false);
 
   const checkAndPromptGuestMigration = useCallback(() => {
+    // If the authenticated user has already completed or discarded guest migration in this browser, skip prompt
+    if (user) {
+      try {
+        if (localStorage.getItem(`${LOCAL_STORAGE_KEYS.GUEST_MIGRATED_PREFIX}${user.uid}`) === 'true') {
+          return;
+        }
+      } catch {
+        // Ignore storage access error
+      }
+    }
+
     let parsedGuestApps: Application[] = [];
     let parsedGuestContacts: Contact[] = [];
 
@@ -46,7 +57,12 @@ export function useGuestMigration({
       const rawGuestApps = localStorage.getItem(LOCAL_STORAGE_KEYS.GUEST_APPS);
       if (rawGuestApps) {
         const parsed = JSON.parse(rawGuestApps);
-        if (Array.isArray(parsed)) parsedGuestApps = parsed;
+        if (Array.isArray(parsed)) {
+          parsedGuestApps = parsed.filter(
+            (item): item is Application =>
+              Boolean(item && typeof item === 'object' && 'id' in item && typeof item.id === 'string' && item.id.trim())
+          );
+        }
       }
     } catch {
       // Ignore guest apps parse error
@@ -56,7 +72,12 @@ export function useGuestMigration({
       const rawGuestContacts = localStorage.getItem(LOCAL_STORAGE_KEYS.GUEST_CONTACTS);
       if (rawGuestContacts) {
         const parsed = JSON.parse(rawGuestContacts);
-        if (Array.isArray(parsed)) parsedGuestContacts = parsed;
+        if (Array.isArray(parsed)) {
+          parsedGuestContacts = parsed.filter(
+            (item): item is Contact =>
+              Boolean(item && typeof item === 'object' && 'id' in item && typeof item.id === 'string' && item.id.trim())
+          );
+        }
       }
     } catch {
       // Ignore guest contacts parse error
@@ -67,7 +88,7 @@ export function useGuestMigration({
       setMigrationContacts(parsedGuestContacts);
       setIsMigrationModalOpen(true);
     }
-  }, []);
+  }, [user]);
 
   const handleImportGuestApps = useCallback(async () => {
     if (!user || (migrationApps.length === 0 && migrationContacts.length === 0)) return;
@@ -122,6 +143,13 @@ export function useGuestMigration({
         setContacts((prev) => [...importedContacts, ...prev]);
       }
 
+      // Mark migration as completed for this user to ensure idempotency even if localStorage clearing fails
+      try {
+        localStorage.setItem(`${LOCAL_STORAGE_KEYS.GUEST_MIGRATED_PREFIX}${user.uid}`, 'true');
+      } catch (markerErr) {
+        console.warn('Could not set guest migration completed marker:', markerErr);
+      }
+
       // Both imports succeeded cleanly; now safely purge localStorage guest cache
       try {
         localStorage.removeItem(LOCAL_STORAGE_KEYS.GUEST_APPS);
@@ -142,6 +170,13 @@ export function useGuestMigration({
 
   const handleDiscardGuestApps = useCallback(() => {
     let discardSuccess = true;
+    if (user) {
+      try {
+        localStorage.setItem(`${LOCAL_STORAGE_KEYS.GUEST_MIGRATED_PREFIX}${user.uid}`, 'true');
+      } catch (markerErr) {
+        console.warn('Could not set guest migration marker on discard:', markerErr);
+      }
+    }
     try {
       localStorage.removeItem(LOCAL_STORAGE_KEYS.GUEST_APPS);
       localStorage.removeItem(LOCAL_STORAGE_KEYS.GUEST_CONTACTS);
@@ -157,7 +192,7 @@ export function useGuestMigration({
     } else {
       addToast('warning', 'Discard Incomplete', 'Could not access browser storage, but local state was cleared.');
     }
-  }, [addToast]);
+  }, [user, addToast]);
 
   return {
     migrationApps,

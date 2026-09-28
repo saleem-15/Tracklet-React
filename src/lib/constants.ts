@@ -157,6 +157,7 @@ export const LOCAL_STORAGE_KEYS = {
   HISTORY_PREFIX: 'tracklet_history_',
   AUTH_PENDING_EMAIL: 'tracklet_auth_pending_email',
   EMAIL_RESEND_COOLDOWN: 'tracklet_email_resend_cooldown',
+  GUEST_MIGRATED_PREFIX: 'tracklet_guest_migrated_',
 };
 
 export const AUTH_PROVIDERS = {

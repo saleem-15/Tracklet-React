@@ -247,16 +247,13 @@ export class ContactRepository {
         });
 
         // Cascade cleanup in linked applications in Firestore
-        if (linkedAppIds.length > 0) {
+        if (linkedAppIds.length > 0 && ids.length > 0) {
           await commitInChunks(linkedAppIds, (batch, appId) => {
             const appRef = doc(db, 'users', userId, 'applications', appId);
-            // arrayRemove each deleted contact id
-            for (const id of ids) {
-              batch.update(appRef, {
-                contactIds: arrayRemove(id),
-                updatedAt: new Date().toISOString(),
-              });
-            }
+            batch.update(appRef, {
+              contactIds: arrayRemove(...ids),
+              updatedAt: new Date().toISOString(),
+            });
           });
         }
       } catch (err) {

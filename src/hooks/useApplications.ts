@@ -330,7 +330,7 @@ export function useApplications({
               let restored = targetApp;
               if (user?.emailVerified) {
                 try {
-                  restored = await ApplicationRepository.addApplication(targetApp, user.uid);
+                  restored = await ApplicationRepository.restoreApplication(targetApp, user.uid);
                 } catch (restoreErr) {
                   console.error('Failed to restore deleted application to Firestore:', restoreErr);
                   addToast('error', 'Restore Failed', 'Could not restore the application to your account.');
@@ -467,7 +467,7 @@ export function useApplications({
             let restoredApps = deletedApps;
             if (user?.emailVerified) {
               try {
-                restoredApps = await ApplicationRepository.batchImport(deletedApps, user.uid);
+                restoredApps = await ApplicationRepository.batchRestoreApplications(deletedApps, user.uid);
               } catch (restoreErr) {
                 console.error('Failed to restore deleted applications to Firestore:', restoreErr);
                 addToast('error', 'Restore Failed', 'Could not restore applications to your account.');
