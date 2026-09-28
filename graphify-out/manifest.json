@@ -645,8 +645,8 @@
     "semantic_hash": "74e941086226dbc8c54afe7c9f1754c7"
   },
   "src/App.tsx": {
-    "mtime": 1790582710.619577,
-    "ast_hash": "58c29b68a723bed017437d5deedde9ca",
+    "mtime": 1790594990.3000848,
+    "ast_hash": "ae9f1b4b4c32081ff866ccff523d4bbb",
     "semantic_hash": ""
   },
   "src/components/AccountSettingsCard.tsx": {
@@ -1990,8 +1990,8 @@
     "semantic_hash": ""
   },
   "docs/ARCHITECTURE_REFACTOR.md": {
-    "mtime": 1790584019.8999481,
-    "ast_hash": "6d4bc10f1e79679afa57e15e00344e34",
+    "mtime": 1790593895.7346134,
+    "ast_hash": "5435a4e02f3196c9f1c9c1100731e6c3",
     "semantic_hash": ""
   },
   "docs/UX_IMPROVEMENTS_AND_ROADMAP.md": {
@@ -2307,6 +2307,46 @@
   "public/logo.svg": {
     "mtime": 1786007470.2809265,
     "ast_hash": "21de0ab0f947fcd639e8228495583f76",
+    "semantic_hash": ""
+  },
+  "src/components/layout/AppModals.tsx": {
+    "mtime": 1790595032.864715,
+    "ast_hash": "71eccdbf592a6087dffc775bbaa67265",
+    "semantic_hash": ""
+  },
+  "src/components/layout/AppSlideOvers.tsx": {
+    "mtime": 1790595041.2251503,
+    "ast_hash": "ba6e6cc91a06a45be5ef1effd13638b0",
+    "semantic_hash": ""
+  },
+  "src/components/layout/AuthGate.tsx": {
+    "mtime": 1790595022.8149593,
+    "ast_hash": "dff8d417831f9775876ffa9151a1887e",
+    "semantic_hash": ""
+  },
+  "src/components/layout/WorkspaceContent.tsx": {
+    "mtime": 1790595052.5644965,
+    "ast_hash": "5c532ea08fe9e78a801e76fb50e66198",
+    "semantic_hash": ""
+  },
+  "src/hooks/useDataLoader.ts": {
+    "mtime": 1790594617.7835357,
+    "ast_hash": "d3397bcf6085a75f87844e12beafe320",
+    "semantic_hash": ""
+  },
+  "docs/architecture/PHASE_1_DOMAIN_HOOKS.md": {
+    "mtime": 1790593870.523693,
+    "ast_hash": "cf0a404a89d3e0e6b6363b3f73a7c642",
+    "semantic_hash": ""
+  },
+  "docs/architecture/PHASE_2_PRESENTATION_LAYOUT.md": {
+    "mtime": 1790595121.4405742,
+    "ast_hash": "abf980f6bd423b1044b83d1bb9221687",
+    "semantic_hash": ""
+  },
+  "docs/architecture/README.md": {
+    "mtime": 1790595137.7149293,
+    "ast_hash": "615d2ca2d13d03a21554e2e5615d5240",
     "semantic_hash": ""
   }
 }
