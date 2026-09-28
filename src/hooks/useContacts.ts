@@ -208,13 +208,13 @@ export function useContacts({
 
       if (user?.emailVerified) {
         for (const appId of addedAppIds) {
-          const targetApp = applications.find((a) => a.id === appId);
+          const targetApp = applicationsRef.current.find((a) => a.id === appId);
           ContactRepository.linkContactToApplication(id, appId, user.uid, updatedContact, targetApp).catch((e) => {
             console.warn(`Could not sync link between contact ${id} and app ${appId}:`, e);
           });
         }
         for (const appId of removedAppIds) {
-          const targetApp = applications.find((a) => a.id === appId);
+          const targetApp = applicationsRef.current.find((a) => a.id === appId);
           ContactRepository.unlinkContactFromApplication(id, appId, user.uid, updatedContact, targetApp).catch((e) => {
             console.warn(`Could not sync unlink between contact ${id} and app ${appId}:`, e);
           });
@@ -237,7 +237,7 @@ export function useContacts({
       }
       addToast('error', 'Update Failed', 'Could not save contact changes.');
     }
-  }, [user, applications, addToast, setApplications]);
+  }, [user, addToast, setApplications]);
 
   // Delete Contact (with cascade remove from applications and Undo snackbar)
   const handleDeleteContact = useCallback(async (id: string) => {
@@ -296,10 +296,12 @@ export function useContacts({
 
           if (user?.emailVerified) {
             await ContactRepository.upsertContact(targetContact!, user.uid);
-            for (const appId of linkedAppIds) {
-              const fullApp = applications.find((a) => a.id === appId);
-              await ContactRepository.linkContactToApplication(id, appId, user.uid, targetContact!, fullApp);
-            }
+            await Promise.allSettled(
+              linkedAppIds.map((appId) => {
+                const fullApp = applicationsRef.current.find((a) => a.id === appId);
+                return ContactRepository.linkContactToApplication(id, appId, user.uid, targetContact!, fullApp);
+              })
+            );
           }
           addToast('success', `Restored ${targetContact!.name}`);
         },
@@ -313,7 +315,7 @@ export function useContacts({
       });
       addToast('error', 'Delete Failed', 'Could not delete contact.');
     }
-  }, [user, applications, addToast, setApplications]);
+  }, [user, addToast, setApplications]);
 
   // Batch Delete Contacts
   const handleBatchDeleteContacts = useCallback(async (ids: string[]) => {

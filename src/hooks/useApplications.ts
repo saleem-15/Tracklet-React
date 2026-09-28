@@ -72,6 +72,9 @@ export function useApplications({
   const applicationsRef = useRef<Application[]>(applications);
   applicationsRef.current = applications;
 
+  const selectedAppIdRef = useRef<string | null>(selectedAppId);
+  selectedAppIdRef.current = selectedAppId;
+
   // Sort State
   const [sort, setSort] = useState<SortState>({
     field: 'dateApplied',
@@ -162,22 +165,16 @@ export function useApplications({
         return true;
       })
       .sort((a, b) => {
-        let valA: any = a[sort.field as keyof Application] || '';
-        let valB: any = b[sort.field as keyof Application] || '';
-
         if (sort.field === 'daysInStage') {
-          valA = calculateDaysInStage(a.stageUpdatedAt);
-          valB = calculateDaysInStage(b.stageUpdatedAt);
+          const valA = calculateDaysInStage(a.stageUpdatedAt);
+          const valB = calculateDaysInStage(b.stageUpdatedAt);
+          return sort.order === 'asc' ? valA - valB : valB - valA;
         }
 
-        if (typeof valA === 'string') {
-          const comp = valA.localeCompare(valB);
-          return sort.order === 'asc' ? comp : -comp;
-        }
-
-        if (valA < valB) return sort.order === 'asc' ? -1 : 1;
-        if (valA > valB) return sort.order === 'asc' ? 1 : -1;
-        return 0;
+        const valA = a[sort.field] || '';
+        const valB = b[sort.field] || '';
+        const comp = valA.localeCompare(valB);
+        return sort.order === 'asc' ? comp : -comp;
       });
   }, [applications, filter, sort]);
 
@@ -315,7 +312,7 @@ export function useApplications({
       if (!user?.emailVerified) ApplicationRepository.saveGuestApplications(next);
       return next;
     });
-    if (selectedAppId === id) setSelectedAppId(null);
+    if (selectedAppIdRef.current === id) setSelectedAppId(null);
 
     try {
       await ApplicationRepository.deleteApplication(id, user?.emailVerified ? user.uid : undefined);
@@ -358,7 +355,7 @@ export function useApplications({
       }
       addToast('error', 'Delete Failed', 'Could not delete application record.');
     }
-  }, [user, addToast, selectedAppId, setSelectedAppId]);
+  }, [user, addToast, setSelectedAppId]);
 
   // Bulk Status Update
   const handleBulkUpdateStatus = useCallback(async (ids: string[], newStatus: ApplicationStatus) => {
@@ -405,13 +402,20 @@ export function useApplications({
               return reverted;
             });
             if (user?.emailVerified) {
-              for (const [appId, oldData] of previousStatusMap.entries()) {
-                await ApplicationRepository.updateApplication(appId, {
-                  status: oldData.status,
-                  stageUpdatedAt: oldData.stageUpdatedAt,
-                  history: oldData.history
-                }, user.uid);
-              }
+              const entries = Array.from(previousStatusMap.entries());
+              await Promise.allSettled(
+                entries.map(([appId, oldData]) =>
+                  ApplicationRepository.updateApplication(
+                    appId,
+                    {
+                      status: oldData.status,
+                      stageUpdatedAt: oldData.stageUpdatedAt,
+                      history: oldData.history,
+                    },
+                    user.uid
+                  )
+                )
+              );
             }
             addToast('info', 'Restored previous statuses');
           },
@@ -452,7 +456,7 @@ export function useApplications({
       if (!user?.emailVerified) ApplicationRepository.saveGuestApplications(next);
       return next;
     });
-    if (selectedAppId && ids.includes(selectedAppId)) setSelectedAppId(null);
+    if (selectedAppIdRef.current && ids.includes(selectedAppIdRef.current)) setSelectedAppId(null);
 
     try {
       await ApplicationRepository.batchDelete(ids, user?.emailVerified ? user.uid : undefined);
@@ -507,7 +511,7 @@ export function useApplications({
       });
       addToast('error', 'Delete Failed', 'Could not delete applications.');
     }
-  }, [user, addToast, selectedAppId, setSelectedAppId]);
+  }, [user, addToast, setSelectedAppId]);
 
   // Merge All Duplicates
   const handleMergeAllDuplicates = useCallback(async () => {
@@ -524,10 +528,11 @@ export function useApplications({
     });
 
     // If currently selected application was one of the purged duplicates, select surviving record
-    if (selectedAppId && purgedAppIds.includes(selectedAppId)) {
+    const currentSelected = selectedAppIdRef.current;
+    if (currentSelected && purgedAppIds.includes(currentSelected)) {
       let survivorId: string | null = null;
       for (const group of groups.values()) {
-        if (group.some((a) => a.id === selectedAppId)) {
+        if (group.some((a) => a.id === currentSelected)) {
           const survivor = group.find((a) => !purgedAppIds.includes(a.id));
           if (survivor) survivorId = survivor.id;
           break;
@@ -567,7 +572,7 @@ export function useApplications({
       'Duplicates Merged',
       `Consolidated ${purgedAppIds.length} duplicate application${purgedAppIds.length === 1 ? '' : 's'}. Notes and pipeline stages preserved.`
     );
-  }, [selectedAppId, setSelectedAppId, user, addToast]);
+  }, [setSelectedAppId, user, addToast]);
 
   // CSV Export
   const handleExportCSV = useCallback(() => {

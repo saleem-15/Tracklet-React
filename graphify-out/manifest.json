@@ -1500,13 +1500,13 @@
     "semantic_hash": "9dc5a586aabe1127d5d06602c7b0c7de"
   },
   "src/hooks/useApplications.ts": {
-    "mtime": 1790591502.4171047,
-    "ast_hash": "8d9ecb85540beefde0460ed71f65cd22",
+    "mtime": 1790593191.3667493,
+    "ast_hash": "98de556edd214076485f279aeaa4de64",
     "semantic_hash": ""
   },
   "src/hooks/useContacts.ts": {
-    "mtime": 1790583746.3883867,
-    "ast_hash": "10ffe080e2813a4d4f0fb64c7ea4c5eb",
+    "mtime": 1790593203.2950366,
+    "ast_hash": "6e98fe3683aa4ac870d6186e4e2ff1b7",
     "semantic_hash": ""
   },
   "src/hooks/useExpirySettings.ts": {
