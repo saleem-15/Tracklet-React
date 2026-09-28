@@ -39,27 +39,33 @@ export function useGuestMigration({
   const [isMigrationModalOpen, setIsMigrationModalOpen] = useState(false);
 
   const checkAndPromptGuestMigration = useCallback(() => {
+    let parsedGuestApps: Application[] = [];
+    let parsedGuestContacts: Contact[] = [];
+
     try {
       const rawGuestApps = localStorage.getItem(LOCAL_STORAGE_KEYS.GUEST_APPS);
-      const rawGuestContacts = localStorage.getItem(LOCAL_STORAGE_KEYS.GUEST_CONTACTS);
-      let parsedGuestApps: Application[] = [];
-      let parsedGuestContacts: Contact[] = [];
       if (rawGuestApps) {
         const parsed = JSON.parse(rawGuestApps);
         if (Array.isArray(parsed)) parsedGuestApps = parsed;
       }
+    } catch {
+      // Ignore guest apps parse error
+    }
+
+    try {
+      const rawGuestContacts = localStorage.getItem(LOCAL_STORAGE_KEYS.GUEST_CONTACTS);
       if (rawGuestContacts) {
         const parsed = JSON.parse(rawGuestContacts);
         if (Array.isArray(parsed)) parsedGuestContacts = parsed;
       }
-
-      if (parsedGuestApps.length > 0 || parsedGuestContacts.length > 0) {
-        setMigrationApps(parsedGuestApps);
-        setMigrationContacts(parsedGuestContacts);
-        setIsMigrationModalOpen(true);
-      }
     } catch {
-      // Ignore parse errors
+      // Ignore guest contacts parse error
+    }
+
+    if (parsedGuestApps.length > 0 || parsedGuestContacts.length > 0) {
+      setMigrationApps(parsedGuestApps);
+      setMigrationContacts(parsedGuestContacts);
+      setIsMigrationModalOpen(true);
     }
   }, []);
 
@@ -69,12 +75,11 @@ export function useGuestMigration({
       let importedContacts: Contact[] = [];
       let contactIdMap = new Map<string, string>();
 
-      // 1. Migrate contacts first so we can remap old guest contact IDs to new Firestore IDs
+      // 1. Migrate contacts first to obtain Firestore ID mapping (defer localStorage cleanup until after apps import)
       if (migrationContacts.length > 0) {
         const result = await ContactRepository.migrateGuestContacts(user.uid, migrationContacts);
         importedContacts = result.migratedContacts;
         contactIdMap = result.idMap;
-        localStorage.removeItem(LOCAL_STORAGE_KEYS.GUEST_CONTACTS);
       }
 
       // 2. Remap application contactIds using new contact Firestore IDs, then batch import
@@ -89,7 +94,6 @@ export function useGuestMigration({
 
         const imported = await ApplicationRepository.batchImport(remappedApps, user.uid);
         setApplications((prev) => [...imported, ...prev]);
-        localStorage.removeItem(LOCAL_STORAGE_KEYS.GUEST_APPS);
 
         // Map old guest application ID -> new Firestore application ID
         const appIdMap = new Map<string, string>();
@@ -99,22 +103,31 @@ export function useGuestMigration({
           }
         });
 
-        // Remap application IDs on imported contacts
+        // Remap application IDs on imported contacts and await all link updates
         if (appIdMap.size > 0 && importedContacts.length > 0) {
           importedContacts = importedContacts.map((c) => {
             const remappedAppIds = (c.applicationIds || []).map((aId) => appIdMap.get(aId) || aId);
             return { ...c, applicationIds: remappedAppIds };
           });
-          for (const c of importedContacts) {
+          const updatePromises = importedContacts.map((c) =>
             ContactRepository.updateContact(c.id, { applicationIds: c.applicationIds }, user.uid).catch((err) => {
               console.warn('Failed to update contact application links after guest migration:', err);
-            });
-          }
+            })
+          );
+          await Promise.all(updatePromises);
         }
       }
 
       if (importedContacts.length > 0) {
         setContacts((prev) => [...importedContacts, ...prev]);
+      }
+
+      // Both imports succeeded cleanly; now safely purge localStorage guest cache
+      try {
+        localStorage.removeItem(LOCAL_STORAGE_KEYS.GUEST_APPS);
+        localStorage.removeItem(LOCAL_STORAGE_KEYS.GUEST_CONTACTS);
+      } catch (storageErr) {
+        console.warn('Could not clear guest storage keys after migration:', storageErr);
       }
 
       setIsMigrationModalOpen(false);
@@ -128,12 +141,22 @@ export function useGuestMigration({
   }, [user, migrationApps, migrationContacts, setApplications, setContacts, addToast]);
 
   const handleDiscardGuestApps = useCallback(() => {
-    localStorage.removeItem(LOCAL_STORAGE_KEYS.GUEST_APPS);
-    localStorage.removeItem(LOCAL_STORAGE_KEYS.GUEST_CONTACTS);
+    let discardSuccess = true;
+    try {
+      localStorage.removeItem(LOCAL_STORAGE_KEYS.GUEST_APPS);
+      localStorage.removeItem(LOCAL_STORAGE_KEYS.GUEST_CONTACTS);
+    } catch (err) {
+      console.warn('Could not remove guest items from storage:', err);
+      discardSuccess = false;
+    }
     setIsMigrationModalOpen(false);
     setMigrationApps([]);
     setMigrationContacts([]);
-    addToast('info', 'Guest Data Discarded', 'Starting with clean cloud account workspace.');
+    if (discardSuccess) {
+      addToast('info', 'Guest Data Discarded', 'Starting with clean cloud account workspace.');
+    } else {
+      addToast('warning', 'Discard Incomplete', 'Could not access browser storage, but local state was cleared.');
+    }
   }, [addToast]);
 
   return {

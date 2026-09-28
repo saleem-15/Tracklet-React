@@ -79,68 +79,59 @@ export function useExtensionSync({
 
   const processIncomingEmail = useCallback(async (payload: IncomingEmailPayload) => {
     const { appId, emailLog, updatedStatus, newContact } = payload;
-    let wasAdded = false;
-    let updatedTargetApp: Application | null = null;
-    let nextApplicationsState: Application[] = [];
 
-    setApplications((prev) => {
-      const appIndex = prev.findIndex((a) => a.id === appId);
-      if (appIndex < 0) return prev;
-
-      const existingApp = prev[appIndex];
-      // Duplicate guard
-      if (
-        (existingApp.emails || []).some(
-          (e) => e.id === emailLog.id || (e.emailUrl && emailLog.emailUrl && e.emailUrl === emailLog.emailUrl)
-        )
-      ) {
-        return prev;
-      }
-
-      const updatedEmails = [...(existingApp.emails || []), emailLog];
-      const nowISO = new Date().toISOString();
-
-      let updatedApp: Application = {
-        ...existingApp,
-        emails: updatedEmails,
-        updatedAt: nowISO,
-      };
-
-      if (updatedStatus && updatedStatus !== existingApp.status) {
-        updatedApp.status = updatedStatus;
-        updatedApp.stageUpdatedAt = nowISO;
-        updatedApp.history = appendStatusHistory(
-          existingApp.history,
-          updatedStatus,
-          existingApp.status,
-          nowISO
-        );
-      }
-
-      const next = [...prev];
-      next[appIndex] = updatedApp;
-
-      wasAdded = true;
-      updatedTargetApp = updatedApp;
-      nextApplicationsState = next;
-
-      return next;
-    });
-
-    if (!wasAdded || !updatedTargetApp) {
-      if (dataLoadingRef.current) {
-        pendingEmailPayloadsRef.current.push(payload);
-      }
+    if (dataLoadingRef.current) {
+      pendingEmailPayloadsRef.current.push(payload);
       return;
     }
 
+    const currentApps = applicationsRef.current;
+    const appIndex = currentApps.findIndex((a) => a.id === appId);
+    if (appIndex < 0) return;
+
+    const existingApp = currentApps[appIndex];
+    // Duplicate guard
+    if (
+      (existingApp.emails || []).some(
+        (e) => e.id === emailLog.id || (e.emailUrl && emailLog.emailUrl && e.emailUrl === emailLog.emailUrl)
+      )
+    ) {
+      return;
+    }
+
+    const updatedEmails = [...(existingApp.emails || []), emailLog];
+    const nowISO = new Date().toISOString();
+
+    let updatedApp: Application = {
+      ...existingApp,
+      emails: updatedEmails,
+      updatedAt: nowISO,
+    };
+
+    if (updatedStatus && updatedStatus !== existingApp.status) {
+      updatedApp.status = updatedStatus;
+      updatedApp.stageUpdatedAt = nowISO;
+      updatedApp.history = appendStatusHistory(
+        existingApp.history,
+        updatedStatus,
+        existingApp.status,
+        nowISO
+      );
+    }
+
+    const next = [...currentApps];
+    next[appIndex] = updatedApp;
+
+    applicationsRef.current = next;
+    setApplications(next);
+
     // Persist update outside setApplications updater
     if (user?.emailVerified) {
-      ApplicationRepository.updateApplication(appId, updatedTargetApp, user.uid, updatedTargetApp).catch((err) => {
+      ApplicationRepository.updateApplication(appId, updatedApp, user.uid, updatedApp).catch((err) => {
         console.error('Failed to update email log in Firestore:', err);
       });
     } else {
-      ApplicationRepository.saveGuestApplications(nextApplicationsState);
+      ApplicationRepository.saveGuestApplications(next);
     }
 
     // Acknowledge stored email to extension content script
@@ -157,7 +148,7 @@ export function useExtensionSync({
     addToast(
       'success',
       'Email Logged via Extension',
-      `Logged "${emailLog.subject}" to ${(updatedTargetApp as Application).company}`,
+      `Logged "${emailLog.subject}" to ${updatedApp.company}`,
       {
         label: 'View',
         onClick: () => {
@@ -178,7 +169,7 @@ export function useExtensionSync({
         console.warn('Failed to auto-create contact from email log:', err);
       });
     }
-  }, [user, addToast, setApplications, setSelectedAppId]);
+  }, [user, addToast, setApplications, setSelectedAppId, applicationsRef]);
 
   const processIncomingApplication = useCallback(async (clippedApp: Application, persistedToCloud?: boolean) => {
     // Multi-account guard: if tab is logged in and clipped item is explicitly for another user, skip
@@ -264,7 +255,7 @@ export function useExtensionSync({
     } else {
       if (user?.emailVerified && !persistedToCloud) {
         ApplicationRepository.addApplication(finalApp, user.uid).then((created) => {
-          applicationsRef.current = applicationsRef.current.map((a) => (a.id === finalApp.id ? created : a));
+          applicationsRef.current = applicationsRef.current.map((a) => (a.id === finalApp.id ? { ...a, id: created.id, userId: created.userId } : a));
           setApplications(applicationsRef.current);
         }).catch((err) => {
           console.error('Failed to add unpersisted application to Firestore:', err);

@@ -72,7 +72,7 @@ src/
 - **Objective**: Decouple URL routing, query parameter persistence, and browser `popstate` history from `App.tsx`.
 - **Files Created**:
   - [`src/hooks/useUrlNavigation.ts`](../src/hooks/useUrlNavigation.ts): Custom hook providing `activeTab`, `setActiveTab`, `filter`, `setFilter`, `resetFilters`, `selectedAppId`, `setSelectedAppId`, `isAddModalOpen`, `setIsAddModalOpen`.
-  - [`tests/unit/useUrlNavigation.test.tsx`](../tests/unit/useUrlNavigation.test.tsx): 5 automated tests validating URL parameter generation, tab routing, and back/forward browser synchronization.
+  - [`tests/unit/useUrlNavigation.test.tsx`](../tests/unit/useUrlNavigation.test.tsx): 6 automated tests validating URL parameter generation, tab routing, and back/forward browser popstate synchronization.
 - **Files Modified**:
   - [`src/App.tsx`](../src/App.tsx): Removed scattered `useState`, `useRef`, and `useEffect` blocks; consolidated under `useUrlNavigation()`.
 - **Blast Radius**: Contained entirely to `App.tsx`. Downstream components receive identical variable names and contracts.

@@ -317,16 +317,45 @@ export function useContacts({
 
   // Batch Delete Contacts
   const handleBatchDeleteContacts = useCallback(async (ids: string[]) => {
-    let deleted: Contact[] = [];
+    const currentContacts = contactsRef.current;
+    const deleted = currentContacts.filter((c) => ids.includes(c.id));
+    const deletedSet = new Set(ids);
+
+    // Compute all linked application IDs
+    const linkedAppIds = Array.from(
+      new Set(deleted.flatMap((c) => c.applicationIds || []))
+    );
+
+    // Optimistically remove contacts
     setContacts((prev) => {
-      deleted = prev.filter((c) => ids.includes(c.id));
-      const next = prev.filter((c) => !ids.includes(c.id));
+      const next = prev.filter((c) => !deletedSet.has(c.id));
       if (!user?.emailVerified) ContactRepository.saveGuestContacts(next);
       return next;
     });
 
+    // Optimistically remove deleted contact IDs from linked applications
+    const currentApps = applicationsRef.current;
+    const affectedApps = currentApps.filter((app) => linkedAppIds.includes(app.id));
+
+    setApplications((prev) => {
+      let changed = false;
+      const next = prev.map((app) => {
+        if (!app.contactIds || app.contactIds.length === 0) return app;
+        const remaining = app.contactIds.filter((cId) => !deletedSet.has(cId));
+        if (remaining.length !== app.contactIds.length) {
+          changed = true;
+          return { ...app, contactIds: remaining };
+        }
+        return app;
+      });
+      if (changed && (!user || !user.emailVerified)) {
+        ApplicationRepository.saveGuestApplications(next);
+      }
+      return changed ? next : prev;
+    });
+
     try {
-      await ContactRepository.batchDelete(ids, user?.emailVerified ? user.uid : undefined);
+      await ContactRepository.batchDelete(ids, user?.emailVerified ? user.uid : undefined, linkedAppIds);
       addToast('info', `Deleted ${ids.length} contacts`);
     } catch (err) {
       console.error('Bulk delete contacts failed:', err);
@@ -335,20 +364,26 @@ export function useContacts({
         if (!user?.emailVerified) ContactRepository.saveGuestContacts(reverted);
         return reverted;
       });
+      if (affectedApps.length > 0) {
+        setApplications((prev) => {
+          const appMap = new Map(affectedApps.map((a) => [a.id, a]));
+          const next = prev.map((a) => appMap.get(a.id) || a);
+          if (!user?.emailVerified) ApplicationRepository.saveGuestApplications(next);
+          return next;
+        });
+      }
       addToast('error', 'Delete Failed', 'Could not batch delete contacts.');
     }
-  }, [user, addToast]);
+  }, [user, addToast, setApplications]);
 
   // Link Contact to Application
   const handleLinkContact = useCallback(async (contactId: string, appId: string) => {
-    let prevContacts: Contact[] = [];
-    let prevApps: Application[] = [];
-    let targetContact: Contact | undefined;
-    let targetApp: Application | undefined;
+    const prevContacts = contactsRef.current;
+    const prevApps = applicationsRef.current;
+    const targetContact = prevContacts.find((c) => c.id === contactId);
+    const targetApp = prevApps.find((a) => a.id === appId);
 
     setContacts((prev) => {
-      prevContacts = prev;
-      targetContact = prev.find((c) => c.id === contactId);
       const next = prev.map((c) =>
         c.id === contactId
           ? { ...c, applicationIds: Array.from(new Set([...(c.applicationIds || []), appId])) }
@@ -359,8 +394,6 @@ export function useContacts({
     });
 
     setApplications((prev) => {
-      prevApps = prev;
-      targetApp = prev.find((a) => a.id === appId);
       const next = prev.map((a) =>
         a.id === appId
           ? { ...a, contactIds: Array.from(new Set([...(a.contactIds || []), contactId])) }
@@ -396,14 +429,12 @@ export function useContacts({
 
   // Unlink Contact from Application
   const handleUnlinkContact = useCallback(async (contactId: string, appId: string) => {
-    let prevContacts: Contact[] = [];
-    let prevApps: Application[] = [];
-    let targetContact: Contact | undefined;
-    let targetApp: Application | undefined;
+    const prevContacts = contactsRef.current;
+    const prevApps = applicationsRef.current;
+    const targetContact = prevContacts.find((c) => c.id === contactId);
+    const targetApp = prevApps.find((a) => a.id === appId);
 
     setContacts((prev) => {
-      prevContacts = prev;
-      targetContact = prev.find((c) => c.id === contactId);
       const next = prev.map((c) =>
         c.id === contactId
           ? { ...c, applicationIds: (c.applicationIds || []).filter((id) => id !== appId) }
@@ -414,8 +445,6 @@ export function useContacts({
     });
 
     setApplications((prev) => {
-      prevApps = prev;
-      targetApp = prev.find((a) => a.id === appId);
       const next = prev.map((a) =>
         a.id === appId
           ? { ...a, contactIds: (a.contactIds || []).filter((id) => id !== contactId) }

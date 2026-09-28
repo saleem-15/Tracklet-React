@@ -327,15 +327,22 @@ export function useApplications({
           {
             label: 'Undo',
             onClick: async () => {
+              let restored = targetApp;
+              if (user?.emailVerified) {
+                try {
+                  restored = await ApplicationRepository.addApplication(targetApp, user.uid);
+                } catch (restoreErr) {
+                  console.error('Failed to restore deleted application to Firestore:', restoreErr);
+                  addToast('error', 'Restore Failed', 'Could not restore the application to your account.');
+                  return;
+                }
+              }
               setApplications((prev) => {
-                const next = [targetApp, ...prev];
+                const next = [restored, ...prev];
                 if (!user?.emailVerified) ApplicationRepository.saveGuestApplications(next);
                 return next;
               });
-              if (user?.emailVerified) {
-                await ApplicationRepository.addApplication(targetApp, user.uid);
-              }
-              addToast('success', `Restored ${targetApp.company}`);
+              addToast('success', `Restored ${restored.company}`);
             },
           }
         );
@@ -457,15 +464,22 @@ export function useApplications({
         {
           label: 'Undo',
           onClick: async () => {
+            let restoredApps = deletedApps;
+            if (user?.emailVerified) {
+              try {
+                restoredApps = await ApplicationRepository.batchImport(deletedApps, user.uid);
+              } catch (restoreErr) {
+                console.error('Failed to restore deleted applications to Firestore:', restoreErr);
+                addToast('error', 'Restore Failed', 'Could not restore applications to your account.');
+                return;
+              }
+            }
             setApplications((prev) => {
-              const next = [...deletedApps, ...prev];
+              const next = [...restoredApps, ...prev];
               if (!user?.emailVerified) ApplicationRepository.saveGuestApplications(next);
               return next;
             });
-            if (user?.emailVerified) {
-              await ApplicationRepository.batchImport(deletedApps, user.uid);
-            }
-            addToast('success', 'Restored', `Recovered ${count} application${count === 1 ? '' : 's'}.`);
+            addToast('success', 'Restored', `Recovered ${restoredApps.length} application${restoredApps.length === 1 ? '' : 's'}.`);
           },
         }
       );

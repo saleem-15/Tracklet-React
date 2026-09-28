@@ -89,4 +89,17 @@ describe('useUrlNavigation hook', () => {
     expect(navResult.isAddModalOpen).toBe(true);
     expect(window.location.search).toContain('new=1');
   });
+
+  it('synchronizes active tab and params on browser popstate navigation', () => {
+    mountHarness();
+    expect(navResult.activeTab).toBe('all');
+
+    act(() => {
+      window.history.pushState(null, '', '/contacts?q=Alice');
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    });
+
+    expect(navResult.activeTab).toBe('contacts');
+    expect(navResult.filter.search).toBe('Alice');
+  });
 });

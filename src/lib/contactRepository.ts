@@ -233,14 +233,32 @@ export class ContactRepository {
   }
 
   /**
-   * Batch delete multiple contacts.
+   * Batch delete multiple contacts and cascade remove them from linked applications.
    */
-  static async batchDelete(ids: string[], userId?: string): Promise<void> {
+  static async batchDelete(
+    ids: string[],
+    userId?: string,
+    linkedAppIds: string[] = []
+  ): Promise<void> {
     if (userId) {
       try {
         await commitInChunks(ids, (batch, id) => {
           batch.delete(doc(db, 'users', userId, 'contacts', id));
         });
+
+        // Cascade cleanup in linked applications in Firestore
+        if (linkedAppIds.length > 0) {
+          await commitInChunks(linkedAppIds, (batch, appId) => {
+            const appRef = doc(db, 'users', userId, 'applications', appId);
+            // arrayRemove each deleted contact id
+            for (const id of ids) {
+              batch.update(appRef, {
+                contactIds: arrayRemove(id),
+                updatedAt: new Date().toISOString(),
+              });
+            }
+          });
+        }
       } catch (err) {
         console.error('Failed bulk delete in Firestore:', err);
         throw err;
