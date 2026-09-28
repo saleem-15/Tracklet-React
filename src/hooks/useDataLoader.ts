@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import type { User } from 'firebase/auth';
 import { Application, Contact } from '../types';
 import { ApplicationRepository } from '../lib/applicationRepository';
@@ -40,8 +40,10 @@ export function useDataLoader({
   checkAndPromptGuestMigration,
 }: UseDataLoaderProps): UseDataLoaderReturn {
   const [dataLoading, setDataLoading] = useState(true);
+  const requestIdRef = useRef(0);
 
   const loadData = useCallback(async () => {
+    const currentRequestId = ++requestIdRef.current;
     setDataLoading(true);
     try {
       if (user && user.emailVerified) {
@@ -49,6 +51,8 @@ export function useDataLoader({
           ApplicationRepository.loadApplications(user.uid),
           ContactRepository.loadContacts(user.uid),
         ]);
+
+        if (requestIdRef.current !== currentRequestId) return;
 
         let loadedApps: Application[] = [];
         let loadedContacts: Contact[] = [];
@@ -84,6 +88,8 @@ export function useDataLoader({
           }
         }
 
+        if (requestIdRef.current !== currentRequestId) return;
+
         setApplications(loadedApps);
         setContacts(loadedContacts);
 
@@ -106,14 +112,19 @@ export function useDataLoader({
           ContactRepository.saveGuestContacts(guestContacts);
         }
 
+        if (requestIdRef.current !== currentRequestId) return;
+
         setApplications(guestApps);
         setContacts(guestContacts);
       }
     } catch (err) {
+      if (requestIdRef.current !== currentRequestId) return;
       console.error('Error loading applications and contacts:', err);
       addToast('error', 'Load Error', 'Could not load data from repository.');
     } finally {
-      setDataLoading(false);
+      if (requestIdRef.current === currentRequestId) {
+        setDataLoading(false);
+      }
     }
   }, [user, addToast, checkAndPromptGuestMigration, setApplications, setContacts]);
 

@@ -403,7 +403,7 @@ export function useApplications({
             });
             if (user?.emailVerified) {
               const entries = Array.from(previousStatusMap.entries());
-              await Promise.allSettled(
+              const results = await Promise.allSettled(
                 entries.map(([appId, oldData]) =>
                   ApplicationRepository.updateApplication(
                     appId,
@@ -416,6 +416,26 @@ export function useApplications({
                   )
                 )
               );
+
+              const failedAppIds: string[] = [];
+              results.forEach((res, index) => {
+                if (res.status === 'rejected') {
+                  failedAppIds.push(entries[index][0]);
+                }
+              });
+
+              if (failedAppIds.length > 0) {
+                // Revert only the failed items back to newStatus
+                setApplications((prev) =>
+                  prev.map((a) => (failedAppIds.includes(a.id) ? { ...a, status: newStatus } : a))
+                );
+                addToast(
+                  'warning',
+                  'Partial Undo',
+                  `Could not restore ${failedAppIds.length} application${failedAppIds.length === 1 ? '' : 's'}.`
+                );
+                return;
+              }
             }
             addToast('info', 'Restored previous statuses');
           },

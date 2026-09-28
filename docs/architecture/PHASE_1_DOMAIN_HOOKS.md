@@ -3,24 +3,24 @@
 - **Status**: Completed & Verified
 - **Branch**: [`refactor/modular-clean-architecture`](https://github.com/saleem-15/Tracklet-React/tree/refactor/modular-clean-architecture)
 - **PR**: [#24](https://github.com/saleem-15/Tracklet-React/pull/24)
-- **Impact on [`src/App.tsx`](file:///d:/Programming/Tracklet/src/App.tsx)**: **1,850+ lines -> 589 lines (-68% reduction)**
+- **Impact on [`src/App.tsx`](../../src/App.tsx)**: **1,850+ lines -> 589 lines (-68% reduction)**
 - **Verification**: **34/34 test suites (340 tests passed), TypeScript 0 errors, Vite production build clean**
 
 ---
 
 ## 1. Objectives & Achievements
 
-In Phase 1, all core business logic, persistence sync, optimistic mutation queues, URL query-param routing, and cross-window extension bridges were decoupled from the root orchestrator ([`src/App.tsx`](file:///d:/Programming/Tracklet/src/App.tsx)) into 7 dedicated domain hooks:
+In Phase 1, all core business logic, persistence sync, optimistic mutation queues, URL query-param routing, and cross-window extension bridges were decoupled from the root orchestrator ([`src/App.tsx`](../../src/App.tsx)) into 7 dedicated domain hooks:
 
 | Hook | Responsibility | Lines | Vitest Suite |
 | :--- | :--- | :--- | :--- |
-| [`useToast.ts`](file:///d:/Programming/Tracklet/src/hooks/useToast.ts) | Notification queue, auto-capping, unique ID generation | 43 | `useToast.test.tsx` (4 tests) |
-| [`useUrlNavigation.ts`](file:///d:/Programming/Tracklet/src/hooks/useUrlNavigation.ts) | Pathname tabs, query params (`?app=`, `?q=`, `?new=1`), popstate history | 118 | `useUrlNavigation.test.tsx` (6 tests) |
-| [`useExpirySettings.ts`](file:///d:/Programming/Tracklet/src/hooks/useExpirySettings.ts) | Stale threshold preferences, `localStorage` persistence | 30 | `useExpirySettings.test.tsx` (3 tests) |
-| [`useContacts.ts`](file:///d:/Programming/Tracklet/src/hooks/useContacts.ts) | Contacts Hub state, optimistic link/unlink sync, single/bulk deletes, undo callbacks | 502 | `useContacts.test.tsx` (4 tests) |
-| [`useApplications.ts`](file:///d:/Programming/Tracklet/src/hooks/useApplications.ts) | Application pipeline CRUD, stage timeline logging, dedup merging, sort/filter, undo | 614 | `useApplications.test.tsx` (4 tests) |
-| [`useExtensionSync.ts`](file:///d:/Programming/Tracklet/src/hooks/useExtensionSync.ts) | Chrome extension `BroadcastChannel`, token broadcasting, ingestion buffer | 310 | `useExtensionSync.test.tsx` (1 test) |
-| [`useGuestMigration.ts`](file:///d:/Programming/Tracklet/src/hooks/useGuestMigration.ts) | Guest dataset signature detection, modal prompt, cloud transfer & remapping | 277 | `useGuestMigration.test.tsx` (3 tests) |
+| [`useToast.ts`](../../src/hooks/useToast.ts) | Notification queue, auto-capping, unique ID generation | 43 | `useToast.test.tsx` (4 tests) |
+| [`useUrlNavigation.ts`](../../src/hooks/useUrlNavigation.ts) | Pathname tabs, query params (`?app=`, `?q=`, `?new=1`), popstate history | 118 | `useUrlNavigation.test.tsx` (6 tests) |
+| [`useExpirySettings.ts`](../../src/hooks/useExpirySettings.ts) | Stale threshold preferences, `localStorage` persistence | 30 | `useExpirySettings.test.tsx` (3 tests) |
+| [`useContacts.ts`](../../src/hooks/useContacts.ts) | Contacts Hub state, optimistic link/unlink sync, single/bulk deletes, undo callbacks | 502 | `useContacts.test.tsx` (4 tests) |
+| [`useApplications.ts`](../../src/hooks/useApplications.ts) | Application pipeline CRUD, stage timeline logging, dedup merging, sort/filter, undo | 614 | `useApplications.test.tsx` (4 tests) |
+| [`useExtensionSync.ts`](../../src/hooks/useExtensionSync.ts) | Chrome extension `BroadcastChannel`, token broadcasting, ingestion buffer | 310 | `useExtensionSync.test.tsx` (1 test) |
+| [`useGuestMigration.ts`](../../src/hooks/useGuestMigration.ts) | Guest dataset signature detection, modal prompt, cloud transfer & remapping | 277 | `useGuestMigration.test.tsx` (3 tests) |
 
 ---
 
