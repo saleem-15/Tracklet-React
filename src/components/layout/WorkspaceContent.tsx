@@ -1,66 +1,18 @@
-import {
-  Application,
-  Contact,
-  ApplicationStatus,
-  ActiveTab,
-  SortState,
-  SortField,
-  FilterState,
-  ExpiryNotificationSettings,
-} from '../../types';
+import { AlertTriangle, X } from 'lucide-react';
 import { AllApplicationsTable } from '../AllApplicationsTable';
 import { ActivePipelineBoard } from '../ActivePipelineBoard';
 import { ContactsView } from '../ContactsView';
 import { StatsView } from '../StatsView';
 import { SettingsView } from '../SettingsView';
-import { AlertTriangle, X } from 'lucide-react';
-import type { AddToastFn } from '../../hooks/useToast';
+import { useNavigation } from '../../context/NavigationContext';
+import { useApplicationsContext } from '../../context/ApplicationsContext';
+import { useContactsContext } from '../../context/ContactsContext';
+import { useSettings } from '../../context/SettingsContext';
+import { useAuth } from '../../context/AuthContext';
+import { useToastContext } from '../../context/ToastContext';
 
 export interface WorkspaceContentProps {
-  activeTab: ActiveTab;
-  isLoading: boolean;
-
-  // Duplicate banner
-  duplicateCount: number;
-  isDuplicateBannerDismissed: boolean;
-  onDismissDuplicateBanner: () => void;
-  onMergeAllDuplicates: () => Promise<void>;
-
-  // Shared data
-  applications: Application[];
-  filteredApplications: Application[];
-  contacts: Contact[];
-  selectedAppId: string | null;
-  onSelectApp: (id: string) => void;
-  onShowToast: AddToastFn;
-
-  // AllApplicationsTable
-  onOpenAddModal: () => void;
-  onResetFilters: () => void;
-  onSeedDemoData: () => Promise<void>;
-  sort: SortState;
-  onSortChange: (field: SortField) => void;
-  onBulkUpdateStatus: (ids: string[], newStatus: ApplicationStatus) => Promise<void>;
-  onBulkDelete: (ids: string[]) => Promise<void>;
-
-  // ActivePipelineBoard
-  onUpdatePipelineStatus: (id: string, newStatus: ApplicationStatus) => void;
-
-  // ContactsView
-  onAddContact: (newContact: Omit<Contact, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => Promise<Contact>;
-  onUpdateContact: (id: string, updates: Partial<Contact>) => Promise<void>;
-  onDeleteContact: (id: string) => Promise<void>;
-  onSelectContact: (contactId: string) => void;
-  onOpenMobileSidebar: () => void;
-  expiryThresholdHours: number;
-
-  // SettingsView
-  expirySettings: ExpiryNotificationSettings;
-  onUpdateExpirySettings: (settings: ExpiryNotificationSettings) => void;
-  onExportCSV: () => void;
-  onImportApplications: (newApps: Omit<Application, 'id' | 'userId' | 'createdAt' | 'updatedAt' | 'stageUpdatedAt'>[]) => Promise<void>;
-  onAccountDeleted: () => void;
-  userId?: string;
+  isLoading?: boolean;
 }
 
 /**
@@ -73,42 +25,53 @@ export interface WorkspaceContentProps {
  * - 'stats': StatsView (analytics dashboard)
  * - 'settings': SettingsView (preferences, import/export, account)
  *
- * Also renders the duplicate applications warning banner when duplicates are detected.
+ * In Phase 3, all domain state (applications, contacts, settings, navigation, toast)
+ * is consumed directly from scoped feature context providers, eliminating 29 props.
  */
-export function WorkspaceContent({
-  activeTab,
-  isLoading,
-  duplicateCount,
-  isDuplicateBannerDismissed,
-  onDismissDuplicateBanner,
-  onMergeAllDuplicates,
-  applications,
-  filteredApplications,
-  contacts,
-  selectedAppId,
-  onSelectApp,
-  onShowToast,
-  onOpenAddModal,
-  onResetFilters,
-  onSeedDemoData,
-  sort,
-  onSortChange,
-  onBulkUpdateStatus,
-  onBulkDelete,
-  onUpdatePipelineStatus,
-  onAddContact,
-  onUpdateContact,
-  onDeleteContact,
-  onSelectContact,
-  onOpenMobileSidebar,
-  expiryThresholdHours,
-  expirySettings,
-  onUpdateExpirySettings,
-  onExportCSV,
-  onImportApplications,
-  onAccountDeleted,
-  userId,
-}: WorkspaceContentProps) {
+export function WorkspaceContent({ isLoading = false }: WorkspaceContentProps) {
+  const { user } = useAuth();
+  const { addToast } = useToastContext();
+  const {
+    activeTab,
+    selectedAppId,
+    setSelectedAppId,
+    openAddModal,
+    resetFilters,
+    openMobileSidebar,
+  } = useNavigation();
+
+  const {
+    applications,
+    filteredApplications,
+    duplicateCount,
+    isDuplicateBannerDismissed,
+    dismissDuplicateBanner,
+    handleMergeAllDuplicates,
+    sort,
+    handleSortChange,
+    handleBulkUpdateStatus,
+    handleBulkDelete,
+    handleUpdatePipelineStatus,
+    handleExportCSV,
+    handleBatchImportApplications,
+    handleSeedDemoData,
+    handleAccountDeleted,
+  } = useApplicationsContext();
+
+  const {
+    contacts,
+    handleAddContact,
+    handleUpdateContact,
+    handleDeleteContact,
+    handleSwitchToContact,
+  } = useContactsContext();
+
+  const {
+    expirySettings,
+    updateExpirySettings,
+    expiryThresholdHours,
+  } = useSettings();
+
   if (isLoading) {
     return (
       <div className="flex-1 flex items-center justify-center font-mono text-xs text-slate-500">
@@ -136,14 +99,14 @@ export function WorkspaceContent({
           <div className="flex items-center gap-2 shrink-0">
             <button
               type="button"
-              onClick={onMergeAllDuplicates}
+              onClick={handleMergeAllDuplicates}
               className="px-2.5 py-1 text-xs font-medium rounded-md bg-amber-600 text-white hover:bg-amber-700 active:bg-amber-800 transition-colors shadow-2xs focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-amber-600 cursor-pointer"
             >
               Merge All
             </button>
             <button
               type="button"
-              onClick={onDismissDuplicateBanner}
+              onClick={dismissDuplicateBanner}
               aria-label="Dismiss duplicate notice"
               className="p-1 text-amber-600 hover:text-amber-800 rounded-md hover:bg-amber-100/60 active:bg-amber-200/60 transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-amber-600 cursor-pointer"
             >
@@ -157,16 +120,16 @@ export function WorkspaceContent({
         <AllApplicationsTable
           applications={filteredApplications}
           totalAppCount={applications.length}
-          onOpenAddModal={onOpenAddModal}
-          onResetFilters={onResetFilters}
-          onSeedDemoData={onSeedDemoData}
+          onOpenAddModal={openAddModal}
+          onResetFilters={resetFilters}
+          onSeedDemoData={handleSeedDemoData}
           selectedAppId={selectedAppId}
-          onSelectApp={(app) => onSelectApp(app.id)}
+          onSelectApp={(app) => setSelectedAppId(app.id)}
           sort={sort}
-          onSortChange={onSortChange}
-          onBulkUpdateStatus={onBulkUpdateStatus}
-          onBulkDelete={onBulkDelete}
-          onShowToast={onShowToast}
+          onSortChange={handleSortChange}
+          onBulkUpdateStatus={handleBulkUpdateStatus}
+          onBulkDelete={handleBulkDelete}
+          onShowToast={addToast}
         />
       )}
 
@@ -174,12 +137,12 @@ export function WorkspaceContent({
         <ActivePipelineBoard
           applications={filteredApplications}
           totalAppCount={applications.length}
-          onOpenAddModal={onOpenAddModal}
-          onResetFilters={onResetFilters}
-          onSeedDemoData={onSeedDemoData}
+          onOpenAddModal={openAddModal}
+          onResetFilters={resetFilters}
+          onSeedDemoData={handleSeedDemoData}
           selectedAppId={selectedAppId}
-          onSelectApp={(app) => onSelectApp(app.id)}
-          onUpdateStatus={onUpdatePipelineStatus}
+          onSelectApp={(app) => setSelectedAppId(app.id)}
+          onUpdateStatus={handleUpdatePipelineStatus}
         />
       )}
 
@@ -187,12 +150,12 @@ export function WorkspaceContent({
         <ContactsView
           contacts={contacts}
           applications={applications}
-          onAddContact={onAddContact}
-          onUpdateContact={onUpdateContact}
-          onDeleteContact={onDeleteContact}
-          onSelectContact={onSelectContact}
-          onOpenMobileSidebar={onOpenMobileSidebar}
-          onShowToast={onShowToast}
+          onAddContact={handleAddContact}
+          onUpdateContact={handleUpdateContact}
+          onDeleteContact={handleDeleteContact}
+          onSelectContact={handleSwitchToContact}
+          onOpenMobileSidebar={openMobileSidebar}
+          onShowToast={addToast}
           expiryThresholdHours={expiryThresholdHours}
         />
       )}
@@ -200,7 +163,7 @@ export function WorkspaceContent({
       {activeTab === 'stats' && (
         <StatsView
           applications={applications}
-          onSelectApplication={onSelectApp}
+          onSelectApplication={(id) => setSelectedAppId(id)}
         />
       )}
 
@@ -208,17 +171,17 @@ export function WorkspaceContent({
         <div className="flex-1 overflow-y-auto p-6">
           <SettingsView
             settings={expirySettings}
-            onUpdateSettings={onUpdateExpirySettings}
+            onUpdateSettings={updateExpirySettings}
             applications={applications}
             contacts={contacts}
-            onSelectApplication={onSelectApp}
-            onExportCSV={onExportCSV}
-            onImportCSV={onImportApplications}
-            onImportJSON={onImportApplications}
-            onSeedDemoData={onSeedDemoData}
-            onShowToast={onShowToast}
-            onAccountDeleted={onAccountDeleted}
-            userId={userId}
+            onSelectApplication={(id) => setSelectedAppId(id)}
+            onExportCSV={handleExportCSV}
+            onImportCSV={handleBatchImportApplications}
+            onImportJSON={handleBatchImportApplications}
+            onSeedDemoData={handleSeedDemoData}
+            onShowToast={addToast}
+            onAccountDeleted={handleAccountDeleted}
+            userId={user?.uid}
           />
         </div>
       )}

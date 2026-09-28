@@ -1,19 +1,14 @@
 import { type ReactNode } from 'react';
-import type { User } from 'firebase/auth';
 import { EmailVerificationGate } from '../EmailVerificationGate';
 import { AuthScreen } from '../AuthScreen';
-import { ToastContainer, ToastMessage } from '../Toast';
-import type { AddToastFn } from '../../hooks/useToast';
+import { ToastContainer } from '../Toast';
+import { useAuth } from '../../context/AuthContext';
+import { useToastContext } from '../../context/ToastContext';
 
 export interface AuthGateProps {
-  user: User | null;
-  authLoading: boolean;
   isGuestMode: boolean;
   onContinueAsGuest: () => void;
   onReloadData: () => Promise<void>;
-  onShowToast: AddToastFn;
-  toasts: ToastMessage[];
-  onDismissToast: (id: string) => void;
   children: ReactNode;
 }
 
@@ -28,20 +23,17 @@ export interface AuthGateProps {
  * 3. No user and no guest mode → AuthScreen wall
  * 4. Otherwise → renders children (the full workspace)
  *
- * Each auth screen renders its own ToastContainer for feedback
- * (separate from the workspace ToastContainer in children).
+ * In Phase 3, AuthGate consumes user, authLoading, and toast notifications
+ * directly from feature context providers.
  */
 export function AuthGate({
-  user,
-  authLoading,
   isGuestMode,
   onContinueAsGuest,
   onReloadData,
-  onShowToast,
-  toasts,
-  onDismissToast,
   children,
 }: AuthGateProps) {
+  const { user, loading: authLoading } = useAuth();
+  const { toasts, addToast, dismissToast } = useToastContext();
   // Auth state is still loading
   if (authLoading) {
     return (
@@ -63,9 +55,9 @@ export function AuthGate({
       <div className="min-h-screen w-screen bg-slate-50 font-sans">
         <EmailVerificationGate
           onVerified={onReloadData}
-          onShowToast={onShowToast}
+          onShowToast={addToast}
         />
-        <ToastContainer toasts={toasts} onDismiss={onDismissToast} />
+        <ToastContainer toasts={toasts} onDismiss={dismissToast} />
       </div>
     );
   }
@@ -75,10 +67,10 @@ export function AuthGate({
     return (
       <div className="min-h-screen w-screen bg-slate-50 font-sans">
         <AuthScreen
-          onShowToast={onShowToast}
+          onShowToast={addToast}
           onContinueAsGuest={onContinueAsGuest}
         />
-        <ToastContainer toasts={toasts} onDismiss={onDismissToast} />
+        <ToastContainer toasts={toasts} onDismiss={dismissToast} />
       </div>
     );
   }

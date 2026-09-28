@@ -2,26 +2,20 @@ import { Application, Contact } from '../../types';
 import { AddApplicationModal } from '../AddApplicationModal';
 import { AuthModal } from '../AuthModal';
 import { GuestMigrationModal } from '../GuestMigrationModal';
-import type { AddToastFn } from '../../hooks/useToast';
+import { useNavigation } from '../../context/NavigationContext';
+import { useApplicationsContext } from '../../context/ApplicationsContext';
+import { useContactsContext } from '../../context/ContactsContext';
+import { useToastContext } from '../../context/ToastContext';
 
 export interface AppModalsProps {
-  /** AddApplicationModal */
-  isAddModalOpen: boolean;
-  onCloseAddModal: () => void;
-  contacts: Contact[];
-  onAddApplication: (newApp: Omit<Application, 'id' | 'userId' | 'createdAt' | 'updatedAt' | 'stageUpdatedAt'>) => Promise<void>;
-  onCreateContact: (newContact: Omit<Contact, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => Promise<Contact>;
-
-  /** AuthModal */
-  onShowToast: AddToastFn;
-
-  /** GuestMigrationModal */
-  isMigrationModalOpen: boolean;
-  migrationApps: Application[];
-  migrationContacts: Contact[];
-  onImportGuestApps: () => Promise<void>;
-  onDiscardGuestApps: () => void;
-  onCloseMigrationModal: () => void;
+  migration?: {
+    isOpen: boolean;
+    apps: Application[];
+    contacts: Contact[];
+    onImport: () => Promise<void>;
+    onDiscard: () => void;
+    onClose: () => void;
+  };
 }
 
 /**
@@ -31,45 +25,40 @@ export interface AppModalsProps {
  * AuthModal (multi-provider sign-in/sign-up), and GuestMigrationModal
  * (transfer localStorage guest data to authenticated cloud account).
  *
- * Pure pass-through container — no state or logic of its own.
+ * In Phase 3, AddApplicationModal and AuthModal consume state and actions
+ * directly from feature context providers.
  */
-export function AppModals({
-  isAddModalOpen,
-  onCloseAddModal,
-  contacts,
-  onAddApplication,
-  onCreateContact,
-  onShowToast,
-  isMigrationModalOpen,
-  migrationApps,
-  migrationContacts,
-  onImportGuestApps,
-  onDiscardGuestApps,
-  onCloseMigrationModal,
-}: AppModalsProps) {
+export function AppModals({ migration }: AppModalsProps = {}) {
+  const { isAddModalOpen, closeAddModal } = useNavigation();
+  const { handleAddApplication } = useApplicationsContext();
+  const { contacts, handleAddContact } = useContactsContext();
+  const { addToast } = useToastContext();
+
   return (
     <>
       {/* Add Application Modal */}
       <AddApplicationModal
         isOpen={isAddModalOpen}
         allContacts={contacts}
-        onClose={onCloseAddModal}
-        onAdd={onAddApplication}
-        onCreateContact={onCreateContact}
+        onClose={closeAddModal}
+        onAdd={handleAddApplication}
+        onCreateContact={handleAddContact}
       />
 
       {/* Multi-Provider Auth Modal */}
-      <AuthModal onShowToast={onShowToast} />
+      <AuthModal onShowToast={addToast} />
 
       {/* Guest-to-Account Data Migration Modal */}
-      <GuestMigrationModal
-        isOpen={isMigrationModalOpen}
-        guestApplications={migrationApps}
-        guestContacts={migrationContacts}
-        onImport={onImportGuestApps}
-        onDiscard={onDiscardGuestApps}
-        onClose={onCloseMigrationModal}
-      />
+      {migration && (
+        <GuestMigrationModal
+          isOpen={migration.isOpen}
+          guestApplications={migration.apps}
+          guestContacts={migration.contacts}
+          onImport={migration.onImport}
+          onDiscard={migration.onDiscard}
+          onClose={migration.onClose}
+        />
+      )}
     </>
   );
 }
