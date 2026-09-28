@@ -1,6 +1,6 @@
 # Phase 3 Blueprint: Context Providers & Feature Boundaries
 
-- **Status**: 📋 PLANNING & BLUEPRINT
+- **Status**: 📋 IN PROGRESS
 - **Branch**: [`refactor/modular-clean-architecture`](https://github.com/saleem-15/Tracklet-React/tree/refactor/modular-clean-architecture)
 - **Target Components**: 
   - [`src/App.tsx`](../../src/App.tsx) (225 lines → **target < 100 lines**)
@@ -148,14 +148,14 @@ AppProviders (Composite Wrapper)
 │   └── expirySettings, updateExpirySettings, expiryThresholdHours
 │
 ├── NavigationProvider (src/context/NavigationContext.tsx)
-│   └── activeTab, filter, selectedAppId, selectedContactId, modals, mobileSidebar
-│   └── cross-entity switchers: switchToApp, switchToContact
+│   └── activeTab, filter, selectedAppId, modals, mobileSidebar
 │
 ├── ApplicationsProvider (src/context/ApplicationsContext.tsx)
 │   └── applications, filteredApplications, sort, CRUD, bulk actions, merge duplicates
 │
 └── ContactsProvider (src/context/ContactsContext.tsx)
-    └── contacts, selectedContact, CRUD, link/unlink, follow-up
+    └── contacts, selectedContact, selectedContactId, CRUD, link/unlink, follow-up
+    └── cross-entity switchers: handleSwitchToApp, handleSwitchToContact
 ```
 
 ---
@@ -193,7 +193,7 @@ AppProviders (Composite Wrapper)
 ---
 
 ### Specification 3.3: `NavigationContext` (`src/context/NavigationContext.tsx`)
-- **Responsibility**: URL-synchronized navigation (`activeTab`), query search filters (`filter`, `setFilter`, `resetFilters`), drawer selection state (`selectedAppId`, `selectedContactId`), modal visibility (`isAddModalOpen`), mobile sidebar drawer (`isMobileSidebarOpen`), and cross-entity navigation actions.
+- **Responsibility**: URL-synchronized navigation (`activeTab`), query search filters (`filter`, `setFilter`, `resetFilters`), drawer selection state (`selectedAppId`), modal visibility (`isAddModalOpen`), and mobile sidebar drawer (`isMobileSidebarOpen`).
 - **Dependencies**: None (reads `window.location`).
 - **Eliminates**: ~14 props drilled to `TopBar`, `Sidebar`, `WorkspaceContent`, `AppSlideOvers`, `AppModals`.
 - **API Surface**:
@@ -206,8 +206,6 @@ AppProviders (Composite Wrapper)
     resetFilters: () => void;
     selectedAppId: string | null;
     setSelectedAppId: (id: string | null) => void;
-    selectedContactId: string | null;
-    setSelectedContactId: (id: string | null) => void;
     isAddModalOpen: boolean;
     setIsAddModalOpen: (open: boolean) => void;
     isMobileSidebarOpen: boolean;
@@ -216,8 +214,6 @@ AppProviders (Composite Wrapper)
     closeAddModal: () => void;
     openMobileSidebar: () => void;
     closeMobileSidebar: () => void;
-    switchToApp: (appId: string) => void;
-    switchToContact: (contactId: string) => void;
   }
   export const useNavigation = (): NavigationContextType => ...
   ```
@@ -277,6 +273,8 @@ AppProviders (Composite Wrapper)
     handleLinkContact: (contactId: string, appId: string) => Promise<void>;
     handleUnlinkContact: (contactId: string, appId: string) => Promise<void>;
     handleCreateAndLinkContact: (contactData: Omit<Contact, 'id' | 'userId' | 'createdAt' | 'updatedAt'>, appId: string) => Promise<void>;
+    handleSwitchToContact: (contactId: string) => void;
+    handleSwitchToApp: (appId: string) => void;
     handleContactFollowUp: (contact: Contact) => void;
   }
   export const useContactsContext = (): ContactsContextType => ...
@@ -344,9 +342,9 @@ import { getPathForTab, isAuthPath } from './lib/routeUtils';
 
 function TrackletAppContent() {
   const { user, loading: authLoading } = useAuth();
-  const { activeTab } = useNavigation();
+  const { activeTab, setSelectedAppId } = useNavigation();
   const { toasts, dismissToast, addToast } = useToastContext();
-  const { applications, setApplications, applicationsRef, setSelectedAppId } = useApplicationsContext();
+  const { applications, setApplications, applicationsRef } = useApplicationsContext();
   const { contacts, setContacts, handleAddContact } = useContactsContext();
 
   const [isGuestMode, setIsGuestMode] = useState<boolean>(() => {
