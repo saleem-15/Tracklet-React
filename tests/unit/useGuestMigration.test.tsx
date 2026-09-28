@@ -1,0 +1,105 @@
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import React, { act } from 'react';
+import { createRoot, type Root } from 'react-dom/client';
+import { useGuestMigration, UseGuestMigrationReturn } from '../../src/hooks/useGuestMigration';
+import { Application, Contact } from '../../src/types';
+import { LOCAL_STORAGE_KEYS } from '../../src/lib/constants';
+
+let host: HTMLDivElement | null = null;
+let root: Root | null = null;
+let hookResult: UseGuestMigrationReturn;
+let mockSetApplications = vi.fn();
+let mockSetContacts = vi.fn();
+let mockAddToast = vi.fn();
+
+function Harness() {
+  hookResult = useGuestMigration({
+    user: null,
+    setApplications: mockSetApplications,
+    setContacts: mockSetContacts,
+    addToast: mockAddToast,
+  });
+  return null;
+}
+
+function mountHarness() {
+  if (root) {
+    act(() => root!.unmount());
+    root = null;
+  }
+  if (host) host.remove();
+  host = document.createElement('div');
+  document.body.appendChild(host);
+  root = createRoot(host);
+  act(() => {
+    root!.render(<Harness />);
+  });
+}
+
+describe('useGuestMigration hook', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    vi.restoreAllMocks();
+  });
+
+  afterEach(() => {
+    if (root) {
+      act(() => root!.unmount());
+      root = null;
+    }
+    if (host) {
+      host.remove();
+      host = null;
+    }
+  });
+
+  it('initializes with modal closed and empty migration lists', () => {
+    mountHarness();
+
+    expect(hookResult.isMigrationModalOpen).toBe(false);
+    expect(hookResult.migrationApps).toEqual([]);
+    expect(hookResult.migrationContacts).toEqual([]);
+  });
+
+  it('detects guest applications in localStorage and opens modal', () => {
+    const guestApp: Partial<Application> = {
+      id: 'g-app-1',
+      company: 'TestCorp',
+      role: 'Engineer',
+    };
+    localStorage.setItem(LOCAL_STORAGE_KEYS.GUEST_APPS, JSON.stringify([guestApp]));
+
+    mountHarness();
+
+    act(() => {
+      hookResult.checkAndPromptGuestMigration();
+    });
+
+    expect(hookResult.isMigrationModalOpen).toBe(true);
+    expect(hookResult.migrationApps.length).toBe(1);
+    expect(hookResult.migrationApps[0].company).toBe('TestCorp');
+  });
+
+  it('discards guest data and cleans localStorage', () => {
+    localStorage.setItem(LOCAL_STORAGE_KEYS.GUEST_APPS, JSON.stringify([{ id: 'g1' }]));
+    localStorage.setItem(LOCAL_STORAGE_KEYS.GUEST_CONTACTS, JSON.stringify([{ id: 'c1' }]));
+
+    mountHarness();
+
+    act(() => {
+      hookResult.checkAndPromptGuestMigration();
+    });
+    expect(hookResult.isMigrationModalOpen).toBe(true);
+
+    act(() => {
+      hookResult.handleDiscardGuestApps();
+    });
+
+    expect(hookResult.isMigrationModalOpen).toBe(false);
+    expect(hookResult.migrationApps).toEqual([]);
+    expect(hookResult.migrationContacts).toEqual([]);
+    expect(localStorage.getItem(LOCAL_STORAGE_KEYS.GUEST_APPS)).toBeNull();
+    expect(localStorage.getItem(LOCAL_STORAGE_KEYS.GUEST_CONTACTS)).toBeNull();
+    expect(mockAddToast).toHaveBeenCalledWith('info', 'Guest Data Discarded', expect.any(String));
+  });
+});
