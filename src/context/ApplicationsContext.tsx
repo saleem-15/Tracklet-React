@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, useMemo, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { 
   Application, 
   ApplicationStatus, 
@@ -83,6 +83,11 @@ export const ApplicationsProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
   const [isDuplicateBannerDismissed, setIsDuplicateBannerDismissed] = useState(false);
   const dismissDuplicateBanner = useCallback(() => setIsDuplicateBannerDismissed(true), []);
+
+  // Reset duplicate banner dismissal state when authenticated user changes
+  useEffect(() => {
+    setIsDuplicateBannerDismissed(false);
+  }, [user?.uid]);
 
   const handleUpdatePipelineStatus = useCallback((id: string, newStatus: string) => {
     handleUpdateApplication(id, {

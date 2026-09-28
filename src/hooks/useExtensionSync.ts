@@ -67,6 +67,17 @@ export function useExtensionSync({
   // Buffer for incoming emails and applications received before applications data load completes
   const pendingEmailPayloadsRef = useRef<IncomingEmailPayload[]>([]);
   const pendingAppPayloadsRef = useRef<{ clippedApp: Application; persistedToCloud?: boolean }[]>([]);
+
+  // Clear pending payload queues when authenticated user changes to prevent cross-account ingestion
+  const prevUserIdRef = useRef<string | undefined>(user?.uid);
+  useEffect(() => {
+    if (prevUserIdRef.current !== user?.uid) {
+      prevUserIdRef.current = user?.uid;
+      pendingEmailPayloadsRef.current = [];
+      pendingAppPayloadsRef.current = [];
+    }
+  }, [user?.uid]);
+
   const dataLoadingRef = useRef(dataLoading);
   useEffect(() => {
     dataLoadingRef.current = dataLoading;

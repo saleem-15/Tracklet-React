@@ -249,12 +249,11 @@ export class ContactRepository {
         // Verify which linked application documents still exist in Firestore before applying cascade updates
         const validAppIds: string[] = [];
         if (linkedAppIds.length > 0) {
-          const appChecks = await Promise.allSettled(
+          const appSnapshots = await Promise.all(
             linkedAppIds.map((appId) => getDoc(doc(db, 'users', userId, 'applications', appId)))
           );
-          for (let i = 0; i < appChecks.length; i++) {
-            const check = appChecks[i];
-            if (check.status === 'fulfilled' && check.value.exists()) {
+          for (let i = 0; i < appSnapshots.length; i++) {
+            if (appSnapshots[i].exists()) {
               validAppIds.push(linkedAppIds[i]);
             }
           }
