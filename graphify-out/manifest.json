@@ -2345,8 +2345,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/README.md": {
-    "mtime": 1790600304.4416692,
-    "ast_hash": "0efab40d3fd55c6c0549a969e6c3e8c8",
+    "mtime": 1790604336.2650197,
+    "ast_hash": "9ddbc500497ee7a6a51ea0c7879d3311",
     "semantic_hash": ""
   },
   "src/context/AppProviders.tsx": {
@@ -2380,8 +2380,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/PHASE_3_CONTEXT_PROVIDERS.md": {
-    "mtime": 1790603699.3494532,
-    "ast_hash": "2ebc1c810df8a7e951f4edc2e1c2ab22",
+    "mtime": 1790604346.3599358,
+    "ast_hash": "11ec4ace8706b991abeea385cae7a7fc",
     "semantic_hash": ""
   },
   "src/components/layout/index.ts": {

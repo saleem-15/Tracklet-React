@@ -1145,8 +1145,8 @@
     "semantic_hash": "4cc5b2ff908d808e332c0c338ac7be3b"
   },
   "src/lib/contactRepository.ts": {
-    "mtime": 1790591572.980414,
-    "ast_hash": "54e50ffc1ab24960bcec870a2bdbc90f",
+    "mtime": 1790603818.7104487,
+    "ast_hash": "0572500ff0455f69ee594c074414a9d4",
     "semantic_hash": ""
   },
   "src/lib/contactUtils.ts": {
@@ -1515,8 +1515,8 @@
     "semantic_hash": ""
   },
   "src/hooks/useExtensionSync.ts": {
-    "mtime": 1790583838.4472985,
-    "ast_hash": "98ba4325aa68f762d8937cb862dbd079",
+    "mtime": 1790603788.6634398,
+    "ast_hash": "97021881bed07f1303e6086e05fa6ef8",
     "semantic_hash": ""
   },
   "src/hooks/useGuestMigration.ts": {
@@ -2355,8 +2355,8 @@
     "semantic_hash": ""
   },
   "src/context/ApplicationsContext.tsx": {
-    "mtime": 1790601228.0032275,
-    "ast_hash": "21da6732eeee54edff6c3f75a5d9b2bc",
+    "mtime": 1790603753.3080876,
+    "ast_hash": "666262e04c1e38afb0658a7b0f5d5040",
     "semantic_hash": ""
   },
   "src/context/ContactsContext.tsx": {
@@ -2380,8 +2380,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/PHASE_3_CONTEXT_PROVIDERS.md": {
-    "mtime": 1790600284.424026,
-    "ast_hash": "018a4b5c6d1daf38fb991da817407d7e",
+    "mtime": 1790603699.3494532,
+    "ast_hash": "2ebc1c810df8a7e951f4edc2e1c2ab22",
     "semantic_hash": ""
   },
   "src/components/layout/index.ts": {
