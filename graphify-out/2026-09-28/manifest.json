@@ -645,8 +645,8 @@
     "semantic_hash": "74e941086226dbc8c54afe7c9f1754c7"
   },
   "src/App.tsx": {
-    "mtime": 1790601124.2357116,
-    "ast_hash": "ca362eccfa3d6836ddb4ad787a0cec65",
+    "mtime": 1790601598.34875,
+    "ast_hash": "733cff010223e2207295363069bbabfe",
     "semantic_hash": ""
   },
   "src/components/AccountSettingsCard.tsx": {
@@ -2382,6 +2382,16 @@
   "docs/architecture/PHASE_3_CONTEXT_PROVIDERS.md": {
     "mtime": 1790600284.424026,
     "ast_hash": "018a4b5c6d1daf38fb991da817407d7e",
+    "semantic_hash": ""
+  },
+  "src/components/layout/index.ts": {
+    "mtime": 1790601455.4981308,
+    "ast_hash": "601aa48ac0dad15fd10f6b1dd0d70348",
+    "semantic_hash": ""
+  },
+  "src/context/index.ts": {
+    "mtime": 1790601470.2633402,
+    "ast_hash": "3d18dff3747c9c3f8d062cbc1a324cc0",
     "semantic_hash": ""
   }
 }
