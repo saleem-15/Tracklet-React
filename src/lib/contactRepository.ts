@@ -212,28 +212,35 @@ export class ContactRepository {
   static async deleteContact(
     id: string,
     userId?: string,
-    linkedAppIds: string[] = []
+    linkedAppIds: string[] = [],
+    fullContact?: Contact
   ): Promise<void> {
-    return this.batchDelete([id], userId, linkedAppIds);
+    return this.batchDelete([id], userId, linkedAppIds, fullContact ? [fullContact] : undefined);
   }
 
   /**
    * Batch delete multiple contacts and cascade remove them from linked applications.
-   * Uses a race-safe transaction when operations fit within the transaction limit (<= 450 ops),
-   * reading each linked application inside the transaction and skipping any that no longer exist.
-   * For large operations exceeding transaction limits, cleans up surviving application links FIRST
-   * before committing contact deletions so that a cleanup failure cannot leave stale links on surviving applications.
+   * - Uses a race-safe transaction when operations fit within the transaction limit (<= 450 ops),
+   *   reading each linked application inside the transaction and updating only apps that have matching contacts.
+   * - For large operations exceeding transaction limits:
+   *   1. Identifies existing applications and maps each to only the contact IDs being deleted that are actually present on it.
+   *   2. Cleans up surviving application links FIRST, removing only those per-application contact IDs.
+   *      If an application chunk fails after retries, compensates by restoring only the exact removed links via arrayUnion.
+   *   3. Commits contact deletions only after application link cleanup succeeds.
+   *      If contact deletion fails midway after retries, restores deleted contacts from authoritative data
+   *      and re-links applications before propagating the error.
    */
   static async batchDelete(
     ids: string[],
     userId?: string,
-    linkedAppIds: string[] = []
+    linkedAppIds: string[] = [],
+    authoritativeContacts?: Contact[]
   ): Promise<void> {
     if (!userId || ids.length === 0) return;
 
     try {
+      const deletedIdSet = new Set(ids);
       const totalOps = ids.length + linkedAppIds.length;
-
       const CHUNK_SIZE = 450;
 
       // Helper function to commit batch with retries for transient network failures
@@ -257,6 +264,26 @@ export class ContactRepository {
         throw lastErr;
       };
 
+      // Helper to build authoritative contact data for recovery if needed
+      const getAuthoritativeContactMap = async (): Promise<Map<string, Contact>> => {
+        const map = new Map<string, Contact>();
+        if (authoritativeContacts && authoritativeContacts.length > 0) {
+          for (const c of authoritativeContacts) {
+            map.set(c.id, c);
+          }
+        } else {
+          const contactSnaps = await Promise.all(
+            ids.map((id) => getDoc(doc(db, 'users', userId, 'contacts', id)))
+          );
+          for (const snap of contactSnaps) {
+            if (snap.exists()) {
+              map.set(snap.id, { id: snap.id, ...snap.data() } as Contact);
+            }
+          }
+        }
+        return map;
+      };
+
       // Fast-path: no linked applications to cascade
       if (linkedAppIds.length === 0) {
         if (ids.length <= CHUNK_SIZE) {
@@ -266,13 +293,40 @@ export class ContactRepository {
           }
           await batch.commit();
         } else {
-          for (let i = 0; i < ids.length; i += CHUNK_SIZE) {
-            const chunk = ids.slice(i, i + CHUNK_SIZE);
-            const batch = writeBatch(db);
-            for (const id of chunk) {
-              batch.delete(doc(db, 'users', userId, 'contacts', id));
+          // If chunked contact deletion fails, restore already-deleted contacts from authoritative data
+          const committedDeletedContactIds: string[] = [];
+          const authoritativeMap = await getAuthoritativeContactMap();
+          try {
+            for (let i = 0; i < ids.length; i += CHUNK_SIZE) {
+              const chunk = ids.slice(i, i + CHUNK_SIZE);
+              const batch = writeBatch(db);
+              for (const id of chunk) {
+                batch.delete(doc(db, 'users', userId, 'contacts', id));
+              }
+              await commitBatchWithRetry(batch);
+              committedDeletedContactIds.push(...chunk);
             }
-            await commitBatchWithRetry(batch);
+          } catch (contactDeleteErr) {
+            console.error('Failed during standalone contact deletion; restoring committed contacts:', contactDeleteErr);
+            if (committedDeletedContactIds.length > 0) {
+              try {
+                for (let i = 0; i < committedDeletedContactIds.length; i += CHUNK_SIZE) {
+                  const chunk = committedDeletedContactIds.slice(i, i + CHUNK_SIZE);
+                  const restoreBatch = writeBatch(db);
+                  for (const id of chunk) {
+                    const contactData = authoritativeMap.get(id);
+                    if (contactData) {
+                      const { id: _ignored, ...payload } = contactData;
+                      restoreBatch.set(doc(db, 'users', userId, 'contacts', id), sanitizeForFirestore(payload), { merge: true });
+                    }
+                  }
+                  await commitBatchWithRetry(restoreBatch);
+                }
+              } catch (restoreErr) {
+                console.error('Failed to rollback deleted contacts:', restoreErr);
+              }
+            }
+            throw contactDeleteErr;
           }
         }
         return;
@@ -289,12 +343,18 @@ export class ContactRepository {
           );
 
           const now = new Date().toISOString();
-          for (const appSnap of appSnapshots) {
+          for (let i = 0; i < appSnapshots.length; i++) {
+            const appSnap = appSnapshots[i];
             if (appSnap.exists()) {
-              transaction.update(appSnap.ref, {
-                contactIds: arrayRemove(...ids),
-                updatedAt: now,
-              });
+              const appData = appSnap.data() as Application;
+              const currentContactIds = appData?.contactIds || [];
+              const matchingIds = currentContactIds.filter((cId) => deletedIdSet.has(cId));
+              if (matchingIds.length > 0) {
+                transaction.update(appSnap.ref, {
+                  contactIds: arrayRemove(...matchingIds),
+                  updatedAt: now,
+                });
+              }
             }
           }
 
@@ -306,19 +366,30 @@ export class ContactRepository {
       }
 
       // Large-operation path (> 450 ops):
-      // 1. Verify which linked application documents currently exist in Firestore
+      // 1. Verify which linked application documents exist and filter to only those containing IDs to remove.
       const appSnapshots = await Promise.all(
         linkedAppIds.map((appId) => getDoc(doc(db, 'users', userId, 'applications', appId)))
       );
-      const validAppIds: string[] = [];
+      const appMatchingContactMap = new Map<string, string[]>();
       for (let i = 0; i < appSnapshots.length; i++) {
-        if (appSnapshots[i].exists()) {
-          validAppIds.push(linkedAppIds[i]);
+        const snap = appSnapshots[i];
+        if (snap.exists()) {
+          const appData = snap.data() as Application;
+          const currentContactIds = appData?.contactIds || [];
+          const matchingIds = currentContactIds.filter((cId) => deletedIdSet.has(cId));
+          if (matchingIds.length > 0) {
+            appMatchingContactMap.set(linkedAppIds[i], matchingIds);
+          }
         }
       }
 
+      const validAppIds = Array.from(appMatchingContactMap.keys());
+
+      // Pre-load authoritative contact data for recovery in case of partial chunk failures
+      const authoritativeMap = await getAuthoritativeContactMap();
+
       // 2. Clean up surviving application links FIRST with compensation tracking.
-      // If a subsequent chunk fails, we restore the already removed links via arrayUnion before returning failure.
+      // Uses per-application IDs to avoid applying all deleted contact IDs to every linked application.
       const committedAppIds: string[] = [];
       if (validAppIds.length > 0) {
         try {
@@ -328,17 +399,20 @@ export class ContactRepository {
             const now = new Date().toISOString();
             for (const appId of chunk) {
               const appRef = doc(db, 'users', userId, 'applications', appId);
-              batch.update(appRef, {
-                contactIds: arrayRemove(...ids),
-                updatedAt: now,
-              });
+              const toRemove = appMatchingContactMap.get(appId) || [];
+              if (toRemove.length > 0) {
+                batch.update(appRef, {
+                  contactIds: arrayRemove(...toRemove),
+                  updatedAt: now,
+                });
+              }
             }
             await commitBatchWithRetry(batch);
             committedAppIds.push(...chunk);
           }
         } catch (appCleanupErr) {
           console.error('Failed during application link cleanup; compensating committed chunks:', appCleanupErr);
-          // Restore already-committed application links to preserve data integrity before propagating failure
+          // Restore already-committed application links using per-application IDs to prevent cross-contamination
           if (committedAppIds.length > 0) {
             try {
               for (let i = 0; i < committedAppIds.length; i += CHUNK_SIZE) {
@@ -347,10 +421,13 @@ export class ContactRepository {
                 const now = new Date().toISOString();
                 for (const appId of chunk) {
                   const appRef = doc(db, 'users', userId, 'applications', appId);
-                  rollbackBatch.update(appRef, {
-                    contactIds: arrayUnion(...ids),
-                    updatedAt: now,
-                  });
+                  const toRestore = appMatchingContactMap.get(appId) || [];
+                  if (toRestore.length > 0) {
+                    rollbackBatch.update(appRef, {
+                      contactIds: arrayUnion(...toRestore),
+                      updatedAt: now,
+                    });
+                  }
                 }
                 await commitBatchWithRetry(rollbackBatch);
               }
@@ -363,14 +440,70 @@ export class ContactRepository {
       }
 
       // 3. Commit contact deletions only after application-link cleanup has fully succeeded.
-      // Uses commitBatchWithRetry to ensure durable and idempotent completion.
-      for (let i = 0; i < ids.length; i += CHUNK_SIZE) {
-        const chunk = ids.slice(i, i + CHUNK_SIZE);
-        const batch = writeBatch(db);
-        for (const id of chunk) {
-          batch.delete(doc(db, 'users', userId, 'contacts', id));
+      // If contact deletion fails midway, restore deleted contacts from authoritative data
+      // and re-link applications so that no partial deletion or split-brain state is left in Firestore.
+      const committedDeletedContactIds: string[] = [];
+      try {
+        for (let i = 0; i < ids.length; i += CHUNK_SIZE) {
+          const chunk = ids.slice(i, i + CHUNK_SIZE);
+          const batch = writeBatch(db);
+          for (const id of chunk) {
+            batch.delete(doc(db, 'users', userId, 'contacts', id));
+          }
+          await commitBatchWithRetry(batch);
+          committedDeletedContactIds.push(...chunk);
         }
-        await commitBatchWithRetry(batch);
+      } catch (contactDeleteErr) {
+        console.error('Failed during contact deletion; recovering deleted contacts and application links:', contactDeleteErr);
+        // Step 3a: Restore deleted contacts from authoritative data
+        if (committedDeletedContactIds.length > 0) {
+          try {
+            for (let i = 0; i < committedDeletedContactIds.length; i += CHUNK_SIZE) {
+              const chunk = committedDeletedContactIds.slice(i, i + CHUNK_SIZE);
+              const restoreContactsBatch = writeBatch(db);
+              for (const id of chunk) {
+                const contactData = authoritativeMap.get(id);
+                if (contactData) {
+                  const { id: _ignored, ...payload } = contactData;
+                  restoreContactsBatch.set(
+                    doc(db, 'users', userId, 'contacts', id),
+                    sanitizeForFirestore(payload),
+                    { merge: true }
+                  );
+                }
+              }
+              await commitBatchWithRetry(restoreContactsBatch);
+            }
+          } catch (restoreContactsErr) {
+            console.error('Failed to restore deleted contacts during recovery:', restoreContactsErr);
+          }
+        }
+
+        // Step 3b: Restore all application links that were removed in Step 2
+        if (committedAppIds.length > 0) {
+          try {
+            for (let i = 0; i < committedAppIds.length; i += CHUNK_SIZE) {
+              const chunk = committedAppIds.slice(i, i + CHUNK_SIZE);
+              const rollbackAppsBatch = writeBatch(db);
+              const now = new Date().toISOString();
+              for (const appId of chunk) {
+                const appRef = doc(db, 'users', userId, 'applications', appId);
+                const toRestore = appMatchingContactMap.get(appId) || [];
+                if (toRestore.length > 0) {
+                  rollbackAppsBatch.update(appRef, {
+                    contactIds: arrayUnion(...toRestore),
+                    updatedAt: now,
+                  });
+                }
+              }
+              await commitBatchWithRetry(rollbackAppsBatch);
+            }
+          } catch (restoreAppsErr) {
+            console.error('Failed to restore application links during contact deletion recovery:', restoreAppsErr);
+          }
+        }
+
+        throw contactDeleteErr;
       }
     } catch (err) {
       console.error('Failed bulk delete in Firestore:', err);

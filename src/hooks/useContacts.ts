@@ -270,7 +270,8 @@ export function useContacts({
       await ContactRepository.deleteContact(
         id,
         user?.emailVerified ? user.uid : undefined,
-        linkedAppIds
+        linkedAppIds,
+        targetContact
       );
 
       addToast('info', `Deleted ${targetContact.name}`, undefined, {
@@ -357,7 +358,12 @@ export function useContacts({
     });
 
     try {
-      await ContactRepository.batchDelete(ids, user?.emailVerified ? user.uid : undefined, linkedAppIds);
+      await ContactRepository.batchDelete(
+        ids,
+        user?.emailVerified ? user.uid : undefined,
+        linkedAppIds,
+        deleted
+      );
       addToast('info', `Deleted ${ids.length} contacts`);
     } catch (err) {
       console.error('Bulk delete contacts failed:', err);

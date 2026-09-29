@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ContactRepository } from '../../src/lib/contactRepository';
 import * as firebaseModule from '../../src/lib/firebase';
+import { Contact } from '../../src/types';
 
 describe('ContactRepository.batchDelete', () => {
   beforeEach(() => {
@@ -37,10 +38,11 @@ describe('ContactRepository.batchDelete', () => {
   it('uses runTransaction for race-safe atomic cleanup when total operations fit within batch limit', async () => {
     const mockTransaction = {
       get: vi.fn().mockImplementation(async (ref: any) => {
-        // app-1 exists, app-2 does not exist (concurrently deleted)
+        // app-1 exists with c-1; app-2 does not exist (concurrently deleted)
         const isApp1 = ref.path ? ref.path.includes('app-1') : true;
         return {
           exists: () => isApp1,
+          data: () => ({ contactIds: ['c-1'] }),
           ref,
         };
       }),
@@ -61,40 +63,46 @@ describe('ContactRepository.batchDelete', () => {
     expect(mockTransaction.delete).toHaveBeenCalledTimes(2);
   });
 
-  it('in large-operation path, executes application link cleanup before contact deletions', async () => {
+  it('in large-operation path, filters applications to only those with matching contacts and uses per-application IDs', async () => {
     const largeIds = Array.from({ length: 451 }, (_, i) => `c-${i}`);
-    const linkedAppIds = ['app-1'];
+    const linkedAppIds = ['app-with-links', 'app-without-links'];
 
-    vi.spyOn(firebaseModule, 'getDoc').mockResolvedValue({
-      exists: () => true,
-    } as any);
-
-    const callOrder: string[] = [];
-    vi.spyOn(firebaseModule, 'writeBatch').mockImplementation(() => {
-      const ops: string[] = [];
+    vi.spyOn(firebaseModule, 'getDoc').mockImplementation(async (ref: any) => {
+      const isWithLinks = ref.path && ref.path.includes('app-with-links');
       return {
-        update: vi.fn().mockImplementation(() => ops.push('update')),
-        delete: vi.fn().mockImplementation(() => ops.push('delete')),
-        commit: vi.fn().mockImplementation(async () => {
-          if (ops.includes('update')) callOrder.push('app-cleanup');
-          if (ops.includes('delete')) callOrder.push('contact-delete');
+        exists: () => true,
+        data: () => ({
+          contactIds: isWithLinks ? ['c-0', 'c-1', 'other-contact'] : ['unrelated-contact'],
         }),
+      } as any;
+    });
+
+    const updateCalls: any[] = [];
+    vi.spyOn(firebaseModule, 'writeBatch').mockImplementation(() => {
+      return {
+        update: vi.fn().mockImplementation((ref: any, data: any) => {
+          updateCalls.push({ ref, data });
+        }),
+        delete: vi.fn(),
+        commit: vi.fn().mockResolvedValue(undefined),
       } as any;
     });
 
     await ContactRepository.batchDelete(largeIds, 'user-123', linkedAppIds);
 
-    expect(callOrder[0]).toBe('app-cleanup');
-    expect(callOrder.slice(1)).toContain('contact-delete');
+    // Only app-with-links should be updated
+    expect(updateCalls.length).toBe(1);
+    expect(updateCalls[0].ref.path).toContain('app-with-links');
   });
 
   it('in large-operation path, compensates by restoring committed application links if a later chunk fails', async () => {
-    // 451 contacts + 2 application chunks (500 apps total)
+    // 451 contacts + 500 apps total (2 application chunks)
     const largeIds = Array.from({ length: 451 }, (_, i) => `c-${i}`);
     const linkedAppIds = Array.from({ length: 500 }, (_, i) => `app-${i}`);
 
     vi.spyOn(firebaseModule, 'getDoc').mockResolvedValue({
       exists: () => true,
+      data: () => ({ contactIds: ['c-0'] }),
     } as any);
 
     let batchCount = 0;
@@ -121,8 +129,61 @@ describe('ContactRepository.batchDelete', () => {
       ContactRepository.batchDelete(largeIds, 'user-123', linkedAppIds)
     ).rejects.toThrow('Network timeout on chunk 2');
 
-    // Verify compensation: batch 3 should have performed arrayUnion rollback on the 450 apps from batch 1
+    // Verify compensation: batch 3 should have performed rollback on the 450 apps from batch 1
     const rollbackUpdates = updateCalls.filter((u) => u.batchId === 3);
     expect(rollbackUpdates.length).toBe(450);
+  });
+
+  it('in large-operation path, restores deleted contacts and application links when contact deletion fails midway', async () => {
+    // 500 contacts (2 chunks: 450 and 50) + 1 linked app
+    const contacts: Contact[] = Array.from({ length: 500 }, (_, i) => ({
+      id: `c-${i}`,
+      name: `Contact ${i}`,
+      applicationIds: ['app-1'],
+    }));
+    const ids = contacts.map((c) => c.id);
+
+    vi.spyOn(firebaseModule, 'getDoc').mockImplementation(async (ref: any) => {
+      return {
+        exists: () => true,
+        data: () => ({ contactIds: ['c-0', 'c-450'] }),
+      } as any;
+    });
+
+    let batchCount = 0;
+    const setCalls: any[] = [];
+    const updateCalls: any[] = [];
+    vi.spyOn(firebaseModule, 'writeBatch').mockImplementation(() => {
+      const currentBatchId = ++batchCount;
+      return {
+        update: vi.fn().mockImplementation((ref: any, data: any) => {
+          updateCalls.push({ batchId: currentBatchId, ref, data });
+        }),
+        delete: vi.fn(),
+        set: vi.fn().mockImplementation((ref: any, data: any) => {
+          setCalls.push({ batchId: currentBatchId, ref, data });
+        }),
+        commit: vi.fn().mockImplementation(async () => {
+          // Batch 1: app link cleanup (succeeds)
+          // Batch 2: contact delete chunk 1 (contacts 0-449) (succeeds)
+          // Batch 3: contact delete chunk 2 (contacts 450-499) (fails after retries)
+          if (currentBatchId === 3) {
+            throw new Error('Firestore quota exceeded during contact deletion');
+          }
+          // Batch 4: restore contacts (succeeds)
+          // Batch 5: restore app links (succeeds)
+        }),
+      } as any;
+    });
+
+    await expect(
+      ContactRepository.batchDelete(ids, 'user-123', ['app-1'], contacts)
+    ).rejects.toThrow('Firestore quota exceeded during contact deletion');
+
+    // Batch 4 must have restored the 450 contacts from Batch 2
+    expect(setCalls.length).toBe(450);
+    // Batch 5 must have restored the application links
+    const rollbackAppUpdates = updateCalls.filter((u) => u.batchId === 5);
+    expect(rollbackAppUpdates.length).toBe(1);
   });
 });
