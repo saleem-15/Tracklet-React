@@ -1145,8 +1145,8 @@
     "semantic_hash": "4cc5b2ff908d808e332c0c338ac7be3b"
   },
   "src/lib/contactRepository.ts": {
-    "mtime": 1790665616.4641454,
-    "ast_hash": "9a98bf55a4b0884dca5b9c97c81ae845",
+    "mtime": 1790671868.3345194,
+    "ast_hash": "3fb78e6f04bb5a44ff09d29df92cbe88",
     "semantic_hash": ""
   },
   "src/lib/contactUtils.ts": {
@@ -2395,8 +2395,8 @@
     "semantic_hash": ""
   },
   "tests/unit/contactRepository.test.ts": {
-    "mtime": 1790665741.3111298,
-    "ast_hash": "36edca74aaf2755dc9aeb3316da24c2d",
+    "mtime": 1790671887.0790703,
+    "ast_hash": "faef73f2ba5b381992c5b0ed86ee1b96",
     "semantic_hash": ""
   }
 }
