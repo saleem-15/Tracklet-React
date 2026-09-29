@@ -234,24 +234,52 @@ export class ContactRepository {
     try {
       const totalOps = ids.length + linkedAppIds.length;
 
+      const CHUNK_SIZE = 450;
+
+      // Helper function to commit batch with retries for transient network failures
+      const commitBatchWithRetry = async (
+        batch: ReturnType<typeof writeBatch>,
+        retries = 2,
+        backoffMs = 50
+      ): Promise<void> => {
+        let lastErr: unknown;
+        for (let attempt = 0; attempt <= retries; attempt++) {
+          try {
+            await batch.commit();
+            return;
+          } catch (err) {
+            lastErr = err;
+            if (attempt < retries) {
+              await new Promise((resolve) => setTimeout(resolve, backoffMs * Math.pow(2, attempt)));
+            }
+          }
+        }
+        throw lastErr;
+      };
+
       // Fast-path: no linked applications to cascade
       if (linkedAppIds.length === 0) {
-        if (ids.length <= 450) {
+        if (ids.length <= CHUNK_SIZE) {
           const batch = writeBatch(db);
           for (const id of ids) {
             batch.delete(doc(db, 'users', userId, 'contacts', id));
           }
           await batch.commit();
         } else {
-          await commitInChunks(ids, (batch, id) => {
-            batch.delete(doc(db, 'users', userId, 'contacts', id));
-          });
+          for (let i = 0; i < ids.length; i += CHUNK_SIZE) {
+            const chunk = ids.slice(i, i + CHUNK_SIZE);
+            const batch = writeBatch(db);
+            for (const id of chunk) {
+              batch.delete(doc(db, 'users', userId, 'contacts', id));
+            }
+            await commitBatchWithRetry(batch);
+          }
         }
         return;
       }
 
       // Race-safe atomic transaction path (<= 450 ops)
-      if (totalOps <= 450) {
+      if (totalOps <= CHUNK_SIZE) {
         await runTransaction(db, async (transaction) => {
           // In Firestore transactions, all reads MUST precede all writes.
           const appSnapshots = await Promise.all(
@@ -289,22 +317,61 @@ export class ContactRepository {
         }
       }
 
-      // 2. Clean up surviving application links FIRST so that if this step fails,
-      // contact deletions are never committed and no stale links remain on surviving applications.
+      // 2. Clean up surviving application links FIRST with compensation tracking.
+      // If a subsequent chunk fails, we restore the already removed links via arrayUnion before returning failure.
+      const committedAppIds: string[] = [];
       if (validAppIds.length > 0) {
-        await commitInChunks(validAppIds, (batch, appId) => {
-          const appRef = doc(db, 'users', userId, 'applications', appId);
-          batch.update(appRef, {
-            contactIds: arrayRemove(...ids),
-            updatedAt: new Date().toISOString(),
-          });
-        });
+        try {
+          for (let i = 0; i < validAppIds.length; i += CHUNK_SIZE) {
+            const chunk = validAppIds.slice(i, i + CHUNK_SIZE);
+            const batch = writeBatch(db);
+            const now = new Date().toISOString();
+            for (const appId of chunk) {
+              const appRef = doc(db, 'users', userId, 'applications', appId);
+              batch.update(appRef, {
+                contactIds: arrayRemove(...ids),
+                updatedAt: now,
+              });
+            }
+            await commitBatchWithRetry(batch);
+            committedAppIds.push(...chunk);
+          }
+        } catch (appCleanupErr) {
+          console.error('Failed during application link cleanup; compensating committed chunks:', appCleanupErr);
+          // Restore already-committed application links to preserve data integrity before propagating failure
+          if (committedAppIds.length > 0) {
+            try {
+              for (let i = 0; i < committedAppIds.length; i += CHUNK_SIZE) {
+                const chunk = committedAppIds.slice(i, i + CHUNK_SIZE);
+                const rollbackBatch = writeBatch(db);
+                const now = new Date().toISOString();
+                for (const appId of chunk) {
+                  const appRef = doc(db, 'users', userId, 'applications', appId);
+                  rollbackBatch.update(appRef, {
+                    contactIds: arrayUnion(...ids),
+                    updatedAt: now,
+                  });
+                }
+                await commitBatchWithRetry(rollbackBatch);
+              }
+            } catch (rollbackErr) {
+              console.error('Failed to rollback application links after partial cleanup error:', rollbackErr);
+            }
+          }
+          throw appCleanupErr;
+        }
       }
 
-      // 3. Commit contact deletions only after application-link cleanup has succeeded
-      await commitInChunks(ids, (batch, id) => {
-        batch.delete(doc(db, 'users', userId, 'contacts', id));
-      });
+      // 3. Commit contact deletions only after application-link cleanup has fully succeeded.
+      // Uses commitBatchWithRetry to ensure durable and idempotent completion.
+      for (let i = 0; i < ids.length; i += CHUNK_SIZE) {
+        const chunk = ids.slice(i, i + CHUNK_SIZE);
+        const batch = writeBatch(db);
+        for (const id of chunk) {
+          batch.delete(doc(db, 'users', userId, 'contacts', id));
+        }
+        await commitBatchWithRetry(batch);
+      }
     } catch (err) {
       console.error('Failed bulk delete in Firestore:', err);
       throw err;
