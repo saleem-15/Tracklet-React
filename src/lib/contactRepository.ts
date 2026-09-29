@@ -9,6 +9,7 @@ import {
   deleteDoc, 
   doc, 
   writeBatch,
+  runTransaction,
   arrayUnion,
   arrayRemove,
   deleteField
@@ -206,95 +207,107 @@ export class ContactRepository {
 
   /**
    * Delete a contact at /users/{userId}/contacts/{id} and cascade remove from linked applications.
+   * Delegates to batchDelete to ensure atomic, race-safe cleanup across linked applications.
    */
   static async deleteContact(
     id: string,
     userId?: string,
     linkedAppIds: string[] = []
   ): Promise<void> {
-    if (userId) {
-      try {
-        const contactRef = doc(db, 'users', userId, 'contacts', id);
-        await deleteDoc(contactRef);
-
-        // Cascade cleanup in linked applications in Firestore
-        if (linkedAppIds.length > 0) {
-          await commitInChunks(linkedAppIds, (batch, appId) => {
-            const appRef = doc(db, 'users', userId, 'applications', appId);
-            batch.update(appRef, {
-              contactIds: arrayRemove(id),
-              updatedAt: new Date().toISOString(),
-            });
-          });
-        }
-      } catch (err) {
-        console.error('Failed to delete contact from Firestore:', err);
-        throw err;
-      }
-    }
+    return this.batchDelete([id], userId, linkedAppIds);
   }
 
   /**
    * Batch delete multiple contacts and cascade remove them from linked applications.
-   * Verifies existing application documents to prevent failures from stale links,
-   * and executes contact deletion and application cleanup atomically when within single batch limit.
+   * Uses a race-safe transaction when operations fit within the transaction limit (<= 450 ops),
+   * reading each linked application inside the transaction and skipping any that no longer exist.
+   * For large operations exceeding transaction limits, cleans up surviving application links FIRST
+   * before committing contact deletions so that a cleanup failure cannot leave stale links on surviving applications.
    */
   static async batchDelete(
     ids: string[],
     userId?: string,
     linkedAppIds: string[] = []
   ): Promise<void> {
-    if (userId) {
-      try {
-        // Verify which linked application documents still exist in Firestore before applying cascade updates
-        const validAppIds: string[] = [];
-        if (linkedAppIds.length > 0) {
-          const appSnapshots = await Promise.all(
-            linkedAppIds.map((appId) => getDoc(doc(db, 'users', userId, 'applications', appId)))
-          );
-          for (let i = 0; i < appSnapshots.length; i++) {
-            if (appSnapshots[i].exists()) {
-              validAppIds.push(linkedAppIds[i]);
-            }
-          }
-        }
+    if (!userId || ids.length === 0) return;
 
-        // If total writes fit in a single batch (<= 450), commit contact deletions and application link cleanups atomically together
-        const totalOps = ids.length + validAppIds.length;
-        if (totalOps <= 450) {
+    try {
+      const totalOps = ids.length + linkedAppIds.length;
+
+      // Fast-path: no linked applications to cascade
+      if (linkedAppIds.length === 0) {
+        if (ids.length <= 450) {
           const batch = writeBatch(db);
           for (const id of ids) {
             batch.delete(doc(db, 'users', userId, 'contacts', id));
           }
-          const now = new Date().toISOString();
-          for (const appId of validAppIds) {
-            batch.update(doc(db, 'users', userId, 'applications', appId), {
-              contactIds: arrayRemove(...ids),
-              updatedAt: now,
-            });
-          }
           await batch.commit();
-          return;
-        }
-
-        // If operations exceed a single batch, execute in chunks
-        await commitInChunks(ids, (batch, id) => {
-          batch.delete(doc(db, 'users', userId, 'contacts', id));
-        });
-
-        if (validAppIds.length > 0 && ids.length > 0) {
-          await commitInChunks(validAppIds, (batch, appId) => {
-            const appRef = doc(db, 'users', userId, 'applications', appId);
-            batch.update(appRef, {
-              contactIds: arrayRemove(...ids),
-              updatedAt: new Date().toISOString(),
-            });
+        } else {
+          await commitInChunks(ids, (batch, id) => {
+            batch.delete(doc(db, 'users', userId, 'contacts', id));
           });
         }
-      } catch (err) {
-        console.error('Failed bulk delete in Firestore:', err);
-        throw err;
+        return;
       }
+
+      // Race-safe atomic transaction path (<= 450 ops)
+      if (totalOps <= 450) {
+        await runTransaction(db, async (transaction) => {
+          // In Firestore transactions, all reads MUST precede all writes.
+          const appSnapshots = await Promise.all(
+            linkedAppIds.map((appId) =>
+              transaction.get(doc(db, 'users', userId, 'applications', appId))
+            )
+          );
+
+          const now = new Date().toISOString();
+          for (const appSnap of appSnapshots) {
+            if (appSnap.exists()) {
+              transaction.update(appSnap.ref, {
+                contactIds: arrayRemove(...ids),
+                updatedAt: now,
+              });
+            }
+          }
+
+          for (const id of ids) {
+            transaction.delete(doc(db, 'users', userId, 'contacts', id));
+          }
+        });
+        return;
+      }
+
+      // Large-operation path (> 450 ops):
+      // 1. Verify which linked application documents currently exist in Firestore
+      const appSnapshots = await Promise.all(
+        linkedAppIds.map((appId) => getDoc(doc(db, 'users', userId, 'applications', appId)))
+      );
+      const validAppIds: string[] = [];
+      for (let i = 0; i < appSnapshots.length; i++) {
+        if (appSnapshots[i].exists()) {
+          validAppIds.push(linkedAppIds[i]);
+        }
+      }
+
+      // 2. Clean up surviving application links FIRST so that if this step fails,
+      // contact deletions are never committed and no stale links remain on surviving applications.
+      if (validAppIds.length > 0) {
+        await commitInChunks(validAppIds, (batch, appId) => {
+          const appRef = doc(db, 'users', userId, 'applications', appId);
+          batch.update(appRef, {
+            contactIds: arrayRemove(...ids),
+            updatedAt: new Date().toISOString(),
+          });
+        });
+      }
+
+      // 3. Commit contact deletions only after application-link cleanup has succeeded
+      await commitInChunks(ids, (batch, id) => {
+        batch.delete(doc(db, 'users', userId, 'contacts', id));
+      });
+    } catch (err) {
+      console.error('Failed bulk delete in Firestore:', err);
+      throw err;
     }
   }
 
