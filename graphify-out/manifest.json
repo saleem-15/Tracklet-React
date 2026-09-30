@@ -1145,8 +1145,8 @@
     "semantic_hash": "4cc5b2ff908d808e332c0c338ac7be3b"
   },
   "src/lib/contactRepository.ts": {
-    "mtime": 1790671868.3345194,
-    "ast_hash": "3fb78e6f04bb5a44ff09d29df92cbe88",
+    "mtime": 1790678683.8523262,
+    "ast_hash": "4fb44392b064f2c87965c713ff34f93b",
     "semantic_hash": ""
   },
   "src/lib/contactUtils.ts": {
@@ -1505,8 +1505,8 @@
     "semantic_hash": ""
   },
   "src/hooks/useContacts.ts": {
-    "mtime": 1790593203.2950366,
-    "ast_hash": "6e98fe3683aa4ac870d6186e4e2ff1b7",
+    "mtime": 1790678714.506664,
+    "ast_hash": "5b3b0b2c04571aae1aa9291a792e84ab",
     "semantic_hash": ""
   },
   "src/hooks/useExpirySettings.ts": {
@@ -1989,11 +1989,6 @@
     "ast_hash": "90a6ebd6f14d804a98a3b7d8f9d5b4d9",
     "semantic_hash": ""
   },
-  "docs/ARCHITECTURE_REFACTOR.md": {
-    "mtime": 1790593895.7346134,
-    "ast_hash": "5435a4e02f3196c9f1c9c1100731e6c3",
-    "semantic_hash": ""
-  },
   "docs/UX_IMPROVEMENTS_AND_ROADMAP.md": {
     "mtime": 1788534901.197575,
     "ast_hash": "7689130c770572348f3cb5a650e0a1a0",
@@ -2040,8 +2035,8 @@
     "semantic_hash": ""
   },
   "docs/legacy-contacts-migration-cleanup.md": {
-    "mtime": 1788379166.9718344,
-    "ast_hash": "78bdc11be1632682ae0b9c9163b6957b",
+    "mtime": 1790761151.9297793,
+    "ast_hash": "a69f59e96080cc8edb371fdd13f5a2e3",
     "semantic_hash": ""
   },
   "docs/user-flow-and-ux-audit.md": {
@@ -2334,21 +2329,6 @@
     "ast_hash": "a50883cbd2fa4496666df4f1ae3c3d3a",
     "semantic_hash": ""
   },
-  "docs/architecture/PHASE_1_DOMAIN_HOOKS.md": {
-    "mtime": 1790596779.1344142,
-    "ast_hash": "36d3a52fd760176ef21a0c5aaae78ce1",
-    "semantic_hash": ""
-  },
-  "docs/architecture/PHASE_2_PRESENTATION_LAYOUT.md": {
-    "mtime": 1790596793.0011916,
-    "ast_hash": "c460abc89a78c11a8097178df52904c0",
-    "semantic_hash": ""
-  },
-  "docs/architecture/README.md": {
-    "mtime": 1790604336.2650197,
-    "ast_hash": "9ddbc500497ee7a6a51ea0c7879d3311",
-    "semantic_hash": ""
-  },
   "src/context/AppProviders.tsx": {
     "mtime": 1790600729.1104472,
     "ast_hash": "504a6b4d5112bce4d02f6fe1ec3a479e",
@@ -2379,11 +2359,6 @@
     "ast_hash": "35e372c491354a6fa4446064e5a42a67",
     "semantic_hash": ""
   },
-  "docs/architecture/PHASE_3_CONTEXT_PROVIDERS.md": {
-    "mtime": 1790604346.3599358,
-    "ast_hash": "11ec4ace8706b991abeea385cae7a7fc",
-    "semantic_hash": ""
-  },
   "src/components/layout/index.ts": {
     "mtime": 1790601455.4981308,
     "ast_hash": "601aa48ac0dad15fd10f6b1dd0d70348",
@@ -2395,8 +2370,28 @@
     "semantic_hash": ""
   },
   "tests/unit/contactRepository.test.ts": {
-    "mtime": 1790671887.0790703,
-    "ast_hash": "faef73f2ba5b381992c5b0ed86ee1b96",
+    "mtime": 1790678739.6079073,
+    "ast_hash": "a88b29a0b941d71a60f423dbe56bd4e3",
+    "semantic_hash": ""
+  },
+  "docs/architecture-migration/PHASE_1_DOMAIN_HOOKS.md": {
+    "mtime": 1790596779.1344142,
+    "ast_hash": "36d3a52fd760176ef21a0c5aaae78ce1",
+    "semantic_hash": ""
+  },
+  "docs/architecture-migration/PHASE_2_PRESENTATION_LAYOUT.md": {
+    "mtime": 1790596793.0011916,
+    "ast_hash": "c460abc89a78c11a8097178df52904c0",
+    "semantic_hash": ""
+  },
+  "docs/architecture-migration/PHASE_3_CONTEXT_PROVIDERS.md": {
+    "mtime": 1790604346.3599358,
+    "ast_hash": "11ec4ace8706b991abeea385cae7a7fc",
+    "semantic_hash": ""
+  },
+  "docs/architecture-migration/REFACTORING_ROADMAP.md": {
+    "mtime": 1790690264.9275908,
+    "ast_hash": "c6ae57b1a9bc33ec9a92811fe097f9c9",
     "semantic_hash": ""
   }
 }
