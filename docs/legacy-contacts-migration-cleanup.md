@@ -22,8 +22,8 @@ Delete the file:
 rm src/lib/contactMigration.ts
 ```
 
-### 2. Update `src/App.tsx`
-- Remove: `import { migrateLegacyEmbeddedContacts } from './lib/contactMigration';`
+### 2. Update `src/hooks/useDataLoader.ts` (or `src/App.tsx`)
+- Remove: `import { migrateLegacyEmbeddedContacts } from '../lib/contactMigration';`
 - In `loadData()`: Remove the calls to `migrateLegacyEmbeddedContacts(...)`. Set loaded data directly:
   ```ts
   setApplications(loadedApps);

@@ -1,8 +1,6 @@
-# Tracklet Architecture & Clean Code Roadmap
+# Tracklet Architectural Refactoring Roadmap & Migration Log
 
-Welcome to the architectural specifications and phased migration logs for **Tracklet** (React 19, TypeScript, Vite, TailwindCSS v4, Firebase).
-
----
+This document tracks the phased architectural refactoring initiative and migration logs for **Tracklet** (migrating from a monolithic `App.tsx` state orchestrator to Clean Architecture and Scoped Feature Providers).
 
 ## 1. Architectural Philosophy & Mental Model
 
