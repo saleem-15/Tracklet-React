@@ -1500,8 +1500,8 @@
     "semantic_hash": "9dc5a586aabe1127d5d06602c7b0c7de"
   },
   "src/hooks/useApplications.ts": {
-    "mtime": 1791025563.4147396,
-    "ast_hash": "05fb7513ede4aa6c2e40c0cef1e6e5fd",
+    "mtime": 1791019334.6974926,
+    "ast_hash": "f7fe77aaad48f38b2fd60d531dc2e7cd",
     "semantic_hash": ""
   },
   "src/hooks/useContacts.ts": {
@@ -1535,8 +1535,8 @@
     "semantic_hash": ""
   },
   "tests/unit/useApplications.test.tsx": {
-    "mtime": 1791025743.0354185,
-    "ast_hash": "279b4ce39c99c8d07558f7894f84f528",
+    "mtime": 1791019334.6995006,
+    "ast_hash": "258344495ec38348bd7e5b4186c1ad9d",
     "semantic_hash": ""
   },
   "tests/unit/useContacts.test.tsx": {
@@ -2370,8 +2370,8 @@
     "semantic_hash": ""
   },
   "tests/unit/contactRepository.test.ts": {
-    "mtime": 1791025504.240672,
-    "ast_hash": "baca54ffaf8bea1d4e398a5ecb79e0fa",
+    "mtime": 1791019334.6995006,
+    "ast_hash": "acfe936ce7b772f4baf5c012ea5a43e2",
     "semantic_hash": ""
   },
   "docs/architecture-migration/PHASE_1_DOMAIN_HOOKS.md": {
