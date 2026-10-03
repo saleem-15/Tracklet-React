@@ -582,6 +582,13 @@ export function useApplications({
         await ApplicationRepository.batchDelete(purgedAppIds, user.uid);
       } catch (err) {
         console.error('Failed to sync merged duplicates to Firestore:', err);
+        try {
+          const reloaded = await ApplicationRepository.loadApplications(user.uid);
+          applicationsRef.current = reloaded;
+          setApplications(reloaded);
+        } catch (reloadErr) {
+          console.error('Failed to reload applications after merge sync failure:', reloadErr);
+        }
         addToast('error', 'Sync Failed', 'Merged locally, but failed to sync changes to cloud.');
         return;
       }

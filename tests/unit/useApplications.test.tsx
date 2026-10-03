@@ -3,12 +3,14 @@ import React, { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { useApplications, UseApplicationsReturn } from '../../src/hooks/useApplications';
 import { DEFAULT_FILTER } from '../../src/hooks/useUrlNavigation';
-import { FilterState } from '../../src/types';
+import { FilterState, Application } from '../../src/types';
+import { ApplicationRepository } from '../../src/lib/applicationRepository';
 
 let host: HTMLDivElement | null = null;
 let root: Root | null = null;
 let hookResult: UseApplicationsReturn;
 let testFilter: FilterState = { ...DEFAULT_FILTER };
+let testUser: any = null;
 let mockAddToast = vi.fn();
 let currentSelectedAppId: string | null = null;
 let mockSetSelectedAppId = vi.fn((id: string | null) => {
@@ -17,7 +19,7 @@ let mockSetSelectedAppId = vi.fn((id: string | null) => {
 
 function Harness() {
   hookResult = useApplications({
-    user: null,
+    user: testUser,
     filter: testFilter,
     addToast: mockAddToast,
     selectedAppId: currentSelectedAppId,
@@ -45,6 +47,7 @@ describe('useApplications hook', () => {
     localStorage.clear();
     vi.restoreAllMocks();
     testFilter = { ...DEFAULT_FILTER };
+    testUser = null;
     currentSelectedAppId = null;
   });
 
@@ -144,5 +147,67 @@ describe('useApplications hook', () => {
 
     expect(hookResult.applications.length).toBe(1);
     expect(hookResult.applications[0].company).toBe('GitHub');
+  });
+
+  it('in handleMergeAllDuplicates, reloads persisted applications if Firestore sync fails', async () => {
+    testUser = { uid: 'user-1', emailVerified: true };
+    mountHarness();
+
+    const now = '2026-09-01T00:00:00.000Z';
+    const appA: Application = {
+      id: 'app-1',
+      userId: 'user-1',
+      company: 'Acme',
+      role: 'Engineer',
+      status: 'Applied',
+      platform: 'LinkedIn',
+      dateApplied: '2026-09-01',
+      stageUpdatedAt: now,
+      createdAt: now,
+      updatedAt: now,
+    };
+    const appB: Application = {
+      id: 'app-2',
+      userId: 'user-1',
+      company: 'Acme',
+      role: 'Engineer',
+      status: 'Applied',
+      platform: 'LinkedIn',
+      dateApplied: '2026-09-02',
+      stageUpdatedAt: now,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    act(() => {
+      hookResult.setApplications([appA, appB]);
+    });
+
+    const persistedApps: Application[] = [
+      {
+        id: 'app-1',
+        userId: 'user-1',
+        company: 'Acme',
+        role: 'Engineer',
+        status: 'Applied',
+        platform: 'LinkedIn',
+        dateApplied: '2026-09-01',
+        stageUpdatedAt: now,
+        createdAt: now,
+        updatedAt: now,
+      },
+    ];
+
+    vi.spyOn(ApplicationRepository, 'updateApplication').mockRejectedValue(new Error('Firestore network error'));
+    const loadSpy = vi.spyOn(ApplicationRepository, 'loadApplications').mockResolvedValue(persistedApps);
+
+    await act(async () => {
+      await hookResult.handleMergeAllDuplicates();
+    });
+
+    expect(loadSpy).toHaveBeenCalledWith('user-1');
+    expect(hookResult.applications).toEqual(persistedApps);
+    expect(hookResult.applicationsRef.current).toEqual(persistedApps);
+    expect(mockAddToast).toHaveBeenCalledWith('error', 'Sync Failed', expect.stringContaining('failed to sync'));
   });
 });

@@ -109,18 +109,17 @@ describe('ContactRepository.batchDelete', () => {
     const updateCalls: any[] = [];
     vi.spyOn(firebaseModule, 'writeBatch').mockImplementation(() => {
       const currentBatchId = ++batchCount;
+      const batchUpdatePaths: string[] = [];
       return {
         update: vi.fn().mockImplementation((ref: any, data: any) => {
+          batchUpdatePaths.push(ref.path || '');
           updateCalls.push({ batchId: currentBatchId, ref, data });
         }),
         delete: vi.fn(),
         commit: vi.fn().mockImplementation(async () => {
-          // Batch 1 (apps 0-449) succeeds
-          // Batch 2 (apps 450-499) fails even after retries
-          if (currentBatchId === 2) {
+          if (batchUpdatePaths.some((p) => p.includes('app-450'))) {
             throw new Error('Network timeout on chunk 2');
           }
-          // Batch 3 (rollback compensation) succeeds
         }),
       } as any;
     });
@@ -129,8 +128,8 @@ describe('ContactRepository.batchDelete', () => {
       ContactRepository.batchDelete(largeIds, 'user-123', linkedAppIds)
     ).rejects.toThrow('Network timeout on chunk 2');
 
-    // Verify compensation: batch 3 should have performed rollback on the 450 apps from batch 1
-    const rollbackUpdates = updateCalls.filter((u) => u.batchId === 3);
+    // Verify compensation: rollback batch 5 should have performed rollback on the 450 apps from batch 1
+    const rollbackUpdates = updateCalls.filter((u) => u.batchId === 5);
     expect(rollbackUpdates.length).toBe(450);
   });
 
@@ -155,23 +154,21 @@ describe('ContactRepository.batchDelete', () => {
     const updateCalls: any[] = [];
     vi.spyOn(firebaseModule, 'writeBatch').mockImplementation(() => {
       const currentBatchId = ++batchCount;
+      const batchDeletePaths: string[] = [];
       return {
         update: vi.fn().mockImplementation((ref: any, data: any) => {
           updateCalls.push({ batchId: currentBatchId, ref, data });
         }),
-        delete: vi.fn(),
+        delete: vi.fn().mockImplementation((ref: any) => {
+          batchDeletePaths.push(ref.path || '');
+        }),
         set: vi.fn().mockImplementation((ref: any, data: any) => {
           setCalls.push({ batchId: currentBatchId, ref, data });
         }),
         commit: vi.fn().mockImplementation(async () => {
-          // Batch 1: app link cleanup (succeeds)
-          // Batch 2: contact delete chunk 1 (contacts 0-449) (succeeds)
-          // Batch 3: contact delete chunk 2 (contacts 450-499) (fails after retries)
-          if (currentBatchId === 3) {
+          if (batchDeletePaths.some((p) => p.includes('c-450'))) {
             throw new Error('Firestore quota exceeded during contact deletion');
           }
-          // Batch 4: restore contacts (succeeds)
-          // Batch 5: restore app links (succeeds)
         }),
       } as any;
     });
@@ -180,10 +177,10 @@ describe('ContactRepository.batchDelete', () => {
       ContactRepository.batchDelete(ids, 'user-123', ['app-1'], contacts)
     ).rejects.toThrow('Firestore quota exceeded during contact deletion');
 
-    // Batch 4 must have restored the 450 contacts from Batch 2
+    // Batch 6 must have restored the 450 contacts from Batch 2
     expect(setCalls.length).toBe(450);
-    // Batch 5 must have restored the application links
-    const rollbackAppUpdates = updateCalls.filter((u) => u.batchId === 5);
+    // Batch 7 must have restored the application links
+    const rollbackAppUpdates = updateCalls.filter((u) => u.batchId === 7);
     expect(rollbackAppUpdates.length).toBe(1);
   });
 });
