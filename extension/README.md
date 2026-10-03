@@ -6,13 +6,30 @@ Save job applications from any website (LinkedIn, Indeed, Greenhouse, Lever, Ott
 
 ## 🚀 Quick Setup / Installation
 
-### Google Chrome / Microsoft Edge / Brave / Opera
+### 📥 Option A: For Testers (Recommended)
 
-1. Open your browser and navigate to `chrome://extensions` (or `edge://extensions`).
-2. Enable **Developer mode** using the toggle in the top-right corner.
-3. Click the **Load unpacked** button.
-4. Select the `extension/` directory inside this repository (`d:\Programming\Tracklet\extension`).
-5. Pin **Tracklet** to your extension toolbar for quick access!
+[![Download Latest Extension](https://img.shields.io/badge/Download_Extension-Latest_Release-2563eb?style=for-the-badge&logo=googlechrome&logoColor=white)](https://github.com/saleem-15/Tracklet-React/releases/latest/download/tracklet-extension.zip)
+
+1. **Download:** Click the button above or [download `tracklet-extension.zip`](https://github.com/saleem-15/Tracklet-React/releases/latest/download/tracklet-extension.zip).
+2. **Extract:** Unzip `tracklet-extension.zip` into a permanent folder on your computer (e.g. `Downloads/TrackletExtension` or `Documents/TrackletExtension`).
+   > ⚠️ **Important:** Do not delete or move this folder after installing, as Chrome runs the extension directly from it.
+3. **Open Extensions Page:** Open Google Chrome (or Edge / Brave) and navigate to `chrome://extensions` in the address bar.
+4. **Developer Mode:** In the top-right corner, toggle **Developer mode** to ON.
+5. **Load Unpacked:** Click the **Load unpacked** button in the top-left and select the unzipped folder containing `manifest.json`.
+6. **Pin:** Click the puzzle piece icon (🧩) in the Chrome toolbar and pin **Tracklet** for quick access.
+
+#### 🔄 How to Update When a New Version is Released
+1. Download the latest `tracklet-extension.zip` from the link above.
+2. Unzip and replace the files inside your existing extension folder.
+3. In `chrome://extensions`, click the **Reload** (circular arrow) icon on the Tracklet card.
+
+---
+
+### 💻 Option B: For Developers (From Source)
+
+1. Open your browser and navigate to `chrome://extensions`.
+2. Enable **Developer mode** in the top-right corner.
+3. Click **Load unpacked** and select the `extension/` folder inside your cloned repository.
 
 ---
 
