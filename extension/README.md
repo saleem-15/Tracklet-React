@@ -1,6 +1,6 @@
-# 🧩 Tracklet Browser Extension — Job Application Saver
+# 🧩 Tracklet Browser Extension — Job Application Saver & Webmail Companion
 
-Save job applications from any website (LinkedIn, Indeed, Greenhouse, Lever, Otta, Wellfound, company career pages, etc.) directly into your Tracklet workspace with one click.
+Save job applications from any website (LinkedIn, Indeed, Greenhouse, Lever, Otta, Wellfound, company career pages, etc.) and log interview updates directly from webmail (Gmail, Outlook) into your Tracklet workspace with one click.
 
 ---
 
@@ -35,23 +35,43 @@ Save job applications from any website (LinkedIn, Indeed, Greenhouse, Lever, Ott
 
 ## ⚡ How to Use
 
-1. **Clip from Any Job Board:** Open any job post (e.g. on LinkedIn, Indeed, or a company careers page).
-2. **Open Extension Popup:** Click the Tracklet extension icon or press **`Alt + Shift + A`** (Mac: `Option + Shift + A`).
+### 💼 1. Job Application Clipper (Any Job Board)
+
+1. **Navigate to a Job Post:** Open any job posting (LinkedIn, Indeed, Greenhouse, Lever, Otta, Wellfound, or company careers pages).
+2. **Open Extension:** Click the Tracklet extension icon or press **`Alt + Shift + A`** (Mac: `Option + Shift + A`).
 3. **Smart Auto-Fill:** The extension automatically extracts:
    - **Company Name** (with domain logo preview)
    - **Job Role / Title**
    - **Platform** (LinkedIn, Indeed, Lever, Greenhouse, etc.)
    - **Job Link URL**
-   - **Highlights & Notes** (pre-fills text you highlighted on the webpage)
-4. **Save Application:** Click **Save Application** (or press `Enter ↵`).
+   - **Highlights & Notes** (pre-fills any text you highlighted on the webpage)
+4. **Save Application:** Select a stage and click **Save Application** (or press `Enter ↵`).
+
+---
+
+### ✉️ 2. Email Clipping & Webmail Companion (Gmail & Outlook)
+
+Tracklet turns into a dedicated email companion whenever you are in Gmail (`mail.google.com`) or Outlook (`outlook.live.com` / `office.com`):
+
+1. **Open an Email Thread:** Open any recruiter, interview, or application update email.
+2. **Open Extension:** Click the Tracklet extension icon or press **`Alt + Shift + A`**.
+3. **Companion Mode Auto-Detect:** The extension automatically switches to **Email Log View** and captures:
+   - **Counterparty & Recruiter Info:** Names and email addresses (intelligently discerning inbound vs. outbound threads).
+   - **Subject & Timestamp:** Clean subject line and exact date/time sent.
+   - **Sanitized Snippet:** Clean preview of the message content.
+   - **Direct Email Link:** Stores a deep link back to that specific email thread.
+4. **Smart Match & Stage Advance:**
+   - Automatically suggests matching companies from your existing Tracklet pipeline.
+   - Update the application's stage on the fly (e.g. advance to **Interview** or **Offer**) right as you log the email.
+5. **Clip as Job Posting Toggle:** If the email itself contains a new job posting or newsletter lead rather than an update, click *"Clip as job posting instead"* at the bottom to switch back to the job clipper.
 
 ---
 
 ## 🔄 Real-Time Web App Integration
 
-- **Live Sync:** If Tracklet is open in another browser tab, saved applications appear on your pipeline board instantly with a toast notification.
-- **Offline Storage Sync:** If Tracklet is closed when you save, applications are queued in extension local storage and auto-synced the next time you open Tracklet.
-- **Right-Click Context Menu:** Highlight text on any page $\rightarrow$ Right click $\rightarrow$ **Save Job to Tracklet**.
+- **Live Sync:** If Tracklet is open in another browser tab, clipped jobs and logged emails appear in your pipeline and email timeline instantly with a toast receipt.
+- **Offline Storage Sync:** If Tracklet is closed, clipped applications and emails are queued safely in extension local storage and auto-synced the moment you next open Tracklet.
+- **Right-Click Context Menu:** Highlight text on any page $\rightarrow$ Right-click $\rightarrow$ **Save Job to Tracklet**.
 
 ---
 
