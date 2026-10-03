@@ -4,12 +4,14 @@ import { FilterState, JobPlatform, ApplicationStatus, ActiveTab, WorkLocation, E
 import { FilterSelectDropdown } from './FilterSelectDropdown';
 import { MobileFilterDrawer } from './MobileFilterDrawer';
 import { UI_TOKENS } from '../theme/tokens';
+import { useNavigation } from '../context/NavigationContext';
+import { useApplicationsContext } from '../context/ApplicationsContext';
 
-interface TopBarProps {
-  filter: FilterState;
-  setFilter: React.Dispatch<React.SetStateAction<FilterState>>;
-  onOpenAddModal: () => void;
-  totalFilteredCount: number;
+export interface TopBarProps {
+  filter?: FilterState;
+  setFilter?: React.Dispatch<React.SetStateAction<FilterState>>;
+  onOpenAddModal?: () => void;
+  totalFilteredCount?: number;
   onExportCSV?: () => void;
   activeTab?: ActiveTab;
   onOpenMobileSidebar?: () => void;
@@ -73,14 +75,16 @@ const DATE_OPTIONS = [
   { label: 'Last 60 days', value: '60days' },
 ];
 
-export const TopBar: React.FC<TopBarProps> = ({
-  filter,
-  setFilter,
-  onOpenAddModal,
-  totalFilteredCount,
-  activeTab,
-  onOpenMobileSidebar,
-}) => {
+export const TopBar: React.FC<TopBarProps> = (props) => {
+  const nav = useNavigation();
+  const apps = useApplicationsContext();
+
+  const filter = props.filter ?? nav.filter;
+  const setFilter = props.setFilter ?? nav.setFilter;
+  const onOpenAddModal = props.onOpenAddModal ?? nav.openAddModal;
+  const totalFilteredCount = props.totalFilteredCount ?? apps.filteredAndSortedApplications.length;
+  const activeTab = props.activeTab ?? nav.activeTab;
+  const onOpenMobileSidebar = props.onOpenMobileSidebar ?? nav.openMobileSidebar;
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
 

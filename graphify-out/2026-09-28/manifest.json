@@ -645,8 +645,8 @@
     "semantic_hash": "74e941086226dbc8c54afe7c9f1754c7"
   },
   "src/App.tsx": {
-    "mtime": 1791019334.6870615,
-    "ast_hash": "6de9baf3aa3efadaae21a7a4827a735b",
+    "mtime": 1790601598.34875,
+    "ast_hash": "733cff010223e2207295363069bbabfe",
     "semantic_hash": ""
   },
   "src/components/AccountSettingsCard.tsx": {
@@ -780,7 +780,7 @@
     "semantic_hash": "08d06d96a587ca7f8ce147d990b6870c"
   },
   "src/components/Sidebar.tsx": {
-    "mtime": 1791019334.6870615,
+    "mtime": 1790601036.11522,
     "ast_hash": "cdb10446540fab65955597447aae9671",
     "semantic_hash": ""
   },
@@ -810,7 +810,7 @@
     "semantic_hash": "00df6c02348ebccb25ac2a1a1bc82212"
   },
   "src/components/TopBar.tsx": {
-    "mtime": 1791019334.6870615,
+    "mtime": 1790600949.6767218,
     "ast_hash": "b9d0ce94fd013d76c75fe3d74d5ae0d8",
     "semantic_hash": ""
   },
@@ -1115,7 +1115,7 @@
     "semantic_hash": "f831608343980ed254c2c9e89bbc6a0d"
   },
   "src/lib/applicationRepository.ts": {
-    "mtime": 1791019334.6995006,
+    "mtime": 1790591479.1055942,
     "ast_hash": "cc86e7128db1bfd8b06e406040691ef4",
     "semantic_hash": ""
   },
@@ -1135,7 +1135,7 @@
     "semantic_hash": "923a50fb875ff28c150e3ccc2307f5d5"
   },
   "src/lib/constants.ts": {
-    "mtime": 1791019334.6995006,
+    "mtime": 1790591352.316767,
     "ast_hash": "ae8782fe079ce4ff5a1643a9e2070f1d",
     "semantic_hash": ""
   },
@@ -1145,8 +1145,8 @@
     "semantic_hash": "4cc5b2ff908d808e332c0c338ac7be3b"
   },
   "src/lib/contactRepository.ts": {
-    "mtime": 1791019572.7479868,
-    "ast_hash": "176f2dc71fd82904ee52cbd3a0895557",
+    "mtime": 1790603818.7104487,
+    "ast_hash": "0572500ff0455f69ee594c074414a9d4",
     "semantic_hash": ""
   },
   "src/lib/contactUtils.ts": {
@@ -1265,9 +1265,9 @@
     "semantic_hash": "04fa0aa7b0a429c146e3170ebbadbea4"
   },
   "src/lib/firebase.ts": {
-    "mtime": 1791019334.6995006,
-    "ast_hash": "c3335427fe6de689274906fa316ea75d",
-    "semantic_hash": ""
+    "mtime": 1788379167.0173614,
+    "ast_hash": "fa77a1ad4edaf064a542866960df8983",
+    "semantic_hash": "fa77a1ad4edaf064a542866960df8983"
   },
   "src/lib/firestoreUtils.ts": {
     "mtime": 1788379167.0183628,
@@ -1500,73 +1500,73 @@
     "semantic_hash": "9dc5a586aabe1127d5d06602c7b0c7de"
   },
   "src/hooks/useApplications.ts": {
-    "mtime": 1791025563.4147396,
-    "ast_hash": "05fb7513ede4aa6c2e40c0cef1e6e5fd",
+    "mtime": 1790596753.865606,
+    "ast_hash": "a8daa60df8479ef104877634749cd1cc",
     "semantic_hash": ""
   },
   "src/hooks/useContacts.ts": {
-    "mtime": 1791019517.1981077,
-    "ast_hash": "8fbea22fc124a18d7334857bf352463b",
+    "mtime": 1790593203.2950366,
+    "ast_hash": "6e98fe3683aa4ac870d6186e4e2ff1b7",
     "semantic_hash": ""
   },
   "src/hooks/useExpirySettings.ts": {
-    "mtime": 1791019334.6995006,
-    "ast_hash": "9dfc9ff17ea6c4895394cc31932c148b",
+    "mtime": 1790580859.3856108,
+    "ast_hash": "c3f4ca14d5f01c7b564f65862731b7b0",
     "semantic_hash": ""
   },
   "src/hooks/useExtensionSync.ts": {
-    "mtime": 1791019334.6995006,
-    "ast_hash": "38631ba09aafc0c5d68f80df75e1b5f0",
+    "mtime": 1790603788.6634398,
+    "ast_hash": "97021881bed07f1303e6086e05fa6ef8",
     "semantic_hash": ""
   },
   "src/hooks/useGuestMigration.ts": {
-    "mtime": 1791019611.2753642,
-    "ast_hash": "e42f44d2e64254e59bf73fbfd222e098",
+    "mtime": 1790591389.7261536,
+    "ast_hash": "49f116dfd442d4168c01fdbd69d53fc3",
     "semantic_hash": ""
   },
   "src/hooks/useToast.ts": {
-    "mtime": 1791019334.6995006,
-    "ast_hash": "f7f9947c7fe8af26a9a5e417e98a905c",
+    "mtime": 1790519211.857584,
+    "ast_hash": "28bf5a391c845bb345543ec375219092",
     "semantic_hash": ""
   },
   "src/hooks/useUrlNavigation.ts": {
-    "mtime": 1791019334.6995006,
-    "ast_hash": "fffa05d514e94c7535332c21634f4bea",
+    "mtime": 1790519692.251426,
+    "ast_hash": "fc09e55f177c6e915279b4b447bcdf5a",
     "semantic_hash": ""
   },
   "tests/unit/useApplications.test.tsx": {
-    "mtime": 1791025743.0354185,
-    "ast_hash": "279b4ce39c99c8d07558f7894f84f528",
+    "mtime": 1790581773.2735615,
+    "ast_hash": "f1aadb11be183f81ba7a62de9b1050d0",
     "semantic_hash": ""
   },
   "tests/unit/useContacts.test.tsx": {
-    "mtime": 1791019334.6995006,
-    "ast_hash": "6df40294fa1642fe7734e1f8788290b7",
+    "mtime": 1790581540.3246882,
+    "ast_hash": "5989d79cdb1630887a6fb46c2b559144",
     "semantic_hash": ""
   },
   "tests/unit/useExpirySettings.test.tsx": {
-    "mtime": 1791019334.6995006,
-    "ast_hash": "16963e2e9faac2fa56968a6379f01204",
+    "mtime": 1790580890.376255,
+    "ast_hash": "90652eb6d7139b282f4c6166429190ac",
     "semantic_hash": ""
   },
   "tests/unit/useExtensionSync.test.tsx": {
-    "mtime": 1791019334.6995006,
-    "ast_hash": "58b7656348e4acc4220f2f54d83c97d7",
+    "mtime": 1790584100.057744,
+    "ast_hash": "115a7d1b96e34a85feec265c9d585cc2",
     "semantic_hash": ""
   },
   "tests/unit/useGuestMigration.test.tsx": {
-    "mtime": 1791019334.6995006,
-    "ast_hash": "f423ee4179b5dfbb3e0c178d692caa1e",
+    "mtime": 1790591593.5302281,
+    "ast_hash": "070384ef4a7310d50c8dd67a3ee57aeb",
     "semantic_hash": ""
   },
   "tests/unit/useToast.test.tsx": {
-    "mtime": 1791019334.6995006,
-    "ast_hash": "efff6b7fda756f2e2276d90f71d2058b",
+    "mtime": 1790519234.0213814,
+    "ast_hash": "618e0afdb3d2b731abb88c35b3c7d8ca",
     "semantic_hash": ""
   },
   "tests/unit/useUrlNavigation.test.tsx": {
-    "mtime": 1791019334.6995006,
-    "ast_hash": "ba6fc72bacbfe9f84716edd325093954",
+    "mtime": 1790583989.6385057,
+    "ast_hash": "2f4b830646771f80874fcd1fd20af5f8",
     "semantic_hash": ""
   },
   ".agents/AGENTS.md": {
@@ -1989,6 +1989,11 @@
     "ast_hash": "90a6ebd6f14d804a98a3b7d8f9d5b4d9",
     "semantic_hash": ""
   },
+  "docs/ARCHITECTURE_REFACTOR.md": {
+    "mtime": 1790593895.7346134,
+    "ast_hash": "5435a4e02f3196c9f1c9c1100731e6c3",
+    "semantic_hash": ""
+  },
   "docs/UX_IMPROVEMENTS_AND_ROADMAP.md": {
     "mtime": 1788534901.197575,
     "ast_hash": "7689130c770572348f3cb5a650e0a1a0",
@@ -2035,8 +2040,8 @@
     "semantic_hash": ""
   },
   "docs/legacy-contacts-migration-cleanup.md": {
-    "mtime": 1791019334.5535212,
-    "ast_hash": "a69f59e96080cc8edb371fdd13f5a2e3",
+    "mtime": 1788379166.9718344,
+    "ast_hash": "78bdc11be1632682ae0b9c9163b6957b",
     "semantic_hash": ""
   },
   "docs/user-flow-and-ux-audit.md": {
@@ -2305,93 +2310,88 @@
     "semantic_hash": ""
   },
   "src/components/layout/AppModals.tsx": {
-    "mtime": 1791019334.6870615,
-    "ast_hash": "3667bbfcea30a04f5ed29ed3e9e46f8f",
+    "mtime": 1790600794.405537,
+    "ast_hash": "6e07a4da5511b8f65f17bc1d6e78558b",
     "semantic_hash": ""
   },
   "src/components/layout/AppSlideOvers.tsx": {
-    "mtime": 1791019334.689588,
-    "ast_hash": "e179c19b5f2e9448973acfe64d22b739",
+    "mtime": 1790600762.7870667,
+    "ast_hash": "d61881af0b2a1aa0bdaadff39f6e9c6e",
     "semantic_hash": ""
   },
   "src/components/layout/AuthGate.tsx": {
-    "mtime": 1791019334.689588,
-    "ast_hash": "b96648a1e50f8b6b8496a66d585777f0",
+    "mtime": 1790601082.8321495,
+    "ast_hash": "89dc16b1eecee53c2110279b14b932f5",
     "semantic_hash": ""
   },
   "src/components/layout/WorkspaceContent.tsx": {
-    "mtime": 1791019334.689588,
-    "ast_hash": "bee6f14130432e23487e90f505eb34d3",
+    "mtime": 1790600745.2886305,
+    "ast_hash": "5a34d708b548b3e084afdce3894bd01c",
     "semantic_hash": ""
   },
   "src/hooks/useDataLoader.ts": {
-    "mtime": 1791019334.6995006,
-    "ast_hash": "5fae4cbddbd2323eedf6555caa08f4ca",
+    "mtime": 1790596745.1319053,
+    "ast_hash": "a50883cbd2fa4496666df4f1ae3c3d3a",
+    "semantic_hash": ""
+  },
+  "docs/architecture/PHASE_1_DOMAIN_HOOKS.md": {
+    "mtime": 1790596779.1344142,
+    "ast_hash": "36d3a52fd760176ef21a0c5aaae78ce1",
+    "semantic_hash": ""
+  },
+  "docs/architecture/PHASE_2_PRESENTATION_LAYOUT.md": {
+    "mtime": 1790596793.0011916,
+    "ast_hash": "c460abc89a78c11a8097178df52904c0",
+    "semantic_hash": ""
+  },
+  "docs/architecture/README.md": {
+    "mtime": 1790600304.4416692,
+    "ast_hash": "0efab40d3fd55c6c0549a969e6c3e8c8",
     "semantic_hash": ""
   },
   "src/context/AppProviders.tsx": {
-    "mtime": 1791019334.689588,
-    "ast_hash": "bc7757cc3e549ffb60892f1fa7e1adf0",
+    "mtime": 1790600729.1104472,
+    "ast_hash": "504a6b4d5112bce4d02f6fe1ec3a479e",
     "semantic_hash": ""
   },
   "src/context/ApplicationsContext.tsx": {
-    "mtime": 1791019334.689588,
-    "ast_hash": "8d8cfb936683e35fc288492f577f977e",
+    "mtime": 1790603753.3080876,
+    "ast_hash": "666262e04c1e38afb0658a7b0f5d5040",
     "semantic_hash": ""
   },
   "src/context/ContactsContext.tsx": {
-    "mtime": 1791019334.689588,
-    "ast_hash": "70fff3675cc2955f6d2983b8312f93a0",
+    "mtime": 1790600710.639032,
+    "ast_hash": "ed7dd6ae287cecb5b25cab7bb7fc8f03",
     "semantic_hash": ""
   },
   "src/context/NavigationContext.tsx": {
-    "mtime": 1791019334.689588,
-    "ast_hash": "c9a2caf4606cea68013207b5134f49c4",
+    "mtime": 1790600644.5890176,
+    "ast_hash": "4d58b4e09253e033b741727902fd0a8b",
     "semantic_hash": ""
   },
   "src/context/SettingsContext.tsx": {
-    "mtime": 1791019334.689588,
-    "ast_hash": "60d7a981beb280ceacd6d9171c08e03e",
+    "mtime": 1790600605.2226212,
+    "ast_hash": "f4374a96d0bd54a30b6b4b9dc3081a51",
     "semantic_hash": ""
   },
   "src/context/ToastContext.tsx": {
-    "mtime": 1791019334.6970034,
-    "ast_hash": "c0dd94705ea7bf5d3242402bf145df58",
+    "mtime": 1790600594.6409554,
+    "ast_hash": "35e372c491354a6fa4446064e5a42a67",
+    "semantic_hash": ""
+  },
+  "docs/architecture/PHASE_3_CONTEXT_PROVIDERS.md": {
+    "mtime": 1790603699.3494532,
+    "ast_hash": "2ebc1c810df8a7e951f4edc2e1c2ab22",
     "semantic_hash": ""
   },
   "src/components/layout/index.ts": {
-    "mtime": 1791019334.689588,
-    "ast_hash": "fd49075e7a462bb434dd8e02fef984e6",
+    "mtime": 1790601455.4981308,
+    "ast_hash": "601aa48ac0dad15fd10f6b1dd0d70348",
     "semantic_hash": ""
   },
   "src/context/index.ts": {
-    "mtime": 1791019334.6974926,
-    "ast_hash": "822cb16eeaafb1f9b90034f0606f848a",
-    "semantic_hash": ""
-  },
-  "tests/unit/contactRepository.test.ts": {
-    "mtime": 1791025504.240672,
-    "ast_hash": "baca54ffaf8bea1d4e398a5ecb79e0fa",
-    "semantic_hash": ""
-  },
-  "docs/architecture-migration/PHASE_1_DOMAIN_HOOKS.md": {
-    "mtime": 1791019334.5512104,
-    "ast_hash": "b95796d452a219e3a52a88a1102e08ec",
-    "semantic_hash": ""
-  },
-  "docs/architecture-migration/PHASE_2_PRESENTATION_LAYOUT.md": {
-    "mtime": 1791019334.5517855,
-    "ast_hash": "81a1bbaa734560782b88a3b5002a215f",
-    "semantic_hash": ""
-  },
-  "docs/architecture-migration/PHASE_3_CONTEXT_PROVIDERS.md": {
-    "mtime": 1791019334.5523539,
-    "ast_hash": "3c29d9a2e39b4f282ae015b5eabc9ff4",
-    "semantic_hash": ""
-  },
-  "docs/architecture-migration/REFACTORING_ROADMAP.md": {
-    "mtime": 1791019334.5529625,
-    "ast_hash": "73c05eea932eaecbb94f5702818152f7",
+    "mtime": 1790601470.2633402,
+    "ast_hash": "3d18dff3747c9c3f8d062cbc1a324cc0",
     "semantic_hash": ""
   }
 }

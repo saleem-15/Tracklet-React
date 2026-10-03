@@ -157,7 +157,27 @@ export const LOCAL_STORAGE_KEYS = {
   HISTORY_PREFIX: 'tracklet_history_',
   AUTH_PENDING_EMAIL: 'tracklet_auth_pending_email',
   EMAIL_RESEND_COOLDOWN: 'tracklet_email_resend_cooldown',
+  GUEST_MIGRATED_PREFIX: 'tracklet_guest_migrated_',
 };
+
+/**
+ * Clears any stored guest migration completed markers across all users in localStorage.
+ * Called whenever new guest records are saved while signed out so newly added records are offered on sign-in.
+ */
+export function clearGuestMigrationMarkers(): void {
+  try {
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith(LOCAL_STORAGE_KEYS.GUEST_MIGRATED_PREFIX)) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach((k) => localStorage.removeItem(k));
+  } catch {
+    // Ignore storage access error
+  }
+}
 
 export const AUTH_PROVIDERS = {
   GOOGLE: 'google.com',

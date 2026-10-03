@@ -20,34 +20,44 @@ import { getExpiringSoonTasks } from '../lib/expiryUtils';
 import { getContactsFollowUpDueSoon } from '../lib/contactUtils';
 import { useEscapeKey } from '../lib/useEscapeKey';
 import { ACTIVE_STATUSES } from '../lib/constants';
+import { useAuth } from '../context/AuthContext';
+import { useNavigation } from '../context/NavigationContext';
+import { useApplicationsContext } from '../context/ApplicationsContext';
+import { useContactsContext } from '../context/ContactsContext';
+import { useSettings } from '../context/SettingsContext';
 
-interface SidebarProps {
-  activeTab: ActiveTab;
-  setActiveTab: (tab: ActiveTab) => void;
-  applications: Application[];
+export interface SidebarProps {
+  activeTab?: ActiveTab;
+  setActiveTab?: (tab: ActiveTab) => void;
+  applications?: Application[];
   contacts?: Contact[];
-  expirySettings: ExpiryNotificationSettings;
-  user: User | null;
-  onSignIn: () => void;
-  onSignOut: () => void;
-  onSeedDemoData: () => void;
+  expirySettings?: ExpiryNotificationSettings;
+  user?: User | null;
+  onSignIn?: () => void;
+  onSignOut?: () => void;
+  onSeedDemoData?: () => void;
   isMobileOpen?: boolean;
   onCloseMobile?: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({
-  activeTab,
-  setActiveTab,
-  applications,
-  contacts = [],
-  expirySettings,
-  user,
-  onSignIn,
-  onSignOut,
-  onSeedDemoData,
-  isMobileOpen = false,
-  onCloseMobile,
-}) => {
+export const Sidebar: React.FC<SidebarProps> = (props) => {
+  const auth = useAuth();
+  const nav = useNavigation();
+  const apps = useApplicationsContext();
+  const contactsCtx = useContactsContext();
+  const settingsCtx = useSettings();
+
+  const activeTab = props.activeTab ?? nav.activeTab;
+  const setActiveTab = props.setActiveTab ?? nav.setActiveTab;
+  const applications = props.applications ?? apps.applications;
+  const contacts = props.contacts ?? contactsCtx.contacts;
+  const expirySettings = props.expirySettings ?? settingsCtx.expirySettings;
+  const user = props.user !== undefined ? props.user : auth.user;
+  const onSignIn = props.onSignIn ?? (() => auth.openAuthModal('signin'));
+  const onSignOut = props.onSignOut ?? (async () => { await auth.signOut(); });
+  const onSeedDemoData = props.onSeedDemoData ?? apps.handleSeedDemoData;
+  const isMobileOpen = props.isMobileOpen ?? nav.isMobileSidebarOpen;
+  const onCloseMobile = props.onCloseMobile ?? nav.closeMobileSidebar;
   const [isCollapsed, setIsCollapsed] = useState<boolean>(() => {
     try {
       return localStorage.getItem('tracklet_sidebar_collapsed') === 'true';

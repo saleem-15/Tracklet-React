@@ -11,7 +11,7 @@ import {
 } from './firebase';
 import { Application, ApplicationStatus } from '../types';
 import { INITIAL_SAMPLE_APPLICATIONS } from './sampleData';
-import { LOCAL_STORAGE_KEYS, APPLICATION_STATUSES } from './constants';
+import { LOCAL_STORAGE_KEYS, APPLICATION_STATUSES, clearGuestMigrationMarkers } from './constants';
 import { createStatusHistoryEntry, appendStatusHistory } from './historyService';
 import { sanitizeForFirestore, commitInChunks } from './firestoreUtils';
 
@@ -65,6 +65,7 @@ export class ApplicationRepository {
   static saveGuestApplications(apps: Application[]): void {
     try {
       localStorage.setItem(LOCAL_STORAGE_KEYS.GUEST_APPS, JSON.stringify(apps));
+      clearGuestMigrationMarkers();
     } catch (e) {
       console.error('Failed to save to localStorage:', e);
     }
@@ -135,6 +136,71 @@ export class ApplicationRepository {
     }
 
     return createdApp;
+  }
+
+  /**
+   * Restores a deleted application preserving its authoritative original ID and timestamps (for Undo).
+   */
+  static async restoreApplication(
+    app: Application,
+    userId?: string
+  ): Promise<Application> {
+    if (userId) {
+      try {
+        const docRef = doc(db, 'users', userId, 'applications', app.id);
+        const payload = sanitizeForFirestore({
+          ...app,
+          userId,
+        });
+        await setDoc(docRef, payload, { merge: true });
+      } catch (err) {
+        console.error('Failed to restore application in Firestore:', err);
+        throw err;
+      }
+    }
+    return app;
+  }
+
+  /**
+   * Batch restores multiple deleted applications preserving their authoritative original IDs and timestamps (for Bulk Undo).
+   * Tracks committed chunks so that if a later chunk fails, partially restored applications can be reconciled.
+   */
+  static async batchRestoreApplications(
+    apps: Application[],
+    userId?: string
+  ): Promise<Application[]> {
+    if (userId && apps.length > 0) {
+      const committedApps: Application[] = [];
+      const CHUNK_SIZE = 450;
+      for (let i = 0; i < apps.length; i += CHUNK_SIZE) {
+        const chunk = apps.slice(i, i + CHUNK_SIZE);
+        const batch = writeBatch(db);
+        for (const app of chunk) {
+          const docRef = doc(db, 'users', userId, 'applications', app.id);
+          const payload = sanitizeForFirestore({
+            ...app,
+            userId,
+          });
+          batch.set(docRef, payload, { merge: true });
+        }
+        try {
+          await batch.commit();
+          committedApps.push(...chunk);
+        } catch (err) {
+          console.error('Failed partial bulk restore in Firestore:', err);
+          const partialError = Object.assign(
+            new Error(`Failed to restore chunk starting at index ${i}: ${err instanceof Error ? err.message : String(err)}`),
+            {
+              restoredApplications: committedApps,
+              unrestoredApplications: apps.slice(committedApps.length),
+              originalError: err,
+            }
+          );
+          throw partialError;
+        }
+      }
+    }
+    return apps;
   }
 
   /**
