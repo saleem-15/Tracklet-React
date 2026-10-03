@@ -245,13 +245,15 @@ export class ContactRepository {
 
       // Helper function to commit batch with retries for transient network failures
       const commitBatchWithRetry = async (
-        batch: ReturnType<typeof writeBatch>,
+        buildBatch: (batch: ReturnType<typeof writeBatch>) => void,
         retries = 2,
         backoffMs = 50
       ): Promise<void> => {
         let lastErr: unknown;
         for (let attempt = 0; attempt <= retries; attempt++) {
           try {
+            const batch = writeBatch(db);
+            buildBatch(batch);
             await batch.commit();
             return;
           } catch (err) {
@@ -299,11 +301,11 @@ export class ContactRepository {
           try {
             for (let i = 0; i < ids.length; i += CHUNK_SIZE) {
               const chunk = ids.slice(i, i + CHUNK_SIZE);
-              const batch = writeBatch(db);
-              for (const id of chunk) {
-                batch.delete(doc(db, 'users', userId, 'contacts', id));
-              }
-              await commitBatchWithRetry(batch);
+              await commitBatchWithRetry((batch) => {
+                for (const id of chunk) {
+                  batch.delete(doc(db, 'users', userId, 'contacts', id));
+                }
+              });
               committedDeletedContactIds.push(...chunk);
             }
           } catch (contactDeleteErr) {
@@ -312,15 +314,15 @@ export class ContactRepository {
               try {
                 for (let i = 0; i < committedDeletedContactIds.length; i += CHUNK_SIZE) {
                   const chunk = committedDeletedContactIds.slice(i, i + CHUNK_SIZE);
-                  const restoreBatch = writeBatch(db);
-                  for (const id of chunk) {
-                    const contactData = authoritativeMap.get(id);
-                    if (contactData) {
-                      const { id: _ignored, ...payload } = contactData;
-                      restoreBatch.set(doc(db, 'users', userId, 'contacts', id), sanitizeForFirestore(payload), { merge: true });
+                  await commitBatchWithRetry((restoreBatch) => {
+                    for (const id of chunk) {
+                      const contactData = authoritativeMap.get(id);
+                      if (contactData) {
+                        const { id: _ignored, ...payload } = contactData;
+                        restoreBatch.set(doc(db, 'users', userId, 'contacts', id), sanitizeForFirestore(payload), { merge: true });
+                      }
                     }
-                  }
-                  await commitBatchWithRetry(restoreBatch);
+                  });
                 }
               } catch (restoreErr) {
                 console.error('Failed to rollback deleted contacts:', restoreErr);
@@ -395,19 +397,19 @@ export class ContactRepository {
         try {
           for (let i = 0; i < validAppIds.length; i += CHUNK_SIZE) {
             const chunk = validAppIds.slice(i, i + CHUNK_SIZE);
-            const batch = writeBatch(db);
             const now = new Date().toISOString();
-            for (const appId of chunk) {
-              const appRef = doc(db, 'users', userId, 'applications', appId);
-              const toRemove = appMatchingContactMap.get(appId) || [];
-              if (toRemove.length > 0) {
-                batch.update(appRef, {
-                  contactIds: arrayRemove(...toRemove),
-                  updatedAt: now,
-                });
+            await commitBatchWithRetry((batch) => {
+              for (const appId of chunk) {
+                const appRef = doc(db, 'users', userId, 'applications', appId);
+                const toRemove = appMatchingContactMap.get(appId) || [];
+                if (toRemove.length > 0) {
+                  batch.update(appRef, {
+                    contactIds: arrayRemove(...toRemove),
+                    updatedAt: now,
+                  });
+                }
               }
-            }
-            await commitBatchWithRetry(batch);
+            });
             committedAppIds.push(...chunk);
           }
         } catch (appCleanupErr) {
@@ -417,19 +419,19 @@ export class ContactRepository {
             try {
               for (let i = 0; i < committedAppIds.length; i += CHUNK_SIZE) {
                 const chunk = committedAppIds.slice(i, i + CHUNK_SIZE);
-                const rollbackBatch = writeBatch(db);
                 const now = new Date().toISOString();
-                for (const appId of chunk) {
-                  const appRef = doc(db, 'users', userId, 'applications', appId);
-                  const toRestore = appMatchingContactMap.get(appId) || [];
-                  if (toRestore.length > 0) {
-                    rollbackBatch.update(appRef, {
-                      contactIds: arrayUnion(...toRestore),
-                      updatedAt: now,
-                    });
+                await commitBatchWithRetry((rollbackBatch) => {
+                  for (const appId of chunk) {
+                    const appRef = doc(db, 'users', userId, 'applications', appId);
+                    const toRestore = appMatchingContactMap.get(appId) || [];
+                    if (toRestore.length > 0) {
+                      rollbackBatch.update(appRef, {
+                        contactIds: arrayUnion(...toRestore),
+                        updatedAt: now,
+                      });
+                    }
                   }
-                }
-                await commitBatchWithRetry(rollbackBatch);
+                });
               }
             } catch (rollbackErr) {
               console.error('Failed to rollback application links after partial cleanup error:', rollbackErr);
@@ -446,11 +448,11 @@ export class ContactRepository {
       try {
         for (let i = 0; i < ids.length; i += CHUNK_SIZE) {
           const chunk = ids.slice(i, i + CHUNK_SIZE);
-          const batch = writeBatch(db);
-          for (const id of chunk) {
-            batch.delete(doc(db, 'users', userId, 'contacts', id));
-          }
-          await commitBatchWithRetry(batch);
+          await commitBatchWithRetry((batch) => {
+            for (const id of chunk) {
+              batch.delete(doc(db, 'users', userId, 'contacts', id));
+            }
+          });
           committedDeletedContactIds.push(...chunk);
         }
       } catch (contactDeleteErr) {
@@ -460,19 +462,19 @@ export class ContactRepository {
           try {
             for (let i = 0; i < committedDeletedContactIds.length; i += CHUNK_SIZE) {
               const chunk = committedDeletedContactIds.slice(i, i + CHUNK_SIZE);
-              const restoreContactsBatch = writeBatch(db);
-              for (const id of chunk) {
-                const contactData = authoritativeMap.get(id);
-                if (contactData) {
-                  const { id: _ignored, ...payload } = contactData;
-                  restoreContactsBatch.set(
-                    doc(db, 'users', userId, 'contacts', id),
-                    sanitizeForFirestore(payload),
-                    { merge: true }
-                  );
+              await commitBatchWithRetry((restoreContactsBatch) => {
+                for (const id of chunk) {
+                  const contactData = authoritativeMap.get(id);
+                  if (contactData) {
+                    const { id: _ignored, ...payload } = contactData;
+                    restoreContactsBatch.set(
+                      doc(db, 'users', userId, 'contacts', id),
+                      sanitizeForFirestore(payload),
+                      { merge: true }
+                    );
+                  }
                 }
-              }
-              await commitBatchWithRetry(restoreContactsBatch);
+              });
             }
           } catch (restoreContactsErr) {
             console.error('Failed to restore deleted contacts during recovery:', restoreContactsErr);
@@ -484,19 +486,19 @@ export class ContactRepository {
           try {
             for (let i = 0; i < committedAppIds.length; i += CHUNK_SIZE) {
               const chunk = committedAppIds.slice(i, i + CHUNK_SIZE);
-              const rollbackAppsBatch = writeBatch(db);
               const now = new Date().toISOString();
-              for (const appId of chunk) {
-                const appRef = doc(db, 'users', userId, 'applications', appId);
-                const toRestore = appMatchingContactMap.get(appId) || [];
-                if (toRestore.length > 0) {
-                  rollbackAppsBatch.update(appRef, {
-                    contactIds: arrayUnion(...toRestore),
-                    updatedAt: now,
-                  });
+              await commitBatchWithRetry((rollbackAppsBatch) => {
+                for (const appId of chunk) {
+                  const appRef = doc(db, 'users', userId, 'applications', appId);
+                  const toRestore = appMatchingContactMap.get(appId) || [];
+                  if (toRestore.length > 0) {
+                    rollbackAppsBatch.update(appRef, {
+                      contactIds: arrayUnion(...toRestore),
+                      updatedAt: now,
+                    });
+                  }
                 }
-              }
-              await commitBatchWithRetry(rollbackAppsBatch);
+              });
             }
           } catch (restoreAppsErr) {
             console.error('Failed to restore application links during contact deletion recovery:', restoreAppsErr);
@@ -733,9 +735,6 @@ export class ContactRepository {
       await commitInChunks(itemsWithRefs, (batch, { docRef, contactObj }) => {
         batch.set(docRef, contactObj);
       });
-
-      // Clear guest contacts from local storage
-      localStorage.removeItem(LOCAL_STORAGE_KEYS.GUEST_CONTACTS);
 
       const migratedContacts: Contact[] = itemsWithRefs.map(({ docRef, contactObj }) => ({
         ...(contactObj as unknown as Omit<Contact, 'id'>),

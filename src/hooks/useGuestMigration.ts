@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import type { User } from 'firebase/auth';
 import { Application, Contact } from '../types';
 import { ApplicationRepository } from '../lib/applicationRepository';
@@ -47,6 +47,11 @@ export function useGuestMigration({
   const [migrationApps, setMigrationApps] = useState<Application[]>([]);
   const [migrationContacts, setMigrationContacts] = useState<Contact[]>([]);
   const [isMigrationModalOpen, setIsMigrationModalOpen] = useState(false);
+  const migratedContactsCacheRef = useRef<{
+    userId: string;
+    contacts: Contact[];
+    contactIdMap: Map<string, string>;
+  } | null>(null);
 
   const checkAndPromptGuestMigration = useCallback(() => {
     let parsedGuestApps: Application[] = [];
@@ -153,6 +158,7 @@ export function useGuestMigration({
 
     setMigrationApps(parsedGuestApps);
     setMigrationContacts(parsedGuestContacts);
+    migratedContactsCacheRef.current = null;
     setIsMigrationModalOpen(true);
   }, [user]);
 
@@ -163,10 +169,25 @@ export function useGuestMigration({
       let contactIdMap = new Map<string, string>();
 
       // 1. Migrate contacts first to obtain Firestore ID mapping (defer localStorage cleanup until after apps import)
+      // Retain and reuse created contacts and contactIdMap across retries so retrying after an application import failure does not create duplicate cloud contacts
       if (migrationContacts.length > 0) {
-        const result = await ContactRepository.migrateGuestContacts(user.uid, migrationContacts);
-        importedContacts = result.migratedContacts;
-        contactIdMap = result.idMap;
+        if (
+          migratedContactsCacheRef.current &&
+          migratedContactsCacheRef.current.userId === user.uid &&
+          migratedContactsCacheRef.current.contacts.length > 0
+        ) {
+          importedContacts = migratedContactsCacheRef.current.contacts;
+          contactIdMap = migratedContactsCacheRef.current.contactIdMap;
+        } else {
+          const result = await ContactRepository.migrateGuestContacts(user.uid, migrationContacts);
+          importedContacts = result.migratedContacts;
+          contactIdMap = result.idMap;
+          migratedContactsCacheRef.current = {
+            userId: user.uid,
+            contacts: importedContacts,
+            contactIdMap,
+          };
+        }
       }
 
       // 2. Remap application contactIds using new contact Firestore IDs, then batch import
@@ -227,6 +248,7 @@ export function useGuestMigration({
         console.warn('Could not clear guest storage keys after migration:', storageErr);
       }
 
+      migratedContactsCacheRef.current = null;
       setIsMigrationModalOpen(false);
       setMigrationApps([]);
       setMigrationContacts([]);
@@ -254,6 +276,7 @@ export function useGuestMigration({
       console.warn('Could not remove guest items from storage:', err);
       discardSuccess = false;
     }
+    migratedContactsCacheRef.current = null;
     setIsMigrationModalOpen(false);
     setMigrationApps([]);
     setMigrationContacts([]);

@@ -252,6 +252,9 @@ export function useContacts({
       return next;
     });
 
+    const currentApps = applicationsRef.current;
+    const affectedApps = currentApps.filter((app) => linkedAppIds.includes(app.id));
+
     if (linkedAppIds.length > 0) {
       setApplications((prev) => {
         const next = prev.map((app) =>
@@ -295,16 +298,37 @@ export function useContacts({
             });
           }
 
-          if (user?.emailVerified) {
-            await ContactRepository.upsertContact(targetContact!, user.uid);
-            await Promise.allSettled(
-              linkedAppIds.map((appId) => {
-                const fullApp = applicationsRef.current.find((a) => a.id === appId);
-                return ContactRepository.linkContactToApplication(id, appId, user.uid, targetContact!, fullApp);
-              })
-            );
+          try {
+            if (user?.emailVerified) {
+              await ContactRepository.upsertContact(targetContact!, user.uid);
+              await Promise.allSettled(
+                linkedAppIds.map((appId) => {
+                  const fullApp = applicationsRef.current.find((a) => a.id === appId);
+                  return ContactRepository.linkContactToApplication(id, appId, user.uid, targetContact!, fullApp);
+                })
+              );
+            }
+            addToast('success', `Restored ${targetContact!.name}`);
+          } catch (err) {
+            console.error('Failed to restore contact:', err);
+            setContacts((prev) => {
+              const next = prev.filter((c) => c.id !== id);
+              if (!user?.emailVerified) ContactRepository.saveGuestContacts(next);
+              return next;
+            });
+            if (linkedAppIds.length > 0) {
+              setApplications((prev) => {
+                const next = prev.map((app) =>
+                  linkedAppIds.includes(app.id)
+                    ? { ...app, contactIds: (app.contactIds || []).filter((cId) => cId !== id) }
+                    : app
+                );
+                if (!user?.emailVerified) ApplicationRepository.saveGuestApplications(next);
+                return next;
+              });
+            }
+            addToast('error', 'Restore Failed', 'Could not restore contact.');
           }
-          addToast('success', `Restored ${targetContact!.name}`);
         },
       });
     } catch (err) {
@@ -314,6 +338,14 @@ export function useContacts({
         if (!user?.emailVerified) ContactRepository.saveGuestContacts(reverted);
         return reverted;
       });
+      if (affectedApps.length > 0) {
+        setApplications((prev) => {
+          const appMap = new Map(affectedApps.map((a) => [a.id, a]));
+          const next = prev.map((a) => appMap.get(a.id) || a);
+          if (!user?.emailVerified) ApplicationRepository.saveGuestApplications(next);
+          return next;
+        });
+      }
       addToast('error', 'Delete Failed', 'Could not delete contact.');
     }
   }, [user, addToast, setApplications]);
