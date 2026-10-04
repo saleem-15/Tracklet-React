@@ -17,7 +17,7 @@ function TrackletAppContent() {
   const { activeTab, setSelectedAppId } = useNavigation();
   const { toasts, addToast, dismissToast } = useToastContext();
   const { applications, setApplications, applicationsRef } = useApplicationsContext();
-  const { contacts, setContacts, handleAddContact, setSelectedContactId } = useContactsContext();
+  const { contacts, setContacts, handleAddContact, handleLinkContact, setSelectedContactId } = useContactsContext();
 
   const [isGuestMode, setIsGuestMode] = useState<boolean>(() => {
     try { return localStorage.getItem('tracklet_guest_mode') === 'true'; } catch { return false; }
@@ -34,7 +34,7 @@ function TrackletAppContent() {
 
   useExtensionSync({
     user, applications, setApplications, applicationsRef,
-    contacts, dataLoading, handleAddContact, setSelectedAppId, addToast,
+    contacts, dataLoading, handleAddContact, handleLinkContact, setSelectedAppId, addToast,
   });
 
   useEffect(() => {

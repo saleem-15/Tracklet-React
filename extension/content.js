@@ -43,15 +43,69 @@ function parseJsonLd() {
       const item = Array.isArray(data) ? data.find(i => i['@type'] === 'JobPosting') : (data['@type'] === 'JobPosting' ? data : null);
       if (item) {
         let company = '';
+        let companyUrl = '';
+        const sameAs = [];
+
         if (typeof item.hiringOrganization === 'string') {
           company = item.hiringOrganization;
-        } else if (item.hiringOrganization && item.hiringOrganization.name) {
-          company = item.hiringOrganization.name;
+        } else if (item.hiringOrganization && typeof item.hiringOrganization === 'object') {
+          company = item.hiringOrganization.name || '';
+          if (item.hiringOrganization.url) {
+            companyUrl = item.hiringOrganization.url;
+          }
+          if (item.hiringOrganization.sameAs) {
+            if (Array.isArray(item.hiringOrganization.sameAs)) {
+              sameAs.push(...item.hiringOrganization.sameAs);
+            } else if (typeof item.hiringOrganization.sameAs === 'string') {
+              sameAs.push(item.hiringOrganization.sameAs);
+            }
+          }
         }
+
+        // Location extraction
+        let location = '';
+        if (item.jobLocation) {
+          const locs = Array.isArray(item.jobLocation) ? item.jobLocation : [item.jobLocation];
+          for (const loc of locs) {
+            if (loc && loc.address) {
+              const a = loc.address;
+              const parts = [a.addressLocality, a.addressRegion, a.addressCountry].filter(Boolean);
+              if (parts.length > 0) {
+                location = parts.join(', ');
+                break;
+              }
+            }
+          }
+        }
+
+        // Work arrangement (Remote / Hybrid / Onsite)
+        let workLocation = null;
+        const locType = String(item.jobLocationType || '').toUpperCase();
+        const descText = String(item.description || '').toLowerCase();
+        if (locType === 'TELECOMMUTE' || descText.includes('100% remote') || descText.includes('fully remote')) {
+          workLocation = 'Remote';
+        } else if (descText.includes('hybrid')) {
+          workLocation = 'Hybrid';
+        } else if (location) {
+          workLocation = 'Onsite';
+        }
+
+        // Employment type
+        let employmentType = null;
+        const rawEmp = String(item.employmentType || '').toUpperCase();
+        if (rawEmp.includes('FULL_TIME') || rawEmp.includes('FULLTIME')) employmentType = 'Full-time';
+        else if (rawEmp.includes('PART_TIME') || rawEmp.includes('PARTTIME')) employmentType = 'Part-time';
+        else if (rawEmp.includes('CONTRACT') || rawEmp.includes('TEMPORARY')) employmentType = 'Contract';
+        else if (rawEmp.includes('INTERN')) employmentType = 'Internship';
 
         return {
           title: cleanText(item.title),
           company: cleanText(company),
+          companyUrl,
+          sameAs,
+          location: cleanText(location),
+          workLocation,
+          employmentType,
           description: cleanText(typeof item.description === 'string' ? item.description.replace(/<[^>]*>?/gm, '') : ''),
         };
       }
@@ -68,11 +122,77 @@ function parseSiteSpecific() {
   
   // LinkedIn
   if (host.includes('linkedin.')) {
-    const titleEl = document.querySelector('.job-details-jobs-unified-top-card__job-title, .jobs-unified-top-card__job-title, h1.t-24');
-    const companyEl = document.querySelector('.job-details-jobs-unified-top-card__company-name, .jobs-unified-top-card__company-name, .jobs-unified-top-card__subtitle-primary-grouping a');
+    const titleEl = document.querySelector('.job-details-jobs-unified-top-card__job-title, .jobs-unified-top-card__job-title, h1.t-24, h1');
+    const companyAnchor = document.querySelector('.job-details-jobs-unified-top-card__company-name a, .jobs-unified-top-card__company-name a, .jobs-unified-top-card__subtitle-primary-grouping a');
+    const companyEl = companyAnchor || document.querySelector('.job-details-jobs-unified-top-card__company-name, .jobs-unified-top-card__company-name');
+
+    let companySlug = '';
+    if (companyAnchor && companyAnchor.href) {
+      const match = companyAnchor.href.match(/\/company\/([a-zA-Z0-9_-]+)/);
+      if (match) companySlug = match[1].toLowerCase();
+    }
+
+    // Work arrangement & employment type from pills
+    let location = '';
+    let workLocation = null;
+    let employmentType = null;
+
+    const insightItems = document.querySelectorAll(
+      '.job-details-jobs-unified-top-card__primary-description-container span, ' +
+      '.jobs-unified-top-card__job-insight span, ' +
+      '.job-details-jobs-unified-top-card__bullet, ' +
+      '.ui-label'
+    );
+
+    insightItems.forEach(el => {
+      const txt = cleanText(el.textContent);
+      if (!txt) return;
+      const lower = txt.toLowerCase();
+
+      if (lower === 'remote') workLocation = 'Remote';
+      else if (lower === 'hybrid') workLocation = 'Hybrid';
+      else if (lower === 'on-site' || lower === 'onsite') workLocation = 'Onsite';
+      else if (lower === 'full-time' || lower === 'full time') employmentType = 'Full-time';
+      else if (lower === 'part-time' || lower === 'part time') employmentType = 'Part-time';
+      else if (lower === 'contract') employmentType = 'Contract';
+      else if (lower === 'internship') employmentType = 'Internship';
+      else if (txt.includes(',') && !location && !lower.includes('applicant') && !lower.includes('ago')) {
+        location = txt;
+      }
+    });
+
+    // Detect hiring contact / recruiter
+    let contact = null;
+    const hirerCard = document.querySelector('.hirer-card__hirer-information, .jobs-poster__name, .jobs-box__html--with-bottom-action');
+    if (hirerCard) {
+      const nameEl = hirerCard.querySelector('.jobs-poster__name, strong, a[href*="/in/"]');
+      const titleEl = hirerCard.querySelector('.jobs-poster__job-title, .hirer-card__job-title, span.t-14');
+      const profileAnchor = hirerCard.querySelector('a[href*="/in/"]');
+      const name = cleanText(nameEl ? nameEl.textContent : '');
+      if (name && name.length >= 2 && !name.toLowerCase().includes('message')) {
+        const role = cleanText(titleEl ? titleEl.textContent : 'Recruiter');
+        let linkedIn = profileAnchor ? profileAnchor.href : '';
+        if (linkedIn) {
+          linkedIn = linkedIn.split('?')[0].replace(/\/+$/, '');
+        }
+        const isHiringManager = /manager|director|lead|head|vp|founder/i.test(role);
+        contact = {
+          name,
+          role,
+          linkedIn,
+          category: isHiringManager ? 'Hiring Manager' : 'Recruiter',
+        };
+      }
+    }
+
     return {
       title: cleanText(titleEl ? titleEl.textContent : ''),
       company: cleanText(companyEl ? companyEl.textContent : ''),
+      companySlug,
+      location,
+      workLocation,
+      employmentType,
+      contact,
     };
   }
 
@@ -80,9 +200,24 @@ function parseSiteSpecific() {
   if (host.includes('indeed.')) {
     const titleEl = document.querySelector('h1.jobsearch-JobInfoHeader-title, .jobsearch-JobInfoHeader-title');
     const companyEl = document.querySelector('[data-company-name="true"], .jobsearch-CompanyReview--heading');
+    const locationEl = document.querySelector('[data-testid="inlineHeader-companyLocation"], .jobsearch-JobInfoHeader-companyLocation');
+    
+    let workLocation = null;
+    let employmentType = null;
+    const textAll = cleanText(document.body.innerText).toLowerCase();
+    if (textAll.includes('remote') || textAll.includes('work from home')) workLocation = 'Remote';
+    else if (textAll.includes('hybrid')) workLocation = 'Hybrid';
+    
+    if (textAll.includes('full-time') || textAll.includes('full time')) employmentType = 'Full-time';
+    else if (textAll.includes('part-time')) employmentType = 'Part-time';
+    else if (textAll.includes('contract')) employmentType = 'Contract';
+
     return {
       title: cleanText(titleEl ? titleEl.textContent : ''),
       company: cleanText(companyEl ? companyEl.textContent : ''),
+      location: cleanText(locationEl ? locationEl.textContent : ''),
+      workLocation,
+      employmentType,
     };
   }
 
@@ -90,9 +225,20 @@ function parseSiteSpecific() {
   if (host.includes('greenhouse.io')) {
     const titleEl = document.querySelector('#header h1.app-title, .job-title, h1');
     const companyEl = document.querySelector('.company-name, #header .company-name');
+    const locationEl = document.querySelector('.location, .job-location, [class*="location"]');
+    
+    // Extract ATS company slug: boards.greenhouse.io/{slug} or /embed/job_board/{slug}
+    let atsSlug = '';
+    const match = window.location.pathname.match(/^\/(?:embed\/job_board\/|boards\/|job-boards\/)?([a-z0-9-]+)/i);
+    if (match && !['jobs', 'search', 'embed'].includes(match[1])) {
+      atsSlug = match[1].toLowerCase();
+    }
+
     return {
       title: cleanText(titleEl ? titleEl.textContent : ''),
       company: cleanText(companyEl ? companyEl.textContent : ''),
+      location: cleanText(locationEl ? locationEl.textContent : ''),
+      atsSlug,
     };
   }
 
@@ -100,9 +246,40 @@ function parseSiteSpecific() {
   if (host.includes('lever.co')) {
     const titleEl = document.querySelector('.posting-header h2, h2');
     const companyEl = document.querySelector('.main-header-text, .posting-header .company-name');
+    const locationEl = document.querySelector('.posting-categories .location');
+    const workplaceEl = document.querySelector('.posting-categories .workplace-type');
+    const commitmentEl = document.querySelector('.posting-categories .commitment');
+
+    let atsSlug = '';
+    const match = window.location.pathname.match(/^\/([a-z0-9-]+)/i);
+    if (match && !['jobs', 'apply'].includes(match[1])) {
+      atsSlug = match[1].toLowerCase();
+    }
+
+    let workLocation = null;
+    if (workplaceEl) {
+      const wt = cleanText(workplaceEl.textContent).toLowerCase();
+      if (wt.includes('remote')) workLocation = 'Remote';
+      else if (wt.includes('hybrid')) workLocation = 'Hybrid';
+      else if (wt.includes('on-site') || wt.includes('onsite')) workLocation = 'Onsite';
+    }
+
+    let employmentType = null;
+    if (commitmentEl) {
+      const ct = cleanText(commitmentEl.textContent).toLowerCase();
+      if (ct.includes('full-time') || ct.includes('full time')) employmentType = 'Full-time';
+      else if (ct.includes('part-time')) employmentType = 'Part-time';
+      else if (ct.includes('contract')) employmentType = 'Contract';
+      else if (ct.includes('intern')) employmentType = 'Internship';
+    }
+
     return {
       title: cleanText(titleEl ? titleEl.textContent : ''),
       company: cleanText(companyEl ? companyEl.textContent : ''),
+      location: cleanText(locationEl ? locationEl.textContent : ''),
+      workLocation,
+      employmentType,
+      atsSlug,
     };
   }
 
@@ -134,7 +311,6 @@ function parseUniversalFallback() {
 
   if (ogTitle && ogTitle.content) {
     const content = ogTitle.content;
-    // Common pattern: "Job Title at Company Name" or "Company Name - Job Title"
     if (content.includes(' at ')) {
       const parts = content.split(' at ');
       title = parts[0];
@@ -175,16 +351,70 @@ function parseUniversalFallback() {
     }
   }
 
-  // 4. Fallback company from domain name if still empty
-  if (!company) {
-    const host = getDomainFromUrl(window.location.href);
-    const domainName = host.split('.')[0];
-    if (domainName && domainName !== 'careers' && domainName !== 'jobs') {
-      company = domainName.charAt(0).toUpperCase() + domainName.slice(1);
+  return { title: cleanText(title), company: cleanText(company) };
+}
+
+// Prioritized Company Domain Resolver (never assigns a job board or ATS domain)
+function resolveCompanyDomain(companyName, jsonLdData, siteData) {
+  const registry = typeof JobBoardRegistry !== 'undefined' ? JobBoardRegistry : null;
+
+  // 1. Check JSON-LD sameAs links and companyUrl
+  if (jsonLdData) {
+    const candidates = [jsonLdData.companyUrl, ...(jsonLdData.sameAs || [])].filter(Boolean);
+    for (const c of candidates) {
+      if (registry && registry.cleanCompanyDomain) {
+        const cleaned = registry.cleanCompanyDomain(c);
+        if (cleaned) return cleaned;
+      }
     }
   }
 
-  return { title: cleanText(title), company: cleanText(company) };
+  // 2. Check siteData companySlug or atsSlug in KNOWN_COMPANY_DOMAINS
+  const knownDict = registry && registry.KNOWN_COMPANY_DOMAINS ? registry.KNOWN_COMPANY_DOMAINS : {};
+  const slug = (siteData && (siteData.companySlug || siteData.atsSlug)) ? (siteData.companySlug || siteData.atsSlug).toLowerCase() : '';
+  if (slug && knownDict[slug]) {
+    return knownDict[slug];
+  }
+
+  // 3. Check if hosted directly on company's own careers website (not a job board / ATS)
+  const currentHost = window.location.hostname.toLowerCase();
+  const isBoardOrAts = registry && registry.isJobBoardOrAts ? registry.isJobBoardOrAts(currentHost) : true;
+  if (!isBoardOrAts) {
+    // Strip subdomains like careers., jobs., apply., recruiting.
+    const stripped = currentHost
+      .replace(/^www\./, '')
+      .replace(/^(?:careers|jobs|apply|recruiting|hire|join)\./, '');
+    if (registry && registry.cleanCompanyDomain) {
+      const cleaned = registry.cleanCompanyDomain(stripped);
+      if (cleaned) return cleaned;
+    }
+  }
+
+  // 4. Lookup normalized company name in known company dictionary
+  const normalizedCompany = (companyName || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  if (normalizedCompany && knownDict[normalizedCompany]) {
+    return knownDict[normalizedCompany];
+  }
+
+  // 5. If we are on a job board or ATS, NEVER use the job board domain!
+  if (isBoardOrAts) {
+    return '';
+  }
+
+  // If on direct company site, return cleaned root host
+  if (registry && registry.cleanCompanyDomain) {
+    return registry.cleanCompanyDomain(currentHost) || '';
+  }
+
+  return '';
+}
+
+// Check if current page is an application confirmation/submitted page
+function isApplicationSubmittedPage() {
+  const url = window.location.href.toLowerCase();
+  const title = (document.title || '').toLowerCase();
+  const patterns = /(?:confirmation|applied|thank-you|thank_you|thankyou|success|submitted|application-complete|application_complete)/i;
+  return patterns.test(url) || patterns.test(title);
 }
 
 // Master extraction function
@@ -201,17 +431,26 @@ function extractPageData() {
   const role = (jsonLdData && jsonLdData.title) || (siteData && siteData.title) || fallbackData.title || '';
   const company = (jsonLdData && jsonLdData.company) || (siteData && siteData.company) || fallbackData.company || '';
 
-  // Get active text selection if any
-  const selection = cleanText(window.getSelection() ? window.getSelection().toString() : '');
-  const notes = selection || (jsonLdData && jsonLdData.description ? jsonLdData.description.slice(0, 300) : '');
+  // Resolve sanitized company domain (NEVER job board or ATS)
+  const companyDomain = resolveCompanyDomain(company, jsonLdData, siteData);
 
-  // Favicon URL
+  // Additional fields
+  const location = (siteData && siteData.location) || (jsonLdData && jsonLdData.location) || '';
+  const workLocation = (siteData && siteData.workLocation) || (jsonLdData && jsonLdData.workLocation) || null;
+  const employmentType = (siteData && siteData.employmentType) || (jsonLdData && jsonLdData.employmentType) || null;
+  const contact = (siteData && siteData.contact) || null;
+
+  // Notes: highlighted text wins; otherwise bounded summary of description
+  const selection = cleanText(window.getSelection() ? window.getSelection().toString() : '');
+  const notes = selection || (jsonLdData && jsonLdData.description ? jsonLdData.description.slice(0, 350) : '');
+
+  // Suggested stage: Applied if confirmation page, else Saved
+  const suggestedStage = isApplicationSubmittedPage() ? 'Applied' : 'Saved';
+
+  // Favicon URL: High-res Google Favicon for companyDomain if available
   let faviconUrl = '';
-  const iconLink = document.querySelector('link[rel*="icon"]');
-  if (iconLink && iconLink.href) {
-    faviconUrl = iconLink.href;
-  } else {
-    faviconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
+  if (companyDomain) {
+    faviconUrl = `https://www.google.com/s2/favicons?domain=${companyDomain}&sz=128`;
   }
 
   return {
@@ -220,8 +459,14 @@ function extractPageData() {
     company,
     platform,
     jobLink: window.location.href,
-    domain,
+    domain: companyDomain, // Clean hiring company domain
+    companyDomain,
+    location,
+    workLocation,
+    employmentType,
     notes,
+    suggestedStage,
+    contact,
     faviconUrl,
     pageTitle: document.title,
   };

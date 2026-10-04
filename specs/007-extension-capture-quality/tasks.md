@@ -9,9 +9,9 @@
 
 **Purpose**: Establish the single canonical Job Board & ATS Registry across web app and extension.
 
-- [ ] T001 Create canonical Job Board & ATS Registry in `src/lib/jobBoardRegistry.ts`
-- [ ] T002 Create mirrored Job Board & ATS Registry in `extension/jobBoardRegistry.js`
-- [ ] T003 Update `extension/manifest.json` to load `jobBoardRegistry.js` in content scripts and popup
+- [X] T001 Create canonical Job Board & ATS Registry in `src/lib/jobBoardRegistry.ts`
+- [X] T002 Create mirrored Job Board & ATS Registry in `extension/jobBoardRegistry.js`
+- [X] T003 Update `extension/manifest.json` to load `jobBoardRegistry.js` in content scripts and popup
 
 ---
 
@@ -19,8 +19,8 @@
 
 **Purpose**: Core unit tests and infrastructure that MUST be in place before user stories.
 
-- [ ] T004 [P] Create unit tests for Job Board Registry in `tests/unit/jobBoardRegistry.test.ts`
-- [ ] T005 [P] Create unit tests for logo sanitization and bad-domain filtering in `tests/unit/logoUtils.test.ts`
+- [X] T004 [P] Create unit tests for Job Board Registry in `tests/unit/jobBoardRegistry.test.ts`
+- [X] T005 [P] Create unit tests for logo sanitization and bad-domain filtering in `tests/unit/logoUtils.test.ts`
 
 **Checkpoint**: Foundation ready — registry tests pass and extension manifest loads registry.
 
@@ -33,9 +33,9 @@
 **Independent Test**: An existing application with `companyDomain: "linkedin.com"` or `logoUrl: "https://logo.clearbit.com/linkedin.com"` renders a monogram or correct company logo in table/board views, and email matching ignores board domains.
 
 ### Implementation for User Story 2
-- [ ] T006 [US2] Update `getCompanyDomain` and `getCompanyLogoUrls` in `src/lib/logoUtils.ts` to discard any `customDomain` or `customLogoUrl` matching `isJobBoardOrAts`
-- [ ] T007 [US2] Update `src/lib/emailMatchingUtils.ts` to ignore job-board domains when matching sender emails to jobs
-- [ ] T008 [US2] Verify `tests/unit/logoUtils.test.ts` passes with 100% green assertions on job-board rejection
+- [X] T006 [US2] Update `getCompanyDomain` and `getCompanyLogoUrls` in `src/lib/logoUtils.ts` to discard any `customDomain` or `customLogoUrl` matching `isJobBoardOrAts`
+- [X] T007 [US2] Update `src/lib/emailMatchingUtils.ts` to ignore job-board domains when matching sender emails to jobs
+- [X] T008 [US2] Verify `tests/unit/logoUtils.test.ts` passes with 100% green assertions on job-board rejection
 
 **Checkpoint**: Existing corrupted records in Tracklet display with clean monograms and correct company branding.
 
@@ -48,11 +48,11 @@
 **Independent Test**: Clip a job on LinkedIn, Indeed, and Greenhouse. In each case, the popup and saved record show the employer's logo/domain, never the job board's.
 
 ### Implementation for User Story 1
-- [ ] T009 [US1] Implement prioritized company domain extraction in `extension/content.js` (JSON-LD `sameAs` / `hiringOrganization.url`, ATS slug parser, known company dictionary, careers site subdomain stripper)
-- [ ] T010 [US1] Update `extension/popup.html` to add editable Company Domain input with live logo avatar preview
-- [ ] T011 [US1] Update `updateCompanyAvatar` in `extension/popup.js` to resolve high-res Google Favicon with monogram fallback, removing deprecated Clearbit URL dependency
-- [ ] T012 [US1] Update `extension/popup.js` to bind domain input edits to live avatar preview and save payload
-- [ ] T013 [US1] Update context menu save handler in `extension/background.js` to use extracted domain and remove `logo.clearbit.com` hardcoding
+- [X] T009 [US1] Implement prioritized company domain extraction in `extension/content.js` (JSON-LD `sameAs` / `hiringOrganization.url`, ATS slug parser, known company dictionary, careers site subdomain stripper)
+- [X] T010 [US1] Update `extension/popup.html` to add editable Company Domain input with live logo avatar preview
+- [X] T011 [US1] Update `updateCompanyAvatar` in `extension/popup.js` to resolve high-res Google Favicon with monogram fallback, removing deprecated Clearbit URL dependency
+- [X] T012 [US1] Update `extension/popup.js` to bind domain input edits to live avatar preview and save payload
+- [X] T013 [US1] Update context menu save handler in `extension/background.js` to use extracted domain and remove `logo.clearbit.com` hardcoding
 
 **Checkpoint**: New clips from LinkedIn and ATS sites record the real employer domain and display clean logos.
 
@@ -65,11 +65,11 @@
 **Independent Test**: (1) New clip only offers Saved/Applied. (2) Re-saving a job at "Interview" shows stage as read-only and retains Interview status and history.
 
 ### Implementation for User Story 5
-- [ ] T014 [US5] Add page heuristic in `extension/content.js` to detect confirmation/thank-you URLs and suggest `Applied`
-- [ ] T015 [US5] Restrict stage dropdown in `extension/popup.html` and `extension/popup.js` to `Saved` and `Applied` for new jobs
-- [ ] T016 [US5] Add read-only stage badge state in `extension/popup.html` and `extension/popup.css` for existing jobs at later stages (`Screening`, `Interview`, `Offer`, etc.)
-- [ ] T017 [US5] Update duplicate detection in `extension/popup.js` to switch stage UI to read-only when existing job is past `Saved`
-- [ ] T018 [US5] Update save handling in `extension/popup.js` and `extension/background.js` to append `StatusHistoryEntry` on Saved → Applied, and preserve existing `status` and `history` without overwriting
+- [X] T014 [US5] Add page heuristic in `extension/content.js` to detect confirmation/thank-you URLs and suggest `Applied`
+- [X] T015 [US5] Restrict stage dropdown in `extension/popup.html` and `extension/popup.js` to `Saved` and `Applied` for new jobs
+- [X] T016 [US5] Add read-only stage badge state in `extension/popup.html` and `extension/popup.css` for existing jobs at later stages (`Screening`, `Interview`, `Offer`, etc.)
+- [X] T017 [US5] Update duplicate detection in `extension/popup.js` to switch stage UI to read-only when existing job is past `Saved`
+- [X] T018 [US5] Update save handling in `extension/popup.js` and `extension/background.js` to append `StatusHistoryEntry` on Saved → Applied, and preserve existing `status` and `history` without overwriting
 
 **Checkpoint**: Stage progress cannot be accidentally reset from the extension clipper.
 
@@ -82,11 +82,11 @@
 **Independent Test**: Clip a job stating "Remote · Full-time · Berlin, Germany". All three appear pre-selected and editable in popup and persist to Tracklet.
 
 ### Implementation for User Story 3
-- [ ] T019 [US3] Implement Location, Work Arrangement, and Employment Type extraction in `extension/content.js` (JSON-LD + site-specific DOM for LinkedIn, Indeed, Greenhouse, Lever, Workday)
-- [ ] T020 [US3] Implement bounded plain-text description summary in `extension/content.js` (yielding to user-highlighted text if present)
-- [ ] T021 [US3] Add Work Arrangement and Employment Type selectable pills and Location input in `extension/popup.html` and `extension/popup.css`
-- [ ] T022 [US3] Wire extracted attributes into popup inputs and include in `basePayload` in `extension/popup.js`
-- [ ] T023 [US3] Update `background.js` Firestore field mappings to write `location`, `workLocation`, and `employmentType`
+- [X] T019 [US3] Implement Location, Work Arrangement, and Employment Type extraction in `extension/content.js` (JSON-LD + site-specific DOM for LinkedIn, Indeed, Greenhouse, Lever, Workday)
+- [X] T020 [US3] Implement bounded plain-text description summary in `extension/content.js` (yielding to user-highlighted text if present)
+- [X] T021 [US3] Add Work Arrangement and Employment Type selectable pills and Location input in `extension/popup.html` and `extension/popup.css`
+- [X] T022 [US3] Wire extracted attributes into popup inputs and include in `basePayload` in `extension/popup.js`
+- [X] T023 [US3] Update `background.js` Firestore field mappings to write `location`, `workLocation`, and `employmentType`
 
 **Checkpoint**: Applications captured via extension arrive fully populated with location, work arrangement, and employment type.
 
@@ -99,10 +99,10 @@
 **Independent Test**: Clip a LinkedIn job showing a job poster. Popup shows recruiter card. Saving creates and links the contact in Contacts Hub.
 
 ### Implementation for User Story 4
-- [ ] T024 [US4] Implement recruiter / job poster extraction in `extension/content.js` (name, title, LinkedIn profile link)
-- [ ] T025 [US4] Add recruiter toggle card component in `extension/popup.html` and `extension/popup.css`
-- [ ] T026 [US4] Wire contact detection in `extension/popup.js` to populate contact card with toggle checkbox
-- [ ] T027 [US4] Implement contact deduplication and persistence in `extension/background.js` / `src/lib/extensionSync.ts` to link contact to application
+- [X] T024 [US4] Implement recruiter / job poster extraction in `extension/content.js` (name, title, LinkedIn profile link)
+- [X] T025 [US4] Add recruiter toggle card component in `extension/popup.html` and `extension/popup.css`
+- [X] T026 [US4] Wire contact detection in `extension/popup.js` to populate contact card with toggle checkbox
+- [X] T027 [US4] Implement contact deduplication and persistence in `extension/background.js` / `src/lib/extensionSync.ts` to link contact to application
 
 **Checkpoint**: Recruiter contacts are cleanly captured and linked to applications without duplicates.
 
@@ -112,11 +112,11 @@
 
 **Purpose**: End-to-end verification, type checks, build validation, and documentation.
 
-- [ ] T028 Run TypeScript type checks (`npx tsc --noEmit`) and ensure 0 errors
-- [ ] T029 Run all unit tests (`npm test`) and verify 100% pass
-- [ ] T030 Validate production bundle build (`npm run build`)
-- [ ] T031 Perform manual end-to-end validation across scenarios in `specs/007-extension-capture-quality/quickstart.md`
-- [ ] T032 [P] Update `extension/README.md` to reflect new capture capabilities and removed Clearbit dependency
+- [X] T028 Run TypeScript type checks (`npx tsc --noEmit`) and ensure 0 errors
+- [X] T029 Run all unit tests (`npm test`) and verify 100% pass
+- [X] T030 Validate production bundle build (`npm run build`)
+- [X] T031 Perform manual end-to-end validation across scenarios in `specs/007-extension-capture-quality/quickstart.md`
+- [X] T032 [P] Update `extension/README.md` to reflect new capture capabilities and removed Clearbit dependency
 
 ---
 

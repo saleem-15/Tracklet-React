@@ -7,7 +7,9 @@
 document.addEventListener('DOMContentLoaded', async () => {
   // DOM Elements
   const companyInput = document.getElementById('company');
+  const companyDomainInput = document.getElementById('companyDomain');
   const roleInput = document.getElementById('role');
+  const locationInput = document.getElementById('location');
   const dateAppliedInput = document.getElementById('dateApplied');
   const jobLinkInput = document.getElementById('jobLink');
   const notesInput = document.getElementById('notes');
@@ -15,6 +17,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   const companyAvatar = document.getElementById('company-avatar');
   const mainContainer = document.getElementById('main-container');
   const mainFormView = document.getElementById('main-form-view');
+  const duplicateBanner = document.getElementById('duplicate-banner');
+  const duplicateBannerText = document.getElementById('duplicate-banner-text');
+  const duplicateOpenLink = document.getElementById('duplicate-open-link');
+  const workLocationPills = document.querySelectorAll('#work-location-pills .pill-btn');
+  const employmentTypePills = document.querySelectorAll('#employment-type-pills .pill-btn');
+  const recruiterContactCard = document.getElementById('recruiter-contact-card');
+  const addRecruiterContactCheckbox = document.getElementById('add-recruiter-contact-checkbox');
+  const recruiterNameEl = document.getElementById('recruiter-name');
+  const recruiterTitleEl = document.getElementById('recruiter-title');
+  const recruiterBadgeEl = document.getElementById('recruiter-badge');
   const alreadySavedView = document.getElementById('already-saved-view');
   const savedCompanyName = document.getElementById('saved-company-name');
   const savedRoleTitle = document.getElementById('saved-role-title');
@@ -84,6 +96,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Custom Stage Elements
   const stageSelectorContainer = document.getElementById('stage-selector-container');
+  const stageReadonlyContainer = document.getElementById('stage-readonly-container');
+  const stageReadonlyBadge = document.getElementById('stage-readonly-badge');
+  const stageReadonlyDot = document.getElementById('stage-readonly-dot');
+  const stageReadonlyText = document.getElementById('stage-readonly-text');
   const stageTriggerBtn = document.getElementById('stage-trigger-btn');
   const stageLabelText = document.getElementById('stage-label-text');
   const stageDot = document.getElementById('stage-dot');
@@ -102,7 +118,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   };
 
   let selectedPlatform = 'Company Site';
-  let selectedStage = 'Applied';
+  let selectedStage = 'Saved';
+  let selectedWorkLocation = null;
+  let selectedEmploymentType = null;
+  let detectedRecruiterContact = null;
   let currentDomain = '';
   let matchedApplication = null;
   let isExplicitNewEntry = false;
@@ -204,6 +223,46 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
+  // Work Location & Employment Type Pills Handlers
+  function setWorkLocation(val) {
+    selectedWorkLocation = val;
+    workLocationPills.forEach(btn => {
+      if (btn.getAttribute('data-value') === val) {
+        btn.classList.add('selected');
+      } else {
+        btn.classList.remove('selected');
+      }
+    });
+  }
+
+  workLocationPills.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const val = btn.getAttribute('data-value');
+      setWorkLocation(selectedWorkLocation === val ? null : val);
+    });
+  });
+
+  function setEmploymentType(val) {
+    selectedEmploymentType = val;
+    employmentTypePills.forEach(btn => {
+      if (btn.getAttribute('data-value') === val) {
+        btn.classList.add('selected');
+      } else {
+        btn.classList.remove('selected');
+      }
+    });
+  }
+
+  employmentTypePills.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const val = btn.getAttribute('data-value');
+      setEmploymentType(selectedEmploymentType === val ? null : val);
+    });
+  });
+
+
   // Custom Stage Dropdown Handlers
   stageTriggerBtn.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -269,7 +328,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  // Avatar Preview Update Handler with dual-tier fallback (Clearbit -> Google Favicon -> Initial)
+  // Avatar Preview Update Handler with high-res Google Favicon & monogram fallback (Clearbit removed)
   function updateCompanyAvatar(companyName, domain, targetEl = companyAvatar) {
     if (!targetEl) return;
     const cleanCompany = (companyName || '').trim();
@@ -281,26 +340,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     const initial = cleanCompany.charAt(0).toUpperCase();
     targetEl.textContent = initial;
 
-    if (domain) {
-      const clearbitUrl = `https://logo.clearbit.com/${domain}`;
-      const googleFaviconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
+    const registry = typeof JobBoardRegistry !== 'undefined' ? JobBoardRegistry : null;
+    const cleanDom = registry && registry.cleanCompanyDomain ? registry.cleanCompanyDomain(domain) : (domain || '').trim().toLowerCase();
 
+    // Never show logo for job boards / ATS
+    if (cleanDom && (!registry || !registry.isJobBoardOrAts || !registry.isJobBoardOrAts(cleanDom))) {
+      const googleFaviconUrl = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(cleanDom)}&sz=128`;
       const img = new Image();
       img.onload = () => {
-        targetEl.innerHTML = `<img src="${clearbitUrl}" alt="${cleanCompany}" />`;
+        targetEl.innerHTML = `<img src="${googleFaviconUrl}" alt="${cleanCompany}" />`;
       };
       img.onerror = () => {
-        // Fallback to high-res Google Favicon
-        const fallbackImg = new Image();
-        fallbackImg.onload = () => {
-          targetEl.innerHTML = `<img src="${googleFaviconUrl}" alt="${cleanCompany}" />`;
-        };
-        fallbackImg.onerror = () => {
-          targetEl.textContent = initial;
-        };
-        fallbackImg.src = googleFaviconUrl;
+        targetEl.textContent = initial;
       };
-      img.src = clearbitUrl;
+      img.src = googleFaviconUrl;
     }
   }
 
@@ -354,6 +407,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Helper to extract non-aggregator domain from URL
   function extractDomainFromUrl(url) {
     if (!url) return '';
+    if (typeof JobBoardRegistry !== 'undefined') {
+      return JobBoardRegistry.cleanCompanyDomain(url) || '';
+    }
     try {
       const parsed = new URL(url.startsWith('http') ? url : `https://${url}`);
       let host = parsed.hostname.toLowerCase().replace(/^www\./, '');
@@ -488,7 +544,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       let score = 0;
       const rawAppCompany = (app.company || '').trim();
       const normAppCompany = normalizeCompanyName(rawAppCompany);
-      const appDomain = cleanDomain(app.companyDomain) || extractDomainFromUrl(app.jobLink);
+      const rawCleanedDomain = typeof JobBoardRegistry !== 'undefined'
+        ? JobBoardRegistry.cleanCompanyDomain(app.companyDomain)
+        : cleanDomain(app.companyDomain);
+      const appDomain = rawCleanedDomain || extractDomainFromUrl(app.jobLink);
       const atsJobSlug = extractAtsSlugFromUrl(app.jobLink);
       const contactEmail = (app.contactEmail || '').toLowerCase().trim();
       const contactEmails = (app.contactEmails || []).map(e => e.toLowerCase().trim());
@@ -617,6 +676,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     triggerDupCheck();
   });
 
+  companyDomainInput.addEventListener('input', () => {
+    companyDomainInput.classList.remove('input-error');
+    const rawVal = companyDomainInput.value.trim();
+    let cleaned = rawVal;
+    if (typeof JobBoardRegistry !== 'undefined' && JobBoardRegistry.cleanCompanyDomain) {
+      cleaned = JobBoardRegistry.cleanCompanyDomain(rawVal) || rawVal.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0];
+    }
+    currentDomain = cleaned;
+    updateCompanyAvatar(companyInput.value, currentDomain);
+    triggerDupCheck();
+  });
+
   roleInput.addEventListener('input', () => {
     roleInput.classList.remove('input-error');
     validateInputs();
@@ -651,19 +722,47 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
             companyInput.value = response.company || '';
             roleInput.value = response.role || '';
-            
+            companyDomainInput.value = response.companyDomain || response.domain || '';
+            currentDomain = companyDomainInput.value;
+            locationInput.value = response.location || '';
+            setWorkLocation(response.workLocation || null);
+            setEmploymentType(response.employmentType || null);
+
+            // Hiring Contact detection (US4)
+            if (response.contact && response.contact.name) {
+              detectedRecruiterContact = response.contact;
+              recruiterNameEl.textContent = response.contact.name;
+              recruiterTitleEl.textContent = response.contact.role || '';
+              recruiterBadgeEl.textContent = response.contact.category || 'Recruiter';
+              addRecruiterContactCheckbox.checked = true;
+              recruiterContactCard.style.display = 'block';
+            } else {
+              detectedRecruiterContact = null;
+              recruiterContactCard.style.display = 'none';
+            }
+
+            // Stage selection (US5)
+            if (response.suggestedStage) {
+              updateStageUI(response.suggestedStage);
+            } else {
+              updateStageUI('Saved');
+            }
+
             setPlatform(response.platform || 'Company Site');
-
             notesInput.value = response.notes || '';
-            currentDomain = response.domain || '';
 
-            updateCompanyAvatar(response.company, response.domain);
+            updateCompanyAvatar(response.company, currentDomain);
             checkForDuplicates(tab.url);
           } else {
             const pageTitle = tab.title || '';
             roleInput.value = pageTitle;
             companyInput.value = getDomainFallback(tab.url);
-            currentDomain = getDomain(tab.url);
+            const dom = getDomain(tab.url);
+            const registry = typeof JobBoardRegistry !== 'undefined' ? JobBoardRegistry : null;
+            const cleanedDom = (registry && registry.cleanCompanyDomain) ? registry.cleanCompanyDomain(dom) : dom;
+            currentDomain = cleanedDom || '';
+            companyDomainInput.value = currentDomain;
+            updateStageUI('Saved');
             updateCompanyAvatar(companyInput.value, currentDomain);
             checkForDuplicates(tab.url);
           }
@@ -729,25 +828,60 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       if (match) {
         matchedApplication = match;
-        mainFormView.style.display = 'none';
-        alreadySavedView.style.display = 'flex';
+        mainFormView.style.display = 'block';
+        alreadySavedView.style.display = 'none';
 
-        savedCompanyName.textContent = match.company || 'Company';
-        savedRoleTitle.textContent = match.role || 'Job Application';
+        if (duplicateBanner) {
+          duplicateBanner.style.display = 'flex';
+          duplicateBannerText.textContent = `Already tracked in Tracklet (${match.status || 'Saved'})`;
+        }
 
-        const stageInfo = STAGE_CONFIG[match.status] || STAGE_CONFIG.Applied;
-        savedStagePill.style.color = stageInfo.text;
-        savedStagePill.style.backgroundColor = stageInfo.bg;
-        savedStagePill.style.borderColor = stageInfo.border;
-        savedStageDot.style.backgroundColor = stageInfo.dot;
-        savedStageText.textContent = stageInfo.label;
+        // Auto-fill empty fields from existing record
+        if (!companyDomainInput.value && match.companyDomain) {
+          companyDomainInput.value = match.companyDomain;
+          currentDomain = match.companyDomain;
+          updateCompanyAvatar(companyInput.value, currentDomain);
+        }
+        if (!locationInput.value && match.location) {
+          locationInput.value = match.location;
+        }
+        if (!selectedWorkLocation && match.workLocation) {
+          setWorkLocation(match.workLocation);
+        }
+        if (!selectedEmploymentType && match.employmentType) {
+          setEmploymentType(match.employmentType);
+        }
 
-        savedDateText.textContent = match.dateApplied ? `Applied on ${match.dateApplied}` : 'Saved in workspace';
+        // Stage UI logic for existing job (US5 / FR-012, FR-013, FR-014)
+        if (match.status === 'Saved') {
+          // Allow advancing Saved -> Applied
+          stageReadonlyContainer.style.display = 'none';
+          stageSelectorContainer.style.display = 'block';
+          updateStageUI(selectedStage === 'Applied' ? 'Applied' : 'Saved');
+        } else {
+          // Progress preserved: read-only badge for later stages
+          stageSelectorContainer.style.display = 'none';
+          stageReadonlyContainer.style.display = 'flex';
+          stageReadonlyText.textContent = match.status;
+          const config = STAGE_CONFIG[match.status] || STAGE_CONFIG.Applied;
+          stageReadonlyDot.style.backgroundColor = config.dot;
+        }
+
+        saveBtn.querySelector('span').textContent = 'Update Application';
       } else {
         matchedApplication = null;
-        alreadySavedView.style.display = 'none';
-        mainFormView.style.display = 'block';
+        if (duplicateBanner) duplicateBanner.style.display = 'none';
+        stageReadonlyContainer.style.display = 'none';
+        stageSelectorContainer.style.display = 'block';
+        saveBtn.querySelector('span').textContent = 'Save Application';
       }
+    });
+  }
+
+  if (duplicateOpenLink) {
+    duplicateOpenLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      focusOrOpenWorkspace(matchedApplication?.id);
     });
   }
 
@@ -1294,30 +1428,54 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   /**
-   * Direct write to Firebase Firestore via REST API
+   * Direct write to Firebase Firestore via REST API (supports create and update)
    */
-  async function pushToFirestoreDirectly(payload, userSession, config) {
+  async function pushToFirestoreDirectly(payload, userSession, config, docIdToUpdate = null) {
     const projectId = config?.projectId || 'demo-tracklet';
     const apiKey = config?.apiKey;
     const userId = userSession.uid;
     const idToken = userSession.idToken;
 
-    let url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/users/${userId}/applications`;
+    let url = docIdToUpdate
+      ? `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/users/${userId}/applications/${docIdToUpdate}`
+      : `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/users/${userId}/applications`;
+
+    const queryParams = [];
     if (apiKey && apiKey !== 'demo-api-key') {
-      url += `?key=${encodeURIComponent(apiKey)}`;
+      queryParams.push(`key=${encodeURIComponent(apiKey)}`);
+    }
+    if (docIdToUpdate) {
+      const updateFields = [
+        'company', 'role', 'platform', 'status', 'dateApplied',
+        'stageUpdatedAt', 'updatedAt', 'jobLink', 'notes',
+        'companyDomain', 'history', 'location', 'workLocation', 'employmentType'
+      ];
+      updateFields.forEach(f => queryParams.push(`updateMask.fieldPaths=${f}`));
+    }
+    if (queryParams.length > 0) {
+      url += `?${queryParams.join('&')}`;
     }
 
-    const historyEntries = [
-      {
-        mapValue: {
-          fields: {
-            id: { stringValue: `hist-${Date.now()}` },
-            stage: { stringValue: payload.status },
-            timestamp: { stringValue: payload.stageUpdatedAt || new Date().toISOString() }
+    const historyList = (payload.history && payload.history.length > 0)
+      ? payload.history
+      : [
+          {
+            id: `hist-${Date.now()}`,
+            toStatus: payload.status,
+            timestamp: payload.stageUpdatedAt || new Date().toISOString()
           }
-        }
-      }
-    ];
+        ];
+
+    const historyEntries = historyList.map(h => {
+      const hFields = {
+        id: { stringValue: h.id || `hist-${Date.now()}` },
+        toStatus: { stringValue: h.toStatus || h.stage || payload.status },
+        timestamp: { stringValue: h.timestamp || payload.stageUpdatedAt || new Date().toISOString() }
+      };
+      if (h.fromStatus) hFields.fromStatus = { stringValue: h.fromStatus };
+      if (h.note) hFields.note = { stringValue: h.note };
+      return { mapValue: { fields: hFields } };
+    });
 
     const fields = {
       company: { stringValue: payload.company },
@@ -1339,13 +1497,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (payload.jobLink) fields.jobLink = { stringValue: payload.jobLink };
     if (payload.notes) fields.notes = { stringValue: payload.notes };
     if (payload.companyDomain) fields.companyDomain = { stringValue: payload.companyDomain };
-    if (payload.logoUrl) fields.logoUrl = { stringValue: payload.logoUrl };
+    if (payload.location) fields.location = { stringValue: payload.location };
+    if (payload.workLocation) fields.workLocation = { stringValue: payload.workLocation };
+    if (payload.employmentType) fields.employmentType = { stringValue: payload.employmentType };
 
     const headers = { 'Content-Type': 'application/json' };
     if (idToken) headers['Authorization'] = `Bearer ${idToken}`;
 
+    const method = docIdToUpdate ? 'PATCH' : 'POST';
     const response = await fetch(url, {
-      method: 'POST',
+      method,
       headers,
       body: JSON.stringify({ fields })
     });
@@ -1356,12 +1517,63 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     const resData = await response.json();
-    const docId = resData.name ? resData.name.split('/').pop() : `cloud-${Date.now()}`;
+    const docId = docIdToUpdate || (resData.name ? resData.name.split('/').pop() : `cloud-${Date.now()}`);
     return {
       ...payload,
       id: docId,
       userId
     };
+  }
+
+  /**
+   * Persist recruiter contact directly to Firestore /users/{userId}/contacts
+   */
+  async function pushContactToFirestoreDirectly(contact, appId, userSession, config) {
+    if (!contact || !contact.name) return null;
+    const projectId = config?.projectId || 'demo-tracklet';
+    const apiKey = config?.apiKey;
+    const userId = userSession.uid;
+    const idToken = userSession.idToken;
+
+    let url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/users/${userId}/contacts`;
+    if (apiKey && apiKey !== 'demo-api-key') {
+      url += `?key=${encodeURIComponent(apiKey)}`;
+    }
+
+    const nowISO = new Date().toISOString();
+    const fields = {
+      name: { stringValue: contact.name },
+      role: { stringValue: contact.role || 'Recruiter' },
+      category: { stringValue: contact.category || 'Recruiter' },
+      createdAt: { stringValue: nowISO },
+      updatedAt: { stringValue: nowISO },
+      applicationIds: {
+        arrayValue: {
+          values: appId ? [{ stringValue: appId }] : []
+        }
+      }
+    };
+    if (contact.organization) fields.organization = { stringValue: contact.organization };
+    if (contact.linkedIn) fields.linkedIn = { stringValue: contact.linkedIn };
+    if (contact.email) fields.email = { stringValue: contact.email };
+
+    const headers = { 'Content-Type': 'application/json' };
+    if (idToken) headers['Authorization'] = `Bearer ${idToken}`;
+
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ fields })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        return data.name ? data.name.split('/').pop() : null;
+      }
+    } catch (e) {
+      console.warn('Direct Firestore contact push failed:', e);
+    }
+    return null;
   }
 
   async function handleSave() {
@@ -1385,21 +1597,80 @@ document.addEventListener('DOMContentLoaded', async () => {
       ? customPlatformInput.value.trim() 
       : selectedPlatform;
 
+    // Sanitize domain: never store a job board or ATS domain (US1 / FR-001)
+    const rawDom = (companyDomainInput.value || currentDomain || '').trim();
+    const registry = typeof JobBoardRegistry !== 'undefined' ? JobBoardRegistry : null;
+    let cleanDom = registry && registry.cleanCompanyDomain ? registry.cleanCompanyDomain(rawDom) : rawDom.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0];
+    if (registry && registry.isJobBoardOrAts && registry.isJobBoardOrAts(cleanDom)) {
+      cleanDom = '';
+    }
+
     const nowISO = new Date().toISOString();
+
+    // Stage & History Resolution (US5 / FR-012, FR-013, FR-014)
+    let resolvedStatus = selectedStage;
+    let resolvedStageUpdatedAt = nowISO;
+    let resolvedHistory = [];
+
+    if (matchedApplication) {
+      if (matchedApplication.status === 'Saved' && selectedStage === 'Applied') {
+        // Legitimate user promotion Saved -> Applied
+        resolvedStatus = 'Applied';
+        resolvedStageUpdatedAt = nowISO;
+        const newEntry = {
+          id: `hist-${Date.now()}`,
+          toStatus: 'Applied',
+          fromStatus: 'Saved',
+          timestamp: nowISO,
+          note: 'Stage updated via Tracklet Extension'
+        };
+        resolvedHistory = [...(matchedApplication.history || []), newEntry];
+      } else {
+        // Preserve existing status and history without downgrade or overwrite
+        resolvedStatus = matchedApplication.status || selectedStage;
+        resolvedStageUpdatedAt = matchedApplication.stageUpdatedAt || nowISO;
+        resolvedHistory = (matchedApplication.history && matchedApplication.history.length > 0)
+          ? matchedApplication.history
+          : [{ id: `hist-${Date.now()}`, toStatus: resolvedStatus, timestamp: resolvedStageUpdatedAt }];
+      }
+    } else {
+      resolvedStatus = selectedStage;
+      resolvedStageUpdatedAt = nowISO;
+      resolvedHistory = [{ id: `hist-${Date.now()}`, toStatus: selectedStage, timestamp: nowISO }];
+    }
+
     const basePayload = {
+      ...(matchedApplication || {}),
       company,
       role,
       platform: finalPlatform,
-      dateApplied: dateAppliedInput.value || today,
-      status: selectedStage,
+      dateApplied: dateAppliedInput.value || (matchedApplication?.dateApplied) || today,
+      status: resolvedStatus,
       jobLink: jobLinkInput.value,
       notes: notesInput.value.trim(),
-      companyDomain: currentDomain,
-      logoUrl: currentDomain ? `https://logo.clearbit.com/${currentDomain}` : undefined,
-      stageUpdatedAt: nowISO,
-      createdAt: nowISO,
+      companyDomain: cleanDom || undefined,
+      location: locationInput.value.trim() || undefined,
+      workLocation: selectedWorkLocation || undefined,
+      employmentType: selectedEmploymentType || undefined,
+      stageUpdatedAt: resolvedStageUpdatedAt,
+      history: resolvedHistory,
       updatedAt: nowISO
     };
+
+    if (!matchedApplication) {
+      basePayload.createdAt = nowISO;
+    }
+
+    // Attach Recruiter Contact if checked (US4)
+    if (detectedRecruiterContact && addRecruiterContactCheckbox && addRecruiterContactCheckbox.checked) {
+      basePayload.newContact = {
+        name: detectedRecruiterContact.name,
+        role: detectedRecruiterContact.role || 'Recruiter',
+        organization: company,
+        linkedIn: detectedRecruiterContact.linkedIn || '',
+        category: detectedRecruiterContact.category || 'Recruiter'
+      };
+    }
 
     let finalizedApp = null;
     let savedToCloud = false;
@@ -1407,8 +1678,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 1. Direct Cloud Persist if user session is available
     if (currentUserSession && currentUserSession.uid) {
       try {
-        finalizedApp = await pushToFirestoreDirectly(basePayload, currentUserSession, currentFirebaseConfig);
+        finalizedApp = await pushToFirestoreDirectly(basePayload, currentUserSession, currentFirebaseConfig, matchedApplication?.id);
         savedToCloud = true;
+
+        if (basePayload.newContact) {
+          await pushContactToFirestoreDirectly(basePayload.newContact, finalizedApp.id, currentUserSession, currentFirebaseConfig);
+        }
       } catch (cloudErr) {
         console.warn('Direct Firestore push failed (offline or auth expired), falling back to local storage:', cloudErr);
       }
@@ -1418,7 +1693,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!finalizedApp) {
       finalizedApp = {
         ...basePayload,
-        id: `ext-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+        id: matchedApplication?.id || `ext-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
         userId: currentUserSession?.uid || 'guest'
       };
     }
@@ -1442,10 +1717,16 @@ document.addEventListener('DOMContentLoaded', async () => {
       let guestApps = result.tracklet_guest_apps_v1 || [];
       let appsIndex = result.tracklet_apps_index || [];
 
-      guestApps = [finalizedApp, ...guestApps];
-      appsIndex = [finalizedApp, ...appsIndex];
-      if (!savedToCloud) {
-        pending = [finalizedApp, ...pending];
+      if (matchedApplication?.id) {
+        guestApps = guestApps.map(a => a.id === matchedApplication.id ? finalizedApp : a);
+        appsIndex = appsIndex.map(a => a.id === matchedApplication.id ? finalizedApp : a);
+        pending = pending.map(a => a.id === matchedApplication.id ? finalizedApp : a);
+      } else {
+        guestApps = [finalizedApp, ...guestApps];
+        appsIndex = [finalizedApp, ...appsIndex];
+        if (!savedToCloud) {
+          pending = [finalizedApp, ...pending];
+        }
       }
 
       chrome.storage.local.set({
@@ -1457,14 +1738,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         chrome.runtime.sendMessage({ action: 'FLASH_SUCCESS' });
 
         // Show Success Overlay
-        successTitle.textContent = savedToCloud ? 'Saved to Cloud!' : 'Application Saved!';
-        successSubtitle.textContent = `${company} — ${role} logged to Tracklet.`;
+        successTitle.textContent = matchedApplication
+          ? (savedToCloud ? 'Cloud Updated!' : 'Application Updated!')
+          : (savedToCloud ? 'Saved to Cloud!' : 'Application Saved!');
+        successSubtitle.textContent = matchedApplication
+          ? `Updated "${role}" at ${company}.`
+          : `${company} — ${role} logged to Tracklet.`;
 
         mainContainer.style.display = 'none';
         successView.classList.add('visible');
 
-        // Auto-close popup with 3.2s duration (pauses on hover)
-        scheduleAutoClose(3200);
+        // Auto-close popup with 2.8s duration
+        scheduleAutoClose(2800);
       });
     });
   }
