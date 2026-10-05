@@ -16,6 +16,7 @@ interface MobileFilterDrawerProps {
 const PLATFORMS: JobPlatform[] = [
   'LinkedIn',
   'Indeed',
+  'Bayt',
   'Lever',
   'Greenhouse',
   'Otta',

@@ -10,6 +10,7 @@ export type ApplicationStatus =
 export type JobPlatform = 
   | 'LinkedIn'
   | 'Indeed'
+  | 'Bayt'
   | 'Lever'
   | 'Greenhouse'
   | 'Otta'
