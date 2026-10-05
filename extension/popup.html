@@ -190,22 +190,22 @@
           </div>
 
           <div class="stage-selector-container" id="stage-selector-container">
-            <button type="button" class="stage-trigger-btn" id="stage-trigger-btn">
+            <button type="button" class="stage-trigger-btn" id="stage-trigger-btn" style="background-color: var(--stage-saved-bg); color: var(--stage-saved-text); border-color: var(--stage-saved-border);">
               <div class="stage-trigger-left">
-                <span class="stage-dot" id="stage-dot" style="background-color: var(--stage-applied-dot);"></span>
-                <span id="stage-label-text">Applied</span>
+                <span class="stage-dot" id="stage-dot" style="background-color: var(--stage-saved-dot);"></span>
+                <span id="stage-label-text">Saved</span>
               </div>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
             </button>
             <div class="stage-dropdown-menu" id="stage-dropdown-menu">
               <div class="stage-dropdown-header">Select Stage</div>
-              <div class="stage-option-item" data-stage="Saved" style="color: var(--stage-saved-text);">
+              <div class="stage-option-item selected" data-stage="Saved" style="color: var(--stage-saved-text);">
                 <div style="display:flex; align-items:center; gap:8px;">
                   <span class="stage-dot" style="background-color: var(--stage-saved-dot);"></span>
                   <span>Saved</span>
                 </div>
               </div>
-              <div class="stage-option-item selected" data-stage="Applied" style="color: var(--stage-applied-text);">
+              <div class="stage-option-item" data-stage="Applied" style="color: var(--stage-applied-text);">
                 <div style="display:flex; align-items:center; gap:8px;">
                   <span class="stage-dot" style="background-color: var(--stage-applied-dot);"></span>
                   <span>Applied</span>
@@ -248,8 +248,8 @@
               <button type="button" class="toolbar-btn" data-cmd="h3" title="Heading"><b>H</b></button>
               <button type="button" class="toolbar-btn" data-cmd="bullet" title="Bullet List">• List</button>
             </div>
-            <div id="notes-editor" class="notes-contenteditable" contenteditable="true" role="textbox" aria-multiline="true" spellcheck="true" data-placeholder="Job description, requirements, notes..."></div>
-            <textarea id="notes-raw" class="notes-raw-textarea" rows="6" style="display: none;"></textarea>
+            <div id="notes-editor" class="notes-contenteditable" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Notes" spellcheck="true" data-placeholder="Job description, requirements, notes..."></div>
+            <textarea id="notes-raw" class="notes-raw-textarea" rows="6" style="display: none;" aria-label="Raw Markdown Notes"></textarea>
           </div>
           <input type="hidden" id="notes" name="notes">
         </div>

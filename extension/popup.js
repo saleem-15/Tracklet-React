@@ -62,6 +62,24 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   if (notesEditorEl) {
+    notesEditorEl.addEventListener('click', (e) => {
+      const anchor = e.target.closest('a');
+      if (anchor) {
+        const href = anchor.getAttribute('href');
+        if (href) {
+          try {
+            const parsed = new URL(href.startsWith('http') || href.startsWith('mailto:') || href.startsWith('tel:') ? href : `https://${href}`);
+            if (['http:', 'https:', 'mailto:', 'tel:'].includes(parsed.protocol)) {
+              e.preventDefault();
+              chrome.tabs.create({ url: parsed.href });
+            }
+          } catch {
+            // Ignore invalid URL
+          }
+        }
+      }
+    });
+
     notesEditorEl.addEventListener('input', () => {
       if (popupRegistry && popupRegistry.htmlToMarkdown) {
         internalNotesMarkdown = popupRegistry.htmlToMarkdown(notesEditorEl.innerHTML);
@@ -1583,26 +1601,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const userId = userSession.uid;
     const idToken = userSession.idToken;
 
-    let url = docIdToUpdate
-      ? `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/users/${userId}/applications/${docIdToUpdate}`
-      : `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/users/${userId}/applications`;
-
-    const queryParams = [];
-    if (apiKey && apiKey !== 'demo-api-key') {
-      queryParams.push(`key=${encodeURIComponent(apiKey)}`);
-    }
-    if (docIdToUpdate) {
-      const updateFields = [
-        'company', 'role', 'platform', 'status', 'dateApplied',
-        'stageUpdatedAt', 'updatedAt', 'jobLink', 'notes',
-        'companyDomain', 'history', 'location', 'workLocation', 'employmentType'
-      ];
-      updateFields.forEach(f => queryParams.push(`updateMask.fieldPaths=${f}`));
-    }
-    if (queryParams.length > 0) {
-      url += `?${queryParams.join('&')}`;
-    }
-
     const historyList = (payload.history && payload.history.length > 0)
       ? payload.history
       : [
@@ -1625,11 +1623,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     const fields = {
-      company: { stringValue: payload.company },
-      role: { stringValue: payload.role },
-      platform: { stringValue: payload.platform },
-      status: { stringValue: payload.status },
-      dateApplied: { stringValue: payload.dateApplied },
+      company: { stringValue: payload.company || '' },
+      role: { stringValue: payload.role || '' },
+      platform: { stringValue: payload.platform || 'Other' },
+      status: { stringValue: payload.status || 'Saved' },
+      dateApplied: { stringValue: payload.dateApplied || new Date().toISOString().slice(0, 10) },
       userId: { stringValue: userId },
       stageUpdatedAt: { stringValue: payload.stageUpdatedAt || new Date().toISOString() },
       createdAt: { stringValue: payload.createdAt || new Date().toISOString() },
@@ -1641,12 +1639,31 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     };
 
-    if (payload.jobLink) fields.jobLink = { stringValue: payload.jobLink };
-    if (payload.notes) fields.notes = { stringValue: payload.notes };
-    if (payload.companyDomain) fields.companyDomain = { stringValue: payload.companyDomain };
-    if (payload.location) fields.location = { stringValue: payload.location };
-    if (payload.workLocation) fields.workLocation = { stringValue: payload.workLocation };
-    if (payload.employmentType) fields.employmentType = { stringValue: payload.employmentType };
+    if (payload.jobLink !== undefined && payload.jobLink !== null) fields.jobLink = { stringValue: payload.jobLink };
+    if (payload.notes !== undefined && payload.notes !== null) fields.notes = { stringValue: payload.notes };
+    if (payload.companyDomain !== undefined && payload.companyDomain !== null) fields.companyDomain = { stringValue: payload.companyDomain };
+    if (payload.location !== undefined && payload.location !== null) fields.location = { stringValue: payload.location };
+    if (payload.workLocation !== undefined && payload.workLocation !== null) fields.workLocation = { stringValue: payload.workLocation };
+    if (payload.employmentType !== undefined && payload.employmentType !== null) fields.employmentType = { stringValue: payload.employmentType };
+
+    let url = docIdToUpdate
+      ? `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/users/${userId}/applications/${docIdToUpdate}`
+      : `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/users/${userId}/applications`;
+
+    const queryParams = [];
+    if (apiKey && apiKey !== 'demo-api-key') {
+      queryParams.push(`key=${encodeURIComponent(apiKey)}`);
+    }
+    if (docIdToUpdate) {
+      Object.keys(fields).forEach(f => {
+        if (f !== 'userId' && f !== 'createdAt') {
+          queryParams.push(`updateMask.fieldPaths=${f}`);
+        }
+      });
+    }
+    if (queryParams.length > 0) {
+      url += `?${queryParams.join('&')}`;
+    }
 
     const headers = { 'Content-Type': 'application/json' };
     if (idToken) headers['Authorization'] = `Bearer ${idToken}`;
@@ -1996,6 +2013,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   // Initialize Stage & Platform UI
-  updateStageUI('Applied');
+  updateStageUI('Saved');
   setPlatform('Company Site');
 });

@@ -345,8 +345,18 @@
   function parseInlineToHtml(line) {
     if (!line) return '';
     let escaped = escapeHtml(line);
-    // Links: [text](url)
-    escaped = escaped.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+    // Links: [text](url) with protocol validation
+    escaped = escaped.replace(/\[([^\]]+)\]\(([^)]+)\)/g, function (_match, text, url) {
+      const trimmedUrl = url.trim();
+      const lower = trimmedUrl.toLowerCase();
+      if (lower.startsWith('javascript:') || lower.startsWith('data:') || lower.startsWith('vbscript:')) {
+        return text;
+      }
+      const safeUrl = (lower.startsWith('http://') || lower.startsWith('https://') || lower.startsWith('mailto:') || lower.startsWith('tel:'))
+        ? trimmedUrl
+        : 'https://' + trimmedUrl;
+      return '<a href="' + safeUrl + '" target="_blank" rel="noopener noreferrer">' + text + '</a>';
+    });
     // Bold: **text**
     escaped = escaped.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
     // Italic: *text*
