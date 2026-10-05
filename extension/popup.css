@@ -329,8 +329,195 @@ textarea {
   min-height: 80px;
   max-height: 240px;
   line-height: 1.5;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--font-body);
+  font-size: 12px;
+}
+
+/* Rich Notes WYSIWYG View + Edit Surface (matching Tracklet RichTextEditor) */
+.form-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 6px;
+}
+
+.notes-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn-ghost-xs {
+  background: transparent;
+  border: none;
+  color: var(--neutral-muted, #64748b);
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+}
+
+.btn-ghost-xs:hover {
+  color: var(--primary, #2563eb);
+  background-color: #f1f5f9;
+}
+
+.rich-notes-container {
+  position: relative;
+  width: 100%;
+  background-color: #ffffff;
+  border: 1px solid var(--neutral-border, #e2e8f0);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.15s ease;
+}
+
+.rich-notes-container:hover {
+  border-color: #cbd5e1;
+}
+
+.rich-notes-container:focus-within {
+  border-color: var(--primary, #2563eb);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
+}
+
+.rich-notes-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 8px;
+  background-color: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.toolbar-btn {
+  background: transparent;
+  border: none;
+  padding: 3px 8px;
+  border-radius: 6px;
   font-size: 11.5px;
+  color: #475569;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: inherit;
+  transition: all 0.12s ease;
+}
+
+.toolbar-btn:hover {
+  background-color: #e2e8f0;
+  color: #0f172a;
+}
+
+.notes-contenteditable {
+  min-height: 100px;
+  max-height: 240px;
+  overflow-y: auto;
+  padding: 10px 12px;
+  font-family: var(--font-body, system-ui, -apple-system, sans-serif);
+  font-size: 12px;
+  line-height: 1.6;
+  color: #1e293b;
+  outline: none;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+/* Rich typography inside contenteditable matching Tracklet RichTextEditor */
+.notes-contenteditable h1,
+.notes-contenteditable h2 {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #0f172a;
+  margin-top: 10px;
+  margin-bottom: 4px;
+  line-height: 1.3;
+}
+
+.notes-contenteditable h3,
+.notes-contenteditable h4 {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #0f172a;
+  margin-top: 8px;
+  margin-bottom: 3px;
+  line-height: 1.3;
+}
+
+.notes-contenteditable p {
+  margin-top: 0;
+  margin-bottom: 6px;
+  color: #334155;
+}
+
+.notes-contenteditable ul,
+.notes-contenteditable ol {
+  padding-left: 18px;
+  margin-top: 4px;
+  margin-bottom: 8px;
+}
+
+.notes-contenteditable li {
+  margin-bottom: 3px;
+  color: #334155;
+}
+
+.notes-contenteditable strong,
+.notes-contenteditable b {
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.notes-contenteditable em,
+.notes-contenteditable i {
+  font-style: italic;
+  color: #334155;
+}
+
+.notes-contenteditable code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  background-color: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  padding: 1px 4px;
+  color: #0f172a;
+}
+
+.notes-contenteditable a {
+  color: #2563eb;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.notes-contenteditable:empty:before {
+  content: attr(data-placeholder);
+  color: #94a3b8;
+  pointer-events: none;
+  display: block;
+}
+
+.notes-raw-textarea {
+  width: 100%;
+  min-height: 100px;
+  max-height: 240px;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 0;
+  outline: none;
+  background-color: #ffffff;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: #1e293b;
+  resize: vertical;
 }
 
 /* Custom Select Component matching CustomSelectDropdown.tsx */

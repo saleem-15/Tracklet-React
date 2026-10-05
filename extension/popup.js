@@ -13,6 +13,144 @@ document.addEventListener('DOMContentLoaded', async () => {
   const dateAppliedInput = document.getElementById('dateApplied');
   const jobLinkInput = document.getElementById('jobLink');
   const notesInput = document.getElementById('notes');
+  const notesEditorEl = document.getElementById('notes-editor');
+  const notesRawEl = document.getElementById('notes-raw');
+  const toggleMdBtn = document.getElementById('btn-toggle-md');
+  const toggleMdLabel = document.getElementById('toggle-md-label');
+  const clearNotesBtn = document.getElementById('btn-clear-notes');
+  const notesToolbar = document.getElementById('notes-toolbar');
+
+  const popupRegistry = typeof JobBoardRegistry !== 'undefined' ? JobBoardRegistry : null;
+
+  let isRawNotesMode = false;
+  let internalNotesMarkdown = '';
+
+  function updateNotesEditorView(md) {
+    internalNotesMarkdown = md || '';
+    if (notesRawEl) notesRawEl.value = internalNotesMarkdown;
+    if (notesEditorEl) {
+      if (popupRegistry && popupRegistry.markdownToHtml) {
+        notesEditorEl.innerHTML = popupRegistry.markdownToHtml(internalNotesMarkdown);
+      } else {
+        notesEditorEl.textContent = internalNotesMarkdown;
+      }
+    }
+  }
+
+  function getSerializedNotesMarkdown() {
+    if (isRawNotesMode && notesRawEl) {
+      return notesRawEl.value;
+    }
+    if (notesEditorEl && popupRegistry && popupRegistry.htmlToMarkdown) {
+      return popupRegistry.htmlToMarkdown(notesEditorEl.innerHTML);
+    }
+    return internalNotesMarkdown;
+  }
+
+  if (notesInput) {
+    Object.defineProperty(notesInput, 'value', {
+      get: function () {
+        return getSerializedNotesMarkdown();
+      },
+      set: function (val) {
+        updateNotesEditorView(val);
+      },
+      configurable: true,
+    });
+  }
+
+  if (notesEditorEl) {
+    notesEditorEl.addEventListener('input', () => {
+      if (popupRegistry && popupRegistry.htmlToMarkdown) {
+        internalNotesMarkdown = popupRegistry.htmlToMarkdown(notesEditorEl.innerHTML);
+        if (notesRawEl) notesRawEl.value = internalNotesMarkdown;
+      }
+    });
+
+    notesEditorEl.addEventListener('paste', (e) => {
+      e.preventDefault();
+      const text = e.clipboardData ? e.clipboardData.getData('text/plain') : '';
+      if (text) {
+        document.execCommand('insertText', false, text);
+      }
+    });
+  }
+
+  if (notesRawEl) {
+    notesRawEl.addEventListener('input', () => {
+      internalNotesMarkdown = notesRawEl.value;
+      if (notesEditorEl && popupRegistry && popupRegistry.markdownToHtml) {
+        notesEditorEl.innerHTML = popupRegistry.markdownToHtml(internalNotesMarkdown);
+      }
+    });
+  }
+
+  if (notesToolbar) {
+    notesToolbar.querySelectorAll('.toolbar-btn').forEach((btn) => {
+      btn.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        const cmd = btn.getAttribute('data-cmd');
+        if (notesEditorEl) notesEditorEl.focus();
+
+        if (cmd === 'bold') {
+          document.execCommand('bold', false, null);
+        } else if (cmd === 'italic') {
+          document.execCommand('italic', false, null);
+        } else if (cmd === 'h3') {
+          document.execCommand('formatBlock', false, '<h3>');
+        } else if (cmd === 'bullet') {
+          document.execCommand('insertUnorderedList', false, null);
+        }
+
+        if (popupRegistry && popupRegistry.htmlToMarkdown && notesEditorEl) {
+          internalNotesMarkdown = popupRegistry.htmlToMarkdown(notesEditorEl.innerHTML);
+          if (notesRawEl) notesRawEl.value = internalNotesMarkdown;
+        }
+      });
+    });
+  }
+
+  if (toggleMdBtn) {
+    toggleMdBtn.addEventListener('click', () => {
+      isRawNotesMode = !isRawNotesMode;
+      if (isRawNotesMode) {
+        if (notesEditorEl && popupRegistry && popupRegistry.htmlToMarkdown) {
+          internalNotesMarkdown = popupRegistry.htmlToMarkdown(notesEditorEl.innerHTML);
+          if (notesRawEl) notesRawEl.value = internalNotesMarkdown;
+        }
+        if (notesEditorEl) notesEditorEl.style.display = 'none';
+        if (notesToolbar) notesToolbar.style.display = 'none';
+        if (notesRawEl) {
+          notesRawEl.style.display = 'block';
+          notesRawEl.focus();
+        }
+        if (toggleMdLabel) toggleMdLabel.textContent = 'View';
+      } else {
+        if (notesRawEl) {
+          internalNotesMarkdown = notesRawEl.value;
+        }
+        if (notesEditorEl && popupRegistry && popupRegistry.markdownToHtml) {
+          notesEditorEl.innerHTML = popupRegistry.markdownToHtml(internalNotesMarkdown);
+        }
+        if (notesRawEl) notesRawEl.style.display = 'none';
+        if (notesToolbar) notesToolbar.style.display = 'flex';
+        if (notesEditorEl) {
+          notesEditorEl.style.display = 'block';
+          notesEditorEl.focus();
+        }
+        if (toggleMdLabel) toggleMdLabel.textContent = 'Markdown';
+      }
+    });
+  }
+
+  if (clearNotesBtn) {
+    clearNotesBtn.addEventListener('click', () => {
+      internalNotesMarkdown = '';
+      if (notesEditorEl) notesEditorEl.innerHTML = '';
+      if (notesRawEl) notesRawEl.value = '';
+    });
+  }
+
   const saveBtn = document.getElementById('save-btn');
   const companyAvatar = document.getElementById('company-avatar');
   const mainContainer = document.getElementById('main-container');

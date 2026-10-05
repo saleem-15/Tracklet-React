@@ -226,42 +226,79 @@
   function htmlToMarkdown(htmlOrNode) {
     if (!htmlOrNode) return '';
     if (typeof htmlOrNode !== 'string') return '';
-    if (!/<[a-z][\s\S]*>/i.test(htmlOrNode)) {
-      return htmlOrNode.trim();
-    }
 
     let md = htmlOrNode;
+
+    // 1. If HTML tags are escaped as &lt;p&gt; or &lt;b&gt;, unescape tag delimiters first
+    if (/&lt;[a-z/][^&]*&gt;/i.test(md)) {
+      md = md
+        .replace(/&lt;/gi, '<')
+        .replace(/&gt;/gi, '>');
+    }
+
+    if (!/<[a-z][\s\S]*>/i.test(md)) {
+      return md.trim();
+    }
+
     md = md.replace(/\r\n/g, '\n');
     md = md.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
     md = md.replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '');
     md = md.replace(/<!--[\s\S]*?-->/g, '');
 
-    md = md.replace(/<h1[^>]*>(.*?)<\/h1>/gis, '\n\n# $1\n\n');
-    md = md.replace(/<h2[^>]*>(.*?)<\/h2>/gis, '\n\n## $1\n\n');
-    md = md.replace(/<h3[^>]*>(.*?)<\/h3>/gis, '\n\n### $1\n\n');
-    md = md.replace(/<h4[^>]*>(.*?)<\/h4>/gis, '\n\n#### $1\n\n');
-    md = md.replace(/<h5[^>]*>(.*?)<\/h5>/gis, '\n\n##### $1\n\n');
-    md = md.replace(/<h6[^>]*>(.*?)<\/h6>/gis, '\n\n###### $1\n\n');
+    // 2. Explicit Headings (strip internal tags so headers stay clean)
+    md = md.replace(/<h[12]\b[^>]*>(.*?)<\/h[12]>/gis, function (_match, content) {
+      const clean = content.replace(/<[^>]+>/g, '').trim();
+      return clean ? '\n\n## ' + clean + '\n\n' : '\n\n';
+    });
 
+    md = md.replace(/<h[3-6]\b[^>]*>(.*?)<\/h[3-6]>/gis, function (_match, content) {
+      const clean = content.replace(/<[^>]+>/g, '').trim();
+      return clean ? '\n\n### ' + clean + '\n\n' : '\n\n';
+    });
+
+    // 3. Implicit Headings: Job boards (Bayt, Indeed, LinkedIn, etc.) frequently wrap section titles
+    // in <p><b>Heading</b></p>, <div><strong>Heading:</strong></div>, or <b>Heading:</b><br>.
+    md = md.replace(/<(?:p|div|section)\b[^>]*>\s*<(?:strong|b)\b[^>]*>([^<]+)<\/(?:strong|b)>\s*<\/(?:p|div|section)>/gi, function (match, text) {
+      const clean = text.trim();
+      if (clean.length > 0 && clean.length <= 80 && !clean.endsWith('.') && !clean.includes('. ')) {
+        return '\n\n### ' + clean + '\n\n';
+      }
+      return match;
+    });
+
+    md = md.replace(/<(?:strong|b)\b[^>]*>([^<]+)<\/(?:strong|b)>\s*(?:<br\s*[\/]?>|\n)+/gi, function (match, text) {
+      const clean = text.trim();
+      if (clean.length > 0 && clean.length <= 80 && !clean.endsWith('.') && !clean.includes('. ')) {
+        return '\n\n### ' + clean + '\n\n';
+      }
+      return match;
+    });
+
+    // 4. Formatting tags
     md = md.replace(/<(?:strong|b)\b[^>]*>(.*?)<\/(?:strong|b)>/gis, ' **$1** ');
     md = md.replace(/<(?:em|i)\b[^>]*>(.*?)<\/(?:em|i)>/gis, ' *$1* ');
     md = md.replace(/<code\b[^>]*>(.*?)<\/code>/gis, ' `$1` ');
     md = md.replace(/<pre\b[^>]*>(.*?)<\/pre>/gis, '\n```\n$1\n```\n');
 
+    // 5. Links
     md = md.replace(/<a\b[^>]*href=["']([^"']*)["'][^>]*>(.*?)<\/a>/gis, '[$2]($1)');
 
+    // 6. Lists
     md = md.replace(/<li\b[^>]*>(.*?)<\/li>/gis, '\n- $1');
     md = md.replace(/<\/(?:ul|ol)>/gis, '\n\n');
     md = md.replace(/<(?:ul|ol)\b[^>]*>/gis, '\n');
 
+    // 7. Structural tags
     md = md.replace(/<p\b[^>]*>(.*?)<\/p>/gis, '\n\n$1\n\n');
     md = md.replace(/<blockquote\b[^>]*>(.*?)<\/blockquote>/gis, '\n> $1\n\n');
     md = md.replace(/<br\s*[\/]?>/gi, '\n');
     md = md.replace(/<hr\s*[\/]?>/gi, '\n\n---\n\n');
     md = md.replace(/<\/?(?:div|section|article|main|header|footer|span)\b[^>]*>/gi, '\n');
 
+    // 8. Strip remaining tags
     md = md.replace(/<[^>]+>/g, '');
 
+    // 9. Decode HTML entities
     md = md
       .replace(/&nbsp;/gi, ' ')
       .replace(/&amp;/gi, '&')
@@ -273,6 +310,19 @@
       .replace(/&ndash;/gi, '–')
       .replace(/&mdash;/gi, '—');
 
+    // 10. Post-process headings
+    md = md.replace(/^(\s*)\*\*([^*\n]+)\*\*(\s*)$/gm, function (match, before, text, after) {
+      const clean = text.trim();
+      if (clean.length > 0 && clean.length <= 80 && !clean.endsWith('.') && !clean.includes('. ')) {
+        return before + '### ' + clean + after;
+      }
+      return match;
+    });
+
+    md = md.replace(/^(#{1,6}\s+)\*\*([^*\n]+)\*\*\s*$/gm, '$1$2');
+    md = md.replace(/^(#{1,6}\s+)\*([^*\n]+)\*\s*$/gm, '$1$2');
+
+    // 11. Normalize spacing
     md = md
       .replace(/[ \t]+/g, ' ')
       .replace(/\n[ \t]+/g, '\n')
@@ -281,6 +331,136 @@
       .trim();
 
     return md;
+  }
+
+  function escapeHtml(str) {
+    return String(str || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  function parseInlineToHtml(line) {
+    if (!line) return '';
+    let escaped = escapeHtml(line);
+    // Links: [text](url)
+    escaped = escaped.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+    // Bold: **text**
+    escaped = escaped.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    // Italic: *text*
+    escaped = escaped.replace(/(^|[^*])\*([^*]+)\*(?!\*)/g, '$1<em>$2</em>');
+    // Inline code: `text`
+    escaped = escaped.replace(/`([^`]+)`/g, '<code>$1</code>');
+    return escaped;
+  }
+
+  function markdownToHtml(markdown) {
+    if (!markdown || !markdown.trim()) {
+      return '<p><br></p>';
+    }
+
+    const lines = markdown.split(/\r?\n/);
+    const htmlParts = [];
+    let inUl = false;
+    let inOl = false;
+
+    function closeLists() {
+      if (inUl) {
+        htmlParts.push('</ul>');
+        inUl = false;
+      }
+      if (inOl) {
+        htmlParts.push('</ol>');
+        inOl = false;
+      }
+    }
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const trimmed = line.trim();
+
+      if (!trimmed) {
+        closeLists();
+        htmlParts.push('<p><br></p>');
+        continue;
+      }
+
+      // Headings
+      if (trimmed.startsWith('# ')) {
+        closeLists();
+        htmlParts.push('<h2>' + parseInlineToHtml(trimmed.slice(2)) + '</h2>');
+        continue;
+      }
+      if (trimmed.startsWith('## ')) {
+        closeLists();
+        htmlParts.push('<h3>' + parseInlineToHtml(trimmed.slice(3)) + '</h3>');
+        continue;
+      }
+      if (trimmed.startsWith('### ')) {
+        closeLists();
+        htmlParts.push('<h4>' + parseInlineToHtml(trimmed.slice(4)) + '</h4>');
+        continue;
+      }
+      if (trimmed.startsWith('#### ') || trimmed.startsWith('##### ') || trimmed.startsWith('###### ')) {
+        closeLists();
+        const headerText = trimmed.replace(/^#+\s*/, '');
+        htmlParts.push('<h4>' + parseInlineToHtml(headerText) + '</h4>');
+        continue;
+      }
+
+      // Bullet lists
+      const bulletMatch = trimmed.match(/^[-*]\s+(.*)$/);
+      if (bulletMatch) {
+        if (inOl) {
+          htmlParts.push('</ol>');
+          inOl = false;
+        }
+        if (!inUl) {
+          htmlParts.push('<ul>');
+          inUl = true;
+        }
+        htmlParts.push('<li>' + parseInlineToHtml(bulletMatch[1]) + '</li>');
+        continue;
+      }
+
+      // Numbered lists
+      const numMatch = trimmed.match(/^(\d+)\.\s+(.*)$/);
+      if (numMatch) {
+        if (inUl) {
+          htmlParts.push('</ul>');
+          inUl = false;
+        }
+        if (!inOl) {
+          htmlParts.push('<ol>');
+          inOl = true;
+        }
+        htmlParts.push('<li>' + parseInlineToHtml(numMatch[2]) + '</li>');
+        continue;
+      }
+
+      // Divider
+      if (/^(-{3,}|\*{3,}|_{3,})$/.test(trimmed)) {
+        closeLists();
+        htmlParts.push('<hr>');
+        continue;
+      }
+
+      // Blockquote
+      if (trimmed.startsWith('> ')) {
+        closeLists();
+        htmlParts.push('<blockquote>' + parseInlineToHtml(trimmed.slice(2)) + '</blockquote>');
+        continue;
+      }
+
+      // Standard paragraph
+      closeLists();
+      htmlParts.push('<p>' + parseInlineToHtml(trimmed) + '</p>');
+    }
+
+    closeLists();
+    return htmlParts.join('');
   }
 
   function cleanCompanyDomain(urlOrHost) {
@@ -301,5 +481,6 @@
     expandCountry,
     formatLocation,
     htmlToMarkdown,
+    markdownToHtml,
   };
 });

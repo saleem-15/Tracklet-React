@@ -226,13 +226,32 @@
           </div>
         </div>
 
-        <!-- Notes / Highlights -->
+        <!-- Notes / Highlights — Shared RichText WYSIWYG View + Edit Component -->
         <div class="form-group">
-          <label for="notes">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-            <span>Job Description & Notes (Markdown)</span>
-          </label>
-          <textarea id="notes" rows="6" placeholder="Job description in Markdown, requirements, compensation, or recruiter notes..."></textarea>
+          <div class="form-label-row">
+            <label for="notes-editor">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+              <span>Job Description &amp; Notes</span>
+            </label>
+            <div class="notes-header-actions">
+              <button type="button" class="btn-ghost-xs" id="btn-toggle-md" title="Toggle between formatted view and markdown code">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                <span id="toggle-md-label">Markdown</span>
+              </button>
+              <button type="button" class="btn-ghost-xs" id="btn-clear-notes" title="Clear notes">Clear</button>
+            </div>
+          </div>
+          <div class="rich-notes-container" id="notes-rich-container">
+            <div class="rich-notes-toolbar" id="notes-toolbar">
+              <button type="button" class="toolbar-btn" data-cmd="bold" title="Bold (Ctrl+B)"><b>B</b></button>
+              <button type="button" class="toolbar-btn" data-cmd="italic" title="Italic (Ctrl+I)"><i>I</i></button>
+              <button type="button" class="toolbar-btn" data-cmd="h3" title="Heading"><b>H</b></button>
+              <button type="button" class="toolbar-btn" data-cmd="bullet" title="Bullet List">• List</button>
+            </div>
+            <div id="notes-editor" class="notes-contenteditable" contenteditable="true" role="textbox" aria-multiline="true" spellcheck="true" data-placeholder="Job description, requirements, notes..."></div>
+            <textarea id="notes-raw" class="notes-raw-textarea" rows="6" style="display: none;"></textarea>
+          </div>
+          <input type="hidden" id="notes" name="notes">
         </div>
       </div>
 

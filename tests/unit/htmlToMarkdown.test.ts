@@ -7,21 +7,71 @@ describe('htmlToMarkdown', () => {
     expect(htmlToMarkdown(plain)).toBe(plain);
   });
 
-  it('converts headings h1 to h6 to markdown headings', () => {
+  it('converts headings h1 to h6 to clean markdown headings', () => {
     const html = '<h1>Role Title</h1><p>Intro</p><h2>Requirements</h2><p>Details</p><h3>Nice to have</h3>';
     const md = htmlToMarkdown(html);
-    expect(md).toContain('# Role Title');
+    expect(md).toContain('## Role Title');
     expect(md).toContain('## Requirements');
     expect(md).toContain('### Nice to have');
   });
 
-  it('converts bold and italic tags into markdown tokens', () => {
-    const html = '<p>We are <strong>boldly</strong> seeking an <em>exceptional</em> <b>Senior</b> <i>Engineer</i>.</p>';
+  it('strips internal formatting tags from headings so they do not produce redundant bold markers', () => {
+    const html = '<h2><b>Job Description</b></h2><p>Overview</p><h3><strong>Required Qualifications:</strong></h3>';
     const md = htmlToMarkdown(html);
-    expect(md).toContain('**boldly**');
-    expect(md).toContain('*exceptional*');
-    expect(md).toContain('**Senior**');
-    expect(md).toContain('*Engineer*');
+    expect(md).toContain('## Job Description');
+    expect(md).not.toContain('## **Job Description**');
+    expect(md).toContain('### Required Qualifications:');
+    expect(md).not.toContain('### **Required Qualifications:**');
+  });
+
+  it('converts implicit bold section titles (CMS style on job boards) to markdown headings', () => {
+    const html = `
+      <p><b>Job Description</b></p>
+      <p>We are looking for a Senior Developer to join our team.</p>
+      <p><strong>Requirements:</strong></p>
+      <ul>
+        <li>TypeScript & React</li>
+      </ul>
+      <div><b>Skills</b></div>
+      <ul>
+        <li>Node.js</li>
+      </ul>
+      <b>Preferred Candidate:</b><br>
+      <p>Master's degree or equivalent experience.</p>
+    `;
+    const md = htmlToMarkdown(html);
+    expect(md).toContain('### Job Description');
+    expect(md).not.toContain('**Job Description**');
+    expect(md).toContain('### Requirements:');
+    expect(md).not.toContain('**Requirements:**');
+    expect(md).toContain('### Skills');
+    expect(md).toContain('### Preferred Candidate:');
+    expect(md).toContain('- TypeScript & React');
+    expect(md).toContain('- Node.js');
+  });
+
+  it('preserves normal inline bold text in sentences and does not convert them to headings', () => {
+    const html = '<p>We are seeking an <b>exceptional</b> candidate with <strong>solid</strong> fundamentals.</p>';
+    const md = htmlToMarkdown(html);
+    expect(md).toContain('**exceptional**');
+    expect(md).toContain('**solid**');
+    expect(md).not.toContain('### exceptional');
+    expect(md).not.toContain('### solid');
+  });
+
+  it('preserves full-sentence bold notes ending with a period and does not convert them to headings', () => {
+    const html = '<p><strong>Note: Applications without a cover letter will not be reviewed.</strong></p>';
+    const md = htmlToMarkdown(html);
+    expect(md).toContain('**Note: Applications without a cover letter will not be reviewed.**');
+    expect(md).not.toContain('### Note:');
+  });
+
+  it('unescapes HTML tags that were entity-encoded in JSON-LD', () => {
+    const html = '&lt;h2&gt;Job Overview&lt;/h2&gt;&lt;p&gt;Overview details&lt;/p&gt;&lt;b&gt;Qualifications:&lt;/b&gt;&lt;br&gt;';
+    const md = htmlToMarkdown(html);
+    expect(md).toContain('## Job Overview');
+    expect(md).toContain('Overview details');
+    expect(md).toContain('### Qualifications:');
   });
 
   it('converts unordered lists into markdown bullet points', () => {
