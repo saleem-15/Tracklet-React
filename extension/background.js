@@ -504,11 +504,18 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'SYNC_USER_SESSION') {
     const user = message.payload?.user || null;
     const config = message.payload?.config || null;
+    const origin = message.payload?.origin || null;
 
-    chrome.storage.local.set({
+    const toStore = {
       tracklet_user_session: user,
       tracklet_firebase_config: config
-    }, () => {
+    };
+
+    if (origin && !origin.includes('localhost') && !origin.includes('127.0.0.1')) {
+      toStore.tracklet_web_origin = origin;
+    }
+
+    chrome.storage.local.set(toStore, () => {
       sendResponse({ success: true });
     });
     return true;

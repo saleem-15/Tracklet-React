@@ -1597,7 +1597,10 @@ window.addEventListener('message', (event) => {
     try {
       chrome.runtime.sendMessage({
         action: 'SYNC_USER_SESSION',
-        payload: event.data.payload
+        payload: {
+          ...event.data.payload,
+          origin: window.location.origin
+        }
       });
     } catch {
       // Extension context invalidated or reloaded

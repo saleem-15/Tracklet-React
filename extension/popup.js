@@ -5,6 +5,8 @@
  */
 
 document.addEventListener('DOMContentLoaded', async () => {
+  const TRACKLET_APP_URL = 'https://tracklet-eight.vercel.app';
+
   // DOM Elements
   const companyInput = document.getElementById('company');
   const companyDomainInput = document.getElementById('companyDomain');
@@ -277,9 +279,16 @@ document.addEventListener('DOMContentLoaded', async () => {
       userAccountEmail.textContent = 'Cloud Sync';
     } else {
       userAccountDot.classList.remove('connected');
-      if (userAccountBadge) userAccountBadge.title = 'Guest Mode: Applications saved to local storage';
+      if (userAccountBadge) userAccountBadge.title = 'Guest Mode: Click to open Tracklet workspace';
       userAccountEmail.textContent = 'Local Mode';
     }
+  }
+
+  if (userAccountBadge) {
+    userAccountBadge.style.cursor = 'pointer';
+    userAccountBadge.addEventListener('click', () => {
+      focusOrOpenWorkspace();
+    });
   }
 
   // Initialize today's date in YYYY-MM-DD
@@ -1915,18 +1924,28 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Focuses existing Tracklet tab if open or opens new tab
   async function focusOrOpenWorkspace(appId = null) {
+    let resolvedBaseUrl = TRACKLET_APP_URL;
+
     try {
+      // 1. Check if user has an active origin saved in storage
+      const storageResult = await chrome.storage.local.get(['tracklet_web_origin']);
+      if (storageResult && storageResult.tracklet_web_origin) {
+        const storedOrigin = String(storageResult.tracklet_web_origin).trim();
+        // Ignore localhost origins so the user is always directed to the real web app
+        if (!storedOrigin.includes('localhost') && !storedOrigin.includes('127.0.0.1')) {
+          resolvedBaseUrl = storedOrigin;
+        }
+      }
+
+      // 2. Search for any existing open Tracklet tab (prefer production/remote domains)
       const tabs = await chrome.tabs.query({});
       const trackletTab = tabs.find(t => t.url && (
-        t.url.includes('localhost:') ||
-        t.url.includes('127.0.0.1:') ||
-        t.url.includes('tracklet') ||
-        t.url.includes('web.app') ||
-        t.url.includes('firebaseapp.com') ||
-        t.url.includes('vercel.app')
+        t.url.includes('tracklet-eight.vercel.app') ||
+        t.url.includes('tracklet.app') ||
+        t.url.includes('.web.app') ||
+        t.url.includes('.firebaseapp.com') ||
+        t.url.includes('.vercel.app')
       ));
-
-      const targetUrl = appId ? `http://localhost:3000/?appId=${encodeURIComponent(appId)}` : 'http://localhost:3000';
 
       if (trackletTab && trackletTab.id) {
         if (appId) {
@@ -1944,7 +1963,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     } catch (err) {
       console.warn('Tab focus check failed:', err);
     }
-    chrome.tabs.create({ url: appId ? `http://localhost:3000/?appId=${encodeURIComponent(appId)}` : 'http://localhost:3000' });
+
+    const cleanBase = resolvedBaseUrl.replace(/\/+$/, '');
+    const targetUrl = appId
+      ? `${cleanBase}/?appId=${encodeURIComponent(appId)}`
+      : cleanBase;
+
+    chrome.tabs.create({ url: targetUrl });
     window.close();
   }
 
