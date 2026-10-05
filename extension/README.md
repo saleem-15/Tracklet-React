@@ -40,12 +40,19 @@ Save job applications from any website (LinkedIn, Indeed, Greenhouse, Lever, Ott
 1. **Navigate to a Job Post:** Open any job posting (LinkedIn, Indeed, Greenhouse, Lever, Otta, Wellfound, or company careers pages).
 2. **Open Extension:** Click the Tracklet extension icon or press **`Alt + Shift + A`** (Mac: `Option + Shift + A`).
 3. **Smart Auto-Fill:** The extension automatically extracts:
-   - **Company Name** (with domain logo preview)
+   - **Company Identity & Logo:** Resolves the true hiring employer domain and high-res favicon (or monogram), never the job board or ATS logo. Deprecated Clearbit dependencies have been removed.
    - **Job Role / Title**
-   - **Platform** (LinkedIn, Indeed, Lever, Greenhouse, etc.)
+   - **Location:** City, region, or country as posted.
+   - **Workplace Arrangement:** Remote, Hybrid, or On-site.
+   - **Employment Type:** Full-time, Part-time, Contract, or Internship.
+   - **Platform:** LinkedIn, Indeed, Lever, Greenhouse, etc.
+   - **Recruiter / Job Poster:** One-click capture of recruiter contacts linked directly into Contacts Hub.
+   - **Highlights & Notes:** Automatically summarizes job descriptions or captures your highlighted text.
    - **Job Link URL**
-   - **Highlights & Notes** (pre-fills any text you highlighted on the webpage)
-4. **Save Application:** Select a stage and click **Save Application** (or press `Enter ↵`).
+4. **Pipeline Stage Safety:**
+   - **New Jobs:** Limited strictly to **Saved** or **Applied** (defaults to Applied on confirmation/thank-you pages).
+   - **Existing Jobs:** Jobs already at **Interview**, **Offer**, etc. are displayed with a read-only stage badge so your pipeline progress and stage history are never overwritten or lost.
+5. **Save Application:** Click **Save Application** (or press `Enter ↵`).
 
 ---
 
@@ -78,7 +85,9 @@ Tracklet turns into a dedicated email companion whenever you are in Gmail (`mail
 ## 🛠️ File Structure
 
 - `manifest.json`: Manifest V3 configuration.
-- `popup.html` & `popup.css`: Executive design tokens, stage selector pills, favicon initial fallbacks.
-- `popup.js`: Form management, BroadcastChannel emitter, and storage management.
-- `content.js`: Page extraction engine (JSON-LD structured data parser + site DOM selectors + universal fallbacks).
+- `jobBoardRegistry.js`: Shared registry of job boards, ATS domains, and logo proxies.
+- `popup.html` & `popup.css`: Executive design tokens, stage selector pills, work arrangement & employment type chips, recruiter contact card, and Google Favicon / monogram fallbacks.
+- `popup.js`: Form management, live logo resolution, duplicate detection, and direct Firestore/storage persistence.
+- `content.js`: Page extraction engine (JSON-LD structured data parser + site DOM selectors + prioritized domain resolver).
 - `background.js`: Service worker handling context menu actions, extension badge indicators, and offline sync storage.
+

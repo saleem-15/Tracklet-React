@@ -123,6 +123,7 @@ export function normalizeCSVPlatform(raw: string): JobPlatform {
 
   if (clean.includes('linkedin')) return 'LinkedIn';
   if (clean.includes('indeed')) return 'Indeed';
+  if (clean.includes('bayt')) return 'Bayt';
   if (clean.includes('lever')) return 'Lever';
   if (clean.includes('greenhouse')) return 'Greenhouse';
   if (clean.includes('otta')) return 'Otta';

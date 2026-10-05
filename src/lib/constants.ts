@@ -63,6 +63,7 @@ export const TERMINAL_STATUSES: ApplicationStatus[] = [
 export const JOB_PLATFORMS: JobPlatform[] = [
   'LinkedIn',
   'Indeed',
+  'Bayt',
   'Lever',
   'Greenhouse',
   'Otta',

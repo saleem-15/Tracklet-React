@@ -67,6 +67,7 @@ describe('importCsv', () => {
     it('normalizes platform names correctly', () => {
       expect(normalizeCSVPlatform('LinkedIn Jobs')).toBe('LinkedIn');
       expect(normalizeCSVPlatform('indeed.com')).toBe('Indeed');
+      expect(normalizeCSVPlatform('Bayt.com')).toBe('Bayt');
       expect(normalizeCSVPlatform('Greenhouse Board')).toBe('Greenhouse');
       expect(normalizeCSVPlatform('Lever.co')).toBe('Lever');
       expect(normalizeCSVPlatform('Referred by Friend')).toBe('Referral');

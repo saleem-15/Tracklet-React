@@ -40,9 +40,22 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
           platform: response.platform || baseData.platform,
           jobLink: response.jobLink || baseData.jobLink,
           notes: info.selectionText || response.notes || '',
-          companyDomain: response.domain || '',
-          logoUrl: response.domain ? `https://logo.clearbit.com/${response.domain}` : undefined
+          companyDomain: response.companyDomain || response.domain || '',
+          location: response.location || undefined,
+          workLocation: response.workLocation || undefined,
+          employmentType: response.employmentType || undefined,
+          status: response.suggestedStage || 'Saved',
         };
+
+        if (response.contact && response.contact.name) {
+          baseData.newContact = {
+            name: response.contact.name,
+            role: response.contact.role || 'Recruiter',
+            organization: baseData.company,
+            linkedIn: response.contact.linkedIn || '',
+            category: response.contact.category || 'Recruiter'
+          };
+        }
       }
 
       await saveAndSyncApplication(baseData);
@@ -78,12 +91,37 @@ async function pushToFirestoreDirectly(payload, userSession, config, docIdToUpda
     queryParams.push(`key=${encodeURIComponent(apiKey)}`);
   }
   if (docIdToUpdate) {
-    const updateFields = ['company', 'role', 'platform', 'status', 'dateApplied', 'stageUpdatedAt', 'updatedAt', 'jobLink', 'notes', 'companyDomain', 'logoUrl', 'history'];
+    const updateFields = [
+      'company', 'role', 'platform', 'status', 'dateApplied',
+      'stageUpdatedAt', 'updatedAt', 'jobLink', 'notes',
+      'companyDomain', 'history', 'location', 'workLocation', 'employmentType'
+    ];
     updateFields.forEach(f => queryParams.push(`updateMask.fieldPaths=${f}`));
   }
   if (queryParams.length > 0) {
     url += `?${queryParams.join('&')}`;
   }
+
+  const historyList = (payload.history && payload.history.length > 0)
+    ? payload.history
+    : [
+        {
+          id: `hist-${Date.now()}`,
+          toStatus: payload.status,
+          timestamp: payload.stageUpdatedAt || new Date().toISOString()
+        }
+      ];
+
+  const historyEntries = historyList.map(h => {
+    const hFields = {
+      id: { stringValue: h.id || `hist-${Date.now()}` },
+      toStatus: { stringValue: h.toStatus || h.stage || payload.status },
+      timestamp: { stringValue: h.timestamp || payload.stageUpdatedAt || new Date().toISOString() }
+    };
+    if (h.fromStatus) hFields.fromStatus = { stringValue: h.fromStatus };
+    if (h.note) hFields.note = { stringValue: h.note };
+    return { mapValue: { fields: hFields } };
+  });
 
   const fields = {
     company: { stringValue: payload.company },
@@ -97,17 +135,7 @@ async function pushToFirestoreDirectly(payload, userSession, config, docIdToUpda
     updatedAt: { stringValue: payload.updatedAt || new Date().toISOString() },
     history: {
       arrayValue: {
-        values: [
-          {
-            mapValue: {
-              fields: {
-                id: { stringValue: `hist-${Date.now()}` },
-                stage: { stringValue: payload.status },
-                timestamp: { stringValue: payload.stageUpdatedAt || new Date().toISOString() }
-              }
-            }
-          }
-        ]
+        values: historyEntries
       }
     }
   };
@@ -115,7 +143,9 @@ async function pushToFirestoreDirectly(payload, userSession, config, docIdToUpda
   if (payload.jobLink) fields.jobLink = { stringValue: payload.jobLink };
   if (payload.notes) fields.notes = { stringValue: payload.notes };
   if (payload.companyDomain) fields.companyDomain = { stringValue: payload.companyDomain };
-  if (payload.logoUrl) fields.logoUrl = { stringValue: payload.logoUrl };
+  if (payload.location) fields.location = { stringValue: payload.location };
+  if (payload.workLocation) fields.workLocation = { stringValue: payload.workLocation };
+  if (payload.employmentType) fields.employmentType = { stringValue: payload.employmentType };
 
   const headers = { 'Content-Type': 'application/json' };
   if (idToken) headers['Authorization'] = `Bearer ${idToken}`;
@@ -136,6 +166,55 @@ async function pushToFirestoreDirectly(payload, userSession, config, docIdToUpda
   return { ...payload, id: docId, userId };
 }
 
+// Push contact to Firestore directly
+async function pushContactToFirestoreDirectly(contact, appId, userSession, config) {
+  if (!contact || !contact.name) return null;
+  const projectId = config?.projectId || 'demo-tracklet';
+  const apiKey = config?.apiKey;
+  const userId = userSession.uid;
+  const idToken = userSession.idToken;
+
+  let url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/users/${userId}/contacts`;
+  if (apiKey && apiKey !== 'demo-api-key') {
+    url += `?key=${encodeURIComponent(apiKey)}`;
+  }
+
+  const nowISO = new Date().toISOString();
+  const fields = {
+    name: { stringValue: contact.name },
+    role: { stringValue: contact.role || 'Recruiter' },
+    category: { stringValue: contact.category || 'Recruiter' },
+    createdAt: { stringValue: nowISO },
+    updatedAt: { stringValue: nowISO },
+    applicationIds: {
+      arrayValue: {
+        values: appId ? [{ stringValue: appId }] : []
+      }
+    }
+  };
+  if (contact.organization) fields.organization = { stringValue: contact.organization };
+  if (contact.linkedIn) fields.linkedIn = { stringValue: contact.linkedIn };
+  if (contact.email) fields.email = { stringValue: contact.email };
+
+  const headers = { 'Content-Type': 'application/json' };
+  if (idToken) headers['Authorization'] = `Bearer ${idToken}`;
+
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ fields })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return data.name ? data.name.split('/').pop() : null;
+    }
+  } catch (e) {
+    console.warn('Direct Firestore contact push failed from background:', e);
+  }
+  return null;
+}
+
 // Save application and broadcast to open tabs
 async function saveAndSyncApplication(appData) {
   const { tracklet_user_session, tracklet_firebase_config, tracklet_apps_index, tracklet_guest_apps_v1 } = await chrome.storage.local.get([
@@ -145,6 +224,8 @@ async function saveAndSyncApplication(appData) {
     'tracklet_guest_apps_v1'
   ]);
 
+  const nowISO = new Date().toISOString();
+
   // Check for existing app match by URL or company+role
   const allKnown = [...(tracklet_apps_index || []), ...(tracklet_guest_apps_v1 || [])];
   const existing = allKnown.find(a => 
@@ -153,6 +234,41 @@ async function saveAndSyncApplication(appData) {
   );
   const existingAppId = existing ? existing.id : null;
 
+  if (existing) {
+    // Stage & History resolution: never overwrite a later stage (US5 / FR-013, FR-014)
+    if (existing.status === 'Saved' && appData.status === 'Applied') {
+      const newEntry = {
+        id: `hist-${Date.now()}`,
+        toStatus: 'Applied',
+        fromStatus: 'Saved',
+        timestamp: nowISO,
+        note: 'Stage updated via Tracklet context menu'
+      };
+      appData.status = 'Applied';
+      appData.stageUpdatedAt = nowISO;
+      appData.history = [...(existing.history || []), newEntry];
+    } else {
+      appData.status = existing.status || appData.status;
+      appData.stageUpdatedAt = existing.stageUpdatedAt || nowISO;
+      appData.history = (existing.history && existing.history.length > 0)
+        ? existing.history
+        : [{ id: `hist-${Date.now()}`, toStatus: appData.status, timestamp: appData.stageUpdatedAt }];
+    }
+
+    if (!appData.location && existing.location) appData.location = existing.location;
+    if (!appData.workLocation && existing.workLocation) appData.workLocation = existing.workLocation;
+    if (!appData.employmentType && existing.employmentType) appData.employmentType = existing.employmentType;
+    if (!appData.companyDomain && existing.companyDomain) appData.companyDomain = existing.companyDomain;
+
+    if (existing.notes && !appData.notes) {
+      appData.notes = existing.notes;
+    } else if (existing.notes && appData.notes && !existing.notes.includes(appData.notes)) {
+      appData.notes = `${existing.notes}\n\n${appData.notes}`;
+    }
+  } else {
+    appData.history = [{ id: `hist-${Date.now()}`, toStatus: appData.status, timestamp: nowISO }];
+  }
+
   let finalizedApp = null;
   let savedToCloud = false;
 
@@ -160,6 +276,10 @@ async function saveAndSyncApplication(appData) {
     try {
       finalizedApp = await pushToFirestoreDirectly(appData, tracklet_user_session, tracklet_firebase_config, existingAppId);
       savedToCloud = true;
+
+      if (appData.newContact) {
+        await pushContactToFirestoreDirectly(appData.newContact, finalizedApp.id, tracklet_user_session, tracklet_firebase_config);
+      }
     } catch (e) {
       console.warn('Direct Firestore save failed from background worker:', e);
     }
@@ -187,15 +307,18 @@ async function saveAndSyncApplication(appData) {
   });
 
   // 2. Persist in chrome.storage.local
-  chrome.storage.local.get(['tracklet_pending_apps', 'tracklet_guest_apps_v1'], (result) => {
+  chrome.storage.local.get(['tracklet_pending_apps', 'tracklet_guest_apps_v1', 'tracklet_apps_index'], (result) => {
     let pending = result.tracklet_pending_apps || [];
     let guestApps = result.tracklet_guest_apps_v1 || [];
+    let appsIndex = result.tracklet_apps_index || [];
 
     if (existingAppId) {
       guestApps = guestApps.map(app => app.id === existingAppId ? finalizedApp : app);
+      appsIndex = appsIndex.map(app => app.id === existingAppId ? finalizedApp : app);
       pending = pending.map(app => app.id === existingAppId ? finalizedApp : app);
     } else {
       guestApps = [finalizedApp, ...guestApps];
+      appsIndex = [finalizedApp, ...appsIndex];
       if (!savedToCloud) {
         pending = [finalizedApp, ...pending];
       }
@@ -203,7 +326,8 @@ async function saveAndSyncApplication(appData) {
 
     chrome.storage.local.set({
       tracklet_pending_apps: pending,
-      tracklet_guest_apps_v1: guestApps
+      tracklet_guest_apps_v1: guestApps,
+      tracklet_apps_index: appsIndex
     }, () => {
       // Flash badge
       chrome.action.setBadgeText({ text: '✓' });
@@ -380,11 +504,18 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'SYNC_USER_SESSION') {
     const user = message.payload?.user || null;
     const config = message.payload?.config || null;
+    const origin = message.payload?.origin || null;
 
-    chrome.storage.local.set({
+    const toStore = {
       tracklet_user_session: user,
       tracklet_firebase_config: config
-    }, () => {
+    };
+
+    if (origin && !origin.includes('localhost') && !origin.includes('127.0.0.1')) {
+      toStore.tracklet_web_origin = origin;
+    }
+
+    chrome.storage.local.set(toStore, () => {
       sendResponse({ success: true });
     });
     return true;

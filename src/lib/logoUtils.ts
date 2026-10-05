@@ -2,61 +2,32 @@
  * Helper functions to resolve company domains and logos cleanly.
  */
 
-// Known company name to domain mappings for accurate resolution
-const KNOWN_COMPANY_DOMAINS: Record<string, string> = {
-  linear: 'linear.app',
-  stripe: 'stripe.com',
-  vercel: 'vercel.com',
-  figma: 'figma.com',
-  datadog: 'datadoghq.com',
-  notion: 'notion.so',
-  github: 'github.com',
-  retool: 'retool.com',
-  supabase: 'supabase.com',
-  doordash: 'doordash.com',
-  uber: 'uber.com',
-  shopify: 'shopify.com',
-  snowflake: 'snowflake.com',
-  openai: 'openai.com',
-  anthropic: 'anthropic.com',
-  airbnb: 'airbnb.com',
-  meta: 'meta.com',
-  facebook: 'meta.com',
-  google: 'google.com',
-  apple: 'apple.com',
-  microsoft: 'microsoft.com',
-  amazon: 'amazon.com',
-  netflix: 'netflix.com',
-  spotify: 'spotify.com',
-  slack: 'slack.com',
-  atlassian: 'atlassian.com',
-  canva: 'canva.com',
-  cloudflare: 'cloudflare.com',
-  palantir: 'palantir.com',
-  roblox: 'roblox.com',
-  coinbase: 'coinbase.com',
-  robinhood: 'robinhood.com',
-  zoom: 'zoom.us',
-};
+import {
+  cleanCompanyDomain,
+  isJobBoardOrAts,
+  isJobBoardOrAtsLogo,
+  KNOWN_COMPANY_DOMAINS,
+} from './jobBoardRegistry';
 
 /**
  * Cleanly extracts a hostname/domain from a company name or job link.
  */
 export function getCompanyDomain(companyName: string, jobLink?: string, customDomain?: string): string {
   if (customDomain && customDomain.trim()) {
-    return customDomain.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+    const cleaned = cleanCompanyDomain(customDomain);
+    if (cleaned) {
+      return cleaned;
+    }
   }
 
   // 1. Try extracting domain from jobLink if provided
   if (jobLink && jobLink.trim()) {
     try {
       const url = new URL(jobLink.startsWith('http') ? jobLink : `https://${jobLink}`);
-      let hostname = url.hostname.toLowerCase().replace(/^www\./, '');
-      
-      // Ignore common job board domains (e.g., linkedin.com, indeed.com, greenhouse.io)
-      const isJobBoard = /linkedin|indeed|greenhouse|lever|workday|otta|wellfound|ashbyhq|glassdoor|ziprecruiter|monster/.test(hostname);
-      if (!isJobBoard && hostname.includes('.')) {
-        return hostname;
+      const hostname = url.hostname.toLowerCase().replace(/^www\./, '');
+      const cleaned = cleanCompanyDomain(hostname);
+      if (cleaned) {
+        return cleaned;
       }
     } catch {
       // Ignore parsing errors
@@ -82,7 +53,11 @@ export function getCompanyDomain(companyName: string, jobLink?: string, customDo
  */
 export function getCompanyLogoUrls(companyName: string, jobLink?: string, customLogoUrl?: string, customDomain?: string): string[] {
   if (customLogoUrl && customLogoUrl.trim()) {
-    return [customLogoUrl.trim()];
+    const trimmed = customLogoUrl.trim();
+    // Do not use the customLogoUrl if it points to a job board or ATS host logo (e.g. logo.clearbit.com/linkedin.com)
+    if (!isJobBoardOrAtsLogo(trimmed)) {
+      return [trimmed];
+    }
   }
 
   const domain = getCompanyDomain(companyName, jobLink, customDomain);

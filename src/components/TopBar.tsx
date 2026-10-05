@@ -20,6 +20,7 @@ export interface TopBarProps {
 const PLATFORMS: JobPlatform[] = [
   'LinkedIn',
   'Indeed',
+  'Bayt',
   'Lever',
   'Greenhouse',
   'Otta',

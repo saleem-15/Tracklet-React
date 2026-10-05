@@ -19,6 +19,7 @@ export interface UseExtensionSyncProps {
   contacts: Contact[];
   dataLoading: boolean;
   handleAddContact: (newContact: Omit<Contact, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => Promise<Contact>;
+  handleLinkContact?: (contactId: string, appId: string) => Promise<void>;
   setSelectedAppId: (id: string | null) => void;
   addToast: (
     type: 'success' | 'error' | 'info' | 'warning', 
@@ -42,9 +43,19 @@ export function useExtensionSync({
   contacts,
   dataLoading,
   handleAddContact,
+  handleLinkContact,
   setSelectedAppId,
   addToast,
 }: UseExtensionSyncProps): void {
+  const handleLinkContactRef = useRef(handleLinkContact);
+  useEffect(() => {
+    handleLinkContactRef.current = handleLinkContact;
+  });
+
+  const contactsRef = useRef(contacts);
+  useEffect(() => {
+    contactsRef.current = contacts;
+  }, [contacts]);
   // Sync Auth Session to Browser Extension on login/logout & token refresh
   useEffect(() => {
     syncAuthSessionToExtension(user);
@@ -277,6 +288,52 @@ export function useExtensionSync({
         'Clipped via Tracklet Extension',
         `Saved "${finalApp.role}" at ${finalApp.company}`
       );
+    }
+
+    // Recruiter / Job Poster Contact Linking & Deduplication (US4 / T027)
+    const incomingContact = (clippedApp as any).newContact;
+    if (incomingContact && incomingContact.name) {
+      const knownContacts = contactsRef.current;
+      const existingMatch = knownContacts.find((c) => {
+        if (incomingContact.linkedIn && c.linkedIn && incomingContact.linkedIn.trim().toLowerCase() === c.linkedIn.trim().toLowerCase()) {
+          return true;
+        }
+        if (incomingContact.email && c.email && incomingContact.email.trim().toLowerCase() === c.email.trim().toLowerCase()) {
+          return true;
+        }
+        if (
+          incomingContact.name && c.name &&
+          incomingContact.name.trim().toLowerCase() === c.name.trim().toLowerCase() &&
+          incomingContact.organization && c.organization &&
+          incomingContact.organization.trim().toLowerCase() === c.organization.trim().toLowerCase()
+        ) {
+          return true;
+        }
+        return false;
+      });
+
+      if (existingMatch) {
+        // Link existing contact if not already linked
+        const isAlreadyLinked = (existingMatch.applicationIds || []).includes(finalApp.id);
+        if (!isAlreadyLinked && handleLinkContactRef.current) {
+          handleLinkContactRef.current(existingMatch.id, finalApp.id).catch((err) => {
+            console.warn('Failed to link existing contact to clipped application:', err);
+          });
+        }
+      } else {
+        // Create new contact linked to this application
+        handleAddContactRef.current({
+          name: incomingContact.name,
+          role: incomingContact.role || 'Recruiter',
+          organization: incomingContact.organization || finalApp.company,
+          linkedIn: incomingContact.linkedIn || undefined,
+          email: incomingContact.email || undefined,
+          category: incomingContact.category || 'Recruiter',
+          applicationIds: [finalApp.id],
+        }).catch((err) => {
+          console.warn('Failed to create recruiter contact from clipped application:', err);
+        });
+      }
     }
 
     if (!user?.emailVerified) {

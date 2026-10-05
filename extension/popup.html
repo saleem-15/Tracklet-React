@@ -33,6 +33,15 @@
     <div id="main-form-view">
       <!-- Direct Form Layout -->
       <div class="form-layout">
+        <!-- Duplicate Info Banner (Shown when job is already saved) -->
+        <div class="duplicate-banner" id="duplicate-banner" style="display: none;">
+          <div class="duplicate-banner-content">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>
+            <span id="duplicate-banner-text">Already tracked in Tracklet</span>
+          </div>
+          <button type="button" class="btn-text-link" id="duplicate-open-link">Open</button>
+        </div>
+
         <!-- Company Name -->
         <div class="form-group">
           <label for="company">
@@ -46,6 +55,17 @@
           </div>
         </div>
 
+        <!-- Company Website / Domain -->
+        <div class="form-group">
+          <label for="companyDomain">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            <span>Company Website / Domain</span>
+          </label>
+          <div class="input-wrapper">
+            <input type="text" id="companyDomain" placeholder="e.g. stripe.com, figma.com" autocomplete="off">
+          </div>
+        </div>
+
         <!-- Job Role -->
         <div class="form-group">
           <label for="role">
@@ -56,6 +76,59 @@
           <div class="input-wrapper">
             <input type="text" id="role" placeholder="e.g. Senior Frontend Engineer" required autocomplete="off">
           </div>
+        </div>
+
+        <!-- Location -->
+        <div class="form-group">
+          <label for="location">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            <span>Location</span>
+          </label>
+          <div class="input-wrapper">
+            <input type="text" id="location" placeholder="e.g. San Francisco, CA or Remote" autocomplete="off">
+          </div>
+        </div>
+
+        <!-- Workplace & Employment Type Row -->
+        <div class="form-row">
+          <div class="form-group">
+            <label>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+              <span>Workplace</span>
+            </label>
+            <div class="pill-group" id="work-location-pills">
+              <button type="button" class="pill-btn" data-value="Remote">Remote</button>
+              <button type="button" class="pill-btn" data-value="Hybrid">Hybrid</button>
+              <button type="button" class="pill-btn" data-value="Onsite">On-site</button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+              <span>Type</span>
+            </label>
+            <div class="pill-group" id="employment-type-pills">
+              <button type="button" class="pill-btn" data-value="Full-time">Full-time</button>
+              <button type="button" class="pill-btn" data-value="Part-time">Part-time</button>
+              <button type="button" class="pill-btn" data-value="Contract">Contract</button>
+              <button type="button" class="pill-btn" data-value="Internship">Intern</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hiring Contact Card (shown if detected) -->
+        <div class="recruiter-contact-card" id="recruiter-contact-card" style="display: none;">
+          <label class="recruiter-card-label">
+            <input type="checkbox" id="add-recruiter-contact-checkbox" checked>
+            <div class="recruiter-card-info">
+              <div class="recruiter-name-row">
+                <span class="recruiter-name" id="recruiter-name"></span>
+                <span class="recruiter-badge" id="recruiter-badge">Recruiter</span>
+              </div>
+              <div class="recruiter-title" id="recruiter-title"></div>
+            </div>
+          </label>
         </div>
 
         <!-- Platform & Date Applied Row -->
@@ -74,6 +147,7 @@
               <div class="custom-select-dropdown" id="platform-dropdown">
                 <div class="custom-select-option selected" data-value="LinkedIn">LinkedIn</div>
                 <div class="custom-select-option" data-value="Indeed">Indeed</div>
+                <div class="custom-select-option" data-value="Bayt">Bayt</div>
                 <div class="custom-select-option" data-value="Lever">Lever</div>
                 <div class="custom-select-option" data-value="Greenhouse">Greenhouse</div>
                 <div class="custom-select-option" data-value="Otta">Otta</div>
@@ -99,62 +173,42 @@
           </div>
         </div>
 
-        <!-- Stage Selector Component matching StageSelectorDropdown.tsx -->
-        <div class="form-group">
+        <!-- Stage Selector Component (Saved / Applied only for extension clipper) -->
+        <div class="form-group" id="stage-form-group">
           <label>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
             <span>Pipeline Stage</span>
           </label>
+
+          <!-- Read-only stage badge shown when existing job is past Saved -->
+          <div id="stage-readonly-container" style="display: none;">
+            <div class="stage-readonly-badge" id="stage-readonly-badge">
+              <span class="stage-dot" id="stage-readonly-dot"></span>
+              <span id="stage-readonly-text">Interview</span>
+              <span class="stage-readonly-hint">(Tracked in Tracklet)</span>
+            </div>
+          </div>
+
           <div class="stage-selector-container" id="stage-selector-container">
-            <button type="button" class="stage-trigger-btn" id="stage-trigger-btn">
+            <button type="button" class="stage-trigger-btn" id="stage-trigger-btn" style="background-color: var(--stage-saved-bg); color: var(--stage-saved-text); border-color: var(--stage-saved-border);">
               <div class="stage-trigger-left">
-                <span class="stage-dot" id="stage-dot" style="background-color: var(--stage-applied-dot);"></span>
-                <span id="stage-label-text">Applied</span>
+                <span class="stage-dot" id="stage-dot" style="background-color: var(--stage-saved-dot);"></span>
+                <span id="stage-label-text">Saved</span>
               </div>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
             </button>
             <div class="stage-dropdown-menu" id="stage-dropdown-menu">
-              <div class="stage-dropdown-header">Advance Stage</div>
-              <div class="stage-option-item" data-stage="Saved" style="color: var(--stage-saved-text);">
+              <div class="stage-dropdown-header">Select Stage</div>
+              <div class="stage-option-item selected" data-stage="Saved" style="color: var(--stage-saved-text);">
                 <div style="display:flex; align-items:center; gap:8px;">
                   <span class="stage-dot" style="background-color: var(--stage-saved-dot);"></span>
                   <span>Saved</span>
                 </div>
               </div>
-              <div class="stage-option-item selected" data-stage="Applied" style="color: var(--stage-applied-text);">
+              <div class="stage-option-item" data-stage="Applied" style="color: var(--stage-applied-text);">
                 <div style="display:flex; align-items:center; gap:8px;">
                   <span class="stage-dot" style="background-color: var(--stage-applied-dot);"></span>
                   <span>Applied</span>
-                </div>
-              </div>
-              <div class="stage-option-item" data-stage="Screening" style="color: var(--stage-screening-text);">
-                <div style="display:flex; align-items:center; gap:8px;">
-                  <span class="stage-dot" style="background-color: var(--stage-screening-dot);"></span>
-                  <span>Screening</span>
-                </div>
-              </div>
-              <div class="stage-option-item" data-stage="Interview" style="color: var(--stage-interview-text);">
-                <div style="display:flex; align-items:center; gap:8px;">
-                  <span class="stage-dot" style="background-color: var(--stage-interview-dot);"></span>
-                  <span>Interview</span>
-                </div>
-              </div>
-              <div class="stage-option-item" data-stage="Offer" style="color: var(--stage-offer-text);">
-                <div style="display:flex; align-items:center; gap:8px;">
-                  <span class="stage-dot" style="background-color: var(--stage-offer-dot);"></span>
-                  <span>Offer</span>
-                </div>
-              </div>
-              <div class="stage-option-item" data-stage="Rejected" style="color: var(--stage-rejected-text);">
-                <div style="display:flex; align-items:center; gap:8px;">
-                  <span class="stage-dot" style="background-color: var(--stage-rejected-dot);"></span>
-                  <span>Rejected</span>
-                </div>
-              </div>
-              <div class="stage-option-item" data-stage="Archived" style="color: var(--stage-archived-text);">
-                <div style="display:flex; align-items:center; gap:8px;">
-                  <span class="stage-dot" style="background-color: var(--stage-archived-dot);"></span>
-                  <span>Archived</span>
                 </div>
               </div>
             </div>
@@ -172,13 +226,32 @@
           </div>
         </div>
 
-        <!-- Notes / Highlights -->
+        <!-- Notes / Highlights — Shared RichText WYSIWYG View + Edit Component -->
         <div class="form-group">
-          <label for="notes">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-            <span>Notes & Job Description</span>
-          </label>
-          <textarea id="notes" placeholder="Paste requirements, compensation, or recruiter notes..."></textarea>
+          <div class="form-label-row">
+            <label for="notes-editor">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+              <span>Job Description &amp; Notes</span>
+            </label>
+            <div class="notes-header-actions">
+              <button type="button" class="btn-ghost-xs" id="btn-toggle-md" title="Toggle between formatted view and markdown code">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                <span id="toggle-md-label">Markdown</span>
+              </button>
+              <button type="button" class="btn-ghost-xs" id="btn-clear-notes" title="Clear notes">Clear</button>
+            </div>
+          </div>
+          <div class="rich-notes-container" id="notes-rich-container">
+            <div class="rich-notes-toolbar" id="notes-toolbar">
+              <button type="button" class="toolbar-btn" data-cmd="bold" title="Bold (Ctrl+B)"><b>B</b></button>
+              <button type="button" class="toolbar-btn" data-cmd="italic" title="Italic (Ctrl+I)"><i>I</i></button>
+              <button type="button" class="toolbar-btn" data-cmd="h3" title="Heading"><b>H</b></button>
+              <button type="button" class="toolbar-btn" data-cmd="bullet" title="Bullet List">• List</button>
+            </div>
+            <div id="notes-editor" class="notes-contenteditable" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Notes" spellcheck="true" data-placeholder="Job description, requirements, notes..."></div>
+            <textarea id="notes-raw" class="notes-raw-textarea" rows="6" style="display: none;" aria-label="Raw Markdown Notes"></textarea>
+          </div>
+          <input type="hidden" id="notes" name="notes">
         </div>
       </div>
 
@@ -378,6 +451,7 @@
     </div>
   </div>
 
+  <script src="jobBoardRegistry.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>
