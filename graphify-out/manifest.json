@@ -610,8 +610,8 @@
     "semantic_hash": ""
   },
   "extension/content.js": {
-    "mtime": 1791192016.312324,
-    "ast_hash": "22dddd91463664e5a6862b1c8e89d8d4",
+    "mtime": 1791192996.0954592,
+    "ast_hash": "00a1d747b9ff3b19fbceb9ab075c2c17",
     "semantic_hash": ""
   },
   "extension/manifest.json": {
@@ -620,8 +620,8 @@
     "semantic_hash": ""
   },
   "extension/popup.js": {
-    "mtime": 1791192016.3164158,
-    "ast_hash": "66af625a4f064239cb67e458c802d20d",
+    "mtime": 1791193029.8756046,
+    "ast_hash": "8b0b2d6999c9ac7a4f92c3181a3ee728",
     "semantic_hash": ""
   },
   "firebase-blueprint.json": {
@@ -2050,8 +2050,8 @@
     "semantic_hash": ""
   },
   "extension/popup.html": {
-    "mtime": 1791192016.315382,
-    "ast_hash": "244f870db82edb1fb0e845b07ff1e57a",
+    "mtime": 1791192794.069293,
+    "ast_hash": "c5aba853cafb9d9a461d6e7cf93a681b",
     "semantic_hash": ""
   },
   "index.html": {
@@ -2395,8 +2395,8 @@
     "semantic_hash": ""
   },
   "extension/jobBoardRegistry.js": {
-    "mtime": 1791192016.312324,
-    "ast_hash": "c6c8ac0388dfb75356cde1ccc1015881",
+    "mtime": 1791193050.8108702,
+    "ast_hash": "f829f7127ddcda3efafae3f5b2590d08",
     "semantic_hash": ""
   },
   "src/lib/htmlToMarkdown.ts": {
