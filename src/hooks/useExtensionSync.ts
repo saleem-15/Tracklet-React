@@ -2,6 +2,7 @@ import { useEffect, useRef, useCallback } from 'react';
 import type { User } from 'firebase/auth';
 import { Application, Contact } from '../types';
 import { ApplicationRepository } from '../lib/applicationRepository';
+import { ContactRepository } from '../lib/contactRepository';
 import { appendStatusHistory } from '../lib/historyService';
 import { 
   setupExtensionSync, 
@@ -17,6 +18,7 @@ export interface UseExtensionSyncProps {
   setApplications: React.Dispatch<React.SetStateAction<Application[]>>;
   applicationsRef: React.MutableRefObject<Application[]>;
   contacts: Contact[];
+  setContacts?: React.Dispatch<React.SetStateAction<Contact[]>>;
   dataLoading: boolean;
   handleAddContact: (newContact: Omit<Contact, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => Promise<Contact>;
   handleLinkContact?: (contactId: string, appId: string) => Promise<void>;
@@ -41,6 +43,7 @@ export function useExtensionSync({
   setApplications,
   applicationsRef,
   contacts,
+  setContacts,
   dataLoading,
   handleAddContact,
   handleLinkContact,
@@ -341,6 +344,41 @@ export function useExtensionSync({
     }
   }, [user, addToast, setApplications, applicationsRef]);
 
+  const processIncomingContact = useCallback((contact: Contact, persistedToCloud?: boolean) => {
+    const known = contactsRef.current;
+    const existingIdx = known.findIndex((c) => c.id === contact.id);
+    let next: Contact[];
+    if (existingIdx >= 0) {
+      next = known.map((c) => (c.id === contact.id ? { ...c, ...contact } : c));
+    } else {
+      next = [contact, ...known];
+    }
+    contactsRef.current = next;
+    if (setContacts) setContacts(next);
+
+    if (user?.emailVerified) {
+      if (!persistedToCloud) {
+        if (existingIdx >= 0) {
+          ContactRepository.updateContact(contact.id, contact, user.uid).catch((err) => {
+            console.warn('Failed to update contact in Firestore:', err);
+          });
+        } else {
+          ContactRepository.addContact(contact, user.uid).catch((err) => {
+            console.warn('Failed to add contact to Firestore:', err);
+          });
+        }
+      }
+    } else {
+      ContactRepository.saveGuestContacts(next);
+    }
+
+    addToast(
+      'success',
+      existingIdx >= 0 ? 'Contact Updated via Extension' : 'Clipped Contact via Extension',
+      `Saved "${contact.name}" to Contacts Hub`
+    );
+  }, [user, addToast, setContacts]);
+
   // Drain buffered incoming applications and emails once applications data loading completes
   useEffect(() => {
     if (!dataLoading) {
@@ -370,8 +408,11 @@ export function useExtensionSync({
       onEmailReceived: (payload) => {
         processIncomingEmail(payload);
       },
+      onContactReceived: (contact, persistedToCloud) => {
+        processIncomingContact(contact, persistedToCloud);
+      },
     });
 
     return () => cleanup();
-  }, [processIncomingApplication, processIncomingEmail]);
+  }, [processIncomingApplication, processIncomingEmail, processIncomingContact]);
 }

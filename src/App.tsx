@@ -34,7 +34,7 @@ function TrackletAppContent() {
 
   useExtensionSync({
     user, applications, setApplications, applicationsRef,
-    contacts, dataLoading, handleAddContact, handleLinkContact, setSelectedAppId, addToast,
+    contacts, setContacts, dataLoading, handleAddContact, handleLinkContact, setSelectedAppId, addToast,
   });
 
   useEffect(() => {

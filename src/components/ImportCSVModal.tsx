@@ -252,6 +252,8 @@ export const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
       }
     }
 
+    const resumeFileName = mapping.resumeFileName != null && mapping.resumeFileName >= 0 ? row[mapping.resumeFileName]?.trim() : undefined;
+
     return {
       company: finalCompany,
       companyDomain,
@@ -266,6 +268,7 @@ export const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
       emailThreadUrl: emailThreadUrl || undefined,
       contactEmail: contactEmail || undefined,
       notes: notes || undefined,
+      resumeFileName: resumeFileName || undefined,
     };
   };
 

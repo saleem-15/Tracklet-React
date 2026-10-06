@@ -20,6 +20,7 @@ export interface ExtensionSyncCallbacks {
   onApplicationReceived: (app: Application, persistedToCloud?: boolean) => void;
   onApplicationUpdated?: (app: Application) => void;
   onEmailReceived?: (payload: IncomingEmailPayload) => void;
+  onContactReceived?: (contact: Contact, persistedToCloud?: boolean) => void;
   onApplicationDeleted?: (appId: string) => void;
 }
 
@@ -141,6 +142,12 @@ export function setupExtensionSync(callbacks: ExtensionSyncCallbacks): () => voi
         }
       } else if (event.data.type === 'TRACKLET_EXT_ADD_EMAIL') {
         callbacks.onEmailReceived?.(event.data.payload);
+      } else if (event.data.type === 'TRACKLET_EXT_ADD_CONTACT') {
+        const contact: Contact = event.data.payload;
+        if (contact?.id) {
+          const persistedToCloud: boolean = Boolean(event.data.persistedToCloud);
+          callbacks.onContactReceived?.(contact, persistedToCloud);
+        }
       } else if (event.data.type === 'REQUEST_TRACKLET_AUTH') {
         // Respond to extension request for auth session
         if (channel) {
@@ -177,12 +184,18 @@ export function setupExtensionSync(callbacks: ExtensionSyncCallbacks): () => voi
       }
     } else if (event.data && event.data.type === 'TRACKLET_EXT_ADD_EMAIL') {
       callbacks.onEmailReceived?.(event.data.payload);
+    } else if (event.data && event.data.type === 'TRACKLET_EXT_ADD_CONTACT') {
+      const contact: Contact = event.data.payload;
+      if (contact?.id) {
+        const persistedToCloud: boolean = Boolean(event.data.persistedToCloud);
+        callbacks.onContactReceived?.(contact, persistedToCloud);
+      }
     }
   };
   window.addEventListener('message', windowMessageHandler);
 
   // 3. Drain any pending items stored in localStorage / chrome.storage
-  syncPendingAppsFromStorage(callbacks.onApplicationReceived, callbacks.onEmailReceived);
+  syncPendingAppsFromStorage(callbacks.onApplicationReceived, callbacks.onEmailReceived, callbacks.onContactReceived);
 
   // Return cleanup function
   return () => {
@@ -194,11 +207,12 @@ export function setupExtensionSync(callbacks: ExtensionSyncCallbacks): () => voi
 }
 
 /**
- * Checks localStorage or extension storage for applications or emails clipped while Tracklet tab was closed.
+ * Checks localStorage or extension storage for applications, contacts, or emails clipped while Tracklet tab was closed.
  */
 export function syncPendingAppsFromStorage(
   onAdd: (app: Application) => void,
-  onAddEmail?: (payload: IncomingEmailPayload) => void
+  onAddEmail?: (payload: IncomingEmailPayload) => void,
+  onAddContact?: (contact: Contact, persistedToCloud?: boolean) => void
 ) {
   try {
     // 1. Check localStorage fallback keys
@@ -208,6 +222,15 @@ export function syncPendingAppsFromStorage(
       if (Array.isArray(pendingApps) && pendingApps.length > 0) {
         pendingApps.forEach(app => onAdd(app));
         localStorage.removeItem(PENDING_STORAGE_KEY);
+      }
+    }
+
+    const rawPendingContacts = localStorage.getItem('tracklet_pending_contacts');
+    if (rawPendingContacts && onAddContact) {
+      const pendingContacts: Contact[] = JSON.parse(rawPendingContacts);
+      if (Array.isArray(pendingContacts) && pendingContacts.length > 0) {
+        pendingContacts.forEach(contact => onAddContact(contact, false));
+        localStorage.removeItem('tracklet_pending_contacts');
       }
     }
 
@@ -222,11 +245,17 @@ export function syncPendingAppsFromStorage(
 
     // 2. If chrome.storage is accessible directly
     if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-      chrome.storage.local.get([PENDING_STORAGE_KEY, 'tracklet_pending_emails'], (result: any) => {
+      chrome.storage.local.get([PENDING_STORAGE_KEY, 'tracklet_pending_emails', 'tracklet_pending_contacts'], (result: any) => {
         const pending: Application[] = result[PENDING_STORAGE_KEY] || [];
         if (pending.length > 0) {
           pending.forEach(app => onAdd(app));
           chrome.storage.local.remove([PENDING_STORAGE_KEY]);
+        }
+
+        const pendingContacts: Contact[] = result['tracklet_pending_contacts'] || [];
+        if (pendingContacts.length > 0 && onAddContact) {
+          pendingContacts.forEach(contact => onAddContact(contact, false));
+          chrome.storage.local.remove(['tracklet_pending_contacts']);
         }
 
         const pendingEmails: IncomingEmailPayload[] = result['tracklet_pending_emails'] || [];
@@ -316,6 +345,12 @@ export function syncApplicationsToExtension(applications: Application[], contact
       type: 'TRACKLET_APPS_INDEX_SYNC',
       payload: index,
     }, '*');
+    if (contacts && Array.isArray(contacts)) {
+      window.postMessage({
+        type: 'TRACKLET_CONTACTS_INDEX_SYNC',
+        payload: contacts,
+      }, '*');
+    }
   } catch {
     // ignore
   }
@@ -327,6 +362,12 @@ export function syncApplicationsToExtension(applications: Application[], contact
       type: 'TRACKLET_APPS_INDEX_SYNC',
       payload: index,
     });
+    if (contacts && Array.isArray(contacts)) {
+      channel.postMessage({
+        type: 'TRACKLET_CONTACTS_INDEX_SYNC',
+        payload: contacts,
+      });
+    }
     channel.close();
   } catch {
     // ignore
@@ -336,6 +377,7 @@ export function syncApplicationsToExtension(applications: Application[], contact
   if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
     chrome.storage.local.set({
       tracklet_apps_index: index,
+      tracklet_contacts_index: contacts || [],
     });
   }
 }

@@ -58,6 +58,9 @@ export function exportApplicationsToCSV(
     'Job Listing URL',
     'Email Thread URL',
     'Notes',
+    'Resume File Name',
+    'Resume File Size',
+    'Resume Uploaded At',
   ];
 
   const rows = applications.map((app) => {
@@ -75,6 +78,9 @@ export function exportApplicationsToCSV(
       escapeCSV(app.jobLink || ''),
       escapeCSV(app.emailThreadUrl || ''),
       escapeCSV(app.notes || ''),
+      escapeCSV(app.resumeFileName || ''),
+      escapeCSV(app.resumeFileSize != null ? app.resumeFileSize.toString() : ''),
+      escapeCSV(app.resumeUploadedAt || ''),
     ].join(',');
   });
 

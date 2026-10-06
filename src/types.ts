@@ -100,6 +100,12 @@ export interface Application {
   stageUpdatedAt: string; // ISO date string or YYYY-MM-DD
   createdAt: string;
   updatedAt: string;
+
+  // Tailored CV Attachment Attributes
+  resumeFileName?: string;
+  resumeFileSize?: number;
+  resumeBlobId?: string;
+  resumeUploadedAt?: string;
 }
 
 export interface StatusHistoryEntry {
