@@ -1824,13 +1824,14 @@ function executeAutofill(profile) {
   }
 
   const detection = detectAtsForm();
+  const formRoot = (detection.formSelector ? document.querySelector(detection.formSelector) : null) || document;
   const populatedFields = [];
   const manualFieldsRequired = [];
 
   for (const match of detection.fieldsMatched) {
     const val = profile[match.candidateKey];
     if (val) {
-      const el = document.querySelector(match.targetSelector);
+      const el = formRoot.querySelector(match.targetSelector);
       if (el && (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement)) {
         setNativeInputValue(el, val);
         populatedFields.push({
@@ -1844,7 +1845,7 @@ function executeAutofill(profile) {
   }
 
   // Check for resume file upload input
-  const fileInput = document.querySelector('input[type="file"]');
+  const fileInput = formRoot.querySelector('input[type="file"]');
   if (fileInput) {
     manualFieldsRequired.push({
       field: 'Resume File Upload',
@@ -1863,7 +1864,9 @@ function executeAutofill(profile) {
 function scrollToField(targetSelector) {
   try {
     ensureTransientHighlightStyles();
-    const el = document.querySelector(targetSelector);
+    const detection = detectAtsForm();
+    const formRoot = (detection.formSelector ? document.querySelector(detection.formSelector) : null) || document;
+    const el = formRoot.querySelector(targetSelector) || document.querySelector(targetSelector);
     if (!el) return false;
     el.scrollIntoView({ behavior: 'smooth', block: 'center' });
     el.focus({ preventScroll: true });

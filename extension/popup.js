@@ -1284,9 +1284,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     const ranked = scored
       .filter(item => item.score >= 40)
       .sort((a, b) => {
-        // 1. Direct score comparison if difference is significant (> 15 pts, e.g. role match)
-        if (Math.abs(b.score - a.score) > 15) {
-          return b.score - a.score;
+        // 1. Direct score comparison by score bucket (15 pts buckets)
+        const bucketA = Math.floor(a.score / 15);
+        const bucketB = Math.floor(b.score / 15);
+        if (bucketB !== bucketA) {
+          return bucketB - bucketA;
         }
 
         // 2. Active Stage Priority (Offer > Interview > Screening > Applied > Saved > Rejected/Archived)
@@ -1415,10 +1417,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (recruiterExistingBadge) recruiterExistingBadge.style.display = 'none';
             if (addRecruiterCheckboxText) addRecruiterCheckboxText.textContent = 'Add to Contacts Hub & link to job';
           }
-        });
 
-        if (addRecruiterContactCheckbox) addRecruiterContactCheckbox.checked = true;
-        if (recruiterContactCard) recruiterContactCard.style.display = 'block';
+          if (addRecruiterContactCheckbox) addRecruiterContactCheckbox.checked = true;
+          if (recruiterContactCard) recruiterContactCard.style.display = 'block';
+        });
       } else {
         detectedRecruiterContact = null;
         if (recruiterContactCard) recruiterContactCard.style.display = 'none';
@@ -1460,19 +1462,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     validateInputs();
   }
 
-  function applyLinkedInProfileData(profileData, tab) {
-    window.__currentLinkedInProfile = profileData;
-    if (typeof updateContactClipperUI === 'function') {
-      updateContactClipperUI(profileData, tab);
-    }
-  }
-
   async function inspectActiveTab(tab) {
     if (!tab || !tab.id) return;
     activeObservedTabId = tab.id;
     activeObservedUrl = tab.url || '';
 
-    if (jobLinkInput && !jobLinkInput.value) {
+    if (jobLinkInput) {
       jobLinkInput.value = tab.url || '';
     }
 
@@ -1569,7 +1564,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (message.action === 'ACTIVE_TAB_CHANGED' || message.action === 'ACTIVE_TAB_UPDATED') {
       if (message.payload && message.payload.tabId) {
         chrome.tabs.get(message.payload.tabId).then(tab => {
-          if (tab) handleTabContextSwitch(tab);
+          if (tab && tab.active && tab.id !== activeObservedTabId) {
+            handleTabContextSwitch(tab);
+          }
         }).catch(() => {});
       }
     }
@@ -1718,6 +1715,79 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Save Application Click Handler
   saveBtn.addEventListener('click', handleSave);
 
+  // --- Webmail Helper Controllers ---
+  function detectSuggestedStageAdvancement(matchedApp, subject, text) {
+    if (!matchedApp || !matchedApp.status) return null;
+    const currentStatus = matchedApp.status;
+    const combined = `${subject || ''} ${text || ''}`.toLowerCase();
+
+    // Check for offer first
+    if (/(?:job\s+offer|offer\s+letter|formal\s+offer|offer\s+details|congratulations.*offer)/i.test(combined)) {
+      if (['Saved', 'Applied', 'Screening', 'Interview'].includes(currentStatus)) {
+        return 'Offer';
+      }
+    }
+
+    // Check for interview
+    if (/(?:interview|phone\s+screen|technical\s+assessment|coding\s+challenge|meet\s+the\s+team)/i.test(combined)) {
+      if (['Saved', 'Applied', 'Screening'].includes(currentStatus)) {
+        return 'Interview';
+      }
+    }
+
+    // Check for screening
+    if (/(?:screening|recruiter\s+call|introductory\s+call|phone\s+screen)/i.test(combined)) {
+      if (['Saved', 'Applied'].includes(currentStatus)) {
+        return 'Screening';
+      }
+    }
+
+    return null;
+  }
+
+  function updateStageAdvancementUI() {
+    suggestedAdvanceStage = detectSuggestedStageAdvancement(
+      selectedEmailMatchedApp,
+      emailSubjectInput ? emailSubjectInput.value : '',
+      emailBodyInput ? emailBodyInput.value : ''
+    );
+
+    if (suggestedAdvanceStage && advanceStageOption && advanceStageLabel && advanceStageCheckbox) {
+      advanceStageLabel.textContent = `Advance stage to ${suggestedAdvanceStage}`;
+      advanceStageCheckbox.checked = true;
+      advanceStageOption.style.display = 'flex';
+      if (milestoneBox) milestoneBox.style.display = 'flex';
+    } else if (advanceStageOption) {
+      advanceStageOption.style.display = 'none';
+    }
+  }
+
+  function updateContactDiscoveryUI() {
+    chrome.storage.local.get(['tracklet_contacts_index', 'tracklet_guest_contacts_v1'], (res) => {
+      const allContacts = res?.tracklet_contacts_index || res?.tracklet_guest_contacts_v1 || [];
+      const normEmail = (discoveredRecruiterEmail || '').toLowerCase().trim();
+      const normName = (discoveredRecruiterName || '').toLowerCase().trim();
+      const isKnownContact = selectedEmailMatchedApp?.contactEmails?.some(e => e.toLowerCase() === normEmail) ||
+        allContacts.some(c => (normEmail && c.email?.toLowerCase().trim() === normEmail) || (normName && c.name?.toLowerCase().trim() === normName));
+
+      if (discoveredRecruiterName && !isKnownContact && discoveredRecruiterName !== 'You' && discoveredRecruiterName.length > 1) {
+        if (milestoneBox) milestoneBox.style.display = 'flex';
+        if (addContactOption) addContactOption.style.display = 'flex';
+        if (addContactLabel) addContactLabel.textContent = `Add "${discoveredRecruiterName}" as recruiter contact in Contacts Hub`;
+        if (addContactCheckbox) addContactCheckbox.checked = true;
+      } else {
+        if (addContactOption) addContactOption.style.display = 'none';
+        if (addContactCheckbox) addContactCheckbox.checked = false;
+      }
+
+      const isStageHidden = !advanceStageOption || advanceStageOption.style.display === 'none';
+      const isContactHidden = !addContactOption || addContactOption.style.display === 'none';
+      if (isStageHidden && isContactHidden && milestoneBox) {
+        milestoneBox.style.display = 'none';
+      }
+    });
+  }
+
   // --- Webmail Mode Initialization & UI Controllers ---
   async function initWebmailMode(tab) {
     isWebmailMode = true;
@@ -1737,78 +1807,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 2. Request active email data from content script
     let hasAttemptedInjection = false;
-
-    function detectSuggestedStageAdvancement(matchedApp, subject, text) {
-      if (!matchedApp || !matchedApp.status) return null;
-      const currentStatus = matchedApp.status;
-      const combined = `${subject || ''} ${text || ''}`.toLowerCase();
-
-      // Check for offer first
-      if (/(?:job\s+offer|offer\s+letter|formal\s+offer|offer\s+details|congratulations.*offer)/i.test(combined)) {
-        if (['Saved', 'Applied', 'Screening', 'Interview'].includes(currentStatus)) {
-          return 'Offer';
-        }
-      }
-
-      // Check for interview
-      if (/(?:interview|conversation|chat|schedule|meet\s+the\s+team|next\s+steps|coding\s+challenge|technical\s+assessment)/i.test(combined)) {
-        if (['Saved', 'Applied', 'Screening'].includes(currentStatus)) {
-          return 'Interview';
-        }
-      }
-
-      // Check for screening
-      if (/(?:screening|recruiter\s+call|introductory\s+call|phone\s+screen)/i.test(combined)) {
-        if (['Saved', 'Applied'].includes(currentStatus)) {
-          return 'Screening';
-        }
-      }
-
-      return null;
-    }
-
-    function updateStageAdvancementUI() {
-      suggestedAdvanceStage = detectSuggestedStageAdvancement(
-        selectedEmailMatchedApp,
-        emailSubjectInput.value,
-        emailBodyInput.value
-      );
-
-      if (suggestedAdvanceStage && advanceStageOption && advanceStageLabel && advanceStageCheckbox) {
-        advanceStageLabel.textContent = `Advance stage to ${suggestedAdvanceStage}`;
-        advanceStageCheckbox.checked = true;
-        advanceStageOption.style.display = 'flex';
-        if (milestoneBox) milestoneBox.style.display = 'flex';
-      } else if (advanceStageOption) {
-        advanceStageOption.style.display = 'none';
-      }
-    }
-
-    function updateContactDiscoveryUI() {
-      chrome.storage.local.get(['tracklet_contacts_index', 'tracklet_guest_contacts_v1'], (res) => {
-        const allContacts = res?.tracklet_contacts_index || res?.tracklet_guest_contacts_v1 || [];
-        const normEmail = (discoveredRecruiterEmail || '').toLowerCase().trim();
-        const normName = (discoveredRecruiterName || '').toLowerCase().trim();
-        const isKnownContact = selectedEmailMatchedApp?.contactEmails?.some(e => e.toLowerCase() === normEmail) ||
-          allContacts.some(c => (normEmail && c.email?.toLowerCase().trim() === normEmail) || (normName && c.name?.toLowerCase().trim() === normName));
-
-        if (discoveredRecruiterName && !isKnownContact && discoveredRecruiterName !== 'You' && discoveredRecruiterName.length > 1) {
-          if (milestoneBox) milestoneBox.style.display = 'flex';
-          if (addContactOption) addContactOption.style.display = 'flex';
-          if (addContactLabel) addContactLabel.textContent = `Add "${discoveredRecruiterName}" as recruiter contact in Contacts Hub`;
-          if (addContactCheckbox) addContactCheckbox.checked = true;
-        } else {
-          if (addContactOption) addContactOption.style.display = 'none';
-          if (addContactCheckbox) addContactCheckbox.checked = false;
-        }
-
-        const isStageHidden = !advanceStageOption || advanceStageOption.style.display === 'none';
-        const isContactHidden = !addContactOption || addContactOption.style.display === 'none';
-        if (isStageHidden && isContactHidden && milestoneBox) {
-          milestoneBox.style.display = 'none';
-        }
-      });
-    }
 
     function applyExtractedEmailData(emailData) {
       rawExtractedEmailData = emailData;
@@ -2532,7 +2530,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  async function pushContactToFirestoreDirectly(payload, userSession, config, docIdToUpdate = null) {
+  async function pushStandaloneContactToFirestoreDirectly(payload, userSession, config, docIdToUpdate = null) {
     const projectId = config?.projectId || 'demo-tracklet';
     const apiKey = config?.apiKey;
     const userId = userSession.uid;
@@ -2652,7 +2650,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 1. Direct Firestore save via REST API if logged in
     if (currentUserSession && currentUserSession.uid) {
       try {
-        await pushContactToFirestoreDirectly(
+        await pushStandaloneContactToFirestoreDirectly(
           contactPayload,
           currentUserSession,
           currentFirebaseConfig,
@@ -2750,7 +2748,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       e.preventDefault();
       if (!detectedRecruiterContact) return;
       setManualTabOverride('contact');
-      switchCompanionTab('contact');
+      setActiveCompanionTab('contact', false);
 
       if (contactNameInput) contactNameInput.value = detectedRecruiterContact.name || '';
       if (contactRoleInput) contactRoleInput.value = detectedRecruiterContact.role || '';
@@ -2766,7 +2764,16 @@ document.addEventListener('DOMContentLoaded', async () => {
           contactAvatarSvg.style.display = 'block';
         }
       }
-      selectContactCategory(detectedRecruiterContact.category || 'Recruiter');
+      setContactCategory(detectedRecruiterContact.category || 'Recruiter');
+      matchedExistingContact = detectedRecruiterContact.existingContact || null;
+      if (matchedExistingContact && contactStatusBanner) {
+        contactStatusBanner.style.display = 'flex';
+        contactStatusBanner.classList.remove('warning');
+        contactStatusText.textContent = '✓ Saved in Contacts Hub';
+      }
+      if (saveContactBtn) {
+        saveContactBtn.querySelector('span').textContent = matchedExistingContact ? 'Update Contact' : 'Save Contact to Tracklet';
+      }
       checkForContactDuplicates(detectedRecruiterContact.linkedIn, detectedRecruiterContact.name, companyInput.value.trim());
     });
   }
@@ -2811,7 +2818,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       handleSave();
       return;
     }
-    if (e.key === 'Enter' && !e.shiftKey && e.target.tagName !== 'TEXTAREA' && e.target.id !== 'notes-editor' && e.target.id !== 'contact-notes') {
+    const isInteractiveTarget = e.target && (
+      e.target.tagName === 'BUTTON' ||
+      e.target.tagName === 'A' ||
+      (e.target.getAttribute && e.target.getAttribute('role') === 'tab') ||
+      e.target.closest('button') ||
+      e.target.closest('a')
+    );
+    if (e.key === 'Enter' && !e.shiftKey && !isInteractiveTarget && e.target.tagName !== 'TEXTAREA' && e.target.id !== 'notes-editor' && e.target.id !== 'contact-notes') {
       e.preventDefault();
       if (currentActiveTab === 'autofill' && autofillTriggerBtn && !autofillTriggerBtn.disabled && autofillView && autofillView.style.display !== 'none') {
         triggerAutofill();
@@ -3196,8 +3210,8 @@ document.addEventListener('DOMContentLoaded', async () => {
               ...(bundledContactPayload.applicationIds || []).filter(id => !id.startsWith('ext-'))
             ]));
           }
-          await pushContactToFirestoreDirectly(bundledContactPayload, finalizedApp.id, currentUserSession, currentFirebaseConfig);
-          contactSavedToCloud = true;
+          const pushedContactId = await pushContactToFirestoreDirectly(bundledContactPayload, finalizedApp.id, currentUserSession, currentFirebaseConfig);
+          contactSavedToCloud = Boolean(pushedContactId);
         }
       } catch (cloudErr) {
         console.warn('Direct Firestore push failed (offline or auth expired), falling back to local storage:', cloudErr);
@@ -3313,12 +3327,76 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  // Auto-close Timer Manager (pauses on hover so user can click workspace link)
+  function resetPopupFormState() {
+    // 1. Reset Application Form State
+    if (companyInput) {
+      companyInput.value = '';
+      companyInput.classList.remove('input-error');
+    }
+    if (companyDomainInput) companyDomainInput.value = '';
+    if (roleInput) {
+      roleInput.value = '';
+      roleInput.classList.remove('input-error');
+    }
+    if (locationInput) locationInput.value = '';
+    if (dateAppliedInput) {
+      dateAppliedInput.value = new Date().toISOString().split('T')[0];
+    }
+    if (jobLinkInput) jobLinkInput.value = '';
+    if (notesInput) notesInput.value = '';
+    if (typeof updateCompanyAvatar === 'function') {
+      updateCompanyAvatar('', '');
+    }
+    matchedApplication = null;
+    const dupBanner = document.getElementById('duplicate-banner');
+    if (dupBanner) dupBanner.style.display = 'none';
+    const recCard = document.getElementById('recruiter-contact-card');
+    if (recCard) recCard.classList.add('hidden');
+    detectedRecruiterContact = null;
+    if (typeof clearResumeChip === 'function') {
+      clearResumeChip();
+    }
+    tabDraftMemory.job = null;
+
+    // 2. Reset Contact Form State
+    if (contactNameInput) {
+      contactNameInput.value = '';
+      contactNameInput.classList.remove('input-error');
+    }
+    if (contactRoleInput) contactRoleInput.value = '';
+    if (contactOrgInput) contactOrgInput.value = '';
+    if (contactLocationInput) contactLocationInput.value = '';
+    if (contactLinkedInInput) contactLinkedInInput.value = '';
+    if (contactNotesInput) contactNotesInput.value = '';
+    if (typeof setContactCategory === 'function') {
+      setContactCategory('Recruiter');
+    }
+    if (typeof setContactLinkedApp === 'function') {
+      setContactLinkedApp('');
+    }
+    matchedExistingContact = null;
+    tabDraftMemory.contact = null;
+
+    // 3. Reset Email Logging State
+    if (emailSubjectInput) emailSubjectInput.value = '';
+    if (emailCounterpartyInput) emailCounterpartyInput.value = '';
+    if (emailBodyInput) emailBodyInput.value = '';
+    if (emailDateInput) emailDateInput.value = '';
+    if (emailTimeInput) emailTimeInput.value = '';
+    selectedEmailMatchedApp = null;
+    discoveredRecruiterName = '';
+    discoveredRecruiterEmail = '';
+    tabDraftMemory.email = null;
+  }
+
+  // Auto-close Timer Manager (restores form and hides successView instead of closing persistent panel)
   let closeTimeout = null;
   function scheduleAutoClose(ms = 3200) {
     clearTimeout(closeTimeout);
     closeTimeout = setTimeout(() => {
-      window.close();
+      if (successView) successView.classList.remove('visible');
+      if (mainContainer) mainContainer.style.display = '';
+      resetPopupFormState();
     }, ms);
   }
 
@@ -3372,7 +3450,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (trackletTab.windowId) {
           await chrome.windows.update(trackletTab.windowId, { focused: true });
         }
-        window.close();
         return;
       }
     } catch (err) {
@@ -3385,7 +3462,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       : (subpath ? `${cleanBase}${subpath}` : cleanBase);
 
     chrome.tabs.create({ url: targetUrl });
-    window.close();
   }
 
   // Open Tracklet Dashboard Link Handler from Success View
@@ -3393,6 +3469,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     e.preventDefault();
     clearTimeout(closeTimeout);
     focusOrOpenWorkspace();
+    if (successView) successView.classList.remove('visible');
+    if (mainContainer) mainContainer.style.display = '';
+    resetPopupFormState();
   });
 
   function getDomain(urlStr) {

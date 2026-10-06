@@ -75,18 +75,23 @@
         }
       }
 
-      // Try sync first
-      chrome.storage.sync.get([STORAGE_KEY], (syncResult) => {
-        if (!chrome.runtime.lastError && syncResult && syncResult[STORAGE_KEY]) {
-          return resolve(normalizeCandidateProfile(syncResult[STORAGE_KEY]));
-        }
+      chrome.storage.sync.get([STORAGE_KEY], (syncRes) => {
+        const syncProfile = (!chrome.runtime.lastError && syncRes && syncRes[STORAGE_KEY])
+          ? normalizeCandidateProfile(syncRes[STORAGE_KEY])
+          : null;
 
-        // Fallback to local storage
-        chrome.storage.local.get([STORAGE_KEY], (localResult) => {
-          if (!chrome.runtime.lastError && localResult && localResult[STORAGE_KEY]) {
-            return resolve(normalizeCandidateProfile(localResult[STORAGE_KEY]));
+        chrome.storage.local.get([STORAGE_KEY], (localRes) => {
+          const localProfile = (!chrome.runtime.lastError && localRes && localRes[STORAGE_KEY])
+            ? normalizeCandidateProfile(localRes[STORAGE_KEY])
+            : null;
+
+          if (syncProfile && localProfile) {
+            const syncTime = syncProfile.updatedAt ? new Date(syncProfile.updatedAt).getTime() : 0;
+            const localTime = localProfile.updatedAt ? new Date(localProfile.updatedAt).getTime() : 0;
+            return resolve(localTime > syncTime ? localProfile : syncProfile);
           }
-          resolve(null);
+
+          resolve(syncProfile || localProfile || null);
         });
       });
     });
@@ -126,7 +131,13 @@
             if (chrome.runtime.lastError) {
               return reject(chrome.runtime.lastError);
             }
-            resolve(normalized);
+            // Remove stale sync profile to prevent resurrecting old data
+            chrome.storage.sync.remove([STORAGE_KEY], () => {
+              if (chrome.runtime.lastError) {
+                return reject(chrome.runtime.lastError);
+              }
+              resolve(normalized);
+            });
           });
         } else {
           // Also mirror to local storage for offline resiliency

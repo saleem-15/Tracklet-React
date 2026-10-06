@@ -66,10 +66,22 @@
     return new Promise((resolve, reject) => {
       const tx = db.transaction(STORE_NAME, 'readwrite');
       const store = tx.objectStore(STORE_NAME);
-      const req = store.put(record);
+      store.put(record);
 
-      req.onsuccess = () => resolve(blobId);
-      req.onerror = () => reject(req.error || new Error('Failed to save resume blob'));
+      tx.oncomplete = () => {
+        db.close();
+        resolve(blobId);
+      };
+      tx.onerror = () => {
+        const err = tx.error || new Error('Failed to save resume blob');
+        db.close();
+        reject(err);
+      };
+      tx.onabort = () => {
+        const err = tx.error || new Error('Save resume blob transaction aborted');
+        db.close();
+        reject(err);
+      };
     });
   }
 
@@ -86,8 +98,15 @@
       const store = tx.objectStore(STORE_NAME);
       const req = store.get(blobId);
 
-      req.onsuccess = () => resolve(req.result || null);
-      req.onerror = () => reject(req.error || new Error(`Failed to retrieve resume blob: ${blobId}`));
+      req.onsuccess = () => {
+        db.close();
+        resolve(req.result || null);
+      };
+      req.onerror = () => {
+        const err = req.error || new Error(`Failed to retrieve resume blob: ${blobId}`);
+        db.close();
+        reject(err);
+      };
     });
   }
 
@@ -102,10 +121,22 @@
     return new Promise((resolve, reject) => {
       const tx = db.transaction(STORE_NAME, 'readwrite');
       const store = tx.objectStore(STORE_NAME);
-      const req = store.delete(blobId);
+      store.delete(blobId);
 
-      req.onsuccess = () => resolve(true);
-      req.onerror = () => reject(req.error || new Error(`Failed to delete resume blob: ${blobId}`));
+      tx.oncomplete = () => {
+        db.close();
+        resolve(true);
+      };
+      tx.onerror = () => {
+        const err = tx.error || new Error(`Failed to delete resume blob: ${blobId}`);
+        db.close();
+        reject(err);
+      };
+      tx.onabort = () => {
+        const err = tx.error || new Error('Delete resume blob transaction aborted');
+        db.close();
+        reject(err);
+      };
     });
   }
 

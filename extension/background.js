@@ -788,7 +788,7 @@ chrome.tabs.onActivated.addListener(async (activeInfo) => {
 });
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  if (changeInfo.status === 'complete' && tab && tab.url) {
+  if (changeInfo.status === 'complete' && tab && tab.active && tab.url) {
     chrome.runtime.sendMessage({
       action: 'ACTIVE_TAB_UPDATED',
       payload: { tabId: tab.id, url: tab.url, title: tab.title }
