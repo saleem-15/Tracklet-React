@@ -276,7 +276,7 @@ When viewing an ATS application page (Greenhouse, Lever, Workday) or opening the
 - **FR-029**: Field matching MUST resolve candidate fields using a prioritized 4-tier strategy: ATS selectors $\rightarrow$ `autocomplete` attributes $\rightarrow$ semantic `name`/`id` heuristics $\rightarrow$ label proximity text.
 - **FR-030**: The "⚡ Auto-Fill Application" button MUST populate matched inputs and dispatch synthetic `input`, `change`, and `blur` events without submitting the form, followed by an itemized checklist in the side panel showing populated and manual fields.
 - **FR-031**: When the user clicks any field item in the side panel's autofill checklist, the extension MUST smoothly scroll the host page to that target element, set focus, and apply a transient highlight outline (e.g. 2px accent halo) that automatically fades after 1.5 seconds.
-- **FR-032**: The extension MUST provide a tailored CV file attachment dropzone (and/or detect host ATS file selection), capturing the uploaded CV file payload and metadata (`resumeFileName`, `resumeFileSize`, `resumeFileUrl`, `resumeUploadedAt`), persisting it in storage, and linking it directly to the saved Application record with download/preview access.
+- **FR-032**: The extension MUST provide a tailored CV file attachment dropzone (and/or detect host ATS file selection), capturing the uploaded CV file payload and metadata (`resumeFileName`, `resumeFileSize`, `resumeBlobId`, `resumeUploadedAt`), persisting it in storage, and linking it directly to the saved Application record with download/preview access.
 - **FR-033**: The extension MUST NEVER automatically trigger form submission; final review and submission remain under direct user control.
 
 ---
@@ -313,7 +313,7 @@ When viewing an ATS application page (Greenhouse, Lever, Workday) or opening the
   - `fieldsMatched`: Array of `MatchedField`
   - `unmatchedFields`: Array of strings
 - **Captured Job Record (`Application`)**:
-  - Fields from Tracklet `Application` model in `src/types.ts`, extended with tailored CV attachment fields: `resumeFileName` (string), `resumeFileSize` (bytes number), `resumeFileUrl` (or storage reference string), and `resumeUploadedAt` (ISO timestamp).
+  - Fields from Tracklet `Application` model in `src/types.ts`, extended with tailored CV attachment fields: `resumeFileName` (string), `resumeFileSize` (bytes number), `resumeBlobId` (or storage reference string), and `resumeUploadedAt` (ISO timestamp).
 
 ---
 

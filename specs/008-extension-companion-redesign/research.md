@@ -128,13 +128,13 @@ This document details the architectural decisions, Chrome Manifest V3 APIs, inte
 - **Problem**: Storing 1–5 MB PDF binaries inside `chrome.storage.local` causes storage quota errors and fails in Firestore (1MB limit).
 - **Solution**:
   1. The user uploads/attaches their customized CV file via a dropzone in the side panel or it is captured from the ATS file input.
-  2. The file binary is stored locally in an `IndexedDB` object store named `tracklet_resumes` keyed by a UUID `resumeBlobId`.
+  2. The file binary is stored locally in an `IndexedDB` object store named `tailored_resumes` keyed by a UUID `resumeBlobId`.
   3. The `Application` record stores lightweight metadata:
      - `resumeFileName`: e.g. `Saleem_Senior_Frontend_Stripe_v2.pdf`
      - `resumeFileSize`: e.g. `148520` (bytes)
      - `resumeBlobId`: e.g. `blob_stripe_20261005_abc123`
      - `resumeUploadedAt`: ISO string timestamp
-  4. Tracklet's detail panel and the side panel read from IndexedDB to provide immediate download and preview links.
+  4. The extension side panel reads directly from its extension-origin IndexedDB (`tailored_resumes`); the Tracklet web app detail panel must receive the resume bytes (e.g. via postMessage/sync bridging) or use storage it can access before offering preview and download.
 
 ---
 

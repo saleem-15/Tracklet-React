@@ -9,7 +9,7 @@
 ## 1. Candidate Profile Storage Schema (`chrome.storage.sync`)
 
 - **Storage Key**: `tracklet_candidate_profile_v1`
-- **Fallback**: Automatically falls back to `chrome.storage.local` if `chrome.storage.sync` quota exceeds or user is signed out.
+- **Fallback**: Automatically falls back to `chrome.storage.local` if `chrome.storage.sync` quota exceeds or user is signed out. On local fallback write, the stale sync profile is removed before reporting success, propagating removal errors.
 
 ```json
 {

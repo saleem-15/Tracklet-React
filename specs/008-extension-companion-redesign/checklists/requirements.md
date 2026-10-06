@@ -2,7 +2,7 @@
 
 **Purpose**: Validate specification completeness and quality before proceeding to planning  
 **Created**: 2026-10-05  
-**Feature**: [spec.md](file:///d:/Programming/Tracklet/specs/008-extension-companion-redesign/spec.md)
+**Feature**: [spec.md](../spec.md)
 
 ## Content Quality
 

@@ -16,7 +16,7 @@
 2. **Load Unpacked Extension in Chrome**:
    - Open Chrome and navigate to `chrome://extensions`.
    - Enable **Developer mode** toggle (top right).
-   - Click **Load unpacked** and select the `d:/Programming/Tracklet/extension` directory.
+   - Click **Load unpacked** and select the `extension/` directory from your current checkout.
    - Click the Extension puzzle piece in the Chrome toolbar and pin **Tracklet**.
 
 ---

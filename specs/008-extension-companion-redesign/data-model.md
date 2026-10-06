@@ -60,6 +60,7 @@ export interface Contact {
   email?: string;                     // Optional contact email
   phone?: string;                     // Optional contact phone number
   linkedIn?: string;                  // Canonical LinkedIn URL (e.g. "https://www.linkedin.com/in/username")
+  location?: string;                  // Contact geographic location or region
   notes?: string;                     // Private notes or conversation logs
   nextFollowUpDate?: string;          // YYYY-MM-DD
   applicationIds?: string[];          // Array of linked Application IDs

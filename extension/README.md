@@ -11,7 +11,7 @@
 1. Open Google Chrome (or Edge / Brave) and navigate to `chrome://extensions`.
 2. Toggle **Developer mode** to **ON** in the top-right corner.
 3. Click the **Load unpacked** button in the top-left toolbar.
-4. Select the `extension/` directory inside your Tracklet project folder (`d:/Programming/Tracklet/extension`).
+4. Select the `extension/` directory inside your Tracklet project checkout.
 5. Click the Extensions puzzle piece icon (🧩) in the browser toolbar and pin **Tracklet**.
 
 ### 📌 Side Panel Docking Behavior
