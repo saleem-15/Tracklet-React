@@ -289,10 +289,11 @@ export function resolveFormFields(
       const normalizedAttrs = rawAttrs.replace(/[_\.-]/g, ' ');
       if (SEMANTIC_PATTERNS[key].test(normalizedAttrs)) {
         claimedElements.add(input);
+        const escapedId = input.id ? (typeof CSS !== 'undefined' && CSS.escape ? CSS.escape(input.id) : input.id.replace(/([ #;?%&,.+*~':"!^$[\]()=>|/@])/g, '\\$1')) : '';
         matched.push({
           fieldKey: key,
           label: FIELD_LABELS[key],
-          selector: input.id ? `#${input.id}` : input.name ? `[name="${input.name}"]` : 'input',
+          selector: input.id ? `#${escapedId}` : input.name ? `[name="${input.name}"]` : 'input',
           value: val,
           tier: 'semantic',
           element: input,
@@ -310,7 +311,10 @@ export function resolveFormFields(
       if (SEMANTIC_PATTERNS[key].test(labelText)) {
         let targetInput: HTMLInputElement | null = null;
         if (label.htmlFor) {
-          targetInput = container.querySelector(`#${label.htmlFor}`);
+          const docEl = container.ownerDocument?.getElementById(label.htmlFor);
+          if (docEl && container.contains(docEl) && docEl instanceof HTMLInputElement) {
+            targetInput = docEl;
+          }
         }
         if (!targetInput) {
           targetInput = label.querySelector('input') || (label.nextElementSibling as HTMLInputElement | null);
@@ -318,10 +322,11 @@ export function resolveFormFields(
 
         if (targetInput && !claimedElements.has(targetInput) && targetInput.tagName === 'INPUT') {
           claimedElements.add(targetInput);
+          const escapedId = targetInput.id ? (typeof CSS !== 'undefined' && CSS.escape ? CSS.escape(targetInput.id) : targetInput.id.replace(/([ #;?%&,.+*~':"!^$[\]()=>|/@])/g, '\\$1')) : '';
           matched.push({
             fieldKey: key,
             label: FIELD_LABELS[key],
-            selector: targetInput.id ? `#${targetInput.id}` : `label:contains("${labelText.slice(0, 10)}") + input`,
+            selector: targetInput.id ? `#${escapedId}` : `label:contains("${labelText.slice(0, 10)}") + input`,
             value: val,
             tier: 'label-proximity',
             element: targetInput,

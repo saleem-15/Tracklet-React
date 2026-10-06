@@ -78,9 +78,10 @@ export function useExtensionSync({
     }
   }, [applications, contacts]);
 
-  // Buffer for incoming emails and applications received before applications data load completes
+  // Buffer for incoming emails, applications, and contacts received before applications data load completes
   const pendingEmailPayloadsRef = useRef<IncomingEmailPayload[]>([]);
   const pendingAppPayloadsRef = useRef<{ clippedApp: Application; persistedToCloud?: boolean }[]>([]);
+  const pendingContactPayloadsRef = useRef<{ contact: Contact; persistedToCloud?: boolean }[]>([]);
 
   // Clear pending payload queues when authenticated user changes to prevent cross-account ingestion
   const prevUserIdRef = useRef<string | undefined>(user?.uid);
@@ -89,6 +90,7 @@ export function useExtensionSync({
       prevUserIdRef.current = user?.uid;
       pendingEmailPayloadsRef.current = [];
       pendingAppPayloadsRef.current = [];
+      pendingContactPayloadsRef.current = [];
     }
   }, [user?.uid]);
 
@@ -345,6 +347,11 @@ export function useExtensionSync({
   }, [user, addToast, setApplications, applicationsRef]);
 
   const processIncomingContact = useCallback((contact: Contact, persistedToCloud?: boolean) => {
+    if (dataLoadingRef.current) {
+      pendingContactPayloadsRef.current.push({ contact, persistedToCloud });
+      return;
+    }
+
     const known = contactsRef.current;
     const existingIdx = known.findIndex((c) => c.id === contact.id);
     let next: Contact[];
@@ -363,8 +370,8 @@ export function useExtensionSync({
             console.warn('Failed to update contact in Firestore:', err);
           });
         } else {
-          ContactRepository.addContact(contact, user.uid).catch((err) => {
-            console.warn('Failed to add contact to Firestore:', err);
+          ContactRepository.upsertContact(contact, user.uid).catch((err) => {
+            console.warn('Failed to upsert contact in Firestore:', err);
           });
         }
       }
@@ -379,7 +386,7 @@ export function useExtensionSync({
     );
   }, [user, addToast, setContacts]);
 
-  // Drain buffered incoming applications and emails once applications data loading completes
+  // Drain buffered incoming applications, emails, and contacts once applications data loading completes
   useEffect(() => {
     if (!dataLoading) {
       if (pendingAppPayloadsRef.current.length > 0) {
@@ -396,8 +403,15 @@ export function useExtensionSync({
           processIncomingEmail(payload);
         });
       }
+      if (pendingContactPayloadsRef.current.length > 0) {
+        const contactQueue = [...pendingContactPayloadsRef.current];
+        pendingContactPayloadsRef.current = [];
+        contactQueue.forEach(({ contact, persistedToCloud }) => {
+          processIncomingContact(contact, persistedToCloud);
+        });
+      }
     }
-  }, [dataLoading, processIncomingApplication, processIncomingEmail]);
+  }, [dataLoading, processIncomingApplication, processIncomingEmail, processIncomingContact]);
 
   // Browser Extension Sync Listener
   useEffect(() => {

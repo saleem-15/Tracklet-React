@@ -44,6 +44,7 @@ export interface Contact {
   name: string;
   role?: string;
   organization?: string;
+  location?: string;
   category?: ContactCategory;
   email?: string;
   phone?: string;
