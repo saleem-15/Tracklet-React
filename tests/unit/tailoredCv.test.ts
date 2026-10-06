@@ -98,29 +98,42 @@ describe('Tailored CV Metadata, Validation & Storage (US5 / T030)', () => {
       mockStore = new Map();
 
       const mockDbInstance = {
+        close: vi.fn(),
         objectStoreNames: { contains: vi.fn(() => true) },
-        transaction: vi.fn(() => ({
-          objectStore: vi.fn(() => ({
-            put: vi.fn((record: any) => {
-              mockStore.set(record.blobId, record);
-              const req: any = { onsuccess: null, onerror: null };
-              setTimeout(() => { if (req.onsuccess) req.onsuccess(); }, 0);
-              return req;
-            }),
-            get: vi.fn((key: string) => {
-              const result = mockStore.get(key) || null;
-              const req: any = { result, onsuccess: null, onerror: null };
-              setTimeout(() => { if (req.onsuccess) req.onsuccess(); }, 0);
-              return req;
-            }),
-            delete: vi.fn((key: string) => {
-              mockStore.delete(key);
-              const req: any = { onsuccess: null, onerror: null };
-              setTimeout(() => { if (req.onsuccess) req.onsuccess(); }, 0);
-              return req;
-            })
-          }))
-        }))
+        transaction: vi.fn(() => {
+          const tx: any = {
+            oncomplete: null,
+            onerror: null,
+            onabort: null,
+            objectStore: vi.fn(() => ({
+              put: vi.fn((record: any) => {
+                mockStore.set(record.blobId, record);
+                const req: any = { onsuccess: null, onerror: null };
+                setTimeout(() => {
+                  if (req.onsuccess) req.onsuccess();
+                  if (tx.oncomplete) tx.oncomplete();
+                }, 0);
+                return req;
+              }),
+              get: vi.fn((key: string) => {
+                const result = mockStore.get(key) || null;
+                const req: any = { result, onsuccess: null, onerror: null };
+                setTimeout(() => { if (req.onsuccess) req.onsuccess(); }, 0);
+                return req;
+              }),
+              delete: vi.fn((key: string) => {
+                mockStore.delete(key);
+                const req: any = { onsuccess: null, onerror: null };
+                setTimeout(() => {
+                  if (req.onsuccess) req.onsuccess();
+                  if (tx.oncomplete) tx.oncomplete();
+                }, 0);
+                return req;
+              })
+            }))
+          };
+          return tx;
+        })
       };
 
       (globalThis as any).indexedDB = {

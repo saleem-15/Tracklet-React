@@ -666,9 +666,11 @@ function matchEmailToApplications(
   const ranked = scored
     .filter(item => item.score >= 40)
     .sort((a, b) => {
-      // 1. Direct score comparison if difference is significant (> 15 pts, e.g. role match)
-      if (Math.abs(b.score - a.score) > 15) {
-        return b.score - a.score;
+      // 1. Direct score comparison by score bucket (15 pts buckets)
+      const bucketA = Math.floor(a.score / 15);
+      const bucketB = Math.floor(b.score / 15);
+      if (bucketB !== bucketA) {
+        return bucketB - bucketA;
       }
 
       // 2. Active Stage Priority (Offer > Interview > Screening > Applied > Saved > Rejected/Archived)

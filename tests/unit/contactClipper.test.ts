@@ -53,6 +53,12 @@ export function diffContact(
     changedFields.push('organization');
   }
 
+  const cleanExistingLoc = (existing.location || '').trim().toLowerCase();
+  const cleanScrapedLoc = (scraped.location || '').trim().toLowerCase();
+  if (cleanScrapedLoc && cleanExistingLoc && cleanExistingLoc !== cleanScrapedLoc) {
+    changedFields.push('location');
+  }
+
   return {
     hasChanged: changedFields.length > 0,
     changedFields,
@@ -128,6 +134,18 @@ describe('contactClipper', () => {
       const result = diffContact(stored, scraped);
       expect(result.hasChanged).toBe(true);
       expect(result.changedFields).toContain('organization');
+    });
+
+    it('detects location changes', () => {
+      const storedWithLoc = { ...stored, location: 'San Francisco, CA' };
+      const scraped = {
+        role: 'Technical Recruiter',
+        organization: 'Stripe',
+        location: 'New York, NY',
+      };
+      const result = diffContact(storedWithLoc, scraped);
+      expect(result.hasChanged).toBe(true);
+      expect(result.changedFields).toContain('location');
     });
   });
 });
