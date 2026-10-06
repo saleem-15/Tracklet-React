@@ -280,8 +280,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   const stickyActionBar = document.getElementById('sticky-action-bar');
   const stickyEmailActionBar = document.getElementById('sticky-email-action-bar');
   const stickyContactActionBar = document.getElementById('sticky-contact-action-bar');
+  const stickyAutofillActionBar = document.getElementById('sticky-autofill-action-bar');
   const stickyStageDot = document.getElementById('sticky-stage-dot');
   const stickyStageLabel = document.getElementById('sticky-stage-label');
+
+  // Companion Toast Receipt Elements
+  const companionToast = document.getElementById('companion-toast');
+  const toastTitle = document.getElementById('toast-title');
+  const toastSub = document.getElementById('toast-sub');
+  const toastUndoBtn = document.getElementById('toast-undo-btn');
+  const toastOpenBtn = document.getElementById('toast-open-btn');
+  let toastTimer = null;
 
   // Contact Clipper Elements (US2)
   const contactStatusBanner = document.getElementById('contact-status-banner');
@@ -297,6 +306,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   const contactLinkedInInput = document.getElementById('contact-linkedin');
   const contactCategoryIndicator = document.getElementById('contact-category-indicator');
   const categoryPills = document.querySelectorAll('#category-pills-grid .category-pill');
+  const contactCategorySelectContainer = document.getElementById('contact-category-select-container');
+  const contactCategoryTrigger = document.getElementById('contact-category-trigger');
+  const contactCategoryValueText = document.getElementById('contact-category-value-text');
+  const contactCategoryDropdown = document.getElementById('contact-category-dropdown');
+  const contactCategoryOptions = document.querySelectorAll('#contact-category-dropdown .custom-select-option');
   const contactAppSelectContainer = document.getElementById('contact-app-select-container');
   const contactAppTrigger = document.getElementById('contact-app-trigger');
   const contactAppValueText = document.getElementById('contact-app-value-text');
@@ -685,6 +699,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (stickyActionBar) stickyActionBar.style.display = tabName === 'job' ? 'flex' : 'none';
     if (stickyEmailActionBar) stickyEmailActionBar.style.display = tabName === 'email' ? 'flex' : 'none';
     if (stickyContactActionBar) stickyContactActionBar.style.display = tabName === 'contact' ? 'flex' : 'none';
+    if (stickyAutofillActionBar) stickyAutofillActionBar.style.display = tabName === 'autofill' ? 'flex' : 'none';
 
     restoreTabDraft(tabName);
 
@@ -693,10 +708,33 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  companionTabs.forEach(tab => {
+  const tabNamesList = ['job', 'contact', 'email', 'autofill'];
+
+  companionTabs.forEach((tab, idx) => {
     tab.addEventListener('click', () => {
       const targetTab = tab.getAttribute('data-tab');
       setActiveCompanionTab(targetTab, true);
+    });
+
+    // ARIA Tablist keyboard navigation (Left/Right arrows, Home/End)
+    tab.addEventListener('keydown', (e) => {
+      let targetIdx = -1;
+      if (e.key === 'ArrowRight') {
+        targetIdx = (idx + 1) % tabNamesList.length;
+      } else if (e.key === 'ArrowLeft') {
+        targetIdx = (idx - 1 + tabNamesList.length) % tabNamesList.length;
+      } else if (e.key === 'Home') {
+        targetIdx = 0;
+      } else if (e.key === 'End') {
+        targetIdx = tabNamesList.length - 1;
+      }
+      if (targetIdx !== -1) {
+        e.preventDefault();
+        const nextTabName = tabNamesList[targetIdx];
+        setActiveCompanionTab(nextTabName, true);
+        const nextTabBtn = document.getElementById(`tab-${nextTabName}`);
+        if (nextTabBtn) nextTabBtn.focus();
+      }
     });
   });
 
@@ -933,11 +971,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.addEventListener('click', (e) => {
     platformSelectContainer.classList.remove('open');
     stageSelectorContainer.classList.remove('open');
+    if (contactCategorySelectContainer && !contactCategorySelectContainer.contains(e.target)) {
+      contactCategorySelectContainer.classList.remove('open');
+    }
+    if (contactAppSelectContainer && !contactAppSelectContainer.contains(e.target)) {
+      contactAppSelectContainer.classList.remove('open');
+    }
     if (appSelectorPopover && appSelectorPopover.style.display !== 'none') {
-      // Do not close if the click came from inside the popover, from changeAppBtn,
-      // or from logEmailBtn (that button opens the popover when no app is selected).
       const fromPopover = appSelectorPopover.contains(e.target);
-      const fromChangeBtn = e.target === changeAppBtn || changeAppBtn.contains(e.target);
+      const fromChangeBtn = changeAppBtn && (e.target === changeAppBtn || changeAppBtn.contains(e.target));
       const fromLogBtn = logEmailBtn && (e.target === logEmailBtn || logEmailBtn.contains(e.target));
       if (!fromPopover && !fromChangeBtn && !fromLogBtn) {
         appSelectorPopover.style.display = 'none';
@@ -950,6 +992,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (e.key === 'Escape') {
       platformSelectContainer.classList.remove('open');
       stageSelectorContainer.classList.remove('open');
+      if (contactCategorySelectContainer) contactCategorySelectContainer.classList.remove('open');
+      if (contactAppSelectContainer) contactAppSelectContainer.classList.remove('open');
       if (appSelectorPopover && appSelectorPopover.style.display !== 'none') {
         appSelectorPopover.style.display = 'none';
       }
@@ -1770,11 +1814,15 @@ document.addEventListener('DOMContentLoaded', async () => {
       const isKnownContact = selectedEmailMatchedApp?.contactEmails?.some(e => e.toLowerCase() === normEmail) ||
         allContacts.some(c => (normEmail && c.email?.toLowerCase().trim() === normEmail) || (normName && c.name?.toLowerCase().trim() === normName));
 
-      if (discoveredRecruiterName && !isKnownContact && discoveredRecruiterName !== 'You' && discoveredRecruiterName.length > 1) {
+      // Automated bot/newsletter/system email detection
+      const isAutomatedEmail = /^(hello|no-?reply|support|info|marketing|news(letter)?|notifications?|mail|billing|alerts?|updates?|team|press|jobs|careers|contact)@/i.test(normEmail);
+      const isServiceBrandName = /(flow|alert|team|bot|notification|digest|newsletter|app|platform|service|update|weekly)/i.test(normName);
+
+      if (discoveredRecruiterName && !isKnownContact && !isAutomatedEmail && !isServiceBrandName && discoveredRecruiterName !== 'You' && discoveredRecruiterName.length > 1) {
         if (milestoneBox) milestoneBox.style.display = 'flex';
         if (addContactOption) addContactOption.style.display = 'flex';
         if (addContactLabel) addContactLabel.textContent = `Add "${discoveredRecruiterName}" as recruiter contact in Contacts Hub`;
-        if (addContactCheckbox) addContactCheckbox.checked = true;
+        if (addContactCheckbox) addContactCheckbox.checked = false; // Opt-in default
       } else {
         if (addContactOption) addContactOption.style.display = 'none';
         if (addContactCheckbox) addContactCheckbox.checked = false;
@@ -2261,14 +2309,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
 
       isLoggingEmail = false;
-      // Show success view
-      successTitle.textContent = 'Email Logged!';
-      successSubtitle.textContent = `"${subject}" logged to ${selectedEmailMatchedApp.company} timeline.`;
-
-      mainContainer.style.display = 'none';
-      successView.classList.add('visible');
-
-      scheduleAutoClose(3200);
+      logEmailBtn.disabled = false;
+      logEmailBtn.querySelector('span').textContent = 'Log Email';
+      const loggedAppId = selectedEmailMatchedApp.id;
+      const loggedCompany = selectedEmailMatchedApp.company;
+      resetPopupFormState();
+      showToastReceipt('Email Logged', `Logged to ${loggedCompany} timeline`, null, loggedAppId);
     });
   }
 
@@ -2327,21 +2373,45 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   function setContactCategory(cat) {
-    selectedContactCategory = cat;
-    if (contactCategoryIndicator) {
-      contactCategoryIndicator.textContent = cat;
+    selectedContactCategory = cat || 'Recruiter';
+    if (contactCategoryValueText) {
+      contactCategoryValueText.textContent = selectedContactCategory;
     }
-    categoryPills.forEach(pill => {
-      pill.classList.toggle('active', pill.getAttribute('data-category') === cat);
+    if (contactCategoryIndicator) {
+      contactCategoryIndicator.textContent = selectedContactCategory;
+    }
+    if (contactCategoryOptions) {
+      contactCategoryOptions.forEach(opt => {
+        opt.classList.toggle('selected', opt.getAttribute('data-value') === selectedContactCategory);
+      });
+    }
+    if (categoryPills) {
+      categoryPills.forEach(pill => {
+        pill.classList.toggle('active', pill.getAttribute('data-category') === selectedContactCategory);
+      });
+    }
+  }
+
+  if (contactCategoryTrigger && contactCategorySelectContainer) {
+    contactCategoryTrigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      contactCategorySelectContainer.classList.toggle('open');
+      if (contactAppSelectContainer) contactAppSelectContainer.classList.remove('open');
+      if (platformSelectContainer) platformSelectContainer.classList.remove('open');
+      if (stageSelectorContainer) stageSelectorContainer.classList.remove('open');
     });
   }
 
-  categoryPills.forEach(pill => {
-    pill.addEventListener('click', () => {
-      const cat = pill.getAttribute('data-category');
-      if (cat) setContactCategory(cat);
+  if (contactCategoryOptions) {
+    contactCategoryOptions.forEach(opt => {
+      opt.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const val = opt.getAttribute('data-value');
+        if (val) setContactCategory(val);
+        if (contactCategorySelectContainer) contactCategorySelectContainer.classList.remove('open');
+      });
     });
-  });
+  }
 
   async function loadKnownContacts() {
     try {
@@ -2709,17 +2779,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         isSavingContact = false;
         if (saveContactBtn) {
           saveContactBtn.disabled = false;
-          saveContactBtn.querySelector('span').textContent = 'Save Contact to Tracklet';
+          saveContactBtn.querySelector('span').textContent = 'Save Contact';
         }
 
-        // Show Success View
-        if (successTitle) successTitle.textContent = matchedExistingContact ? 'Contact Updated!' : 'Contact Saved!';
-        if (successSubtitle) successSubtitle.textContent = `"${contactPayload.name}" saved to Contacts Hub.`;
-
-        if (mainContainer) mainContainer.style.display = 'none';
-        if (successView) successView.classList.add('visible');
-
-        scheduleAutoClose(3200);
+        const title = matchedExistingContact ? 'Contact Updated' : 'Contact Saved';
+        const sub = `"${contactPayload.name}" saved to Contacts Hub`;
+        resetPopupFormState();
+        showToastReceipt(title, sub, null);
       });
     });
   }
@@ -2780,11 +2846,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Global Keyboard Shortcuts (Escape to dismiss dropdowns, Ctrl+Enter / Cmd+Enter to submit from anywhere)
   document.addEventListener('keydown', (e) => {
+    if (e.altKey && !e.ctrlKey && !e.metaKey) {
+      if (e.key === '1') { e.preventDefault(); setActiveCompanionTab('job', true); return; }
+      if (e.key === '2') { e.preventDefault(); setActiveCompanionTab('contact', true); return; }
+      if (e.key === '3') { e.preventDefault(); setActiveCompanionTab('email', true); return; }
+      if (e.key === '4') { e.preventDefault(); setActiveCompanionTab('autofill', true); return; }
+    }
     if (e.key === 'Escape') {
       platformSelectContainer.classList.remove('open');
       stageSelectorContainer.classList.remove('open');
-      if (appSelectorPopover) appSelectorPopover.style.display = 'none';
+      if (contactCategorySelectContainer) contactCategorySelectContainer.classList.remove('open');
       if (contactAppSelectContainer) contactAppSelectContainer.classList.remove('open');
+      if (appSelectorPopover) appSelectorPopover.style.display = 'none';
       return;
     }
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
@@ -3305,24 +3378,25 @@ document.addEventListener('DOMContentLoaded', async () => {
         tracklet_guest_apps_v1: guestApps,
         tracklet_apps_index: appsIndex
       }, () => {
+        saveBtn.disabled = false;
+        if (saveBtn.querySelector('span')) {
+          saveBtn.querySelector('span').textContent = 'Save Application';
+        }
+
         // Flash Extension Icon Badge
         chrome.runtime.sendMessage({ action: 'FLASH_SUCCESS' });
 
-        // Show Success Overlay
-        successTitle.textContent = matchedApplication
+        const title = matchedApplication
           ? (savedToCloud ? 'Cloud Updated!' : 'Application Updated!')
           : (savedToCloud ? 'Saved to Cloud!' : 'Application Saved!');
-        successSubtitle.textContent = matchedApplication
+        const sub = matchedApplication
           ? `Updated "${role}" at ${company}.`
           : (bundledContactPayload
               ? `${company} — ${role} logged to Tracklet + recruiter contact linked.`
               : `${company} — ${role} logged to Tracklet.`);
 
-        mainContainer.style.display = 'none';
-        successView.classList.add('visible');
-
-        // Auto-close popup with 2.8s duration
-        scheduleAutoClose(2800);
+        resetPopupFormState();
+        showToastReceipt(title, sub, null, finalizedApp.id);
       });
     });
   }
@@ -3387,6 +3461,71 @@ document.addEventListener('DOMContentLoaded', async () => {
     discoveredRecruiterName = '';
     discoveredRecruiterEmail = '';
     tabDraftMemory.email = null;
+  }
+
+  // Toast Receipt Manager (Floating non-blocking confirmation)
+  function showToastReceipt(title, sub, onUndo = null, openAppId = null, subpath = '') {
+    if (!companionToast) return;
+    if (toastTimer) clearTimeout(toastTimer);
+
+    if (toastTitle) toastTitle.textContent = title || 'Success';
+    if (toastSub) toastSub.textContent = sub || '';
+
+    if (toastUndoBtn) {
+      if (typeof onUndo === 'function') {
+        toastUndoBtn.style.display = 'inline-flex';
+        toastUndoBtn.onclick = () => {
+          hideToastReceipt();
+          onUndo();
+        };
+      } else {
+        toastUndoBtn.style.display = 'none';
+        toastUndoBtn.onclick = null;
+      }
+    }
+
+    if (toastOpenBtn) {
+      toastOpenBtn.onclick = () => {
+        hideToastReceipt();
+        focusOrOpenWorkspace(openAppId, subpath);
+      };
+    }
+
+    companionToast.style.display = 'flex';
+    requestAnimationFrame(() => {
+      companionToast.classList.add('visible');
+    });
+
+    toastTimer = setTimeout(() => {
+      hideToastReceipt();
+    }, 4500);
+  }
+
+  function hideToastReceipt() {
+    if (toastTimer) {
+      clearTimeout(toastTimer);
+      toastTimer = null;
+    }
+    if (!companionToast) return;
+    companionToast.classList.remove('visible');
+    setTimeout(() => {
+      if (!companionToast.classList.contains('visible')) {
+        companionToast.style.display = 'none';
+      }
+    }, 200);
+  }
+
+  if (companionToast) {
+    companionToast.addEventListener('mouseenter', () => {
+      if (toastTimer) clearTimeout(toastTimer);
+    });
+    companionToast.addEventListener('mouseleave', () => {
+      if (companionToast.classList.contains('visible')) {
+        toastTimer = setTimeout(() => {
+          hideToastReceipt();
+        }, 2000);
+      }
+    });
   }
 
   // Auto-close Timer Manager (restores form and hides successView instead of closing persistent panel)
@@ -3809,6 +3948,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           res.populatedFields || [],
           res.manualFieldsRequired || []
         );
+        showToastReceipt('Form Auto-Filled', `${res.fieldsPopulatedCount} fields populated safely`);
       });
     });
   }

@@ -3,18 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tracklet — Save Job Application</title>
+  <title>Tracklet</title>
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
   <div class="container" id="main-container">
-    <!-- Header matching Tracklet Brand -->
+    <!-- Streamlined Header matching Tracklet Brand -->
     <div class="header">
       <div class="brand">
-        <img src="icons/logo.svg" alt="Tracklet Logo" class="brand-logo-img">
-        <div class="brand-info">
-          <span class="brand-title">Tracklet</span>
-        </div>
+        <img src="icons/logo.svg" alt="Tracklet" class="brand-logo-img" width="22" height="22">
       </div>
       <!-- Header Right Group: Context Chip + Sync Pill -->
       <div class="header-right">
@@ -248,7 +245,7 @@
           <div class="recruiter-contact-card" id="recruiter-contact-card" style="display: none;">
             <div class="recruiter-card-top">
               <div class="recruiter-avatar-box" id="recruiter-avatar-box">
-                <img id="recruiter-avatar-img" src="" alt="Avatar" style="display: none; width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+                <img id="recruiter-avatar-img" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'/%3E" alt="Avatar" style="display: none; width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
                 <span id="recruiter-avatar-initials"></span>
               </div>
               <div class="recruiter-card-info">
@@ -380,10 +377,10 @@
           <button type="button" class="btn-text-link" id="contact-open-link">Open</button>
         </div>
 
-        <!-- Micro-Card 1: Contact Identity -->
+        <!-- Unified Contact Card -->
         <div class="form-card">
           <div class="form-card-header">
-            <span class="form-card-title">Contact Identity</span>
+            <span class="form-card-title">Contact Details</span>
             <span class="category-indicator-badge" id="contact-category-indicator">Recruiter</span>
           </div>
 
@@ -395,7 +392,7 @@
             </label>
             <div class="input-wrapper" style="gap: 8px;">
               <div class="contact-avatar-box" id="contact-avatar-box" title="Contact Avatar">
-                <img id="contact-avatar-img" src="" alt="Avatar" style="display: none; width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+                <img id="contact-avatar-img" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'/%3E" alt="Avatar" style="display: none; width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
                 <svg id="contact-avatar-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
               </div>
               <input type="text" id="contact-name" placeholder="e.g. Sarah Connor" required autocomplete="off">
@@ -434,58 +431,62 @@
             </div>
           </div>
 
-          <!-- LinkedIn URL -->
+          <!-- Category (Dropdown) & LinkedIn URL Row -->
+          <div class="form-row">
+            <div class="form-group">
+              <label>
+                <span>Category</span>
+              </label>
+              <div class="custom-select-container" id="contact-category-select-container">
+                <button type="button" class="custom-select-trigger" id="contact-category-trigger">
+                  <span class="custom-select-value" id="contact-category-value-text">Recruiter</span>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
+                </button>
+                <div class="custom-select-dropdown" id="contact-category-dropdown">
+                  <div class="custom-select-option selected" data-value="Recruiter">Recruiter</div>
+                  <div class="custom-select-option" data-value="Hiring Manager">Hiring Manager</div>
+                  <div class="custom-select-option" data-value="Mentor">Mentor</div>
+                  <div class="custom-select-option" data-value="Referral">Referral</div>
+                  <div class="custom-select-option" data-value="Peer / Alumni">Peer / Alumni</div>
+                  <div class="custom-select-option" data-value="Other">Other</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="contact-linkedin">
+                <span>LinkedIn URL</span>
+              </label>
+              <div class="input-wrapper">
+                <input type="url" id="contact-linkedin" placeholder="https://linkedin.com/in/..." autocomplete="off">
+              </div>
+            </div>
+          </div>
+
+          <!-- Link to Active Job Application -->
           <div class="form-group">
-            <label for="contact-linkedin">
-              <span>LinkedIn Profile URL</span>
+            <label>
+              <span>Link to Job Application</span>
+              <span class="label-hint-optional" style="font-size: 11px; font-weight: normal; color: var(--neutral-muted);">Optional</span>
             </label>
-            <div class="input-wrapper">
-              <input type="url" id="contact-linkedin" placeholder="https://www.linkedin.com/in/..." autocomplete="off">
+            <div class="custom-select-container" id="contact-app-select-container">
+              <button type="button" class="custom-select-trigger" id="contact-app-trigger">
+                <span class="custom-select-value" id="contact-app-value-text">No Linked Job (Standalone Contact)</span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
+              </button>
+              <div class="custom-select-dropdown" id="contact-app-dropdown">
+                <div class="custom-select-option selected" data-value="">No Linked Job (Standalone Contact)</div>
+                <!-- Dynamically populated with active applications -->
+              </div>
             </div>
           </div>
-        </div>
 
-        <!-- Micro-Card 2: Category Smart-Defaulting -->
-        <div class="form-card">
-          <div class="form-card-header">
-            <span class="form-card-title">Relationship Category</span>
-            <span style="font-size: 10px; color: var(--neutral-muted);">Smart-defaulted</span>
-          </div>
-          <div class="category-pills-grid" id="category-pills-grid">
-            <button type="button" class="category-pill active" data-category="Recruiter">Recruiter</button>
-            <button type="button" class="category-pill" data-category="Hiring Manager">Hiring Manager</button>
-            <button type="button" class="category-pill" data-category="Mentor">Mentor</button>
-            <button type="button" class="category-pill" data-category="Referral">Referral</button>
-            <button type="button" class="category-pill" data-category="Peer / Alumni">Peer / Alumni</button>
-            <button type="button" class="category-pill" data-category="Other">Other</button>
-          </div>
-        </div>
-
-        <!-- Micro-Card 3: Link to Active Job Application -->
-        <div class="form-card">
-          <div class="form-card-header">
-            <span class="form-card-title">Link to Job Application</span>
-            <span style="font-size: 10px; color: var(--neutral-muted);">Optional</span>
-          </div>
-          <div class="custom-select-container" id="contact-app-select-container">
-            <button type="button" class="custom-select-trigger" id="contact-app-trigger">
-              <span class="custom-select-value" id="contact-app-value-text">No Linked Job (Standalone Contact)</span>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
-            </button>
-            <div class="custom-select-dropdown" id="contact-app-dropdown">
-              <div class="custom-select-option selected" data-value="">No Linked Job (Standalone Contact)</div>
-              <!-- Dynamically populated with active applications -->
-            </div>
-          </div>
-        </div>
-
-        <!-- Micro-Card 4: Private Notes -->
-        <div class="form-card">
-          <div class="form-card-header">
-            <span class="form-card-title">Private Notes</span>
-          </div>
+          <!-- Private Notes -->
           <div class="form-group">
-            <textarea id="contact-notes" rows="3" placeholder="Add context, mutual connections, conversation notes, or follow-up topics..."></textarea>
+            <label for="contact-notes">
+              <span>Private Notes</span>
+            </label>
+            <textarea id="contact-notes" rows="3" placeholder="Context, mutual connections, conversation notes..."></textarea>
           </div>
         </div>
       </div>
@@ -496,7 +497,7 @@
           Open Contacts Hub
         </button>
         <button type="button" class="btn-primary" id="save-contact-btn">
-          <span>Save Contact to Tracklet</span>
+          <span>Save Contact</span>
           <kbd class="btn-shortcut-hint">Ctrl+↵</kbd>
         </button>
       </div>
@@ -605,12 +606,12 @@
             </div>
           </div>
 
-          <!-- Email Body / Notes -->
+          <!-- Email Notes / Summary -->
           <div class="form-group">
             <label for="email-body">
-              <span>Message Content / Notes</span>
+              <span>Notes</span>
             </label>
-            <textarea id="email-body" rows="3" placeholder="Sanitized message preview or notes..."></textarea>
+            <textarea id="email-body" rows="3" placeholder="Key takeaways, next steps, or conversation notes..."></textarea>
           </div>
 
           <!-- In-Flight Stage Advancement & Recruiter Contact Discovery (US4) -->
@@ -624,7 +625,7 @@
             </div>
             <div class="milestone-option" id="add-contact-option" style="display: none;">
               <label class="checkbox-container">
-                <input type="checkbox" id="add-contact-checkbox" checked>
+                <input type="checkbox" id="add-contact-checkbox">
                 <span class="checkmark"></span>
                 <span class="checkbox-label" id="add-contact-label">Add recruiter to contacts</span>
               </label>
@@ -639,7 +640,7 @@
           Clip as job posting
         </button>
         <button type="button" class="btn-primary" id="log-email-btn">
-          <span>⚡ Log Email</span>
+          <span>Log Email</span>
           <kbd class="btn-shortcut-hint">Ctrl+↵</kbd>
         </button>
       </div>
@@ -656,11 +657,6 @@
               <span id="autofill-status-text">Scanning page for application forms...</span>
             </div>
           </div>
-          <button type="button" class="btn-primary autofill-action-btn" id="autofill-trigger-btn" disabled>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m13 2-2 10h5L11 22l2-10H8Z"/></svg>
-            <span id="autofill-btn-text">⚡ Auto-Fill Application</span>
-            <kbd class="btn-shortcut-hint">Ctrl+↵</kbd>
-          </button>
         </div>
 
         <!-- Candidate Profile Summary Card with Quick Edit Mode (FR-027) -->
@@ -811,6 +807,33 @@
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- Sticky Action Bar for Autofill View -->
+      <div class="sticky-action-bar" id="sticky-autofill-action-bar" style="display: none;">
+        <div class="sticky-action-meta" id="sticky-autofill-meta">
+          <span class="stage-dot" id="sticky-autofill-dot" style="background-color: #3b82f6;"></span>
+          <span class="sticky-stage-label" id="sticky-autofill-status-text">ATS Form</span>
+        </div>
+        <button type="button" class="btn-primary" id="autofill-trigger-btn" disabled>
+          <span id="autofill-btn-text">Auto-Fill Application</span>
+          <kbd class="btn-shortcut-hint">Ctrl+↵</kbd>
+        </button>
+      </div>
+    </div>
+
+    <!-- Non-Blocking Action Receipt Toast -->
+    <div class="companion-toast" id="companion-toast" role="status" aria-live="polite" style="display: none;">
+      <div class="companion-toast-content">
+        <div class="companion-toast-icon">✓</div>
+        <div class="companion-toast-text">
+          <span class="companion-toast-title" id="toast-title">Application Saved</span>
+          <span class="companion-toast-sub" id="toast-sub">Added to Tracklet workspace</span>
+        </div>
+      </div>
+      <div class="companion-toast-actions">
+        <button type="button" class="companion-toast-btn" id="toast-undo-btn" style="display: none;">Undo</button>
+        <button type="button" class="companion-toast-btn primary" id="toast-open-btn">Open</button>
       </div>
     </div>
 
