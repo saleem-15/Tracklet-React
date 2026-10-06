@@ -185,6 +185,30 @@ document.addEventListener('DOMContentLoaded', async () => {
   const recruiterNameEl = document.getElementById('recruiter-name');
   const recruiterTitleEl = document.getElementById('recruiter-title');
   const recruiterBadgeEl = document.getElementById('recruiter-badge');
+  const recruiterAvatarBox = document.getElementById('recruiter-avatar-box');
+  const recruiterAvatarImg = document.getElementById('recruiter-avatar-img');
+  const recruiterAvatarInitials = document.getElementById('recruiter-avatar-initials');
+  const recruiterExistingBadge = document.getElementById('recruiter-existing-badge');
+  const recruiterViewDetailsBtn = document.getElementById('recruiter-view-details-btn');
+
+  // Tailored CV / Resume Elements (US5 / T031, T032)
+  const cvUploadGroup = document.getElementById('cv-upload-group');
+  const cvDropzone = document.getElementById('cv-dropzone');
+  const cvFileInput = document.getElementById('cv-file-input');
+  const cvBrowseBtn = document.getElementById('cv-browse-btn');
+  const cvEmptyState = document.getElementById('cv-empty-state');
+  const cvAttachmentChip = document.getElementById('cv-attachment-chip');
+  const cvChipBadge = document.getElementById('cv-chip-badge');
+  const cvChipName = document.getElementById('cv-chip-name');
+  const cvChipSize = document.getElementById('cv-chip-size');
+  const cvDownloadBtn = document.getElementById('cv-download-btn');
+  const cvRemoveBtn = document.getElementById('cv-remove-btn');
+  const cvErrorAlert = document.getElementById('cv-error-alert');
+  const cvErrorText = document.getElementById('cv-error-text');
+
+  let pendingResumeFile = null;
+  let activeResumeMetadata = null;
+
   const alreadySavedView = document.getElementById('already-saved-view');
   const savedCompanyName = document.getElementById('saved-company-name');
   const savedRoleTitle = document.getElementById('saved-role-title');
@@ -227,7 +251,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   const emailBodyInput = document.getElementById('email-body');
   const headerModeChip = document.getElementById('header-mode-chip');
   const headerModeText = document.getElementById('header-mode-text');
+  const multiMatchCountBadge = document.getElementById('multi-match-count-badge');
   const milestoneBox = document.getElementById('milestone-box');
+  const advanceStageOption = document.getElementById('advance-stage-option');
+  const advanceStageCheckbox = document.getElementById('advance-stage-checkbox');
+  const advanceStageLabel = document.getElementById('advance-stage-label');
   const addContactOption = document.getElementById('add-contact-option');
   const addContactCheckbox = document.getElementById('add-contact-checkbox');
   const addContactLabel = document.getElementById('add-contact-label');
@@ -243,6 +271,434 @@ document.addEventListener('DOMContentLoaded', async () => {
   let currentEmailTimestamp = null; // Full ISO 8601 string e.g. "2026-09-25T14:35:10"
   let isWebmailMode = false;
   let rawExtractedEmailData = null;
+  let suggestedAdvanceStage = null;
+
+  // Persistent Companion Tabs & Sticky Action Bar Elements
+  const companionTabs = document.querySelectorAll('.companion-tab');
+  const contactClipView = document.getElementById('contact-clip-view');
+  const autofillView = document.getElementById('autofill-view');
+  const stickyActionBar = document.getElementById('sticky-action-bar');
+  const stickyEmailActionBar = document.getElementById('sticky-email-action-bar');
+  const stickyContactActionBar = document.getElementById('sticky-contact-action-bar');
+  const stickyStageDot = document.getElementById('sticky-stage-dot');
+  const stickyStageLabel = document.getElementById('sticky-stage-label');
+
+  // Contact Clipper Elements (US2)
+  const contactStatusBanner = document.getElementById('contact-status-banner');
+  const contactStatusText = document.getElementById('contact-status-text');
+  const contactOpenLink = document.getElementById('contact-open-link');
+  const contactAvatarBox = document.getElementById('contact-avatar-box');
+  const contactAvatarImg = document.getElementById('contact-avatar-img');
+  const contactAvatarSvg = document.getElementById('contact-avatar-svg');
+  const contactNameInput = document.getElementById('contact-name');
+  const contactRoleInput = document.getElementById('contact-role');
+  const contactOrgInput = document.getElementById('contact-organization');
+  const contactLocationInput = document.getElementById('contact-location');
+  const contactLinkedInInput = document.getElementById('contact-linkedin');
+  const contactCategoryIndicator = document.getElementById('contact-category-indicator');
+  const categoryPills = document.querySelectorAll('#category-pills-grid .category-pill');
+  const contactAppSelectContainer = document.getElementById('contact-app-select-container');
+  const contactAppTrigger = document.getElementById('contact-app-trigger');
+  const contactAppValueText = document.getElementById('contact-app-value-text');
+  const contactAppDropdown = document.getElementById('contact-app-dropdown');
+  const contactNotesInput = document.getElementById('contact-notes');
+  const saveContactBtn = document.getElementById('save-contact-btn');
+  const contactOpenWorkspaceBtn = document.getElementById('contact-open-workspace-btn');
+
+  let selectedContactCategory = 'Recruiter';
+  let selectedContactAppId = '';
+  let matchedExistingContact = null;
+  let allKnownContactsList = [];
+  let rawExtractedProfileData = null;
+
+  // Autofill Hub Elements & State (US6 / T036, T039)
+  const autofillStatusPill = document.getElementById('autofill-status-pill');
+  const autofillStatusDot = document.getElementById('autofill-status-dot');
+  const autofillStatusText = document.getElementById('autofill-status-text');
+  const autofillTriggerBtn = document.getElementById('autofill-trigger-btn');
+  const profileQuickEditToggle = document.getElementById('profile-quick-edit-toggle');
+  const profileEditToggleLabel = document.getElementById('profile-edit-toggle-label');
+  const profileSummaryView = document.getElementById('profile-summary-view');
+  const profileEditDrawer = document.getElementById('profile-edit-drawer');
+  const profileAvatarInitials = document.getElementById('profile-avatar-initials');
+  const profileSummaryName = document.getElementById('profile-summary-name');
+  const profileSummaryTitle = document.getElementById('profile-summary-title');
+  const profileSummaryEmail = document.getElementById('profile-summary-email');
+  const profileSummaryPhone = document.getElementById('profile-summary-phone');
+  const profileSummaryLocation = document.getElementById('profile-summary-location');
+  const profileSummaryWorkAuth = document.getElementById('profile-summary-work-auth');
+  const chipLinkedIn = document.getElementById('chip-linkedin');
+  const chipGitHub = document.getElementById('chip-github');
+  const chipPortfolio = document.getElementById('chip-portfolio');
+  const profileOpenSettingsLink = document.getElementById('profile-open-settings-link');
+  const profileEditName = document.getElementById('profile-edit-name');
+  const profileEditEmail = document.getElementById('profile-edit-email');
+  const profileEditPhone = document.getElementById('profile-edit-phone');
+  const profileEditLocation = document.getElementById('profile-edit-location');
+  const profileEditWorkAuth = document.getElementById('profile-edit-work-auth');
+  const profileEditLinkedIn = document.getElementById('profile-edit-linkedin');
+  const profileEditGitHub = document.getElementById('profile-edit-github');
+  const profileEditPortfolio = document.getElementById('profile-edit-portfolio');
+  const profileCancelBtn = document.getElementById('profile-cancel-btn');
+  const profileSaveBtn = document.getElementById('profile-save-btn');
+  const autofillChecklistCard = document.getElementById('autofill-checklist-card');
+  const checklistCountBadge = document.getElementById('checklist-count-badge');
+  const checklistItemsContainer = document.getElementById('checklist-items-container');
+  const manualAlertsContainer = document.getElementById('manual-alerts-container');
+  const manualAlertsList = document.getElementById('manual-alerts-list');
+
+  let candidateProfile = null;
+  let isProfileEditOpen = false;
+  let currentAtsDetection = null;
+
+  let currentActiveTab = 'job';
+  let activeObservedTabId = null;
+  let activeObservedUrl = '';
+
+  // --- Tailored CV Utilities & Dropzone Handlers (US5 / T031, T032) ---
+  function getResumeStorage() {
+    return typeof TrackletResumeStorage !== 'undefined' ? TrackletResumeStorage : null;
+  }
+
+  function formatCvSize(bytes) {
+    const storage = getResumeStorage();
+    if (storage && storage.formatResumeFileSize) {
+      return storage.formatResumeFileSize(bytes);
+    }
+    if (!bytes || bytes <= 0) return '0 B';
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1).replace(/\.0$/, '')} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1).replace(/\.0$/, '')} MB`;
+  }
+
+  function displayResumeChip(meta, fileObj = null) {
+    if (!meta || !meta.fileName) return;
+    if (cvChipName) cvChipName.textContent = meta.fileName;
+    if (cvChipSize) cvChipSize.textContent = formatCvSize(meta.fileSize);
+
+    const extMatch = (meta.fileName || '').toLowerCase().match(/\.([a-z0-9]+)$/);
+    const ext = extMatch ? extMatch[1].toUpperCase() : 'PDF';
+    if (cvChipBadge) cvChipBadge.textContent = ext;
+
+    if (cvEmptyState) cvEmptyState.style.display = 'none';
+    if (cvAttachmentChip) cvAttachmentChip.style.display = 'flex';
+    if (cvErrorAlert) cvErrorAlert.style.display = 'none';
+  }
+
+  function clearResumeChip() {
+    pendingResumeFile = null;
+    activeResumeMetadata = null;
+    if (cvFileInput) cvFileInput.value = '';
+    if (cvAttachmentChip) cvAttachmentChip.style.display = 'none';
+    if (cvEmptyState) cvEmptyState.style.display = 'flex';
+    if (cvErrorAlert) cvErrorAlert.style.display = 'none';
+  }
+
+  function handleResumeFileSelection(file) {
+    if (!file) return;
+    const storage = getResumeStorage();
+    const validation = storage && storage.validateResumeFile
+      ? storage.validateResumeFile(file)
+      : { valid: true, sanitizedName: file.name, formattedSize: formatCvSize(file.size) };
+
+    if (!validation.valid) {
+      if (cvErrorAlert && cvErrorText) {
+        cvErrorText.textContent = validation.error || 'Invalid file format or size.';
+        cvErrorAlert.style.display = 'flex';
+      }
+      return;
+    }
+
+    if (cvErrorAlert) cvErrorAlert.style.display = 'none';
+    pendingResumeFile = file;
+    activeResumeMetadata = {
+      fileName: validation.sanitizedName || file.name,
+      fileSize: file.size,
+      uploadedAt: new Date().toISOString()
+    };
+    displayResumeChip(activeResumeMetadata, file);
+  }
+
+  // Wire up CV Dropzone and attachment events
+  if (cvBrowseBtn) {
+    cvBrowseBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (cvFileInput) cvFileInput.click();
+    });
+  }
+
+  if (cvDropzone) {
+    cvDropzone.addEventListener('click', (e) => {
+      if (!pendingResumeFile && !activeResumeMetadata && e.target.closest('#cv-empty-state, #cv-dropzone')) {
+        if (cvFileInput) cvFileInput.click();
+      }
+    });
+
+    cvDropzone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      cvDropzone.classList.add('drag-over');
+    });
+
+    cvDropzone.addEventListener('dragleave', () => {
+      cvDropzone.classList.remove('drag-over');
+    });
+
+    cvDropzone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      cvDropzone.classList.remove('drag-over');
+      if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) {
+        handleResumeFileSelection(e.dataTransfer.files[0]);
+      }
+    });
+  }
+
+  if (cvFileInput) {
+    cvFileInput.addEventListener('change', (e) => {
+      if (e.target.files && e.target.files[0]) {
+        handleResumeFileSelection(e.target.files[0]);
+      }
+    });
+  }
+
+  if (cvRemoveBtn) {
+    cvRemoveBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      clearResumeChip();
+    });
+  }
+
+  if (cvDownloadBtn) {
+    cvDownloadBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      if (pendingResumeFile) {
+        const url = URL.createObjectURL(pendingResumeFile);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = activeResumeMetadata?.fileName || 'resume.pdf';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        return;
+      }
+
+      if (activeResumeMetadata && activeResumeMetadata.blobId) {
+        const storage = getResumeStorage();
+        if (storage && storage.getResumeBlob) {
+          try {
+            const record = await storage.getResumeBlob(activeResumeMetadata.blobId);
+            if (record && record.fileData) {
+              const url = URL.createObjectURL(record.fileData);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = activeResumeMetadata.fileName || record.fileName || 'resume.pdf';
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              setTimeout(() => URL.revokeObjectURL(url), 1000);
+              return;
+            }
+          } catch (err) {
+            console.warn('[Tracklet] Failed to download resume blob from IndexedDB:', err);
+          }
+        }
+      }
+    });
+  }
+
+  // Tab Draft Memory (Session-scoped memory across companion tab switches)
+  const tabDraftMemory = {
+    job: null,
+    contact: null,
+    email: null,
+  };
+
+  function saveCurrentTabDraft(tabName) {
+    if (tabName === 'job') {
+      tabDraftMemory.job = {
+        company: companyInput ? companyInput.value : '',
+        companyDomain: companyDomainInput ? companyDomainInput.value : '',
+        role: roleInput ? roleInput.value : '',
+        location: locationInput ? locationInput.value : '',
+        dateApplied: dateAppliedInput ? dateAppliedInput.value : '',
+        jobLink: jobLinkInput ? jobLinkInput.value : '',
+        notes: notesInput ? notesInput.value : '',
+        platform: selectedPlatform,
+        stage: selectedStage,
+        workLocation: selectedWorkLocation,
+        employmentType: selectedEmploymentType,
+        resumeFile: pendingResumeFile,
+        resumeMeta: activeResumeMetadata,
+      };
+    } else if (tabName === 'email') {
+      tabDraftMemory.email = {
+        subject: emailSubjectInput ? emailSubjectInput.value : '',
+        counterparty: emailCounterpartyInput ? emailCounterpartyInput.value : '',
+        date: emailDateInput ? emailDateInput.value : '',
+        time: emailTimeInput ? emailTimeInput.value : '',
+        body: emailBodyInput ? emailBodyInput.value : '',
+        direction: currentEmailDirection,
+      };
+    } else if (tabName === 'contact') {
+      tabDraftMemory.contact = {
+        name: contactNameInput ? contactNameInput.value : '',
+        role: contactRoleInput ? contactRoleInput.value : '',
+        organization: contactOrgInput ? contactOrgInput.value : '',
+        location: contactLocationInput ? contactLocationInput.value : '',
+        linkedIn: contactLinkedInInput ? contactLinkedInInput.value : '',
+        notes: contactNotesInput ? contactNotesInput.value : '',
+        category: selectedContactCategory,
+        applicationId: selectedContactAppId,
+      };
+    }
+  }
+
+  function restoreTabDraft(tabName) {
+    if (tabName === 'job' && tabDraftMemory.job) {
+      const d = tabDraftMemory.job;
+      if (companyInput && d.company) companyInput.value = d.company;
+      if (companyDomainInput && d.companyDomain) companyDomainInput.value = d.companyDomain;
+      if (roleInput && d.role) roleInput.value = d.role;
+      if (locationInput && d.location) locationInput.value = d.location;
+      if (dateAppliedInput && d.dateApplied) dateAppliedInput.value = d.dateApplied;
+      if (jobLinkInput && d.jobLink) jobLinkInput.value = d.jobLink;
+      if (notesInput && d.notes) notesInput.value = d.notes;
+      if (d.platform) setPlatform(d.platform);
+      if (d.stage) updateStageUI(d.stage);
+      if (d.workLocation) setWorkLocation(d.workLocation);
+      if (d.employmentType) setEmploymentType(d.employmentType);
+      if (d.resumeMeta) {
+        activeResumeMetadata = d.resumeMeta;
+        pendingResumeFile = d.resumeFile || null;
+        displayResumeChip(activeResumeMetadata, pendingResumeFile);
+      } else if (!pendingResumeFile && !activeResumeMetadata) {
+        clearResumeChip();
+      }
+      updateCompanyAvatar(companyInput?.value, companyDomainInput?.value);
+      validateInputs();
+    } else if (tabName === 'email' && tabDraftMemory.email) {
+      const d = tabDraftMemory.email;
+      if (emailSubjectInput && d.subject) emailSubjectInput.value = d.subject;
+      if (emailCounterpartyInput && d.counterparty) emailCounterpartyInput.value = d.counterparty;
+      if (emailDateInput && d.date) emailDateInput.value = d.date;
+      if (emailTimeInput && d.time) emailTimeInput.value = d.time;
+      if (emailBodyInput && d.body) emailBodyInput.value = d.body;
+      if (d.direction) setEmailDirection(d.direction);
+    } else if (tabName === 'contact' && tabDraftMemory.contact) {
+      const d = tabDraftMemory.contact;
+      if (contactNameInput && d.name) contactNameInput.value = d.name;
+      if (contactRoleInput && d.role) contactRoleInput.value = d.role;
+      if (contactOrgInput && d.organization) contactOrgInput.value = d.organization;
+      if (contactLocationInput && d.location) contactLocationInput.value = d.location;
+      if (contactLinkedInInput && d.linkedIn) contactLinkedInInput.value = d.linkedIn;
+      if (contactNotesInput && d.notes) contactNotesInput.value = d.notes;
+      if (d.category) setContactCategory(d.category);
+      if (d.applicationId) setContactLinkedApp(d.applicationId);
+    }
+  }
+
+  // Manual Override Anchoring
+  let userManualTabOverride = null;
+  let manualOverrideDomain = '';
+
+  function setManualTabOverride(tabName, url) {
+    userManualTabOverride = tabName;
+    try {
+      manualOverrideDomain = new URL(url || activeObservedUrl || window.location.href).hostname.replace(/^www\./, '').toLowerCase();
+    } catch {
+      manualOverrideDomain = '';
+    }
+  }
+
+  function shouldClearManualOverride(newUrl) {
+    if (!userManualTabOverride || !manualOverrideDomain) return true;
+    try {
+      const newDomain = new URL(newUrl).hostname.replace(/^www\./, '').toLowerCase();
+      return newDomain !== manualOverrideDomain;
+    } catch {
+      return true;
+    }
+  }
+
+  // URL Classification Heuristics
+  function classifyTabUrl(url) {
+    if (!url) return 'generic';
+    try {
+      const parsed = new URL(url);
+      const host = parsed.hostname.toLowerCase();
+      const path = parsed.pathname.toLowerCase();
+
+      if (host.includes('mail.google.com') || host.includes('outlook.live.com') || host.includes('outlook.office.com') || host.includes('outlook.office365.com')) {
+        return 'email';
+      }
+
+      if (host.includes('linkedin.com')) {
+        if (path.startsWith('/in/') || path.includes('/in/')) {
+          return 'contact';
+        }
+        if (path.startsWith('/jobs/') || path.includes('/jobs/')) {
+          return 'job';
+        }
+      }
+
+      const jobHosts = [
+        'lever.co', 'greenhouse.io', 'workday.com', 'myworkdayjobs.com', 'indeed.com',
+        'bayt.com', 'otta.com', 'wellfound.com', 'ashbyhq.com', 'smartrecruiters.com',
+        'jobvite.com', 'recruitee.com', 'rippling.com', 'glassdoor.com', 'builtin.com', 'monster.com', 'dice.com'
+      ];
+
+      if (jobHosts.some(jh => host === jh || host.endsWith('.' + jh))) {
+        return 'job';
+      }
+
+      if (path.includes('/careers') || path.includes('/jobs') || path.includes('/openings') || path.includes('/job/')) {
+        return 'job';
+      }
+
+      return 'generic';
+    } catch {
+      return 'generic';
+    }
+  }
+
+  function setActiveCompanionTab(tabName, isUserClick = true) {
+    if (currentActiveTab === tabName) return;
+
+    saveCurrentTabDraft(currentActiveTab);
+    if (isUserClick) {
+      setManualTabOverride(tabName, activeObservedUrl);
+    }
+
+    currentActiveTab = tabName;
+    companionTabs.forEach(tab => {
+      const isActive = tab.getAttribute('data-tab') === tabName;
+      tab.classList.toggle('active', isActive);
+      tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
+    });
+
+    if (mainFormView) mainFormView.style.display = tabName === 'job' ? 'block' : 'none';
+    if (emailLogView) emailLogView.style.display = tabName === 'email' ? 'block' : 'none';
+    if (contactClipView) contactClipView.style.display = tabName === 'contact' ? 'block' : 'none';
+    if (autofillView) autofillView.style.display = tabName === 'autofill' ? 'block' : 'none';
+    if (alreadySavedView) alreadySavedView.style.display = 'none';
+
+    if (stickyActionBar) stickyActionBar.style.display = tabName === 'job' ? 'flex' : 'none';
+    if (stickyEmailActionBar) stickyEmailActionBar.style.display = tabName === 'email' ? 'flex' : 'none';
+    if (stickyContactActionBar) stickyContactActionBar.style.display = tabName === 'contact' ? 'flex' : 'none';
+
+    restoreTabDraft(tabName);
+
+    if (tabName === 'autofill') {
+      checkAtsFormOnActiveTab();
+    }
+  }
+
+  companionTabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      const targetTab = tab.getAttribute('data-tab');
+      setActiveCompanionTab(targetTab, true);
+    });
+  });
 
   // Custom Platform Elements
   const platformSelectContainer = document.getElementById('platform-select-container');
@@ -392,11 +848,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   function setWorkLocation(val) {
     selectedWorkLocation = val;
     workLocationPills.forEach(btn => {
-      if (btn.getAttribute('data-value') === val) {
+      const isSelected = btn.getAttribute('data-value') === val;
+      if (isSelected) {
         btn.classList.add('selected');
       } else {
         btn.classList.remove('selected');
       }
+      btn.setAttribute('aria-checked', isSelected ? 'true' : 'false');
     });
   }
 
@@ -411,11 +869,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   function setEmploymentType(val) {
     selectedEmploymentType = val;
     employmentTypePills.forEach(btn => {
-      if (btn.getAttribute('data-value') === val) {
+      const isSelected = btn.getAttribute('data-value') === val;
+      if (isSelected) {
         btn.classList.add('selected');
       } else {
         btn.classList.remove('selected');
       }
+      btn.setAttribute('aria-checked', isSelected ? 'true' : 'false');
     });
   }
 
@@ -455,6 +915,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     stageTriggerBtn.style.backgroundColor = config.bg;
     stageTriggerBtn.style.color = config.text;
     stageTriggerBtn.style.borderColor = config.border;
+
+    if (stickyStageDot) stickyStageDot.style.backgroundColor = config.dot;
+    if (stickyStageLabel) stickyStageLabel.textContent = config.label || canonicalStage;
 
     stageOptionItems.forEach(item => {
       const itemStage = item.getAttribute('data-stage');
@@ -498,7 +961,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!targetEl) return;
     const cleanCompany = (companyName || '').trim();
     if (!cleanCompany) {
-      targetEl.textContent = '?';
+      targetEl.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="16" height="20" x="4" y="2" rx="2" ry="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M12 6h.01"/><path d="M12 10h.01"/><path d="M16 10h.01"/><path d="M16 14h.01"/><path d="M8 10h.01"/><path d="M8 14h.01"/></svg>`;
       return;
     }
 
@@ -820,7 +1283,33 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const ranked = scored
       .filter(item => item.score >= 40)
-      .sort((a, b) => b.score - a.score);
+      .sort((a, b) => {
+        // 1. Direct score comparison if difference is significant (> 15 pts, e.g. role match)
+        if (Math.abs(b.score - a.score) > 15) {
+          return b.score - a.score;
+        }
+
+        // 2. Active Stage Priority (Offer > Interview > Screening > Applied > Saved > Rejected/Archived)
+        const STAGE_PRIORITY = {
+          'Offer': 5,
+          'Interview': 4,
+          'Screening': 3,
+          'Applied': 2,
+          'Saved': 1,
+          'Rejected': 0,
+          'Archived': 0,
+        };
+        const stageA = STAGE_PRIORITY[a.app.status] ?? 1;
+        const stageB = STAGE_PRIORITY[b.app.status] ?? 1;
+        if (stageB !== stageA) {
+          return stageB - stageA;
+        }
+
+        // 3. Recency: newest dateApplied or stageUpdatedAt / createdAt wins
+        const dateA = a.app.dateApplied || a.app.stageUpdatedAt || a.app.createdAt || '';
+        const dateB = b.app.dateApplied || b.app.stageUpdatedAt || b.app.createdAt || '';
+        return dateB.localeCompare(dateA);
+      });
 
     const bestMatch = (ranked.length > 0 && ranked[0].score >= 45) ? ranked[0].app : null;
     return { bestMatch, ranked: ranked.map(r => r.app) };
@@ -869,83 +1358,222 @@ document.addEventListener('DOMContentLoaded', async () => {
     return isValid;
   }
 
-  // Request Page Extraction from Active Tab
+  function applyJobPageData(data, tab) {
+    if (data) {
+      companyInput.value = data.company || '';
+      roleInput.value = data.role || '';
+      companyDomainInput.value = data.companyDomain || data.domain || '';
+      currentDomain = companyDomainInput.value;
+      locationInput.value = data.location || '';
+      setWorkLocation(data.workLocation || null);
+      setEmploymentType(data.employmentType || null);
+
+      // Hiring Contact detection (US3)
+      if (data.contact && data.contact.name) {
+        detectedRecruiterContact = { ...data.contact };
+        if (recruiterNameEl) recruiterNameEl.textContent = data.contact.name;
+        if (recruiterTitleEl) recruiterTitleEl.textContent = data.contact.role || '';
+        if (recruiterBadgeEl) recruiterBadgeEl.textContent = data.contact.category || 'Recruiter';
+
+        // Recruiter Avatar
+        if (recruiterAvatarImg && recruiterAvatarInitials) {
+          if (data.contact.avatarUrl) {
+            recruiterAvatarImg.src = data.contact.avatarUrl;
+            recruiterAvatarImg.style.display = 'block';
+            recruiterAvatarInitials.style.display = 'none';
+          } else {
+            const initials = data.contact.name.split(' ').map(n => n[0]).filter(Boolean).slice(0, 2).join('').toUpperCase() || 'R';
+            recruiterAvatarInitials.textContent = initials;
+            recruiterAvatarInitials.style.display = 'inline-block';
+            recruiterAvatarImg.style.display = 'none';
+          }
+        }
+
+        // Check if contact already exists in Contacts Hub
+        chrome.storage.local.get(['tracklet_contacts_index', 'tracklet_guest_contacts_v1'], (res) => {
+          const allContacts = res?.tracklet_contacts_index || res?.tracklet_guest_contacts_v1 || [];
+          const normLinkedIn = (data.contact.linkedIn || '').toLowerCase().trim();
+          const normName = data.contact.name.toLowerCase().trim();
+          const normOrg = (data.company || '').toLowerCase().trim();
+
+          const existingMatch = allContacts.find(c => {
+            if (normLinkedIn && c.linkedIn && c.linkedIn.toLowerCase().trim() === normLinkedIn) return true;
+            if (normName && c.name && c.name.toLowerCase().trim() === normName) {
+              if (!normOrg || !c.organization || c.organization.toLowerCase().trim() === normOrg) return true;
+            }
+            return false;
+          });
+
+          if (existingMatch) {
+            detectedRecruiterContact.existingId = existingMatch.id;
+            detectedRecruiterContact.existingContact = existingMatch;
+            if (recruiterExistingBadge) recruiterExistingBadge.style.display = 'inline-block';
+            if (addRecruiterCheckboxText) addRecruiterCheckboxText.textContent = 'Link existing contact in Contacts Hub to this job';
+          } else {
+            detectedRecruiterContact.existingId = null;
+            detectedRecruiterContact.existingContact = null;
+            if (recruiterExistingBadge) recruiterExistingBadge.style.display = 'none';
+            if (addRecruiterCheckboxText) addRecruiterCheckboxText.textContent = 'Add to Contacts Hub & link to job';
+          }
+        });
+
+        if (addRecruiterContactCheckbox) addRecruiterContactCheckbox.checked = true;
+        if (recruiterContactCard) recruiterContactCard.style.display = 'block';
+      } else {
+        detectedRecruiterContact = null;
+        if (recruiterContactCard) recruiterContactCard.style.display = 'none';
+      }
+
+      // Stage selection
+      if (data.suggestedStage) {
+        updateStageUI(data.suggestedStage);
+      } else {
+        updateStageUI('Saved');
+      }
+
+      setPlatform(data.platform || 'Company Site');
+      notesInput.value = data.notes || '';
+
+      updateCompanyAvatar(data.company, currentDomain);
+      checkForDuplicates(tab?.url);
+    } else if (tab) {
+      const pageTitle = tab.title || '';
+      roleInput.value = pageTitle;
+      companyInput.value = getDomainFallback(tab.url);
+      const dom = getDomain(tab.url);
+      const registry = typeof JobBoardRegistry !== 'undefined' ? JobBoardRegistry : null;
+      const cleanedDom = (registry && registry.cleanCompanyDomain) ? registry.cleanCompanyDomain(dom) : dom;
+      currentDomain = cleanedDom || '';
+      companyDomainInput.value = currentDomain;
+      updateStageUI('Saved');
+      updateCompanyAvatar(companyInput.value, currentDomain);
+      checkForDuplicates(tab.url);
+    }
+
+    // Auto focus first empty required field
+    if (!companyInput.value.trim()) {
+      companyInput.focus();
+    } else if (!roleInput.value.trim()) {
+      roleInput.focus();
+    }
+
+    validateInputs();
+  }
+
+  function applyLinkedInProfileData(profileData, tab) {
+    window.__currentLinkedInProfile = profileData;
+    if (typeof updateContactClipperUI === 'function') {
+      updateContactClipperUI(profileData, tab);
+    }
+  }
+
+  async function inspectActiveTab(tab) {
+    if (!tab || !tab.id) return;
+    activeObservedTabId = tab.id;
+    activeObservedUrl = tab.url || '';
+
+    if (jobLinkInput && !jobLinkInput.value) {
+      jobLinkInput.value = tab.url || '';
+    }
+
+    const isWebmailTab = isWebmail(tab.url);
+    if (isWebmailTab) {
+      initWebmailMode(tab);
+      return;
+    }
+
+    chrome.tabs.sendMessage(tab.id, { action: 'GET_PAGE_DATA', userEmail: currentUserSession?.email }, (response) => {
+      if (chrome.runtime.lastError || !response) {
+        // Fallback to EXTRACT_PAGE_DATA
+        chrome.tabs.sendMessage(tab.id, { action: 'EXTRACT_PAGE_DATA' }, (legacyRes) => {
+          if (!chrome.runtime.lastError && legacyRes && legacyRes.isWebmail) {
+            initWebmailMode(tab);
+            return;
+          }
+          applyJobPageData(legacyRes, tab);
+        });
+        return;
+      }
+
+      if (response.pageType === 'webmail') {
+        initWebmailMode(tab);
+        return;
+      }
+
+      if (response.pageType === 'linkedin_profile' && response.profileData) {
+        applyLinkedInProfileData(response.profileData, tab);
+        return;
+      }
+
+      applyJobPageData(response.jobData, tab);
+    });
+  }
+
+  async function handleTabContextSwitch(tab) {
+    if (!tab || !tab.url) return;
+    activeObservedTabId = tab.id;
+    activeObservedUrl = tab.url;
+
+    if (shouldClearManualOverride(tab.url)) {
+      userManualTabOverride = null;
+      manualOverrideDomain = '';
+    }
+
+    const targetCategory = classifyTabUrl(tab.url);
+
+    if (!userManualTabOverride) {
+      if (targetCategory === 'email') {
+        setActiveCompanionTab('email', false);
+      } else if (targetCategory === 'contact') {
+        setActiveCompanionTab('contact', false);
+      } else if (targetCategory === 'job') {
+        setActiveCompanionTab('job', false);
+      }
+    }
+
+    inspectActiveTab(tab);
+  }
+
+  // Request Initial Page Extraction from Active Tab
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (tab && tab.id) {
-      jobLinkInput.value = tab.url || '';
-      
-      const isWebmailTab = isWebmail(tab.url);
-      if (isWebmailTab) {
-        initWebmailMode(tab);
-      } else {
-        chrome.tabs.sendMessage(tab.id, { action: 'EXTRACT_PAGE_DATA' }, (response) => {
-          if (!chrome.runtime.lastError && response) {
-            if (response.isWebmail) {
-              initWebmailMode(tab);
-              return;
-            }
-            companyInput.value = response.company || '';
-            roleInput.value = response.role || '';
-            companyDomainInput.value = response.companyDomain || response.domain || '';
-            currentDomain = companyDomainInput.value;
-            locationInput.value = response.location || '';
-            setWorkLocation(response.workLocation || null);
-            setEmploymentType(response.employmentType || null);
-
-            // Hiring Contact detection (US4)
-            if (response.contact && response.contact.name) {
-              detectedRecruiterContact = response.contact;
-              recruiterNameEl.textContent = response.contact.name;
-              recruiterTitleEl.textContent = response.contact.role || '';
-              recruiterBadgeEl.textContent = response.contact.category || 'Recruiter';
-              addRecruiterContactCheckbox.checked = true;
-              recruiterContactCard.style.display = 'block';
-            } else {
-              detectedRecruiterContact = null;
-              recruiterContactCard.style.display = 'none';
-            }
-
-            // Stage selection (US5)
-            if (response.suggestedStage) {
-              updateStageUI(response.suggestedStage);
-            } else {
-              updateStageUI('Saved');
-            }
-
-            setPlatform(response.platform || 'Company Site');
-            notesInput.value = response.notes || '';
-
-            updateCompanyAvatar(response.company, currentDomain);
-            checkForDuplicates(tab.url);
-          } else {
-            const pageTitle = tab.title || '';
-            roleInput.value = pageTitle;
-            companyInput.value = getDomainFallback(tab.url);
-            const dom = getDomain(tab.url);
-            const registry = typeof JobBoardRegistry !== 'undefined' ? JobBoardRegistry : null;
-            const cleanedDom = (registry && registry.cleanCompanyDomain) ? registry.cleanCompanyDomain(dom) : dom;
-            currentDomain = cleanedDom || '';
-            companyDomainInput.value = currentDomain;
-            updateStageUI('Saved');
-            updateCompanyAvatar(companyInput.value, currentDomain);
-            checkForDuplicates(tab.url);
-          }
-
-          // Auto focus first empty required field
-          if (!companyInput.value.trim()) {
-            companyInput.focus();
-          } else if (!roleInput.value.trim()) {
-            roleInput.focus();
-          }
-
-          validateInputs();
-        });
-      }
+      handleTabContextSwitch(tab);
     }
   } catch (err) {
-    console.error('Failed to query tab:', err);
+    console.error('Failed to query initial tab:', err);
   }
+
+  // Lifecycle listeners for persistent Side Panel
+  if (typeof chrome !== 'undefined' && chrome.tabs) {
+    chrome.tabs.onActivated.addListener(async (activeInfo) => {
+      try {
+        const tab = await chrome.tabs.get(activeInfo.tabId);
+        if (tab && tab.url) {
+          handleTabContextSwitch(tab);
+        }
+      } catch {
+        // Tab might be restricted or closing
+      }
+    });
+
+    chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+      if (changeInfo.status === 'complete' && tab && tab.id === activeObservedTabId && tab.url) {
+        handleTabContextSwitch(tab);
+      }
+    });
+  }
+
+  // Background message listener for tab switches
+  chrome.runtime.onMessage.addListener((message) => {
+    if (message.action === 'ACTIVE_TAB_CHANGED' || message.action === 'ACTIVE_TAB_UPDATED') {
+      if (message.payload && message.payload.tabId) {
+        chrome.tabs.get(message.payload.tabId).then(tab => {
+          if (tab) handleTabContextSwitch(tab);
+        }).catch(() => {});
+      }
+    }
+  });
 
   // URL Normalizer Helper for robust matching
   function normalizeUrl(url) {
@@ -1032,6 +1660,17 @@ document.addEventListener('DOMContentLoaded', async () => {
           stageReadonlyDot.style.backgroundColor = config.dot;
         }
 
+        // Display existing attached tailored resume if present
+        if (match.resumeFileName && !pendingResumeFile) {
+          activeResumeMetadata = {
+            fileName: match.resumeFileName,
+            fileSize: match.resumeFileSize,
+            blobId: match.resumeBlobId,
+            uploadedAt: match.resumeUploadedAt
+          };
+          displayResumeChip(activeResumeMetadata);
+        }
+
         saveBtn.querySelector('span').textContent = 'Update Application';
       } else {
         matchedApplication = null;
@@ -1039,6 +1678,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         stageReadonlyContainer.style.display = 'none';
         stageSelectorContainer.style.display = 'block';
         saveBtn.querySelector('span').textContent = 'Save Application';
+        if (!pendingResumeFile) {
+          clearResumeChip();
+        }
       }
     });
   }
@@ -1079,9 +1721,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // --- Webmail Mode Initialization & UI Controllers ---
   async function initWebmailMode(tab) {
     isWebmailMode = true;
-    mainFormView.style.display = 'none';
-    alreadySavedView.style.display = 'none';
-    emailLogView.style.display = 'flex';
+    setActiveCompanionTab('email');
 
     // 1. Load known applications for matching
     const storage = await chrome.storage.local.get(['tracklet_apps_index', 'tracklet_guest_apps_v1']);
@@ -1098,18 +1738,76 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 2. Request active email data from content script
     let hasAttemptedInjection = false;
 
-    function updateContactDiscoveryUI() {
-      const isKnownContact = selectedEmailMatchedApp?.contactEmails?.includes((discoveredRecruiterEmail || '').toLowerCase());
-      if (discoveredRecruiterName && !isKnownContact && discoveredRecruiterName !== 'You' && discoveredRecruiterName.length > 1) {
-        if (milestoneBox) milestoneBox.style.display = 'block';
-        addContactOption.style.display = 'flex';
-        addContactLabel.textContent = `Add "${discoveredRecruiterName}" as recruiter contact`;
-        addContactCheckbox.checked = true;
-      } else {
-        if (milestoneBox) milestoneBox.style.display = 'none';
-        addContactOption.style.display = 'none';
-        addContactCheckbox.checked = false;
+    function detectSuggestedStageAdvancement(matchedApp, subject, text) {
+      if (!matchedApp || !matchedApp.status) return null;
+      const currentStatus = matchedApp.status;
+      const combined = `${subject || ''} ${text || ''}`.toLowerCase();
+
+      // Check for offer first
+      if (/(?:job\s+offer|offer\s+letter|formal\s+offer|offer\s+details|congratulations.*offer)/i.test(combined)) {
+        if (['Saved', 'Applied', 'Screening', 'Interview'].includes(currentStatus)) {
+          return 'Offer';
+        }
       }
+
+      // Check for interview
+      if (/(?:interview|conversation|chat|schedule|meet\s+the\s+team|next\s+steps|coding\s+challenge|technical\s+assessment)/i.test(combined)) {
+        if (['Saved', 'Applied', 'Screening'].includes(currentStatus)) {
+          return 'Interview';
+        }
+      }
+
+      // Check for screening
+      if (/(?:screening|recruiter\s+call|introductory\s+call|phone\s+screen)/i.test(combined)) {
+        if (['Saved', 'Applied'].includes(currentStatus)) {
+          return 'Screening';
+        }
+      }
+
+      return null;
+    }
+
+    function updateStageAdvancementUI() {
+      suggestedAdvanceStage = detectSuggestedStageAdvancement(
+        selectedEmailMatchedApp,
+        emailSubjectInput.value,
+        emailBodyInput.value
+      );
+
+      if (suggestedAdvanceStage && advanceStageOption && advanceStageLabel && advanceStageCheckbox) {
+        advanceStageLabel.textContent = `Advance stage to ${suggestedAdvanceStage}`;
+        advanceStageCheckbox.checked = true;
+        advanceStageOption.style.display = 'flex';
+        if (milestoneBox) milestoneBox.style.display = 'flex';
+      } else if (advanceStageOption) {
+        advanceStageOption.style.display = 'none';
+      }
+    }
+
+    function updateContactDiscoveryUI() {
+      chrome.storage.local.get(['tracklet_contacts_index', 'tracklet_guest_contacts_v1'], (res) => {
+        const allContacts = res?.tracklet_contacts_index || res?.tracklet_guest_contacts_v1 || [];
+        const normEmail = (discoveredRecruiterEmail || '').toLowerCase().trim();
+        const normName = (discoveredRecruiterName || '').toLowerCase().trim();
+        const isKnownContact = selectedEmailMatchedApp?.contactEmails?.some(e => e.toLowerCase() === normEmail) ||
+          allContacts.some(c => (normEmail && c.email?.toLowerCase().trim() === normEmail) || (normName && c.name?.toLowerCase().trim() === normName));
+
+        if (discoveredRecruiterName && !isKnownContact && discoveredRecruiterName !== 'You' && discoveredRecruiterName.length > 1) {
+          if (milestoneBox) milestoneBox.style.display = 'flex';
+          if (addContactOption) addContactOption.style.display = 'flex';
+          if (addContactLabel) addContactLabel.textContent = `Add "${discoveredRecruiterName}" as recruiter contact in Contacts Hub`;
+          if (addContactCheckbox) addContactCheckbox.checked = true;
+        } else {
+          if (addContactOption) addContactOption.style.display = 'none';
+          if (addContactCheckbox) addContactCheckbox.checked = false;
+        }
+
+        const isStageHidden = !advanceStageOption || advanceStageOption.style.display === 'none';
+        const isContactHidden = !addContactOption || addContactOption.style.display === 'none';
+        if (isStageHidden && isContactHidden && milestoneBox) {
+          milestoneBox.style.display = 'none';
+        }
+      });
     }
 
     function applyExtractedEmailData(emailData) {
@@ -1150,18 +1848,29 @@ document.addEventListener('DOMContentLoaded', async () => {
         emailCounterpartyInput.value = emailData.counterparty || '';
       }
 
-      // Match to application
-      const { bestMatch } = matchEmailToApplications(emailData, allKnownAppsList);
+      // Match to application (with active stage and recency ranking)
+      const { bestMatch, ranked } = matchEmailToApplications(emailData, allKnownAppsList);
       if (bestMatch) {
         renderMatchedApp(bestMatch, true);
       } else {
         renderMatchedApp(null, false);
       }
 
-      // Contact Discovery
+      // Multi-match indicator badge (US4 / T027)
+      if (multiMatchCountBadge) {
+        if (ranked && ranked.length > 1) {
+          multiMatchCountBadge.textContent = `${ranked.length} matches`;
+          multiMatchCountBadge.style.display = 'inline-block';
+        } else {
+          multiMatchCountBadge.style.display = 'none';
+        }
+      }
+
+      // Contact Discovery & In-flight Stage Advance (US4 / T028, T029)
       discoveredRecruiterName = emailData.counterpartyName || '';
       discoveredRecruiterEmail = emailData.counterpartyEmail || '';
       updateContactDiscoveryUI();
+      updateStageAdvancementUI();
     }
 
     function requestEmailExtraction() {
@@ -1289,6 +1998,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     }
     updateContactDiscoveryUI();
+    updateStageAdvancementUI();
   }
 
   let highlightedAppIndex = -1;
@@ -1439,8 +2149,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   switchToJobClipperBtn.addEventListener('click', () => {
-    emailLogView.style.display = 'none';
-    mainFormView.style.display = 'block';
+    setActiveCompanionTab('job');
     if (rawExtractedEmailData) {
       if (!companyInput.value) {
         companyInput.value = rawExtractedEmailData.counterpartyName || '';
@@ -1521,7 +2230,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       body: emailBodyInput.value.trim(),
       emailUrl: currentEmailUrl || '',
     };
-    const newContact = (addContactCheckbox.checked && discoveredRecruiterName)
+    const newContact = (addContactCheckbox && addContactCheckbox.checked && discoveredRecruiterName)
       ? {
           name: discoveredRecruiterName,
           email: discoveredRecruiterEmail,
@@ -1530,11 +2239,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
       : undefined;
 
+    const updatedStatus = (advanceStageCheckbox && advanceStageCheckbox.checked && suggestedAdvanceStage)
+      ? suggestedAdvanceStage
+      : undefined;
+
     chrome.runtime.sendMessage({
       action: 'SAVE_EMAIL_LOG',
       payload: {
         appId: selectedEmailMatchedApp.id,
         emailLog: emailLogPayload,
+        updatedStatus,
         newContact
       }
     }, (response) => {
@@ -1560,18 +2274,555 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  // Global Keyboard Shortcuts (Escape to dismiss dropdowns, Enter to submit)
+  // --- Contact Clipper UI & Logic (US2: T016, T018, T019) ---
+  function inferContactCategory(headline) {
+    if (!headline) return 'Other';
+    const clean = headline.trim().toLowerCase();
+
+    // 1. Recruiter & Talent Acquisition keywords
+    if (/(?:talent|recruiter|recruiting|sourcer|staffing|people\s+ops|technical\s+sourcer)/i.test(clean)) {
+      return 'Recruiter';
+    }
+
+    // 2. Leadership & Hiring Manager keywords
+    if (/(?:vp|vice\s+president|director|head\s+of|engineering\s+manager|cto|founder|co-founder|tech\s+lead\s+manager)/i.test(clean)) {
+      return 'Hiring Manager';
+    }
+
+    // 3. Mentorship & Advisory keywords
+    if (/(?:mentor|advisor|coach|career\s+guide)/i.test(clean)) {
+      return 'Mentor';
+    }
+
+    // 4. Peer / Alumni keywords
+    if (/(?:peer|alumni|fellow|graduate|class\s+of|engineer|developer|designer)/i.test(clean)) {
+      return 'Peer / Alumni';
+    }
+
+    return 'Other';
+  }
+
+  function diffContact(existing, scraped) {
+    const changedFields = [];
+    const cleanExistingRole = (existing.role || '').trim().toLowerCase();
+    const cleanScrapedRole = (scraped.role || '').trim().toLowerCase();
+    if (cleanScrapedRole && cleanExistingRole !== cleanScrapedRole) {
+      changedFields.push('role');
+    }
+
+    const cleanExistingOrg = (existing.organization || '').trim().toLowerCase();
+    const cleanScrapedOrg = (scraped.organization || '').trim().toLowerCase();
+    if (cleanScrapedOrg && cleanExistingOrg !== cleanScrapedOrg) {
+      changedFields.push('organization');
+    }
+
+    const cleanExistingLoc = (existing.location || '').trim().toLowerCase();
+    const cleanScrapedLoc = (scraped.location || '').trim().toLowerCase();
+    if (cleanScrapedLoc && cleanExistingLoc && cleanExistingLoc !== cleanScrapedLoc) {
+      changedFields.push('location');
+    }
+
+    return {
+      hasChanged: changedFields.length > 0,
+      changedFields,
+    };
+  }
+
+  function setContactCategory(cat) {
+    selectedContactCategory = cat;
+    if (contactCategoryIndicator) {
+      contactCategoryIndicator.textContent = cat;
+    }
+    categoryPills.forEach(pill => {
+      pill.classList.toggle('active', pill.getAttribute('data-category') === cat);
+    });
+  }
+
+  categoryPills.forEach(pill => {
+    pill.addEventListener('click', () => {
+      const cat = pill.getAttribute('data-category');
+      if (cat) setContactCategory(cat);
+    });
+  });
+
+  async function loadKnownContacts() {
+    try {
+      const storage = await chrome.storage.local.get([
+        'tracklet_contacts_index',
+        'tracklet_guest_contacts_v1',
+        'tracklet_pending_contacts'
+      ]);
+      const map = new Map();
+      [
+        ...(storage.tracklet_contacts_index || []),
+        ...(storage.tracklet_guest_contacts_v1 || []),
+        ...(storage.tracklet_pending_contacts || [])
+      ].forEach(c => {
+        if (c && (c.id || c.name)) {
+          const key = c.id || `${c.name}:::${c.organization || ''}`;
+          if (!map.has(key)) map.set(key, c);
+        }
+      });
+      allKnownContactsList = Array.from(map.values());
+    } catch {
+      allKnownContactsList = [];
+    }
+  }
+
+  function populateContactAppDropdown(preferredCompany = '') {
+    if (!contactAppDropdown) return;
+    contactAppDropdown.innerHTML = '';
+
+    // Option 1: Standalone Contact
+    const noneOption = document.createElement('div');
+    noneOption.className = 'custom-select-option' + (!selectedContactAppId ? ' selected' : '');
+    noneOption.setAttribute('data-value', '');
+    noneOption.textContent = 'No Linked Job (Standalone Contact)';
+    noneOption.addEventListener('click', () => {
+      setContactLinkedApp('', 'No Linked Job (Standalone Contact)');
+    });
+    contactAppDropdown.appendChild(noneOption);
+
+    const cleanPrefComp = (preferredCompany || '').trim().toLowerCase();
+    const sortedApps = [...allKnownAppsList].sort((a, b) => {
+      const aMatch = cleanPrefComp && a.company && a.company.toLowerCase().includes(cleanPrefComp);
+      const bMatch = cleanPrefComp && b.company && b.company.toLowerCase().includes(cleanPrefComp);
+      if (aMatch && !bMatch) return -1;
+      if (!aMatch && bMatch) return 1;
+      return 0;
+    });
+
+    let autoSelectedApp = null;
+
+    sortedApps.forEach(app => {
+      const opt = document.createElement('div');
+      const isSelected = selectedContactAppId === app.id;
+      const isCompanyMatch = cleanPrefComp && app.company && app.company.toLowerCase().includes(cleanPrefComp);
+      opt.className = 'custom-select-option' + (isSelected ? ' selected' : '');
+      opt.setAttribute('data-value', app.id);
+      opt.textContent = `${app.company} · ${app.role}${isCompanyMatch ? ' ★' : ''}`;
+      opt.addEventListener('click', () => {
+        setContactLinkedApp(app.id, `${app.company} · ${app.role}`);
+      });
+      contactAppDropdown.appendChild(opt);
+
+      if (isCompanyMatch && !selectedContactAppId && !autoSelectedApp) {
+        autoSelectedApp = app;
+      }
+    });
+
+    if (autoSelectedApp && !selectedContactAppId) {
+      setContactLinkedApp(autoSelectedApp.id, `${autoSelectedApp.company} · ${autoSelectedApp.role}`);
+    }
+  }
+
+  function setContactLinkedApp(appId, labelText = null) {
+    selectedContactAppId = appId || '';
+    if (!labelText) {
+      if (!appId) {
+        labelText = 'No Linked Job (Standalone Contact)';
+      } else {
+        const found = allKnownAppsList.find(a => a.id === appId);
+        labelText = found ? `${found.company} · ${found.role}` : 'Linked Application';
+      }
+    }
+    if (contactAppValueText) {
+      contactAppValueText.textContent = labelText;
+    }
+    if (contactAppDropdown) {
+      const options = contactAppDropdown.querySelectorAll('.custom-select-option');
+      options.forEach(opt => {
+        opt.classList.toggle('selected', opt.getAttribute('data-value') === selectedContactAppId);
+      });
+    }
+    if (contactAppSelectContainer) {
+      contactAppSelectContainer.classList.remove('open');
+    }
+  }
+
+  if (contactAppTrigger && contactAppSelectContainer) {
+    contactAppTrigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      contactAppSelectContainer.classList.toggle('open');
+    });
+  }
+
+  async function applyLinkedInProfileData(profileData, tab) {
+    rawExtractedProfileData = profileData;
+    setActiveCompanionTab('contact', false);
+
+    // 1. Populate text fields
+    if (contactNameInput) contactNameInput.value = profileData.fullName || profileData.name || '';
+    if (contactRoleInput) contactRoleInput.value = profileData.role || profileData.headline || '';
+    if (contactOrgInput) contactOrgInput.value = profileData.organization || '';
+    if (contactLocationInput) contactLocationInput.value = profileData.location || '';
+    if (contactLinkedInInput) contactLinkedInInput.value = profileData.linkedInUrl || (tab ? tab.url : '');
+
+    // 2. Avatar
+    if (contactAvatarImg && contactAvatarSvg) {
+      if (profileData.avatarUrl) {
+        contactAvatarImg.src = profileData.avatarUrl;
+        contactAvatarImg.style.display = 'block';
+        contactAvatarSvg.style.display = 'none';
+      } else {
+        contactAvatarImg.style.display = 'none';
+        contactAvatarSvg.style.display = 'block';
+      }
+    }
+
+    // 3. Category smart-defaulting
+    const inferredCategory = inferContactCategory(profileData.headline || profileData.role || '');
+    setContactCategory(inferredCategory);
+
+    // 4. Load known applications and contacts
+    await loadKnownContacts();
+
+    // 5. Populate application dropdown with auto-suggestion
+    populateContactAppDropdown(profileData.organization);
+
+    // 6. Deduplication and diffing
+    const normUrl = normalizeUrl(profileData.linkedInUrl || (tab ? tab.url : ''));
+    const normName = (profileData.fullName || profileData.name || '').trim().toLowerCase();
+    const normOrg = (profileData.organization || '').trim().toLowerCase();
+
+    const match = allKnownContactsList.find(c => {
+      if (normUrl && c.linkedIn && normalizeUrl(c.linkedIn) === normUrl) return true;
+      if (normName && c.name && c.name.trim().toLowerCase() === normName) {
+        if (!normOrg || !c.organization || c.organization.trim().toLowerCase() === normOrg) {
+          return true;
+        }
+      }
+      return false;
+    });
+
+    if (match) {
+      matchedExistingContact = match;
+      const diff = diffContact(matchedExistingContact, profileData);
+      if (contactStatusBanner) {
+        contactStatusBanner.style.display = 'flex';
+        if (diff.hasChanged) {
+          contactStatusBanner.classList.add('warning');
+          contactStatusText.textContent = 'Already in Contacts Hub · Changes Detected';
+        } else {
+          contactStatusBanner.classList.remove('warning');
+          contactStatusText.textContent = '✓ Saved in Contacts Hub';
+        }
+      }
+      if (match.category) {
+        setContactCategory(match.category);
+      }
+      if (match.notes && contactNotesInput && !contactNotesInput.value) {
+        contactNotesInput.value = match.notes;
+      }
+      if (match.applicationIds && match.applicationIds.length > 0) {
+        setContactLinkedApp(match.applicationIds[0]);
+      }
+      if (saveContactBtn) {
+        saveContactBtn.querySelector('span').textContent = 'Update Contact';
+      }
+    } else {
+      matchedExistingContact = null;
+      if (contactStatusBanner) {
+        contactStatusBanner.style.display = 'none';
+        contactStatusBanner.classList.remove('warning');
+      }
+      if (saveContactBtn) {
+        saveContactBtn.querySelector('span').textContent = 'Save Contact to Tracklet';
+      }
+    }
+  }
+
+  async function pushContactToFirestoreDirectly(payload, userSession, config, docIdToUpdate = null) {
+    const projectId = config?.projectId || 'demo-tracklet';
+    const apiKey = config?.apiKey;
+    const userId = userSession.uid;
+    const idToken = userSession.idToken;
+
+    const fields = {
+      id: { stringValue: payload.id },
+      name: { stringValue: payload.name || '' },
+      role: { stringValue: payload.role || '' },
+      category: { stringValue: payload.category || 'Other' },
+      userId: { stringValue: userId },
+      createdAt: { stringValue: payload.createdAt || new Date().toISOString() },
+      updatedAt: { stringValue: payload.updatedAt || new Date().toISOString() }
+    };
+
+    if (payload.organization) fields.organization = { stringValue: payload.organization };
+    if (payload.location) fields.location = { stringValue: payload.location };
+    if (payload.linkedIn) fields.linkedIn = { stringValue: payload.linkedIn };
+    if (payload.email) fields.email = { stringValue: payload.email };
+    if (payload.phone) fields.phone = { stringValue: payload.phone };
+    if (payload.notes) fields.notes = { stringValue: payload.notes };
+    if (payload.nextFollowUpDate) fields.nextFollowUpDate = { stringValue: payload.nextFollowUpDate };
+
+    if (payload.applicationIds && Array.isArray(payload.applicationIds) && payload.applicationIds.length > 0) {
+      fields.applicationIds = {
+        arrayValue: {
+          values: payload.applicationIds.map(appId => ({ stringValue: appId }))
+        }
+      };
+    }
+
+    let url = docIdToUpdate
+      ? `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/users/${userId}/contacts/${docIdToUpdate}?`
+      : `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/users/${userId}/contacts?documentId=${encodeURIComponent(payload.id)}&`;
+
+    if (apiKey && apiKey !== 'demo-api-key') {
+      url += `key=${encodeURIComponent(apiKey)}&`;
+    }
+
+    if (docIdToUpdate) {
+      const updateFields = Object.keys(fields);
+      updateFields.forEach(f => {
+        url += `updateMask.fieldPaths=${encodeURIComponent(f)}&`;
+      });
+    }
+
+    url = url.replace(/[?&]$/, '');
+
+    const headers = { 'Content-Type': 'application/json' };
+    if (idToken) headers['Authorization'] = `Bearer ${idToken}`;
+
+    const method = docIdToUpdate ? 'PATCH' : 'POST';
+    const res = await fetch(url, {
+      method,
+      headers,
+      body: JSON.stringify({ fields })
+    });
+
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(`Firestore Contact Error [${res.status}]: ${errText}`);
+    }
+
+    return await res.json();
+  }
+
+  let isSavingContact = false;
+
+  async function handleSaveContact() {
+    if (isSavingContact) return;
+
+    const name = contactNameInput ? contactNameInput.value.trim() : '';
+    const role = contactRoleInput ? contactRoleInput.value.trim() : '';
+
+    if (!name) {
+      if (contactNameInput) {
+        contactNameInput.classList.add('input-error');
+        contactNameInput.focus();
+        setTimeout(() => contactNameInput.classList.remove('input-error'), 1500);
+      }
+      return;
+    }
+
+    if (!role) {
+      if (contactRoleInput) {
+        contactRoleInput.classList.add('input-error');
+        contactRoleInput.focus();
+        setTimeout(() => contactRoleInput.classList.remove('input-error'), 1500);
+      }
+      return;
+    }
+
+    isSavingContact = true;
+    if (saveContactBtn) {
+      saveContactBtn.disabled = true;
+      saveContactBtn.querySelector('span').textContent = matchedExistingContact ? 'Updating contact...' : 'Saving contact...';
+    }
+
+    const nowISO = new Date().toISOString();
+    const contactPayload = {
+      id: matchedExistingContact ? matchedExistingContact.id : `c-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      userId: currentUserSession?.uid || 'guest',
+      name,
+      role,
+      organization: contactOrgInput ? contactOrgInput.value.trim() : '',
+      location: contactLocationInput ? contactLocationInput.value.trim() : '',
+      linkedIn: contactLinkedInInput ? contactLinkedInInput.value.trim() : '',
+      category: selectedContactCategory,
+      notes: contactNotesInput ? contactNotesInput.value.trim() : '',
+      applicationIds: selectedContactAppId ? [selectedContactAppId] : (matchedExistingContact?.applicationIds || []),
+      createdAt: matchedExistingContact?.createdAt || nowISO,
+      updatedAt: nowISO
+    };
+
+    let savedToCloud = false;
+
+    // 1. Direct Firestore save via REST API if logged in
+    if (currentUserSession && currentUserSession.uid) {
+      try {
+        await pushContactToFirestoreDirectly(
+          contactPayload,
+          currentUserSession,
+          currentFirebaseConfig,
+          matchedExistingContact?.id
+        );
+        savedToCloud = true;
+      } catch (err) {
+        console.warn('[Tracklet] Direct Firestore contact save failed:', err);
+      }
+    }
+
+    // 2. Deliver to open Tracklet tabs via content script & BroadcastChannel
+    try {
+      chrome.tabs.query({}, (tabs) => {
+        tabs.forEach((t) => {
+          if (t.id) {
+            chrome.tabs.sendMessage(t.id, {
+              action: 'TRACKLET_EXT_INCOMING_CONTACT',
+              payload: contactPayload,
+              persistedToCloud: savedToCloud
+            }).catch(() => {});
+          }
+        });
+      });
+    } catch {
+      // ignore
+    }
+
+    // 3. Persist in chrome.storage.local
+    chrome.storage.local.get([
+      'tracklet_guest_contacts_v1',
+      'tracklet_contacts_index',
+      'tracklet_pending_contacts'
+    ], (result) => {
+      let guestContacts = result.tracklet_guest_contacts_v1 || [];
+      let contactsIndex = result.tracklet_contacts_index || [];
+      let pendingContacts = result.tracklet_pending_contacts || [];
+
+      if (matchedExistingContact) {
+        guestContacts = guestContacts.map(c => c.id === matchedExistingContact.id ? contactPayload : c);
+        contactsIndex = contactsIndex.map(c => c.id === matchedExistingContact.id ? contactPayload : c);
+        pendingContacts = pendingContacts.map(c => c.id === matchedExistingContact.id ? contactPayload : c);
+      } else {
+        guestContacts = [contactPayload, ...guestContacts];
+        contactsIndex = [contactPayload, ...contactsIndex];
+        if (!savedToCloud) {
+          pendingContacts = [contactPayload, ...pendingContacts];
+        }
+      }
+
+      chrome.storage.local.set({
+        tracklet_guest_contacts_v1: guestContacts,
+        tracklet_contacts_index: contactsIndex,
+        tracklet_pending_contacts: pendingContacts
+      }, () => {
+        isSavingContact = false;
+        if (saveContactBtn) {
+          saveContactBtn.disabled = false;
+          saveContactBtn.querySelector('span').textContent = 'Save Contact to Tracklet';
+        }
+
+        // Show Success View
+        if (successTitle) successTitle.textContent = matchedExistingContact ? 'Contact Updated!' : 'Contact Saved!';
+        if (successSubtitle) successSubtitle.textContent = `"${contactPayload.name}" saved to Contacts Hub.`;
+
+        if (mainContainer) mainContainer.style.display = 'none';
+        if (successView) successView.classList.add('visible');
+
+        scheduleAutoClose(3200);
+      });
+    });
+  }
+
+  if (saveContactBtn) {
+    saveContactBtn.addEventListener('click', handleSaveContact);
+  }
+
+  if (contactOpenLink) {
+    contactOpenLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      focusOrOpenWorkspace(null, '/contacts');
+    });
+  }
+
+  if (contactOpenWorkspaceBtn) {
+    contactOpenWorkspaceBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      focusOrOpenWorkspace(null, '/contacts');
+    });
+  }
+
+  // Recruiter Micro-Card "View Contact Details" transition (US3 / T024)
+  if (recruiterViewDetailsBtn) {
+    recruiterViewDetailsBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (!detectedRecruiterContact) return;
+      setManualTabOverride('contact');
+      switchCompanionTab('contact');
+
+      if (contactNameInput) contactNameInput.value = detectedRecruiterContact.name || '';
+      if (contactRoleInput) contactRoleInput.value = detectedRecruiterContact.role || '';
+      if (contactOrgInput) contactOrgInput.value = companyInput.value.trim() || detectedRecruiterContact.organization || '';
+      if (contactLinkedInInput) contactLinkedInInput.value = detectedRecruiterContact.linkedIn || '';
+      if (contactAvatarImg && contactAvatarSvg) {
+        if (detectedRecruiterContact.avatarUrl) {
+          contactAvatarImg.src = detectedRecruiterContact.avatarUrl;
+          contactAvatarImg.style.display = 'block';
+          contactAvatarSvg.style.display = 'none';
+        } else {
+          contactAvatarImg.style.display = 'none';
+          contactAvatarSvg.style.display = 'block';
+        }
+      }
+      selectContactCategory(detectedRecruiterContact.category || 'Recruiter');
+      checkForContactDuplicates(detectedRecruiterContact.linkedIn, detectedRecruiterContact.name, companyInput.value.trim());
+    });
+  }
+
+  // Global Keyboard Shortcuts (Escape to dismiss dropdowns, Ctrl+Enter / Cmd+Enter to submit from anywhere)
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       platformSelectContainer.classList.remove('open');
       stageSelectorContainer.classList.remove('open');
       if (appSelectorPopover) appSelectorPopover.style.display = 'none';
+      if (contactAppSelectContainer) contactAppSelectContainer.classList.remove('open');
       return;
     }
-    if (e.key === 'Enter' && !e.shiftKey && e.target.tagName !== 'TEXTAREA') {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
       e.preventDefault();
+      if (currentActiveTab === 'autofill' && autofillTriggerBtn && !autofillTriggerBtn.disabled && autofillView && autofillView.style.display !== 'none') {
+        triggerAutofill();
+        return;
+      }
+      if (currentActiveTab === 'email' && logEmailBtn && !logEmailBtn.disabled && emailLogView && emailLogView.style.display !== 'none') {
+        handleLogEmail();
+        return;
+      }
+      if (currentActiveTab === 'contact' && saveContactBtn && !saveContactBtn.disabled && contactClipView && contactClipView.style.display !== 'none') {
+        handleSaveContact();
+        return;
+      }
+      if (alreadySavedView && alreadySavedView.style.display === 'flex') {
+        focusOrOpenWorkspace(matchedApplication?.id);
+        return;
+      }
+      if (!validateInputs()) {
+        if (!companyInput.value.trim()) {
+          companyInput.classList.add('input-error');
+          companyInput.focus();
+        } else if (!roleInput.value.trim()) {
+          roleInput.classList.add('input-error');
+          roleInput.focus();
+        }
+        return;
+      }
+      handleSave();
+      return;
+    }
+    if (e.key === 'Enter' && !e.shiftKey && e.target.tagName !== 'TEXTAREA' && e.target.id !== 'notes-editor' && e.target.id !== 'contact-notes') {
+      e.preventDefault();
+      if (currentActiveTab === 'autofill' && autofillTriggerBtn && !autofillTriggerBtn.disabled && autofillView && autofillView.style.display !== 'none') {
+        triggerAutofill();
+        return;
+      }
       if (isWebmailMode && emailLogView.style.display !== 'none') {
         handleLogEmail();
+        return;
+      }
+      if (currentActiveTab === 'contact' && contactClipView && contactClipView.style.display !== 'none') {
+        handleSaveContact();
         return;
       }
       if (alreadySavedView.style.display === 'flex') {
@@ -1646,6 +2897,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (payload.workLocation !== undefined && payload.workLocation !== null) fields.workLocation = { stringValue: payload.workLocation };
     if (payload.employmentType !== undefined && payload.employmentType !== null) fields.employmentType = { stringValue: payload.employmentType };
 
+    // Linked Contact IDs & Tailored CV metadata (US3 / US5)
+    if (Array.isArray(payload.contactIds) && payload.contactIds.length > 0) {
+      fields.contactIds = {
+        arrayValue: {
+          values: payload.contactIds.map(id => ({ stringValue: id }))
+        }
+      };
+    }
+    if (payload.resumeFileName) fields.resumeFileName = { stringValue: payload.resumeFileName };
+    if (payload.resumeFileSize !== undefined) fields.resumeFileSize = { integerValue: String(payload.resumeFileSize) };
+    if (payload.resumeBlobId) fields.resumeBlobId = { stringValue: payload.resumeBlobId };
+    if (payload.resumeUploadedAt) fields.resumeUploadedAt = { stringValue: payload.resumeUploadedAt };
+
     let url = docIdToUpdate
       ? `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/users/${userId}/applications/${docIdToUpdate}`
       : `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/users/${userId}/applications`;
@@ -1690,7 +2954,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   /**
-   * Persist recruiter contact directly to Firestore /users/{userId}/contacts
+   * Persist recruiter contact directly to Firestore /users/{userId}/contacts (supports create and update)
    */
   async function pushContactToFirestoreDirectly(contact, appId, userSession, config) {
     if (!contact || !contact.name) return null;
@@ -1699,40 +2963,57 @@ document.addEventListener('DOMContentLoaded', async () => {
     const userId = userSession.uid;
     const idToken = userSession.idToken;
 
-    let url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/users/${userId}/contacts`;
-    if (apiKey && apiKey !== 'demo-api-key') {
-      url += `?key=${encodeURIComponent(apiKey)}`;
-    }
+    const docIdToUpdate = (contact.id && !contact.id.startsWith('ext-') && !contact.id.startsWith('contact_')) ? contact.id : null;
+    let url = docIdToUpdate
+      ? `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/users/${userId}/contacts/${docIdToUpdate}`
+      : `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/users/${userId}/contacts`;
 
     const nowISO = new Date().toISOString();
+    const appIds = Array.from(new Set([...(contact.applicationIds || []), appId].filter(Boolean)));
     const fields = {
       name: { stringValue: contact.name },
       role: { stringValue: contact.role || 'Recruiter' },
       category: { stringValue: contact.category || 'Recruiter' },
-      createdAt: { stringValue: nowISO },
       updatedAt: { stringValue: nowISO },
       applicationIds: {
         arrayValue: {
-          values: appId ? [{ stringValue: appId }] : []
+          values: appIds.map(id => ({ stringValue: id }))
         }
       }
     };
+    if (!docIdToUpdate) {
+      fields.createdAt = { stringValue: contact.createdAt || nowISO };
+    }
     if (contact.organization) fields.organization = { stringValue: contact.organization };
     if (contact.linkedIn) fields.linkedIn = { stringValue: contact.linkedIn };
     if (contact.email) fields.email = { stringValue: contact.email };
+
+    const queryParams = [];
+    if (apiKey && apiKey !== 'demo-api-key') {
+      queryParams.push(`key=${encodeURIComponent(apiKey)}`);
+    }
+    if (docIdToUpdate) {
+      queryParams.push('updateMask.fieldPaths=applicationIds');
+      queryParams.push('updateMask.fieldPaths=updatedAt');
+      if (contact.role) queryParams.push('updateMask.fieldPaths=role');
+      if (contact.organization) queryParams.push('updateMask.fieldPaths=organization');
+    }
+    if (queryParams.length > 0) {
+      url += `?${queryParams.join('&')}`;
+    }
 
     const headers = { 'Content-Type': 'application/json' };
     if (idToken) headers['Authorization'] = `Bearer ${idToken}`;
 
     try {
       const res = await fetch(url, {
-        method: 'POST',
+        method: docIdToUpdate ? 'PATCH' : 'POST',
         headers,
         body: JSON.stringify({ fields })
       });
       if (res.ok) {
         const data = await res.json();
-        return data.name ? data.name.split('/').pop() : null;
+        return docIdToUpdate || (data.name ? data.name.split('/').pop() : null);
       }
     } catch (e) {
       console.warn('Direct Firestore contact push failed:', e);
@@ -1825,15 +3106,78 @@ document.addEventListener('DOMContentLoaded', async () => {
       basePayload.createdAt = nowISO;
     }
 
-    // Attach Recruiter Contact if checked (US4)
+    const provisionalAppId = matchedApplication?.id || `ext-${Date.now()}`;
+
+    // Persist Tailored CV to IndexedDB if attached (US5 / T032)
+    if (pendingResumeFile && activeResumeMetadata) {
+      let savedBlobId = null;
+      try {
+        const storage = getResumeStorage();
+        if (storage && storage.saveResumeBlob) {
+          savedBlobId = await storage.saveResumeBlob({
+            applicationId: provisionalAppId,
+            fileName: activeResumeMetadata.fileName,
+            fileSize: pendingResumeFile.size,
+            mimeType: pendingResumeFile.type || 'application/pdf',
+            fileData: pendingResumeFile,
+            uploadedAt: activeResumeMetadata.uploadedAt || nowISO
+          });
+        }
+      } catch (resumeErr) {
+        console.warn('[Tracklet] Failed to persist tailored resume to IndexedDB:', resumeErr);
+      }
+
+      basePayload.resumeFileName = activeResumeMetadata.fileName;
+      basePayload.resumeFileSize = pendingResumeFile.size;
+      if (savedBlobId) {
+        basePayload.resumeBlobId = savedBlobId;
+      }
+      basePayload.resumeUploadedAt = activeResumeMetadata.uploadedAt || nowISO;
+    } else if (activeResumeMetadata && activeResumeMetadata.fileName) {
+      basePayload.resumeFileName = activeResumeMetadata.fileName;
+      basePayload.resumeFileSize = activeResumeMetadata.fileSize;
+      if (activeResumeMetadata.blobId) basePayload.resumeBlobId = activeResumeMetadata.blobId;
+      if (activeResumeMetadata.uploadedAt) basePayload.resumeUploadedAt = activeResumeMetadata.uploadedAt;
+    }
+
+    // Bundle Recruiter Contact if checked (US3 / US4 / T023)
+    let bundledContactPayload = null;
+    let contactSavedToCloud = false;
+
     if (detectedRecruiterContact && addRecruiterContactCheckbox && addRecruiterContactCheckbox.checked) {
-      basePayload.newContact = {
-        name: detectedRecruiterContact.name,
-        role: detectedRecruiterContact.role || 'Recruiter',
-        organization: company,
-        linkedIn: detectedRecruiterContact.linkedIn || '',
-        category: detectedRecruiterContact.category || 'Recruiter'
-      };
+      const recLinkedIn = (detectedRecruiterContact.linkedIn || '').trim();
+      const recEmail = (detectedRecruiterContact.email || '').trim();
+      const recRole = detectedRecruiterContact.role || 'Recruiter';
+      const recCategory = detectedRecruiterContact.category || 'Recruiter';
+
+      if (detectedRecruiterContact.existingId && detectedRecruiterContact.existingContact) {
+        const existing = detectedRecruiterContact.existingContact;
+        const currentAppIds = existing.applicationIds || [];
+        const updatedAppIds = currentAppIds.includes(provisionalAppId) ? currentAppIds : [...currentAppIds, provisionalAppId];
+
+        bundledContactPayload = {
+          ...existing,
+          applicationIds: updatedAppIds,
+          updatedAt: nowISO
+        };
+        basePayload.contactIds = Array.from(new Set([...(basePayload.contactIds || []), existing.id]));
+      } else {
+        const newContactId = `contact_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+        bundledContactPayload = {
+          id: newContactId,
+          userId: currentUserSession?.uid || 'guest',
+          name: detectedRecruiterContact.name,
+          role: recRole,
+          organization: company,
+          category: recCategory,
+          linkedIn: recLinkedIn || undefined,
+          email: recEmail || undefined,
+          applicationIds: [provisionalAppId],
+          createdAt: nowISO,
+          updatedAt: nowISO
+        };
+        basePayload.contactIds = Array.from(new Set([...(basePayload.contactIds || []), newContactId]));
+      }
     }
 
     let finalizedApp = null;
@@ -1845,8 +3189,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         finalizedApp = await pushToFirestoreDirectly(basePayload, currentUserSession, currentFirebaseConfig, matchedApplication?.id);
         savedToCloud = true;
 
-        if (basePayload.newContact) {
-          await pushContactToFirestoreDirectly(basePayload.newContact, finalizedApp.id, currentUserSession, currentFirebaseConfig);
+        if (bundledContactPayload) {
+          if (finalizedApp && finalizedApp.id) {
+            bundledContactPayload.applicationIds = Array.from(new Set([
+              finalizedApp.id,
+              ...(bundledContactPayload.applicationIds || []).filter(id => !id.startsWith('ext-'))
+            ]));
+          }
+          await pushContactToFirestoreDirectly(bundledContactPayload, finalizedApp.id, currentUserSession, currentFirebaseConfig);
+          contactSavedToCloud = true;
         }
       } catch (cloudErr) {
         console.warn('Direct Firestore push failed (offline or auth expired), falling back to local storage:', cloudErr);
@@ -1860,9 +3211,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         id: matchedApplication?.id || `ext-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
         userId: currentUserSession?.uid || 'guest'
       };
+      if (bundledContactPayload) {
+        bundledContactPayload.applicationIds = Array.from(new Set([
+          finalizedApp.id,
+          ...(bundledContactPayload.applicationIds || []).filter(id => !id.startsWith('ext-'))
+        ]));
+      }
     }
 
-    // 3. Deliver to open Tracklet tabs via content scripts
+    // 3. Deliver to open Tracklet tabs via content scripts (Application & Contact)
     chrome.tabs.query({}, (tabs) => {
       tabs.forEach((t) => {
         if (t.id) {
@@ -1871,11 +3228,47 @@ document.addEventListener('DOMContentLoaded', async () => {
             payload: finalizedApp,
             persistedToCloud: savedToCloud
           }).catch(() => {});
+
+          if (bundledContactPayload) {
+            chrome.tabs.sendMessage(t.id, {
+              action: 'TRACKLET_EXT_INCOMING_CONTACT',
+              payload: bundledContactPayload,
+              persistedToCloud: contactSavedToCloud
+            }).catch(() => {});
+          }
         }
       });
     });
 
-    // 4. Update extension local storage & pending queue
+    // 4. Update extension local storage for Contact if bundled
+    if (bundledContactPayload) {
+      chrome.storage.local.get(['tracklet_contacts_index', 'tracklet_guest_contacts_v1', 'tracklet_pending_contacts'], (res) => {
+        let contactsIndex = res?.tracklet_contacts_index || [];
+        let guestContacts = res?.tracklet_guest_contacts_v1 || [];
+        let pendingContacts = res?.tracklet_pending_contacts || [];
+
+        const existingIdx = contactsIndex.findIndex(c => c.id === bundledContactPayload.id);
+        if (existingIdx >= 0) {
+          contactsIndex[existingIdx] = bundledContactPayload;
+          guestContacts = guestContacts.map(c => c.id === bundledContactPayload.id ? bundledContactPayload : c);
+          pendingContacts = pendingContacts.map(c => c.id === bundledContactPayload.id ? bundledContactPayload : c);
+        } else {
+          contactsIndex = [bundledContactPayload, ...contactsIndex];
+          guestContacts = [bundledContactPayload, ...guestContacts];
+          if (!contactSavedToCloud) {
+            pendingContacts = [bundledContactPayload, ...pendingContacts];
+          }
+        }
+
+        chrome.storage.local.set({
+          tracklet_contacts_index: contactsIndex,
+          tracklet_guest_contacts_v1: guestContacts,
+          tracklet_pending_contacts: pendingContacts
+        });
+      });
+    }
+
+    // 5. Update extension local storage & pending queue for Application
     chrome.storage.local.get(['tracklet_pending_apps', 'tracklet_guest_apps_v1', 'tracklet_apps_index'], (result) => {
       let pending = result.tracklet_pending_apps || [];
       let guestApps = result.tracklet_guest_apps_v1 || [];
@@ -1907,7 +3300,9 @@ document.addEventListener('DOMContentLoaded', async () => {
           : (savedToCloud ? 'Saved to Cloud!' : 'Application Saved!');
         successSubtitle.textContent = matchedApplication
           ? `Updated "${role}" at ${company}.`
-          : `${company} — ${role} logged to Tracklet.`;
+          : (bundledContactPayload
+              ? `${company} — ${role} logged to Tracklet + recruiter contact linked.`
+              : `${company} — ${role} logged to Tracklet.`);
 
         mainContainer.style.display = 'none';
         successView.classList.add('visible');
@@ -1940,7 +3335,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   // Focuses existing Tracklet tab if open or opens new tab
-  async function focusOrOpenWorkspace(appId = null) {
+  async function focusOrOpenWorkspace(appId = null, subpath = '') {
     let resolvedBaseUrl = TRACKLET_APP_URL;
 
     try {
@@ -1968,6 +3363,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (appId) {
           const base = trackletTab.url.split('?')[0];
           await chrome.tabs.update(trackletTab.id, { active: true, url: `${base}?appId=${encodeURIComponent(appId)}` });
+        } else if (subpath) {
+          const origin = new URL(trackletTab.url).origin;
+          await chrome.tabs.update(trackletTab.id, { active: true, url: `${origin}${subpath}` });
         } else {
           await chrome.tabs.update(trackletTab.id, { active: true });
         }
@@ -1984,7 +3382,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const cleanBase = resolvedBaseUrl.replace(/\/+$/, '');
     const targetUrl = appId
       ? `${cleanBase}/?appId=${encodeURIComponent(appId)}`
-      : cleanBase;
+      : (subpath ? `${cleanBase}${subpath}` : cleanBase);
 
     chrome.tabs.create({ url: targetUrl });
     window.close();
@@ -2011,6 +3409,361 @@ document.addEventListener('DOMContentLoaded', async () => {
     const name = domain.split('.')[0];
     return name.charAt(0).toUpperCase() + name.slice(1);
   }
+
+  // =========================================================================
+  // Autofill Hub Controller & ATS Form Detection (US6 / T036 - T040)
+  // =========================================================================
+
+  function getProfileStorage() {
+    return typeof TrackletProfileStorage !== 'undefined' ? TrackletProfileStorage : null;
+  }
+
+  async function loadAndRenderCandidateProfile() {
+    const storage = getProfileStorage();
+    if (!storage) return;
+
+    try {
+      candidateProfile = await storage.loadCandidateProfile();
+      if (!candidateProfile) {
+        // Fallback default from user account if known
+        const userEmail = currentUserSession?.email || '';
+        const defaultName = userEmail ? userEmail.split('@')[0].replace(/[._]/g, ' ') : '';
+        candidateProfile = {
+          fullName: defaultName ? defaultName.charAt(0).toUpperCase() + defaultName.slice(1) : '',
+          email: userEmail
+        };
+      }
+      renderCandidateProfile(candidateProfile);
+    } catch (e) {
+      console.warn('[Tracklet] Failed to load candidate profile:', e);
+    }
+  }
+
+  function renderCandidateProfile(profile) {
+    if (!profile) return;
+
+    const email = profile.email || '';
+    const phone = profile.phone || '';
+    const location = profile.location || '';
+    const workAuth = profile.workAuthorization || '';
+
+    // Initials derivation
+    let initials = 'ME';
+    if (profile.fullName) {
+      const parts = profile.fullName.trim().split(/\s+/);
+      if (parts.length >= 2) {
+        initials = (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+      } else if (parts.length === 1 && parts[0].length > 0) {
+        initials = parts[0].slice(0, 2).toUpperCase();
+      }
+    } else if (email) {
+      initials = email.slice(0, 2).toUpperCase();
+    }
+
+    if (profileAvatarInitials) profileAvatarInitials.textContent = initials;
+    if (profileSummaryName) profileSummaryName.textContent = profile.fullName || 'No name set';
+    if (profileSummaryTitle) profileSummaryTitle.textContent = profile.targetTitle || 'Candidate Profile';
+    if (profileSummaryEmail) profileSummaryEmail.textContent = email || 'No email set';
+    if (profileSummaryPhone) profileSummaryPhone.textContent = phone || 'Not specified';
+    if (profileSummaryLocation) profileSummaryLocation.textContent = location || 'Not specified';
+    if (profileSummaryWorkAuth) profileSummaryWorkAuth.textContent = workAuth || 'Not specified';
+
+    // Social / portfolio chips
+    if (chipLinkedIn) chipLinkedIn.style.display = profile.linkedInUrl ? 'inline-block' : 'none';
+    if (chipGitHub) chipGitHub.style.display = profile.githubUrl ? 'inline-block' : 'none';
+    if (chipPortfolio) chipPortfolio.style.display = profile.portfolioUrl ? 'inline-block' : 'none';
+
+    // Populate edit drawer inputs
+    if (profileEditName) profileEditName.value = profile.fullName || '';
+    if (profileEditEmail) profileEditEmail.value = profile.email || '';
+    if (profileEditPhone) profileEditPhone.value = profile.phone || '';
+    if (profileEditLocation) profileEditLocation.value = profile.location || '';
+    if (profileEditWorkAuth) profileEditWorkAuth.value = profile.workAuthorization || '';
+    if (profileEditLinkedIn) profileEditLinkedIn.value = profile.linkedInUrl || '';
+    if (profileEditGitHub) profileEditGitHub.value = profile.githubUrl || '';
+    if (profileEditPortfolio) profileEditPortfolio.value = profile.portfolioUrl || '';
+  }
+
+  function setProfileEditMode(isOpen) {
+    isProfileEditOpen = isOpen;
+    if (profileEditDrawer) profileEditDrawer.style.display = isOpen ? 'block' : 'none';
+    if (profileSummaryView) profileSummaryView.style.display = isOpen ? 'none' : 'block';
+    if (profileEditToggleLabel) profileEditToggleLabel.textContent = isOpen ? 'Close' : 'Quick Edit';
+  }
+
+  async function handleSaveCandidateProfile() {
+    const storage = getProfileStorage();
+    if (!storage) return;
+
+    const fullName = profileEditName ? profileEditName.value.trim() : '';
+    const email = profileEditEmail ? profileEditEmail.value.trim() : '';
+
+    if (!fullName && !email) {
+      if (profileEditName) profileEditName.focus();
+      return;
+    }
+
+    const updates = {
+      fullName,
+      email,
+      phone: profileEditPhone ? profileEditPhone.value.trim() : '',
+      location: profileEditLocation ? profileEditLocation.value.trim() : '',
+      workAuthorization: profileEditWorkAuth ? profileEditWorkAuth.value.trim() : '',
+      linkedInUrl: profileEditLinkedIn ? profileEditLinkedIn.value.trim() : '',
+      githubUrl: profileEditGitHub ? profileEditGitHub.value.trim() : '',
+      portfolioUrl: profileEditPortfolio ? profileEditPortfolio.value.trim() : ''
+    };
+
+    if (profileSaveBtn) {
+      profileSaveBtn.disabled = true;
+      profileSaveBtn.textContent = 'Saving...';
+    }
+
+    try {
+      candidateProfile = await storage.saveCandidateProfile(updates);
+      renderCandidateProfile(candidateProfile);
+      setProfileEditMode(false);
+      // Re-scan active tab with updated candidate profile
+      checkAtsFormOnActiveTab();
+    } catch (err) {
+      console.warn('[Tracklet] Failed to save candidate profile:', err);
+    } finally {
+      if (profileSaveBtn) {
+        profileSaveBtn.disabled = false;
+        profileSaveBtn.textContent = 'Save Profile';
+      }
+    }
+  }
+
+  function renderChecklist(fieldsMatched = [], populatedFields = [], manualAlerts = []) {
+    if (!autofillChecklistCard || !checklistItemsContainer) return;
+
+    if (fieldsMatched.length === 0 && populatedFields.length === 0) {
+      autofillChecklistCard.style.display = 'none';
+      return;
+    }
+
+    autofillChecklistCard.style.display = 'block';
+    checklistItemsContainer.innerHTML = '';
+
+    const populatedKeys = new Set((populatedFields || []).map(p => p.candidateKey));
+    const populatedMap = new Map((populatedFields || []).map(p => [p.candidateKey, p]));
+
+    if (checklistCountBadge) {
+      const count = populatedFields.length > 0 ? `${populatedFields.length}/${fieldsMatched.length} filled` : `${fieldsMatched.length} mapped`;
+      checklistCountBadge.textContent = count;
+    }
+
+    fieldsMatched.forEach(field => {
+      const isPopulated = populatedKeys.has(field.candidateKey);
+      const popInfo = populatedMap.get(field.candidateKey);
+
+      const itemEl = document.createElement('div');
+      itemEl.className = 'checklist-item';
+      itemEl.title = `Click to highlight "${field.label}" on active page`;
+
+      const leftWrap = document.createElement('div');
+      leftWrap.className = 'checklist-item-left';
+
+      if (isPopulated) {
+        leftWrap.innerHTML = `<svg class="checklist-check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>`;
+      } else {
+        leftWrap.innerHTML = `<svg class="checklist-check-icon" style="color: var(--primary);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>`;
+      }
+
+      const titleEl = document.createElement('span');
+      titleEl.className = 'checklist-item-title';
+      titleEl.textContent = field.label || field.candidateKey;
+      leftWrap.appendChild(titleEl);
+
+      const valSnippetEl = document.createElement('span');
+      valSnippetEl.className = 'checklist-item-val';
+      if (isPopulated && popInfo?.valueSnippet) {
+        valSnippetEl.textContent = popInfo.valueSnippet;
+      } else {
+        valSnippetEl.textContent = 'Mapped';
+        valSnippetEl.style.color = 'var(--neutral-muted)';
+      }
+      leftWrap.appendChild(valSnippetEl);
+
+      const locateHint = document.createElement('span');
+      locateHint.className = 'checklist-locate-hint';
+      locateHint.textContent = 'Locate';
+
+      itemEl.appendChild(leftWrap);
+      itemEl.appendChild(locateHint);
+
+      itemEl.addEventListener('click', () => {
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+          const tabId = tabs[0]?.id;
+          if (tabId && field.targetSelector) {
+            chrome.tabs.sendMessage(tabId, {
+              action: 'SCROLL_TO_FIELD',
+              targetSelector: field.targetSelector
+            });
+          }
+        });
+      });
+
+      checklistItemsContainer.appendChild(itemEl);
+    });
+
+    // Manual Alerts (e.g. File Upload)
+    if (manualAlertsContainer && manualAlertsList) {
+      if (manualAlerts && manualAlerts.length > 0) {
+        manualAlertsContainer.style.display = 'block';
+        manualAlertsList.innerHTML = '';
+        manualAlerts.forEach(alert => {
+          const alertItem = document.createElement('div');
+          alertItem.style.display = 'flex';
+          alertItem.style.alignItems = 'center';
+          alertItem.style.gap = '5px';
+          const alertText = typeof alert === 'string' ? alert : (alert.field || 'Upload required');
+          alertItem.textContent = `• ${alertText} (upload manually on page)`;
+          manualAlertsList.appendChild(alertItem);
+        });
+      } else {
+        manualAlertsContainer.style.display = 'none';
+      }
+    }
+  }
+
+  function checkAtsFormOnActiveTab() {
+    if (!autofillStatusPill || !autofillStatusText) return;
+
+    autofillStatusPill.className = 'autofill-status-pill scanning';
+    autofillStatusText.textContent = 'Scanning active page for ATS application form...';
+    if (autofillTriggerBtn) autofillTriggerBtn.disabled = true;
+
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      const activeTab = tabs[0];
+      if (!activeTab || !activeTab.id || !activeTab.url || activeTab.url.startsWith('chrome://')) {
+        autofillStatusPill.className = 'autofill-status-pill none';
+        autofillStatusText.textContent = 'Open an application page to detect form';
+        if (autofillChecklistCard) autofillChecklistCard.style.display = 'none';
+        return;
+      }
+
+      chrome.tabs.sendMessage(activeTab.id, { action: 'DETECT_ATS_FORM' }, (res) => {
+        if (chrome.runtime.lastError || !res || !res.result) {
+          autofillStatusPill.className = 'autofill-status-pill none';
+          autofillStatusText.textContent = 'No application form detected on this page';
+          if (autofillChecklistCard) autofillChecklistCard.style.display = 'none';
+          currentAtsDetection = null;
+          return;
+        }
+
+        const detection = res.result;
+        currentAtsDetection = detection;
+
+        if (!detection.formElementFound) {
+          autofillStatusPill.className = 'autofill-status-pill none';
+          autofillStatusText.textContent = 'No application form detected on this page';
+          if (autofillChecklistCard) autofillChecklistCard.style.display = 'none';
+          if (autofillTriggerBtn) autofillTriggerBtn.disabled = true;
+          return;
+        }
+
+        const atsNameMap = {
+          greenhouse: 'Greenhouse',
+          lever: 'Lever',
+          workday: 'Workday',
+          generic: 'Careers'
+        };
+        const atsLabel = atsNameMap[detection.ats] || 'Application';
+        const matchCount = (detection.fieldsMatched || []).length;
+
+        autofillStatusPill.className = 'autofill-status-pill detected';
+        autofillStatusText.textContent = `${atsLabel} Form Detected (${matchCount} fields mapped)`;
+
+        if (autofillTriggerBtn) {
+          autofillTriggerBtn.disabled = matchCount === 0;
+          const btnText = autofillTriggerBtn.querySelector('#autofill-btn-text');
+          if (btnText) btnText.textContent = 'Auto-Fill Application';
+        }
+
+        renderChecklist(detection.fieldsMatched || [], [], []);
+      });
+    });
+  }
+
+  function triggerAutofill() {
+    if (!autofillTriggerBtn || autofillTriggerBtn.disabled) return;
+    if (!currentAtsDetection || !currentAtsDetection.formElementFound) return;
+
+    if (!candidateProfile || (!candidateProfile.fullName && !candidateProfile.email)) {
+      setProfileEditMode(true);
+      return;
+    }
+
+    const btnText = autofillTriggerBtn.querySelector('#autofill-btn-text');
+    if (btnText) btnText.textContent = 'Auto-Filling...';
+    autofillTriggerBtn.disabled = true;
+
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      const activeTab = tabs[0];
+      if (!activeTab || !activeTab.id) {
+        autofillTriggerBtn.disabled = false;
+        if (btnText) btnText.textContent = 'Auto-Fill Application';
+        return;
+      }
+
+      chrome.tabs.sendMessage(activeTab.id, {
+        action: 'EXECUTE_AUTOFILL',
+        profile: candidateProfile
+      }, (res) => {
+        autofillTriggerBtn.disabled = false;
+        if (btnText) btnText.textContent = 'Auto-Fill Application';
+
+        if (chrome.runtime.lastError || !res || !res.success) {
+          console.warn('[Tracklet] Autofill failed:', chrome.runtime.lastError);
+          return;
+        }
+
+        if (autofillStatusPill && autofillStatusText) {
+          autofillStatusPill.className = 'autofill-status-pill detected';
+          autofillStatusText.textContent = `✓ ${res.fieldsPopulatedCount} fields populated safely (Review before submit)`;
+        }
+
+        renderChecklist(
+          currentAtsDetection.fieldsMatched || [],
+          res.populatedFields || [],
+          res.manualFieldsRequired || []
+        );
+      });
+    });
+  }
+
+  // Autofill Hub Event Listeners
+  if (profileQuickEditToggle) {
+    profileQuickEditToggle.addEventListener('click', () => {
+      setProfileEditMode(!isProfileEditOpen);
+    });
+  }
+
+  if (profileCancelBtn) {
+    profileCancelBtn.addEventListener('click', () => {
+      setProfileEditMode(false);
+    });
+  }
+
+  if (profileSaveBtn) {
+    profileSaveBtn.addEventListener('click', handleSaveCandidateProfile);
+  }
+
+  if (profileOpenSettingsLink) {
+    profileOpenSettingsLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      focusOrOpenWorkspace(null, '/settings');
+    });
+  }
+
+  if (autofillTriggerBtn) {
+    autofillTriggerBtn.addEventListener('click', triggerAutofill);
+  }
+
+  // Load candidate profile on extension startup
+  loadAndRenderCandidateProfile();
 
   // Initialize Stage & Platform UI
   updateStageUI('Saved');

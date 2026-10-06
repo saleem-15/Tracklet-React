@@ -386,6 +386,9 @@ interface ApplicationSummary {
   companyDomain?: string;
   contactEmail?: string;
   contactEmails?: string[];
+  dateApplied?: string;
+  stageUpdatedAt?: string;
+  createdAt?: string;
 }
 
 function normalizeCompanyName(name: string): string {
@@ -662,7 +665,33 @@ function matchEmailToApplications(
 
   const ranked = scored
     .filter(item => item.score >= 40)
-    .sort((a, b) => b.score - a.score);
+    .sort((a, b) => {
+      // 1. Direct score comparison if difference is significant (> 15 pts, e.g. role match)
+      if (Math.abs(b.score - a.score) > 15) {
+        return b.score - a.score;
+      }
+
+      // 2. Active Stage Priority (Offer > Interview > Screening > Applied > Saved > Rejected/Archived)
+      const STAGE_PRIORITY: Record<string, number> = {
+        'Offer': 5,
+        'Interview': 4,
+        'Screening': 3,
+        'Applied': 2,
+        'Saved': 1,
+        'Rejected': 0,
+        'Archived': 0,
+      };
+      const stageA = STAGE_PRIORITY[a.app.status] ?? 1;
+      const stageB = STAGE_PRIORITY[b.app.status] ?? 1;
+      if (stageB !== stageA) {
+        return stageB - stageA;
+      }
+
+      // 3. Recency: newest dateApplied or stageUpdatedAt / createdAt wins
+      const dateA = a.app.dateApplied || a.app.stageUpdatedAt || a.app.createdAt || '';
+      const dateB = b.app.dateApplied || b.app.stageUpdatedAt || b.app.createdAt || '';
+      return dateB.localeCompare(dateA);
+    });
 
   const bestMatch = (ranked.length > 0 && ranked[0].score >= 45) ? ranked[0].app : null;
   return { bestMatch, ranked: ranked.map(r => r.app) };
@@ -1281,6 +1310,105 @@ describe('Webmail Companion Engine', () => {
       expect(res.counterparty).toBe('sarah@stripe.com');
       expect(res.counterpartyName).toBe('Sarah Recruiter');
       expect(res.counterpartyEmail).toBe('sarah@stripe.com');
+    });
+  });
+
+  describe('Multi-Application Active Stage & Recency Ranking (US4)', () => {
+    const appStripeSaved: ApplicationSummary = {
+      id: 'app_stripe_saved',
+      company: 'Stripe',
+      role: 'Staff Engineer',
+      status: 'Saved',
+      companyDomain: 'stripe.com',
+      dateApplied: '2026-08-01',
+    };
+
+    const appStripeInterview: ApplicationSummary = {
+      id: 'app_stripe_interview',
+      company: 'Stripe',
+      role: 'Senior Frontend Engineer',
+      status: 'Interview',
+      companyDomain: 'stripe.com',
+      dateApplied: '2026-09-15',
+    };
+
+    const appStripeScreening: ApplicationSummary = {
+      id: 'app_stripe_screening',
+      company: 'Stripe',
+      role: 'Backend Engineer',
+      status: 'Screening',
+      companyDomain: 'stripe.com',
+      dateApplied: '2026-09-01',
+    };
+
+    it('prioritizes active Interview stage over Saved stage when both match company domain', () => {
+      const email = {
+        senderEmail: 'recruiting@stripe.com',
+        counterpartyDomain: 'stripe.com',
+        subject: 'Update on your candidacy at Stripe',
+      };
+
+      const result = matchEmailToApplications(email, [appStripeSaved, appStripeInterview]);
+      expect(result.bestMatch?.id).toBe('app_stripe_interview');
+      expect(result.ranked[0].id).toBe('app_stripe_interview');
+      expect(result.ranked[1].id).toBe('app_stripe_saved');
+    });
+
+    it('prioritizes pipeline stages in descending order: Interview > Screening > Saved', () => {
+      const email = {
+        senderEmail: 'recruiting@stripe.com',
+        counterpartyDomain: 'stripe.com',
+        subject: 'Next steps with Stripe',
+      };
+
+      const result = matchEmailToApplications(email, [appStripeSaved, appStripeScreening, appStripeInterview]);
+      expect(result.bestMatch?.id).toBe('app_stripe_interview');
+      expect(result.ranked.map(a => a.id)).toEqual([
+        'app_stripe_interview',
+        'app_stripe_screening',
+        'app_stripe_saved'
+      ]);
+    });
+
+    it('breaks ties between applications at the same stage using recency (newest dateApplied first)', () => {
+      const appOlderInterview: ApplicationSummary = {
+        id: 'app_interview_aug',
+        company: 'Linear',
+        role: 'Fullstack Engineer',
+        status: 'Interview',
+        companyDomain: 'linear.app',
+        dateApplied: '2026-08-10',
+      };
+
+      const appNewerInterview: ApplicationSummary = {
+        id: 'app_interview_sep',
+        company: 'Linear',
+        role: 'Founding Engineer',
+        status: 'Interview',
+        companyDomain: 'linear.app',
+        dateApplied: '2026-09-25',
+      };
+
+      const email = {
+        senderEmail: 'karla@linear.app',
+        counterpartyDomain: 'linear.app',
+        subject: 'Interview Schedule at Linear',
+      };
+
+      const result = matchEmailToApplications(email, [appOlderInterview, appNewerInterview]);
+      expect(result.bestMatch?.id).toBe('app_interview_sep');
+    });
+
+    it('honors strong role mention in subject over stage hierarchy', () => {
+      const email = {
+        senderEmail: 'recruiting@stripe.com',
+        counterpartyDomain: 'stripe.com',
+        subject: 'Regarding your application for Staff Engineer at Stripe',
+      };
+
+      // Even though appStripeInterview is at Interview, the email explicitly mentions Staff Engineer (+25 pts)
+      const result = matchEmailToApplications(email, [appStripeInterview, appStripeSaved]);
+      expect(result.bestMatch?.id).toBe('app_stripe_saved');
     });
   });
 });

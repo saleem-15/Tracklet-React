@@ -1,93 +1,110 @@
-# 🧩 Tracklet Browser Extension — Job Application Saver & Webmail Companion
+# 🧩 Tracklet Companion — Chrome Side Panel, Contact Clipper & Autofill Hub
 
-Save job applications from any website (LinkedIn, Indeed, Greenhouse, Lever, Otta, Wellfound, company career pages, etc.) and log interview updates directly from webmail (Gmail, Outlook) into your Tracklet workspace with one click.
-
----
-
-## 🚀 Quick Setup / Installation
-
-### 📥 Option A: For Testers (Recommended)
-
-[![Download Latest Extension](https://img.shields.io/badge/Download_Extension-Latest_Release-2563eb?style=for-the-badge&logo=googlechrome&logoColor=white)](https://github.com/saleem-15/Tracklet-React/releases/latest/download/tracklet-extension.zip)
-
-1. **Download:** Click the button above or [download `tracklet-extension.zip`](https://github.com/saleem-15/Tracklet-React/releases/latest/download/tracklet-extension.zip).
-2. **Extract:** Unzip `tracklet-extension.zip` into a permanent folder on your computer (e.g. `Downloads/TrackletExtension` or `Documents/TrackletExtension`).
-   > ⚠️ **Important:** Do not delete or move this folder after installing, as Chrome runs the extension directly from it.
-3. **Open Extensions Page:** Open Google Chrome (or Edge / Brave) and navigate to `chrome://extensions` in the address bar.
-4. **Developer Mode:** In the top-right corner, toggle **Developer mode** to ON.
-5. **Load Unpacked:** Click the **Load unpacked** button in the top-left and select the unzipped folder containing `manifest.json`.
-6. **Pin:** Click the puzzle piece icon (🧩) in the Chrome toolbar and pin **Tracklet** for quick access.
-
-#### 🔄 How to Update When a New Version is Released
-1. Download the latest `tracklet-extension.zip` from the link above.
-2. Unzip and replace the files inside your existing extension folder.
-3. In `chrome://extensions`, click the **Reload** (circular arrow) icon on the Tracklet card.
+**Tracklet Companion** is a persistent browser side panel built with Manifest V3 that docks seamlessly alongside your browsing window. It captures job applications from any careers website, clips recruiter contacts directly from LinkedIn into your Contacts Hub, logs interview emails from webmail with active pipeline ranking, stores tailored CVs in local IndexedDB, and auto-fills ATS application forms without auto-submitting.
 
 ---
 
-### 💻 Option B: For Developers (From Source)
+## 🚀 Installation & Setup
 
-1. Open your browser and navigate to `chrome://extensions`.
-2. Enable **Developer mode** in the top-right corner.
-3. Click **Load unpacked** and select the `extension/` folder inside your cloned repository.
+### 📥 Option A: Load Unpacked in Chrome (Developer Mode)
 
----
+1. Open Google Chrome (or Edge / Brave) and navigate to `chrome://extensions`.
+2. Toggle **Developer mode** to **ON** in the top-right corner.
+3. Click the **Load unpacked** button in the top-left toolbar.
+4. Select the `extension/` directory inside your Tracklet project folder (`d:/Programming/Tracklet/extension`).
+5. Click the Extensions puzzle piece icon (🧩) in the browser toolbar and pin **Tracklet**.
 
-## ⚡ How to Use
-
-### 💼 1. Job Application Clipper (Any Job Board)
-
-1. **Navigate to a Job Post:** Open any job posting (LinkedIn, Indeed, Greenhouse, Lever, Otta, Wellfound, or company careers pages).
-2. **Open Extension:** Click the Tracklet extension icon or press **`Alt + Shift + A`** (Mac: `Option + Shift + A`).
-3. **Smart Auto-Fill:** The extension automatically extracts:
-   - **Company Identity & Logo:** Resolves the true hiring employer domain and high-res favicon (or monogram), never the job board or ATS logo. Deprecated Clearbit dependencies have been removed.
-   - **Job Role / Title**
-   - **Location:** City, region, or country as posted.
-   - **Workplace Arrangement:** Remote, Hybrid, or On-site.
-   - **Employment Type:** Full-time, Part-time, Contract, or Internship.
-   - **Platform:** LinkedIn, Indeed, Lever, Greenhouse, etc.
-   - **Recruiter / Job Poster:** One-click capture of recruiter contacts linked directly into Contacts Hub.
-   - **Highlights & Notes:** Automatically summarizes job descriptions or captures your highlighted text.
-   - **Job Link URL**
-4. **Pipeline Stage Safety:**
-   - **New Jobs:** Limited strictly to **Saved** or **Applied** (defaults to Applied on confirmation/thank-you pages).
-   - **Existing Jobs:** Jobs already at **Interview**, **Offer**, etc. are displayed with a read-only stage badge so your pipeline progress and stage history are never overwritten or lost.
-5. **Save Application:** Click **Save Application** (or press `Enter ↵`).
+### 📌 Side Panel Docking Behavior
+- Clicking the extension icon opens Tracklet docked on the right side of your browser as a persistent **Side Panel** (`chrome.sidePanel`).
+- The side panel stays open while you interact with web pages, fill out applications, or navigate between tabs.
+- For compact browsing, you can also launch Tracklet using the global shortcut **`Alt + Shift + A`** (Mac: **`Option + Shift + A`**).
 
 ---
 
-### ✉️ 2. Email Clipping & Webmail Companion (Gmail & Outlook)
+## ⚡ Core Capabilities & Companion Tabs
 
-Tracklet turns into a dedicated email companion whenever you are in Gmail (`mail.google.com`) or Outlook (`outlook.live.com` / `office.com`):
+The companion features a persistent 4-tab segmented navigation bar that automatically switches context based on your active web tab:
 
-1. **Open an Email Thread:** Open any recruiter, interview, or application update email.
-2. **Open Extension:** Click the Tracklet extension icon or press **`Alt + Shift + A`**.
-3. **Companion Mode Auto-Detect:** The extension automatically switches to **Email Log View** and captures:
-   - **Counterparty & Recruiter Info:** Names and email addresses (intelligently discerning inbound vs. outbound threads).
-   - **Subject & Timestamp:** Clean subject line and exact date/time sent.
-   - **Sanitized Snippet:** Clean preview of the message content.
-   - **Direct Email Link:** Stores a deep link back to that specific email thread.
-4. **Smart Match & Stage Advance:**
-   - Automatically suggests matching companies from your existing Tracklet pipeline.
-   - Update the application's stage on the fly (e.g. advance to **Interview** or **Offer**) right as you log the email.
-5. **Clip as Job Posting Toggle:** If the email itself contains a new job posting or newsletter lead rather than an update, click *"Clip as job posting instead"* at the bottom to switch back to the job clipper.
+```
+┌────────────────────────────────────────────────────────┐
+│  [📥 Job]    [👤 Contact]    [✉️ Email]    [⚡ Autofill] │
+└────────────────────────────────────────────────────────┘
+```
+
+### 📥 1. Job Clipper (`[📥 Job]`)
+- **Auto-Detection**: Extracts company name, job title, location, workplace arrangement (Remote / Hybrid / On-site), employment type (Full-time / Part-time / Contract / Intern), and posting URL.
+- **Brand Avatar Resolution**: Uses Google Favicons (`sz=128`) with canonical rejection of 100+ job board and ATS domains from `jobBoardRegistry.js`, falling back to SVG monogram avatars.
+- **Stage Safety Locks**:
+  - New job clips are strictly restricted to **`Saved`** or **`Applied`** stage pills.
+  - Existing applications already in **`Screening`**, **`Interview`**, **`Offer`**, **`Rejected`**, or **`Archived`** render as immutable badges to prevent accidental pipeline demotions.
+- **Tailored CV Upload**: Drag and drop or browse to attach a tailored resume variant (`.pdf`, `.docx`, `.doc`, `.txt`, max 10MB). Binary file payloads are saved locally in IndexedDB (`TrackletExtensionDB`), with file metadata (`resumeFileName`, `resumeFileSize`, `resumeBlobId`, `resumeUploadedAt`) linked directly to the application record.
+- **Recruiter Micro-Card**: When browsing a job post with an identified recruiter or job poster, a micro-card renders on the Job tab with an opt-in checkbox (checked by default) to bundle contact creation and bidirectional linking in a single transaction on save.
+- **Rich Text Notes**: WYSIWYG notes editor with bidirectional Markdown synchronization.
+
+### 👤 2. LinkedIn Contact Clipper (`[👤 Contact]`)
+- **Profile Extraction**: Automatically extracts full name, current headline / role, organization, location, avatar image, and canonical LinkedIn URL when browsing `linkedin.com/in/*`.
+- **Category Smart-Defaulting**:
+  - `Recruiter`: Matched by `/talent|recruiter|recruiting|sourcer|staffing|people\s+ops/i`.
+  - `Hiring Manager`: Matched by `/vp|vice\s+president|director|head\s+of|lead|manager|engineering\s+manager|cto/i`.
+  - `Mentor`: Matched by `/mentor|advisor|coach/i`.
+  - Easily switch categories between `Recruiter`, `Hiring Manager`, `Mentor`, `Referral`, `Peer / Alumni`, or `Other`.
+- **Job Linking**: Searchable dropdown auto-suggests active Tracklet job applications from the same company.
+- **Duplicate & Change Detection**: Recognizes existing contacts. If details have changed (e.g. updated headline or company), an "Update Contact" button appears to refresh fields while preserving your private notes.
+
+### ✉️ 3. Webmail Companion (`[✉️ Email]`)
+- **Auto-Detect**: Automatically activates when viewing an email thread in Gmail (`mail.google.com`) or Outlook (`outlook.live.com` / `office.com`).
+- **Sender & Subject Extraction**: Dispatches counterparty name, email, clean subject line, date/time, and sanitized snippet.
+- **Active Stage & Recency Ranking**: Matches emails to tracked applications, prioritizing active stages (`Interview` > `Screening` > `Applied` > `Saved`, newest first).
+- **In-Flight Stage Advance**: Advance pipeline stage to `Interview`, `Screening`, or `Offer` right as you log the email.
+- **Recruiter Contact Opt-in**: Checkbox to save new email senders directly into Contacts Hub.
+
+### ⚡ 4. Autofill Hub (`[⚡ Autofill]`)
+- **Candidate Profile Sync**: Stored in `chrome.storage.sync` with local fallback (`TrackletProfileStorage`).
+- **Inline Quick Edit**: Expandable drawer inside the side panel to edit candidate details (Full Name, Email, Phone, Location, Work Authorization, LinkedIn, GitHub, Portfolio).
+- **Real-Time ATS Form Detection**:
+  - Greenhouse (`boards.greenhouse.io` and embedded forms)
+  - Lever (`jobs.lever.co` and application forms)
+  - Workday (`myworkdayjobs.com`)
+  - Generic HTML5 career forms
+- **4-Tier Field Resolution**: ATS-specific selectors $\rightarrow$ HTML5 `autocomplete` $\rightarrow$ semantic name/id heuristics $\rightarrow$ label proximity text.
+- **Safe 1-Click Autofill**: Injects native input values and dispatches synthetic `input`, `change`, and `blur` events without ever submitting the form.
+- **Interactive Populated Checklist**: Shows populated fields (`✓`) and manual alerts (`⚠`). Click any field item to smoothly scroll the host page to that target input, set focus, and trigger a 1.5-second accent halo highlight.
 
 ---
 
-## 🔄 Real-Time Web App Integration
+## ⌨️ Keyboard Shortcuts
 
-- **Live Sync:** If Tracklet is open in another browser tab, clipped jobs and logged emails appear in your pipeline and email timeline instantly with a toast receipt.
-- **Offline Storage Sync:** If Tracklet is closed, clipped applications and emails are queued safely in extension local storage and auto-synced the moment you next open Tracklet.
-- **Right-Click Context Menu:** Highlight text on any page $\rightarrow$ Right-click $\rightarrow$ **Save Job to Tracklet**.
+| Shortcut | Scope | Action |
+| :--- | :--- | :--- |
+| `Alt + Shift + A` (Mac: `Option + Shift + A`) | Global Browser | Open or toggle the Tracklet Side Panel |
+| `Ctrl + Enter` (Mac: `Cmd + Enter`) | Extension Panel | Save application, save contact, log email, or trigger autofill |
+| `Enter` (outside multi-line textarea) | Extension Panel | Save current active entity |
+| `Tab` / `Shift + Tab` | Extension Panel | Navigate through form fields |
+| `Esc` | Custom Dropdowns / Modals | Close open dropdown menus and drawers |
 
 ---
 
-## 🛠️ File Structure
+## 🔄 Cloud & Local Sync Architecture
 
-- `manifest.json`: Manifest V3 configuration.
-- `jobBoardRegistry.js`: Shared registry of job boards, ATS domains, and logo proxies.
-- `popup.html` & `popup.css`: Executive design tokens, stage selector pills, work arrangement & employment type chips, recruiter contact card, and Google Favicon / monogram fallbacks.
-- `popup.js`: Form management, live logo resolution, duplicate detection, and direct Firestore/storage persistence.
-- `content.js`: Page extraction engine (JSON-LD structured data parser + site DOM selectors + prioritized domain resolver).
-- `background.js`: Service worker handling context menu actions, extension badge indicators, and offline sync storage.
+- **Live Web App Sync**: When Tracklet is open in another tab, saved applications, contacts, and emails sync instantly via window postMessage.
+- **Direct Cloud Persistence**: Authenticated users sync directly to Cloud Firestore (`/users/{uid}/applications` and `/users/{uid}/contacts`).
+- **Offline Sync Queue**: If Tracklet is closed or network is offline, items are queued in `tracklet_pending_apps`, `tracklet_pending_contacts`, and `tracklet_pending_emails` and drained automatically when Tracklet is next launched.
+- **Guest / Local Mode**: Operates seamlessly without an account using extension local storage.
 
+---
+
+## 📁 File Structure
+
+```
+extension/
+├── manifest.json              # Manifest V3 (sidePanel, permissions, background worker)
+├── popup.html                 # Side Panel companion layout (Job, Contact, Email, Autofill)
+├── popup.css                  # Modern UI tokens, responsive styles, animations, halos
+├── popup.js                   # Unified controller (tab routing, drafts, storage, validation)
+├── content.js                 # Unified scraper (DOM parsing, ATS detection, autofill, scroll-to-field)
+├── background.js              # Service worker (sidePanel behavior, tab events, context menus)
+├── jobBoardRegistry.js        # Known job boards, ATS hosts, company domain resolvers
+├── indexedDbResumeStorage.js  # IndexedDB binary storage utility (TrackletExtensionDB)
+├── profileStorage.js          # Candidate profile storage helper (sync + local fallback)
+└── icons/                     # SVG & PNG brand icons
+```

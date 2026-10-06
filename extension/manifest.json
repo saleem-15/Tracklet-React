@@ -17,6 +17,9 @@
     },
     "default_title": "Save to Tracklet"
   },
+  "side_panel": {
+    "default_path": "popup.html"
+  },
   "background": {
     "service_worker": "background.js"
   },
@@ -28,6 +31,8 @@
     }
   ],
   "permissions": [
+    "sidePanel",
+    "tabs",
     "activeTab",
     "storage",
     "contextMenus",
