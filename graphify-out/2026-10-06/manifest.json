@@ -615,13 +615,13 @@
     "semantic_hash": ""
   },
   "extension/manifest.json": {
-    "mtime": 1791287152.5959692,
-    "ast_hash": "3b80cf137c04e373ff8bfbb5b8608942",
+    "mtime": 1791282983.798223,
+    "ast_hash": "092fdd38622365b76abc43481037b067",
     "semantic_hash": ""
   },
   "extension/popup.js": {
-    "mtime": 1791290671.5913324,
-    "ast_hash": "509d8e2a144315f36c61674c085aa8cf",
+    "mtime": 1791284423.8401103,
+    "ast_hash": "a7c8ab32ab538e2ae2b4c595e36f4149",
     "semantic_hash": ""
   },
   "firebase-blueprint.json": {
@@ -2050,8 +2050,8 @@
     "semantic_hash": ""
   },
   "extension/popup.html": {
-    "mtime": 1791290834.9599783,
-    "ast_hash": "9387a0ec581ffe9a7831633c89a111fb",
+    "mtime": 1791283143.522916,
+    "ast_hash": "f56a730baeb0efb2c0d924d8b3435608",
     "semantic_hash": ""
   },
   "index.html": {
@@ -2612,11 +2612,6 @@
   "tests/unit/tailoredCv.test.ts": {
     "mtime": 1791284617.3497393,
     "ast_hash": "27e7ffcde9e9dde85e5292c75205a026",
-    "semantic_hash": ""
-  },
-  ".impeccable/critique/2026-10-06T11-28-37Z__extension-popup-html.md": {
-    "mtime": 1791286117.901494,
-    "ast_hash": "e6c64cc537a12798501d431a47a97720",
     "semantic_hash": ""
   }
 }
