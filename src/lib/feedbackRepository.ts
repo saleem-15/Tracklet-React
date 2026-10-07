@@ -75,6 +75,7 @@ export class FeedbackRepository {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          reportId: report.id,
           type: report.type,
           title: report.title,
           description: report.description,

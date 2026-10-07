@@ -17,6 +17,7 @@ function devApiReportIssuePlugin(env: Record<string, string>): Plugin {
             try {
               const data = JSON.parse(body || '{}');
               const {
+                reportId,
                 type,
                 title,
                 description,
@@ -67,7 +68,7 @@ function devApiReportIssuePlugin(env: Record<string, string>): Plugin {
                 ? `\n### Visual Evidence\n![Tester Screenshot](${screenshotUrl})\n`
                 : '';
 
-              const issueBody = `## Description\n${description}\n${screenshotSection}\n### Reporter\n- **Name:** ${reporterName || 'Anonymous Tester'}\n- **Email:** ${reporterEmail || 'Not provided'}\n- **Severity:** \`${severity.toUpperCase()}\`\n- **Category:** \`${type}\`\n\n### Diagnostic Environment\n| Attribute | Value |\n| :--- |\n| **Page Route / Tab** | \`${diagnostics.activeTab}\` (\`${diagnostics.url}\`) |\n| **Browser** | ${diagnostics.browser} |\n| **Operating System** | ${diagnostics.os} |\n| **Viewport Size** | ${diagnostics.viewport} (DPR: ${diagnostics.devicePixelRatio}) |\n| **Auth Mode** | ${diagnostics.authMode} |\n| **Timestamp** | ${diagnostics.timestamp} |\n\n### Recent Console Errors\n${errorRows}\n`;
+              const issueBody = `## Description\n${description}\n${screenshotSection}\n### Reporter\n- **Tracking ID:** \`${reportId || 'N/A'}\`\n- **Name:** ${reporterName || 'Anonymous Tester'}\n- **Email:** ${reporterEmail || 'Not provided'}\n- **Severity:** \`${severity.toUpperCase()}\`\n- **Category:** \`${type}\`\n\n### Diagnostic Environment\n| Attribute | Value |\n| :--- |\n| **Page Route / Tab** | \`${diagnostics.activeTab}\` (\`${diagnostics.url}\`) |\n| **Browser** | ${diagnostics.browser} |\n| **Operating System** | ${diagnostics.os} |\n| **Viewport Size** | ${diagnostics.viewport} (DPR: ${diagnostics.devicePixelRatio}) |\n| **Auth Mode** | ${diagnostics.authMode} |\n| **Timestamp** | ${diagnostics.timestamp} |\n\n### Recent Console Errors\n${errorRows}\n`;
 
               const ghResponse = await fetch(`https://api.github.com/repos/${githubRepo}/issues`, {
                 method: 'POST',

@@ -2,6 +2,19 @@
 // 100% Free Tier (Vercel Hobby) - Zero Credit Card Required
 
 export default async function handler(req: any, res: any) {
+  // CORS Pre-flight and Headers for cross-origin security
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader(
+    'Access-Control-Allow-Headers',
+    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
+  );
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   if (req.method !== 'POST') {
     return res.status(405).json({ 
       error: 'Method Not Allowed', 
@@ -9,7 +22,17 @@ export default async function handler(req: any, res: any) {
     });
   }
 
+  let bodyData = req.body;
+  if (typeof bodyData === 'string') {
+    try {
+      bodyData = JSON.parse(bodyData);
+    } catch {
+      bodyData = {};
+    }
+  }
+
   const {
+    reportId,
     type,
     title,
     description,
@@ -18,7 +41,7 @@ export default async function handler(req: any, res: any) {
     reporterEmail,
     diagnostics,
     screenshotUrl,
-  } = req.body || {};
+  } = bodyData || {};
 
   if (!title || !description || !diagnostics) {
     return res.status(400).json({ 
@@ -54,6 +77,7 @@ export default async function handler(req: any, res: any) {
 ${description}
 ${screenshotSection}
 ### Reporter
+- **Tracking ID:** \`${reportId || 'N/A'}\`
 - **Name:** ${reporterName || 'Anonymous Tester'}
 - **Email:** ${reporterEmail || 'Not provided'}
 - **Severity:** \`${severity.toUpperCase()}\`
