@@ -15,8 +15,8 @@ describe('Tailored CV Metadata, Validation & Storage (US5 / T030)', () => {
   const extensionStorage = (globalThis as any).TrackletResumeStorage;
 
   describe('File Size & Extension Limits', () => {
-    it('enforces maximum 10MB size limit constant', () => {
-      expect(MAX_RESUME_SIZE_BYTES).toBe(10 * 1024 * 1024);
+    it('enforces maximum 2MB size limit constant', () => {
+      expect(MAX_RESUME_SIZE_BYTES).toBe(2 * 1024 * 1024);
       expect(ALLOWED_RESUME_EXTENSIONS).toContain('.pdf');
       expect(ALLOWED_RESUME_EXTENSIONS).toContain('.docx');
       expect(ALLOWED_RESUME_EXTENSIONS).toContain('.doc');
@@ -42,7 +42,7 @@ describe('Tailored CV Metadata, Validation & Storage (US5 / T030)', () => {
       expect(sanitized.endsWith('.pdf')).toBe(true);
     });
 
-    it('validates and accepts valid PDF, Word, and text resumes within 10MB', () => {
+    it('validates and accepts valid PDF, Word, and text resumes within 2MB', () => {
       const validPdf = { name: 'Saleem_Senior_Frontend_CV.pdf', size: 350 * 1024, type: 'application/pdf' };
       const res = validateResumeFile(validPdf);
       expect(res.valid).toBe(true);
@@ -56,15 +56,15 @@ describe('Tailored CV Metadata, Validation & Storage (US5 / T030)', () => {
       expect(validateResumeFile(validTxt).valid).toBe(true);
     });
 
-    it('rejects files exceeding the 10MB limit with a friendly error', () => {
+    it('rejects files exceeding the 2MB limit with a friendly error', () => {
       const oversizedFile = {
         name: 'Huge_Portfolio_Resume.pdf',
-        size: 11 * 1024 * 1024, // 11MB
+        size: 2.5 * 1024 * 1024, // 2.5MB
         type: 'application/pdf'
       };
       const res = validateResumeFile(oversizedFile);
       expect(res.valid).toBe(false);
-      expect(res.error).toContain('exceeds maximum limit of 10 MB');
+      expect(res.error).toContain('exceeds maximum limit of 2 MB');
     });
 
     it('rejects empty (0 byte) files and missing payloads', () => {
@@ -157,7 +157,7 @@ describe('Tailored CV Metadata, Validation & Storage (US5 / T030)', () => {
     });
 
     it('exports matching constants and validation methods on TrackletResumeStorage', () => {
-      expect(extensionStorage.MAX_RESUME_SIZE_BYTES).toBe(10 * 1024 * 1024);
+      expect(extensionStorage.MAX_RESUME_SIZE_BYTES).toBe(2 * 1024 * 1024);
       expect(extensionStorage.validateResumeFile).toBeTypeOf('function');
       expect(extensionStorage.formatResumeFileSize(1024 * 1024)).toBe('1 MB');
     });

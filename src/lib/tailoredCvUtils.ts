@@ -3,7 +3,7 @@
  * Single source of truth for resume validation across web app and extension.
  */
 
-export const MAX_RESUME_SIZE_BYTES = 10 * 1024 * 1024; // 10MB
+export const MAX_RESUME_SIZE_BYTES = 2 * 1024 * 1024; // 2MB
 export const ALLOWED_RESUME_EXTENSIONS = ['.pdf', '.docx', '.doc', '.txt'];
 export const ALLOWED_RESUME_MIME_TYPES = [
   'application/pdf',
@@ -63,7 +63,7 @@ export function validateResumeFile(file: { name?: string; size?: number; type?: 
   if (size > MAX_RESUME_SIZE_BYTES) {
     return {
       valid: false,
-      error: `File size (${formatResumeFileSize(size)}) exceeds maximum limit of 10 MB.`
+      error: `File size (${formatResumeFileSize(size)}) exceeds maximum limit of 2 MB.`
     };
   }
 
