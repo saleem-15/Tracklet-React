@@ -269,6 +269,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   const addContactLabel = document.getElementById('add-contact-label');
   const logEmailBtn = document.getElementById('log-email-btn');
   const switchToJobClipperBtn = document.getElementById('switch-to-job-clipper-btn');
+  const emailDuplicateBanner = document.getElementById('email-duplicate-banner');
+  const emailDuplicateBannerText = document.getElementById('email-duplicate-banner-text');
+  let matchedLoggedEmail = null;
+
+  // Baseline snapshots for dirty tracking (US8 / T053)
+  let baselineJobSnapshot = null;
+  let baselineEmailSnapshot = null;
+  let baselineContactSnapshot = null;
 
   let currentEmailDirection = 'inbound';
   let selectedEmailMatchedApp = null;
@@ -280,6 +288,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   let isWebmailMode = false;
   let rawExtractedEmailData = null;
   let suggestedAdvanceStage = null;
+
 
   // Persistent Companion Tabs & Sticky Action Bar Elements
   const companionTabs = document.querySelectorAll('.companion-tab');
@@ -703,6 +712,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const isActive = tab.getAttribute('data-tab') === tabName;
       tab.classList.toggle('active', isActive);
       tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
+      tab.setAttribute('tabindex', isActive ? '0' : '-1');
     });
 
     if (mainFormView) mainFormView.style.display = tabName === 'job' ? 'block' : 'none';
@@ -2362,7 +2372,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       logEmailBtn.querySelector('span').textContent = 'Log Email';
       const loggedAppId = selectedEmailMatchedApp.id;
       const loggedCompany = selectedEmailMatchedApp.company;
-      resetPopupFormState();
+      resetEmailFormState();
       showToastReceipt('Email Logged', `Logged to ${loggedCompany} timeline`, null, loggedAppId);
     });
   }
@@ -2833,7 +2843,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         const title = matchedExistingContact ? 'Contact Updated' : 'Contact Saved';
         const sub = `"${contactPayload.name}" saved to Contacts Hub`;
-        resetPopupFormState();
+        resetContactFormState();
         showToastReceipt(title, sub, null);
       });
     });
@@ -3444,14 +3454,13 @@ document.addEventListener('DOMContentLoaded', async () => {
               ? `${company} — ${role} logged to Tracklet + recruiter contact linked.`
               : `${company} — ${role} logged to Tracklet.`);
 
-        resetPopupFormState();
+        resetJobFormState();
         showToastReceipt(title, sub, null, finalizedApp.id);
       });
     });
   }
 
-  function resetPopupFormState() {
-    // 1. Reset Application Form State
+  function resetJobFormState() {
     if (companyInput) {
       companyInput.value = '';
       companyInput.classList.remove('input-error');
@@ -3482,8 +3491,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     setWorkLocation(null);
     setEmploymentType(null);
     tabDraftMemory.job = null;
+  }
 
-    // 2. Reset Contact Form State
+  function resetContactFormState() {
     if (contactNameInput) {
       contactNameInput.value = '';
       contactNameInput.classList.remove('input-error');
@@ -3501,8 +3511,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     matchedExistingContact = null;
     tabDraftMemory.contact = null;
+  }
 
-    // 3. Reset Email Logging State
+  function resetEmailFormState() {
     if (emailSubjectInput) emailSubjectInput.value = '';
     if (emailCounterpartyInput) emailCounterpartyInput.value = '';
     if (emailBodyInput) emailBodyInput.value = '';
@@ -3512,6 +3523,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     discoveredRecruiterName = '';
     discoveredRecruiterEmail = '';
     tabDraftMemory.email = null;
+  }
+
+  function resetPopupFormState() {
+    resetJobFormState();
+    resetContactFormState();
+    resetEmailFormState();
   }
 
   // Toast Receipt Manager (Floating non-blocking confirmation)

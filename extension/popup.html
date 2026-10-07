@@ -28,26 +28,26 @@
 
     <!-- Persistent 4-Tab Segmented Companion Navigation -->
     <nav class="companion-tabs-nav" id="companion-tabs-nav" role="tablist" aria-label="Companion Tabs">
-      <button type="button" class="companion-tab active" id="tab-job" role="tab" aria-selected="true" aria-controls="main-form-view" data-tab="job">
+      <button type="button" class="companion-tab active" id="tab-job" role="tab" aria-selected="true" aria-controls="main-form-view" data-tab="job" tabindex="0">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="14" x="2" y="7" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
         <span>Job</span>
       </button>
-      <button type="button" class="companion-tab" id="tab-contact" role="tab" aria-selected="false" aria-controls="contact-clip-view" data-tab="contact">
+      <button type="button" class="companion-tab" id="tab-contact" role="tab" aria-selected="false" aria-controls="contact-clip-view" data-tab="contact" tabindex="-1">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
         <span>Contact</span>
       </button>
-      <button type="button" class="companion-tab" id="tab-email" role="tab" aria-selected="false" aria-controls="email-log-view" data-tab="email">
+      <button type="button" class="companion-tab" id="tab-email" role="tab" aria-selected="false" aria-controls="email-log-view" data-tab="email" tabindex="-1">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
         <span>Email</span>
       </button>
-      <button type="button" class="companion-tab" id="tab-autofill" role="tab" aria-selected="false" aria-controls="autofill-view" data-tab="autofill">
+      <button type="button" class="companion-tab" id="tab-autofill" role="tab" aria-selected="false" aria-controls="autofill-view" data-tab="autofill" tabindex="-1">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m13 2-2 10h5L11 22l2-10H8Z"/></svg>
         <span>Autofill</span>
       </button>
     </nav>
 
     <!-- Main Application Form View (Job Clipper) -->
-    <div id="main-form-view">
+    <div id="main-form-view" role="tabpanel" aria-labelledby="tab-job">
       <div class="form-layout">
         <!-- Duplicate Info Banner (Shown when job is already saved) -->
         <div class="duplicate-banner" id="duplicate-banner" style="display: none;">
@@ -212,11 +212,11 @@
 
           <!-- Row 3: Platform (Full Width with Expandable Custom Input) -->
           <div class="form-group">
-            <label>
+            <label id="platform-label">
               <span>Platform</span>
             </label>
             <div class="custom-select-container" id="platform-select-container">
-              <button type="button" class="custom-select-trigger" id="platform-trigger">
+              <button type="button" class="custom-select-trigger" id="platform-trigger" aria-labelledby="platform-label platform-trigger">
                 <span class="custom-select-value" id="platform-value-text">LinkedIn</span>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
               </button>
@@ -377,7 +377,7 @@
     </div>
 
     <!-- Contact Clipper View (LinkedIn Contact Clipper) -->
-    <div id="contact-clip-view" style="display: none;">
+    <div id="contact-clip-view" role="tabpanel" aria-labelledby="tab-contact" style="display: none;">
       <div class="form-layout">
         <!-- Contact Status Banner (Deduplication / Diffing) -->
         <div class="duplicate-banner" id="contact-status-banner" style="display: none;">
@@ -445,11 +445,11 @@
           <!-- Category (Dropdown) & LinkedIn URL Row -->
           <div class="form-row">
             <div class="form-group">
-              <label>
+              <label id="contact-category-label">
                 <span>Category</span>
               </label>
               <div class="custom-select-container" id="contact-category-select-container">
-                <button type="button" class="custom-select-trigger" id="contact-category-trigger">
+                <button type="button" class="custom-select-trigger" id="contact-category-trigger" aria-labelledby="contact-category-label contact-category-trigger">
                   <span class="custom-select-value" id="contact-category-value-text">Recruiter</span>
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
                 </button>
@@ -476,12 +476,12 @@
 
           <!-- Link to Active Job Application -->
           <div class="form-group">
-            <label>
+            <label id="contact-app-label">
               <span>Link to Job Application</span>
               <span class="label-hint-optional">Optional</span>
             </label>
             <div class="custom-select-container" id="contact-app-select-container">
-              <button type="button" class="custom-select-trigger" id="contact-app-trigger">
+              <button type="button" class="custom-select-trigger" id="contact-app-trigger" aria-labelledby="contact-app-label contact-app-trigger">
                 <span class="custom-select-value" id="contact-app-value-text">No Linked Job (Standalone Contact)</span>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
               </button>
@@ -516,9 +516,18 @@
     </div>
 
     <!-- Email Log View (Webmail Companion Mode) -->
-    <div id="email-log-view" style="display: none;">
+    <div id="email-log-view" role="tabpanel" aria-labelledby="tab-email" style="display: none;">
+      <!-- Duplicate Email Warning Banner -->
+      <div class="duplicate-banner" id="email-duplicate-banner" style="display: none;">
+        <div class="duplicate-banner-content">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+          <span id="email-duplicate-banner-text">Already logged to this application</span>
+        </div>
+      </div>
+
       <!-- Matched Application Section -->
       <div class="matched-app-card" id="matched-app-card">
+
         <div class="target-app-bar">
           <div style="display: flex; align-items: center; gap: 6px;">
             <span class="section-micro-label">Log to Application</span>
@@ -659,7 +668,7 @@
     </div>
 
     <!-- Autofill Hub View (Candidate Profile & ATS Form Autofill) (US6 / T036, T039) -->
-    <div id="autofill-view" style="display: none;">
+    <div id="autofill-view" role="tabpanel" aria-labelledby="tab-autofill" style="display: none;">
       <div class="form-layout">
         <!-- ATS Detection Status Hero Banner -->
         <div class="autofill-hero-card" id="autofill-hero-card">
