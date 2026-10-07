@@ -5,7 +5,9 @@ import {
   EmploymentType, 
   ContactCategory,
   FollowUpCategory,
-  FollowUpTemplate
+  FollowUpTemplate,
+  TesterReportCategory,
+  TesterReportSeverity
 } from '../types';
 
 export const FOLLOWUP_CATEGORIES: FollowUpCategory[] = [
@@ -349,6 +351,22 @@ export const DESTRUCTIVE_ACTION_STYLE = {
   iconButton: 'text-slate-500 hover:text-rose-600 hover:bg-rose-50 active:bg-rose-100 transition-colors',
   button: 'text-slate-500 hover:text-rose-600 hover:bg-rose-50 active:bg-rose-100 transition-colors',
 };
+
+export const TESTER_REPORT_CATEGORIES: { label: string; value: TesterReportCategory; description: string }[] = [
+  { label: 'Bug Report', value: 'bug', description: 'Something is broken or not working as expected' },
+  { label: 'Visual Glitch', value: 'visual_glitch', description: 'Layout issue, overlapping text, or styling flaw' },
+  { label: 'Feature Suggestion', value: 'feature_request', description: 'An idea or workflow enhancement' },
+  { label: 'General Feedback', value: 'general_feedback', description: 'General thoughts or user experience impressions' },
+];
+
+export const TESTER_REPORT_SEVERITIES: { label: string; value: TesterReportSeverity; dotColor: string; badgeColor: string }[] = [
+  { label: 'Low', value: 'low', dotColor: 'bg-slate-400', badgeColor: 'bg-slate-50 text-slate-700 border-slate-200' },
+  { label: 'Medium', value: 'medium', dotColor: 'bg-blue-400', badgeColor: 'bg-blue-50 text-blue-700 border-blue-200' },
+  { label: 'High', value: 'high', dotColor: 'bg-amber-400', badgeColor: 'bg-amber-50 text-amber-700 border-amber-200' },
+  { label: 'Blocker', value: 'blocker', dotColor: 'bg-rose-500', badgeColor: 'bg-rose-50 text-rose-700 border-rose-200' },
+];
+
+export const STORAGE_KEY_TESTER_DRAFT = 'tracklet_tester_report_draft';
 
 
 

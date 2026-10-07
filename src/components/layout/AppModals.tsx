@@ -7,6 +7,9 @@ import { useApplicationsContext } from '../../context/ApplicationsContext';
 import { useContactsContext } from '../../context/ContactsContext';
 import { useToastContext } from '../../context/ToastContext';
 
+import { useAuth } from '../../context/AuthContext';
+import { TesterReportModal } from '../feedback/TesterReportModal';
+
 export interface AppModalsProps {
   migration?: {
     isOpen: boolean;
@@ -22,14 +25,19 @@ export interface AppModalsProps {
  * AppModals
  *
  * Renders all top-level modal dialogs: AddApplicationModal (new job entry),
- * AuthModal (multi-provider sign-in/sign-up), and GuestMigrationModal
- * (transfer localStorage guest data to authenticated cloud account).
- *
- * In Phase 3, AddApplicationModal and AuthModal consume state and actions
- * directly from feature context providers.
+ * AuthModal (multi-provider sign-in/sign-up), GuestMigrationModal
+ * (transfer localStorage guest data to authenticated cloud account),
+ * and TesterReportModal (bug and feedback reporting).
  */
 export function AppModals({ migration }: AppModalsProps = {}) {
-  const { isAddModalOpen, closeAddModal } = useNavigation();
+  const { 
+    isAddModalOpen, 
+    closeAddModal, 
+    isFeedbackModalOpen, 
+    closeFeedbackModal, 
+    activeTab 
+  } = useNavigation();
+  const { user } = useAuth();
   const { handleAddApplication } = useApplicationsContext();
   const { contacts, handleAddContact } = useContactsContext();
   const { addToast } = useToastContext();
@@ -47,6 +55,14 @@ export function AppModals({ migration }: AppModalsProps = {}) {
 
       {/* Multi-Provider Auth Modal */}
       <AuthModal onShowToast={addToast} />
+
+      {/* Tester Issue & Feedback Reporting Modal */}
+      <TesterReportModal
+        isOpen={isFeedbackModalOpen}
+        onClose={closeFeedbackModal}
+        activeTab={activeTab}
+        user={user}
+      />
 
       {/* Guest-to-Account Data Migration Modal */}
       {migration && (

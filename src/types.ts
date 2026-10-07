@@ -173,3 +173,68 @@ export interface GuestMigrationPayload {
   guestApplications: Application[];
   count: number;
 }
+
+// --- Tester Feedback & Issue Reporting ---
+export type TesterReportCategory = 
+  | 'bug' 
+  | 'visual_glitch' 
+  | 'feature_request' 
+  | 'general_feedback';
+
+export type TesterReportSeverity = 
+  | 'low' 
+  | 'medium' 
+  | 'high' 
+  | 'blocker';
+
+export type TesterReportStatus = 
+  | 'new' 
+  | 'under_review' 
+  | 'resolved' 
+  | 'dismissed';
+
+export interface DiagnosticContext {
+  appVersion: string;
+  activeTab: string;
+  url: string;
+  browser: string;
+  os: string;
+  viewport: string;
+  devicePixelRatio: number;
+  authMode: 'authenticated' | 'guest';
+  userId?: string;
+  timestamp: string;
+  recentErrors: string[];
+}
+
+export interface TesterAttachment {
+  id: string;
+  fileName: string;
+  mediaType: string;
+  fileSizeBytes: number;
+  dataUrl?: string;
+  storageUrl?: string;
+  source: 'clipboard_paste' | 'file_upload';
+}
+
+export interface TesterIssueReport {
+  id: string;
+  type: TesterReportCategory;
+  title: string;
+  description: string;
+  severity: TesterReportSeverity;
+  reporterName?: string;
+  reporterEmail?: string;
+  status: TesterReportStatus;
+  githubIssueNumber?: number;
+  githubIssueUrl?: string;
+  diagnostics: DiagnosticContext;
+  attachments: TesterAttachment[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type CreateTesterReportInput = Omit<
+  TesterIssueReport, 
+  'id' | 'status' | 'githubIssueNumber' | 'githubIssueUrl' | 'createdAt' | 'updatedAt'
+>;

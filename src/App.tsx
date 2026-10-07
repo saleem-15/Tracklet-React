@@ -14,7 +14,7 @@ import { getPathForTab, isAuthPath } from './lib/routeUtils';
 
 function TrackletAppContent() {
   const { user, loading: authLoading, signOut } = useAuth();
-  const { activeTab, setSelectedAppId } = useNavigation();
+  const { activeTab, setSelectedAppId, openFeedbackModal } = useNavigation();
   const { toasts, addToast, dismissToast } = useToastContext();
   const { applications, setApplications, applicationsRef } = useApplicationsContext();
   const { contacts, setContacts, handleAddContact, handleLinkContact, setSelectedContactId } = useContactsContext();
@@ -36,6 +36,30 @@ function TrackletAppContent() {
     user, applications, setApplications, applicationsRef,
     contacts, dataLoading, handleAddContact, handleLinkContact, setSelectedAppId, addToast,
   });
+
+  // Global hotkey: press 'Ctrl+Alt+B' or 'Ctrl+Shift+B' to summon tester issue reporter
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const activeEl = document.activeElement as HTMLElement | null;
+      const isEditable = 
+        activeEl?.tagName === 'INPUT' || 
+        activeEl?.tagName === 'TEXTAREA' || 
+        activeEl?.isContentEditable;
+
+      const isReporterHotkey = 
+        (e.ctrlKey && e.altKey && e.key.toLowerCase() === 'b') ||
+        (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'b') ||
+        (e.metaKey && e.shiftKey && e.key.toLowerCase() === 'b');
+
+      if (!isEditable && isReporterHotkey) {
+        e.preventDefault();
+        openFeedbackModal();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [openFeedbackModal]);
 
   useEffect(() => {
     if (authLoading) return;

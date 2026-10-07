@@ -1485,13 +1485,13 @@
     "semantic_hash": "aca6cdac13db39d03d9b95866834d84f"
   },
   "vercel.json": {
-    "mtime": 1791379127.5991194,
-    "ast_hash": "14c225b35c0e0473aae27390a3a910de",
-    "semantic_hash": ""
+    "mtime": 1791370921.572975,
+    "ast_hash": "37e72bc8913bd9371f1b3c8de06d67eb",
+    "semantic_hash": "37e72bc8913bd9371f1b3c8de06d67eb"
   },
   "vite.config.ts": {
-    "mtime": 1791379215.0558045,
-    "ast_hash": "f7cee329433916ffbea3d7c9689932e1",
+    "mtime": 1791377777.2318022,
+    "ast_hash": "0d1f679597001c4b51f70e95eb78221f",
     "semantic_hash": ""
   },
   "vitest.config.ts": {
@@ -2515,8 +2515,8 @@
     "semantic_hash": ""
   },
   "api/report-issue.ts": {
-    "mtime": 1791379191.1318417,
-    "ast_hash": "3e591a1cc841b2412fac2bc14bde79b3",
+    "mtime": 1791374520.754399,
+    "ast_hash": "1b9641672022136f3b7e494ff1cc9770",
     "semantic_hash": ""
   },
   "specs/009-tester-issue-reporting/contracts/api-report-issue.json": {
@@ -2550,8 +2550,8 @@
     "semantic_hash": ""
   },
   "src/lib/feedbackRepository.ts": {
-    "mtime": 1791379177.9101202,
-    "ast_hash": "8f3be1450ea8a50ae71f5d91d8f717f7",
+    "mtime": 1791377787.8551705,
+    "ast_hash": "6513fa873f5ad2b7105186931d003ab4",
     "semantic_hash": ""
   },
   "src/lib/imageUtils.ts": {
