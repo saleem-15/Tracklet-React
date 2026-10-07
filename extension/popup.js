@@ -178,8 +178,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   const duplicateBanner = document.getElementById('duplicate-banner');
   const duplicateBannerText = document.getElementById('duplicate-banner-text');
   const duplicateOpenLink = document.getElementById('duplicate-open-link');
-  const workLocationPills = document.querySelectorAll('#work-location-pills .pill-btn');
-  const employmentTypePills = document.querySelectorAll('#employment-type-pills .pill-btn');
+  const workplaceSelectContainer = document.getElementById('workplace-select-container');
+  const workplaceTrigger = document.getElementById('workplace-trigger');
+  const workplaceValueText = document.getElementById('workplace-value-text');
+  const workplaceDropdown = document.getElementById('workplace-dropdown');
+  const workplaceOptions = document.querySelectorAll('#workplace-dropdown .custom-select-option');
+  const employmentTypeSelectContainer = document.getElementById('employment-type-select-container');
+  const employmentTypeTrigger = document.getElementById('employment-type-trigger');
+  const employmentTypeValueText = document.getElementById('employment-type-value-text');
+  const employmentTypeDropdown = document.getElementById('employment-type-dropdown');
+  const employmentTypeOptions = document.querySelectorAll('#employment-type-dropdown .custom-select-option');
   const recruiterContactCard = document.getElementById('recruiter-contact-card');
   const addRecruiterContactCheckbox = document.getElementById('add-recruiter-contact-checkbox');
   const recruiterNameEl = document.getElementById('recruiter-name');
@@ -444,6 +452,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (cvDropzone) {
     cvDropzone.addEventListener('click', (e) => {
       if (!pendingResumeFile && !activeResumeMetadata && e.target.closest('#cv-empty-state, #cv-dropzone')) {
+        if (cvFileInput) cvFileInput.click();
+      }
+    });
+
+    cvDropzone.addEventListener('keydown', (e) => {
+      if ((e.key === 'Enter' || e.key === ' ') && !pendingResumeFile && !activeResumeMetadata) {
+        e.preventDefault();
         if (cvFileInput) cvFileInput.click();
       }
     });
@@ -882,48 +897,74 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  // Work Location & Employment Type Pills Handlers
+  // Work Location & Employment Type Custom Dropdown Handlers
   function setWorkLocation(val) {
-    selectedWorkLocation = val;
-    workLocationPills.forEach(btn => {
-      const isSelected = btn.getAttribute('data-value') === val;
-      if (isSelected) {
-        btn.classList.add('selected');
-      } else {
-        btn.classList.remove('selected');
-      }
-      btn.setAttribute('aria-checked', isSelected ? 'true' : 'false');
+    selectedWorkLocation = val || null;
+    if (workplaceValueText) {
+      workplaceValueText.textContent = selectedWorkLocation || 'Select Workplace';
+    }
+    if (workplaceOptions) {
+      workplaceOptions.forEach(opt => {
+        const optVal = opt.getAttribute('data-value') || null;
+        opt.classList.toggle('selected', optVal === selectedWorkLocation);
+      });
+    }
+  }
+
+  if (workplaceTrigger && workplaceSelectContainer) {
+    workplaceTrigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      workplaceSelectContainer.classList.toggle('open');
+      if (employmentTypeSelectContainer) employmentTypeSelectContainer.classList.remove('open');
+      if (platformSelectContainer) platformSelectContainer.classList.remove('open');
+      if (stageSelectorContainer) stageSelectorContainer.classList.remove('open');
     });
   }
 
-  workLocationPills.forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const val = btn.getAttribute('data-value');
-      setWorkLocation(selectedWorkLocation === val ? null : val);
+  if (workplaceOptions) {
+    workplaceOptions.forEach(opt => {
+      opt.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const val = opt.getAttribute('data-value') || null;
+        setWorkLocation(val);
+        if (workplaceSelectContainer) workplaceSelectContainer.classList.remove('open');
+      });
     });
-  });
+  }
 
   function setEmploymentType(val) {
-    selectedEmploymentType = val;
-    employmentTypePills.forEach(btn => {
-      const isSelected = btn.getAttribute('data-value') === val;
-      if (isSelected) {
-        btn.classList.add('selected');
-      } else {
-        btn.classList.remove('selected');
-      }
-      btn.setAttribute('aria-checked', isSelected ? 'true' : 'false');
+    selectedEmploymentType = val || null;
+    if (employmentTypeValueText) {
+      employmentTypeValueText.textContent = selectedEmploymentType || 'Select Type';
+    }
+    if (employmentTypeOptions) {
+      employmentTypeOptions.forEach(opt => {
+        const optVal = opt.getAttribute('data-value') || null;
+        opt.classList.toggle('selected', optVal === selectedEmploymentType);
+      });
+    }
+  }
+
+  if (employmentTypeTrigger && employmentTypeSelectContainer) {
+    employmentTypeTrigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      employmentTypeSelectContainer.classList.toggle('open');
+      if (workplaceSelectContainer) workplaceSelectContainer.classList.remove('open');
+      if (platformSelectContainer) platformSelectContainer.classList.remove('open');
+      if (stageSelectorContainer) stageSelectorContainer.classList.remove('open');
     });
   }
 
-  employmentTypePills.forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const val = btn.getAttribute('data-value');
-      setEmploymentType(selectedEmploymentType === val ? null : val);
+  if (employmentTypeOptions) {
+    employmentTypeOptions.forEach(opt => {
+      opt.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const val = opt.getAttribute('data-value') || null;
+        setEmploymentType(val);
+        if (employmentTypeSelectContainer) employmentTypeSelectContainer.classList.remove('open');
+      });
     });
-  });
+  }
 
 
   // Custom Stage Dropdown Handlers
@@ -971,6 +1012,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.addEventListener('click', (e) => {
     platformSelectContainer.classList.remove('open');
     stageSelectorContainer.classList.remove('open');
+    if (workplaceSelectContainer && !workplaceSelectContainer.contains(e.target)) {
+      workplaceSelectContainer.classList.remove('open');
+    }
+    if (employmentTypeSelectContainer && !employmentTypeSelectContainer.contains(e.target)) {
+      employmentTypeSelectContainer.classList.remove('open');
+    }
     if (contactCategorySelectContainer && !contactCategorySelectContainer.contains(e.target)) {
       contactCategorySelectContainer.classList.remove('open');
     }
@@ -992,6 +1039,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (e.key === 'Escape') {
       platformSelectContainer.classList.remove('open');
       stageSelectorContainer.classList.remove('open');
+      if (workplaceSelectContainer) workplaceSelectContainer.classList.remove('open');
+      if (employmentTypeSelectContainer) employmentTypeSelectContainer.classList.remove('open');
       if (contactCategorySelectContainer) contactCategorySelectContainer.classList.remove('open');
       if (contactAppSelectContainer) contactAppSelectContainer.classList.remove('open');
       if (appSelectorPopover && appSelectorPopover.style.display !== 'none') {
@@ -3430,6 +3479,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (typeof clearResumeChip === 'function') {
       clearResumeChip();
     }
+    setWorkLocation(null);
+    setEmploymentType(null);
     tabDraftMemory.job = null;
 
     // 2. Reset Contact Form State

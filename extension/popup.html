@@ -81,7 +81,7 @@
           <!-- Job Role -->
           <div class="form-group">
             <label for="role">
-              <span>Job Role / Title</span>
+              <span>Job Title</span>
               <span class="required-star">*</span>
             </label>
             <div class="input-wrapper">
@@ -93,7 +93,7 @@
           <div class="form-row">
             <div class="form-group">
               <label for="companyDomain">
-                <span>Website / Domain</span>
+                <span>Company Website</span>
               </label>
               <div class="input-wrapper">
                 <input type="text" id="companyDomain" placeholder="e.g. stripe.com" autocomplete="off">
@@ -117,46 +117,7 @@
             <span class="form-card-title">Classification &amp; Pipeline</span>
           </div>
 
-          <!-- Platform & Date Applied Row -->
-          <div class="form-row">
-            <!-- Platform Selector -->
-            <div class="form-group">
-              <label>
-                <span>Platform</span>
-              </label>
-              <div class="custom-select-container" id="platform-select-container">
-                <button type="button" class="custom-select-trigger" id="platform-trigger">
-                  <span class="custom-select-value" id="platform-value-text">LinkedIn</span>
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
-                </button>
-                <div class="custom-select-dropdown" id="platform-dropdown">
-                  <div class="custom-select-option selected" data-value="LinkedIn">LinkedIn</div>
-                  <div class="custom-select-option" data-value="Indeed">Indeed</div>
-                  <div class="custom-select-option" data-value="Bayt">Bayt</div>
-                  <div class="custom-select-option" data-value="Lever">Lever</div>
-                  <div class="custom-select-option" data-value="Greenhouse">Greenhouse</div>
-                  <div class="custom-select-option" data-value="Otta">Otta</div>
-                  <div class="custom-select-option" data-value="Wellfound">Wellfound</div>
-                  <div class="custom-select-option" data-value="Company Site">Company Site</div>
-                  <div class="custom-select-option" data-value="Referral">Referral</div>
-                  <div class="custom-select-option" data-value="Other">Other (Custom)</div>
-                </div>
-              </div>
-              <input type="text" id="custom-platform-input" class="custom-platform-input" placeholder="Type custom platform name..." style="display: none; margin-top: 6px;">
-            </div>
-
-            <!-- Date Applied -->
-            <div class="form-group">
-              <label for="dateApplied">
-                <span>Date Applied</span>
-              </label>
-              <div class="input-wrapper">
-                <input type="date" id="dateApplied" required>
-              </div>
-            </div>
-          </div>
-
-          <!-- Stage Selector & Job URL Row -->
+          <!-- Row 1: Pipeline Stage & Date Applied -->
           <div class="form-row">
             <div class="form-group" id="stage-form-group">
               <label>
@@ -198,39 +159,90 @@
               </div>
             </div>
 
+            <!-- Date Applied -->
             <div class="form-group">
-              <label for="jobLink">
-                <span>Job URL</span>
+              <label for="dateApplied">
+                <span>Date Applied</span>
               </label>
               <div class="input-wrapper">
-                <input type="text" id="jobLink" placeholder="https://..." autocomplete="off">
+                <input type="date" id="dateApplied" required>
               </div>
             </div>
           </div>
 
-          <!-- Workplace & Employment Type Row -->
+          <!-- Row 2: Workplace & Employment Type (Paired Custom Select Dropdowns) -->
           <div class="form-row">
             <div class="form-group">
               <label>
                 <span>Workplace</span>
               </label>
-              <div class="pill-group" id="work-location-pills" role="radiogroup" aria-label="Workplace Location">
-                <button type="button" class="pill-btn" data-value="Remote" role="radio" aria-checked="false">Remote</button>
-                <button type="button" class="pill-btn" data-value="Hybrid" role="radio" aria-checked="false">Hybrid</button>
-                <button type="button" class="pill-btn" data-value="Onsite" role="radio" aria-checked="false">On-site</button>
+              <div class="custom-select-container" id="workplace-select-container">
+                <button type="button" class="custom-select-trigger" id="workplace-trigger">
+                  <span class="custom-select-value" id="workplace-value-text">Select Workplace</span>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
+                </button>
+                <div class="custom-select-dropdown" id="workplace-dropdown">
+                  <div class="custom-select-option selected" data-value="">Not Specified</div>
+                  <div class="custom-select-option" data-value="Remote">Remote</div>
+                  <div class="custom-select-option" data-value="Hybrid">Hybrid</div>
+                  <div class="custom-select-option" data-value="Onsite">On-site</div>
+                </div>
               </div>
             </div>
 
             <div class="form-group">
               <label>
-                <span>Type</span>
+                <span>Employment Type</span>
               </label>
-              <div class="pill-group" id="employment-type-pills" role="radiogroup" aria-label="Employment Type">
-                <button type="button" class="pill-btn" data-value="Full-time" role="radio" aria-checked="false">Full-time</button>
-                <button type="button" class="pill-btn" data-value="Part-time" role="radio" aria-checked="false">Part-time</button>
-                <button type="button" class="pill-btn" data-value="Contract" role="radio" aria-checked="false">Contract</button>
-                <button type="button" class="pill-btn" data-value="Internship" role="radio" aria-checked="false">Intern</button>
+              <div class="custom-select-container" id="employment-type-select-container">
+                <button type="button" class="custom-select-trigger" id="employment-type-trigger">
+                  <span class="custom-select-value" id="employment-type-value-text">Select Type</span>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
+                </button>
+                <div class="custom-select-dropdown" id="employment-type-dropdown">
+                  <div class="custom-select-option selected" data-value="">Not Specified</div>
+                  <div class="custom-select-option" data-value="Full-time">Full-time</div>
+                  <div class="custom-select-option" data-value="Part-time">Part-time</div>
+                  <div class="custom-select-option" data-value="Contract">Contract</div>
+                  <div class="custom-select-option" data-value="Internship">Internship</div>
+                </div>
               </div>
+            </div>
+          </div>
+
+          <!-- Row 3: Platform (Full Width with Expandable Custom Input) -->
+          <div class="form-group">
+            <label>
+              <span>Platform</span>
+            </label>
+            <div class="custom-select-container" id="platform-select-container">
+              <button type="button" class="custom-select-trigger" id="platform-trigger">
+                <span class="custom-select-value" id="platform-value-text">LinkedIn</span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
+              </button>
+              <div class="custom-select-dropdown" id="platform-dropdown">
+                <div class="custom-select-option selected" data-value="LinkedIn">LinkedIn</div>
+                <div class="custom-select-option" data-value="Indeed">Indeed</div>
+                <div class="custom-select-option" data-value="Bayt">Bayt</div>
+                <div class="custom-select-option" data-value="Lever">Lever</div>
+                <div class="custom-select-option" data-value="Greenhouse">Greenhouse</div>
+                <div class="custom-select-option" data-value="Otta">Otta</div>
+                <div class="custom-select-option" data-value="Wellfound">Wellfound</div>
+                <div class="custom-select-option" data-value="Company Site">Company Site</div>
+                <div class="custom-select-option" data-value="Referral">Referral</div>
+                <div class="custom-select-option" data-value="Other">Other (Custom)</div>
+              </div>
+            </div>
+            <input type="text" id="custom-platform-input" class="custom-platform-input" placeholder="Type custom platform name..." style="display: none; margin-top: 6px;">
+          </div>
+
+          <!-- Row 4: Job URL (Full Width) -->
+          <div class="form-group">
+            <label for="jobLink">
+              <span>Job URL</span>
+            </label>
+            <div class="input-wrapper">
+              <input type="text" id="jobLink" placeholder="https://..." autocomplete="off">
             </div>
           </div>
         </div>
@@ -270,22 +282,21 @@
           <div class="form-group cv-upload-group" id="cv-upload-group">
             <div class="form-label-row">
               <label for="cv-file-input">
-                <span>Tailored CV / Resume</span>
-                <span class="cv-label-optional">Optional · Max 10MB</span>
+                <span>Tailored Resume</span>
+                <span class="cv-label-optional">Optional</span>
               </label>
             </div>
 
             <!-- Upload Dropzone -->
-            <div class="cv-dropzone" id="cv-dropzone">
+            <div class="cv-dropzone" id="cv-dropzone" tabindex="0" role="button" aria-label="Upload tailored CV">
               <input type="file" id="cv-file-input" accept=".pdf,.docx,.doc,.txt" style="display: none;" aria-label="Upload Tailored CV">
               
               <div class="cv-empty-state" id="cv-empty-state">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="cv-icon"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
                 <div class="cv-empty-text">
-                  <span>Drop tailored CV here or</span>
-                  <button type="button" class="btn-text-link cv-browse-btn" id="cv-browse-btn">browse</button>
+                  <span>Drop tailored CV here or click to upload</span>
                 </div>
-                <span class="cv-format-hint">PDF, DOCX, DOC, or TXT up to 10 MB</span>
+                <span class="cv-format-hint">PDF, DOCX, DOC, or TXT · Max 2 MB</span>
               </div>
 
               <!-- Active Attachment Chip -->
@@ -311,7 +322,7 @@
             <!-- CV Upload Error Alert -->
             <div class="cv-error-alert" id="cv-error-alert" style="display: none;" role="alert">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-              <span id="cv-error-text">File exceeds 10MB limit.</span>
+              <span id="cv-error-text">File exceeds 2MB limit.</span>
             </div>
           </div>
 
@@ -319,7 +330,7 @@
           <div class="form-group">
             <div class="form-label-row">
               <label for="notes-editor">
-                <span>Job Description &amp; Notes</span>
+                <span>Notes &amp; Description</span>
               </label>
               <div class="notes-header-actions">
                 <button type="button" class="btn-ghost-xs" id="btn-toggle-md" title="Toggle markdown view">
@@ -344,7 +355,7 @@
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/><circle cx="4" cy="6" r="1.5" fill="currentColor"/><circle cx="4" cy="12" r="1.5" fill="currentColor"/><circle cx="4" cy="18" r="1.5" fill="currentColor"/></svg>
                 </button>
               </div>
-              <div id="notes-editor" class="notes-contenteditable" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Notes" spellcheck="true" data-placeholder="Job description, requirements, notes..."></div>
+              <div id="notes-editor" class="notes-contenteditable" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Notes" spellcheck="true" data-placeholder="Job description, key requirements, interview notes..."></div>
               <textarea id="notes-raw" class="notes-raw-textarea" rows="6" style="display: none;" aria-label="Raw Markdown Notes"></textarea>
             </div>
             <input type="hidden" id="notes" name="notes">
@@ -402,7 +413,7 @@
           <!-- Headline / Role -->
           <div class="form-group">
             <label for="contact-role">
-              <span>Headline / Role</span>
+              <span>Role / Headline</span>
               <span class="required-star">*</span>
             </label>
             <div class="input-wrapper">
@@ -414,7 +425,7 @@
           <div class="form-row">
             <div class="form-group">
               <label for="contact-organization">
-                <span>Organization</span>
+                <span>Company / Organization</span>
               </label>
               <div class="input-wrapper">
                 <input type="text" id="contact-organization" placeholder="e.g. Stripe" autocomplete="off">
@@ -455,7 +466,7 @@
 
             <div class="form-group">
               <label for="contact-linkedin">
-                <span>LinkedIn URL</span>
+                <span>LinkedIn Profile</span>
               </label>
               <div class="input-wrapper">
                 <input type="url" id="contact-linkedin" placeholder="https://linkedin.com/in/..." autocomplete="off">
@@ -467,7 +478,7 @@
           <div class="form-group">
             <label>
               <span>Link to Job Application</span>
-              <span class="label-hint-optional" style="font-size: 11px; font-weight: normal; color: var(--neutral-muted);">Optional</span>
+              <span class="label-hint-optional">Optional</span>
             </label>
             <div class="custom-select-container" id="contact-app-select-container">
               <button type="button" class="custom-select-trigger" id="contact-app-trigger">
@@ -485,6 +496,7 @@
           <div class="form-group">
             <label for="contact-notes">
               <span>Private Notes</span>
+              <span class="label-hint-optional">Optional</span>
             </label>
             <textarea id="contact-notes" rows="3" placeholder="Context, mutual connections, conversation notes..."></textarea>
           </div>
@@ -567,7 +579,7 @@
           <!-- Subject -->
           <div class="form-group">
             <label for="email-subject">
-              <span>Subject</span>
+              <span>Email Subject</span>
               <span class="required-star">*</span>
             </label>
             <div class="input-wrapper">
@@ -582,7 +594,7 @@
               <span class="required-star">*</span>
             </label>
             <div class="input-wrapper">
-              <input type="text" id="email-counterparty" placeholder="Name or email" required autocomplete="off">
+              <input type="text" id="email-counterparty" placeholder="e.g. Sarah Connor or recruiter@company.com" required autocomplete="off">
             </div>
           </div>
 
@@ -609,7 +621,7 @@
           <!-- Email Notes / Summary -->
           <div class="form-group">
             <label for="email-body">
-              <span>Notes</span>
+              <span>Key Notes / Summary</span>
             </label>
             <textarea id="email-body" rows="3" placeholder="Key takeaways, next steps, or conversation notes..."></textarea>
           </div>
@@ -620,14 +632,14 @@
               <label class="checkbox-container">
                 <input type="checkbox" id="advance-stage-checkbox" checked>
                 <span class="checkmark"></span>
-                <span class="checkbox-label" id="advance-stage-label">Advance stage to Interview</span>
+                <span class="checkbox-label" id="advance-stage-label">Advance application stage to Interview</span>
               </label>
             </div>
             <div class="milestone-option" id="add-contact-option" style="display: none;">
               <label class="checkbox-container">
                 <input type="checkbox" id="add-contact-checkbox">
                 <span class="checkmark"></span>
-                <span class="checkbox-label" id="add-contact-label">Add recruiter to contacts</span>
+                <span class="checkbox-label" id="add-contact-label">Add sender to Contacts Hub</span>
               </label>
             </div>
           </div>
@@ -678,7 +690,7 @@
               <div class="profile-avatar" id="profile-avatar-initials">SD</div>
               <div class="profile-identity-text">
                 <div class="profile-name" id="profile-summary-name">Not Configured</div>
-                <div class="profile-title" id="profile-summary-title">Click Quick Edit to configure info</div>
+                <div class="profile-title" id="profile-summary-title">Configure profile for one-click form filling</div>
               </div>
             </div>
 
@@ -726,13 +738,13 @@
 
             <div class="form-row">
               <div class="form-group">
-                <label for="profile-edit-email"><span>Email</span><span class="required-star">*</span></label>
+                <label for="profile-edit-email"><span>Email Address</span><span class="required-star">*</span></label>
                 <div class="input-wrapper">
                   <input type="email" id="profile-edit-email" placeholder="name@example.com" autocomplete="email">
                 </div>
               </div>
               <div class="form-group">
-                <label for="profile-edit-phone"><span>Phone</span></label>
+                <label for="profile-edit-phone"><span>Phone Number</span></label>
                 <div class="input-wrapper">
                   <input type="tel" id="profile-edit-phone" placeholder="+1 555-0100" autocomplete="tel">
                 </div>
@@ -755,7 +767,7 @@
             </div>
 
             <div class="form-group">
-              <label for="profile-edit-linkedin"><span>LinkedIn URL</span></label>
+              <label for="profile-edit-linkedin"><span>LinkedIn Profile</span></label>
               <div class="input-wrapper">
                 <input type="url" id="profile-edit-linkedin" placeholder="https://linkedin.com/in/...">
               </div>
@@ -763,13 +775,13 @@
 
             <div class="form-row">
               <div class="form-group">
-                <label for="profile-edit-github"><span>GitHub URL</span></label>
+                <label for="profile-edit-github"><span>GitHub Profile</span></label>
                 <div class="input-wrapper">
                   <input type="url" id="profile-edit-github" placeholder="https://github.com/...">
                 </div>
               </div>
               <div class="form-group">
-                <label for="profile-edit-portfolio"><span>Portfolio / Website</span></label>
+                <label for="profile-edit-portfolio"><span>Portfolio Website</span></label>
                 <div class="input-wrapper">
                   <input type="url" id="profile-edit-portfolio" placeholder="https://...">
                 </div>
