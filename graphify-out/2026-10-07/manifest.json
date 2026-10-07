@@ -545,8 +545,8 @@
     "semantic_hash": "ecd2af5b01b98d6f48ba8d5ba2d4433b"
   },
   ".specify/feature.json": {
-    "mtime": 1791368337.5058193,
-    "ast_hash": "10719dd4349b1cba9b1c6f62d57c9993",
+    "mtime": 1791195458.403311,
+    "ast_hash": "ac450f39b6a6262fde3258ee07e8833a",
     "semantic_hash": ""
   },
   ".specify/init-options.json": {
@@ -2050,8 +2050,8 @@
     "semantic_hash": ""
   },
   "extension/popup.html": {
-    "mtime": 1791368560.206829,
-    "ast_hash": "e8b008a3b168bc9e4dcb2e2f91ef6c5e",
+    "mtime": 1791366050.2681217,
+    "ast_hash": "828c43417c784d2838c66dffed529d7e",
     "semantic_hash": ""
   },
   "index.html": {
@@ -2617,16 +2617,6 @@
   ".impeccable/critique/2026-10-06T11-28-37Z__extension-popup-html.md": {
     "mtime": 1791286117.901494,
     "ast_hash": "e6c64cc537a12798501d431a47a97720",
-    "semantic_hash": ""
-  },
-  "specs/009-tester-issue-reporting/checklists/requirements.md": {
-    "mtime": 1791368453.3902202,
-    "ast_hash": "82d344bff4be08c630aded6130d08188",
-    "semantic_hash": ""
-  },
-  "specs/009-tester-issue-reporting/spec.md": {
-    "mtime": 1791368445.4908917,
-    "ast_hash": "415f1d05d2fd1adc6054c7d5b888edfe",
     "semantic_hash": ""
   }
 }
