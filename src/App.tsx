@@ -37,7 +37,7 @@ function TrackletAppContent() {
     contacts, dataLoading, handleAddContact, handleLinkContact, setSelectedAppId, addToast,
   });
 
-  // Global hotkey: press '?' or 'Ctrl+Alt+B' to summon tester issue reporter
+  // Global hotkey: press 'Ctrl+Alt+B' or 'Ctrl+Shift+B' to summon tester issue reporter
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const activeEl = document.activeElement as HTMLElement | null;
@@ -46,7 +46,12 @@ function TrackletAppContent() {
         activeEl?.tagName === 'TEXTAREA' || 
         activeEl?.isContentEditable;
 
-      if (!isEditable && (e.key === '?' || (e.ctrlKey && e.altKey && e.key.toLowerCase() === 'b'))) {
+      const isReporterHotkey = 
+        (e.ctrlKey && e.altKey && e.key.toLowerCase() === 'b') ||
+        (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'b') ||
+        (e.metaKey && e.shiftKey && e.key.toLowerCase() === 'b');
+
+      if (!isEditable && isReporterHotkey) {
         e.preventDefault();
         openFeedbackModal();
       }

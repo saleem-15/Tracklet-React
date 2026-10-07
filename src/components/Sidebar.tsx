@@ -364,14 +364,19 @@ export const Sidebar: React.FC<SidebarProps> = (props) => {
           if (isMobileView && onCloseMobile) onCloseMobile();
           nav.openFeedbackModal();
         }}
-        title="Report an Issue or Feedback"
-        aria-label="Report an Issue or Feedback"
+        title="Report an Issue or Feedback (Ctrl+Alt+B)"
+        aria-label="Report an Issue or Feedback (Ctrl+Alt+B)"
         className={`w-full flex items-center ${
           !isMobileView && isCollapsed ? 'justify-center p-2' : 'justify-start px-2.5 py-1.5'
-        } rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-200/60 transition-colors text-xs font-medium cursor-pointer`}
+        } rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 transition-colors text-xs font-medium cursor-pointer`}
       >
         <Bug className="w-4 h-4 text-slate-500 shrink-0" />
-        {(isMobileView || !isCollapsed) && <span className="ml-2 font-medium">Report Issue</span>}
+        {(isMobileView || !isCollapsed) && (
+          <div className="ml-2 flex items-center justify-between flex-1">
+            <span className="font-medium">Report Issue</span>
+            <kbd className="text-[11px] text-slate-500 font-mono">Ctrl+Alt+B</kbd>
+          </div>
+        )}
       </button>
 
       {user ? (

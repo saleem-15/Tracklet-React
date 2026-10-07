@@ -58,6 +58,7 @@ export const FeedbackSettingsCard: React.FC<FeedbackSettingsCardProps> = ({
           >
             <Bug className="w-4 h-4" />
             <span>Report an Issue</span>
+            <kbd className="hidden sm:inline-block ml-1 px-1.5 py-0.5 rounded bg-blue-700/60 text-blue-100 font-mono text-[11px]">Ctrl+Alt+B</kbd>
           </button>
         </div>
 

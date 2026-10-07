@@ -62,7 +62,7 @@ export const AttachmentDropzone: React.FC<AttachmentDropzoneProps> = ({
     const handlePaste = (e: ClipboardEvent) => {
       // Ignore if user is currently pasting inside a text input or textarea
       const target = e.target as HTMLElement;
-      if (target?.tagName === 'INPUT' && target?.getAttribute('type') === 'text') return;
+      if (target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA') return;
 
       const file = extractImageFromClipboard(e);
       if (file) {
@@ -74,6 +74,19 @@ export const AttachmentDropzone: React.FC<AttachmentDropzoneProps> = ({
     window.addEventListener('paste', handlePaste);
     return () => window.removeEventListener('paste', handlePaste);
   }, [attachments.length]);
+
+  // Listen for Escape key to close image preview overlay cleanly
+  useEffect(() => {
+    if (!previewModalUrl) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        setPreviewModalUrl(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown, true);
+    return () => window.removeEventListener('keydown', handleKeyDown, true);
+  }, [previewModalUrl]);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -122,11 +135,20 @@ export const AttachmentDropzone: React.FC<AttachmentDropzoneProps> = ({
       {/* Dropzone Card */}
       {attachments.length < 2 && (
         <div
+          role="button"
+          tabIndex={disabled ? -1 : 0}
+          aria-label="Upload screenshot or drag image"
+          onKeyDown={(e) => {
+            if (!disabled && (e.key === 'Enter' || e.key === ' ')) {
+              e.preventDefault();
+              fileInputRef.current?.click();
+            }
+          }}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
           onClick={() => !disabled && fileInputRef.current?.click()}
-          className={`relative border-2 border-dashed rounded-xl p-3.5 text-center cursor-pointer transition-all ${
+          className={`relative border-2 border-dashed rounded-xl p-3.5 text-center cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 ${
             isDragging
               ? 'border-blue-500 bg-blue-50/70 scale-[0.99]'
               : 'border-slate-200 hover:border-slate-300 bg-slate-50/50 hover:bg-slate-50'
@@ -147,7 +169,7 @@ export const AttachmentDropzone: React.FC<AttachmentDropzoneProps> = ({
             </div>
             <div className="text-left text-xs">
               <span className="font-semibold text-slate-800">Click to upload</span> or drag image here
-              <p className="text-[11px] text-slate-500">PNG, JPEG, WebP up to 2MB • Press <kbd className="px-1 py-0.5 rounded bg-slate-100 border border-slate-300 font-mono text-[10px]">Ctrl+V</kbd> to paste</p>
+              <p className="text-[11px] text-slate-500">PNG, JPEG, WebP up to 2MB • Press <kbd className="px-1 py-0.5 rounded bg-slate-100 border border-slate-300 font-mono text-[11px]">Ctrl+V</kbd> to paste</p>
             </div>
           </div>
         </div>

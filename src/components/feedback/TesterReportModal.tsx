@@ -34,6 +34,32 @@ interface TesterReportModalProps {
   user?: AuthUser | null;
 }
 
+const SEVERITY_STYLES: Record<
+  TesterReportSeverity,
+  { active: string; inactive: string; dot: string }
+> = {
+  low: {
+    active: 'bg-slate-100 text-slate-800 border-slate-300 ring-1 ring-slate-400/20 shadow-2xs',
+    inactive: 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:text-slate-900 hover:border-slate-300',
+    dot: 'bg-slate-500',
+  },
+  medium: {
+    active: 'bg-blue-50 text-blue-700 border-blue-300 ring-1 ring-blue-500/20 shadow-2xs',
+    inactive: 'bg-white text-slate-600 border-slate-200 hover:bg-blue-50/70 hover:text-blue-700 hover:border-blue-200',
+    dot: 'bg-blue-500',
+  },
+  high: {
+    active: 'bg-amber-50 text-amber-800 border-amber-300 ring-1 ring-amber-500/20 shadow-2xs',
+    inactive: 'bg-white text-slate-600 border-slate-200 hover:bg-amber-50/70 hover:text-amber-800 hover:border-amber-200',
+    dot: 'bg-amber-500',
+  },
+  blocker: {
+    active: 'bg-rose-50 text-rose-700 border-rose-300 ring-1 ring-rose-500/20 shadow-2xs',
+    inactive: 'bg-white text-slate-600 border-slate-200 hover:bg-rose-50/70 hover:text-rose-700 hover:border-rose-200',
+    dot: 'bg-rose-500',
+  },
+};
+
 export const TesterReportModal: React.FC<TesterReportModalProps> = ({
   isOpen,
   onClose,
@@ -57,7 +83,6 @@ export const TesterReportModal: React.FC<TesterReportModalProps> = ({
   const [submittedIssueNumber, setSubmittedIssueNumber] = useState<number | null>(null);
   const [submittedIssueUrl, setSubmittedIssueUrl] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
 
   // Load draft on mount / open
   useEffect(() => {
@@ -66,7 +91,6 @@ export const TesterReportModal: React.FC<TesterReportModalProps> = ({
       setSubmittedIssueNumber(null);
       setSubmittedIssueUrl(null);
       setErrorMessage(null);
-      setShowDiscardConfirm(false);
 
       const draft = FeedbackRepository.loadDraft();
       if (draft) {
@@ -101,10 +125,13 @@ export const TesterReportModal: React.FC<TesterReportModalProps> = ({
 
   const handleRequestClose = () => {
     if (isDirty && !submittedReportId) {
-      setShowDiscardConfirm(true);
-    } else {
-      onClose();
+      addToast(
+        'info',
+        'Draft Saved',
+        'Your bug report draft is saved locally — reopen anytime with Ctrl+Alt+B.'
+      );
     }
+    onClose();
   };
 
   useEscapeKey(handleRequestClose, isOpen);
@@ -206,7 +233,7 @@ export const TesterReportModal: React.FC<TesterReportModalProps> = ({
             type="button"
             onClick={handleRequestClose}
             aria-label="Close dialog"
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-colors cursor-pointer"
+            className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-200/60 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -304,22 +331,26 @@ export const TesterReportModal: React.FC<TesterReportModalProps> = ({
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
                     Severity <span className="text-rose-500">*</span>
                   </label>
-                  <div className="grid grid-cols-4 gap-1.5">
-                    {TESTER_REPORT_SEVERITIES.map((sev) => (
-                      <button
-                        key={sev.value}
-                        type="button"
-                        onClick={() => setSeverity(sev.value)}
-                        className={`px-2 py-1.5 rounded-lg text-xs font-semibold border transition-all flex items-center justify-center gap-1 cursor-pointer ${
-                          severity === sev.value
-                            ? 'bg-slate-900 text-white border-slate-900 shadow-2xs'
-                            : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
-                        }`}
-                      >
-                        <span className={`w-1.5 h-1.5 rounded-full ${sev.dotColor}`} />
-                        <span>{sev.label}</span>
-                      </button>
-                    ))}
+                  <div role="radiogroup" aria-label="Severity level" className="grid grid-cols-4 gap-1.5">
+                    {TESTER_REPORT_SEVERITIES.map((sev) => {
+                      const isActive = severity === sev.value;
+                      const style = SEVERITY_STYLES[sev.value];
+                      return (
+                        <button
+                          key={sev.value}
+                          type="button"
+                          role="radio"
+                          aria-checked={isActive}
+                          onClick={() => setSeverity(sev.value)}
+                          className={`px-2 py-1.5 rounded-lg text-xs font-semibold border transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                            isActive ? style.active : style.inactive
+                          }`}
+                        >
+                          <span className={`w-1.5 h-1.5 rounded-full ${style.dot}`} />
+                          <span>{sev.label}</span>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
@@ -342,12 +373,24 @@ export const TesterReportModal: React.FC<TesterReportModalProps> = ({
 
               {/* Description textarea */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  What happened? Steps to reproduce <span className="text-rose-500">*</span>
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-semibold text-slate-700">
+                    What happened? Steps to reproduce <span className="text-rose-500">*</span>
+                  </label>
+                  <span className="text-[11px] text-slate-500 font-mono">
+                    <kbd className="px-1 py-0.5 rounded bg-slate-100 border border-slate-200 text-2xs text-slate-600">Ctrl+Enter</kbd> to submit
+                  </span>
+                </div>
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
+                  onKeyDown={(e) => {
+                    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                      e.preventDefault();
+                      const form = document.getElementById('tester-report-form') as HTMLFormElement;
+                      if (form) form.requestSubmit();
+                    }
+                  }}
                   placeholder="Describe what occurred, what you expected, or any specific actions that triggered the issue..."
                   rows={4}
                   className="w-full p-3 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 text-xs text-slate-900 placeholder:text-slate-400 outline-none transition-all resize-y"
@@ -359,7 +402,7 @@ export const TesterReportModal: React.FC<TesterReportModalProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Your Name <span className="text-slate-400 font-normal">(Optional)</span>
+                    Your Name <span className="text-slate-500 font-normal">(Optional)</span>
                   </label>
                   <input
                     type="text"
@@ -371,7 +414,7 @@ export const TesterReportModal: React.FC<TesterReportModalProps> = ({
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Your Email <span className="text-slate-400 font-normal">(Optional for follow-up)</span>
+                    Your Email <span className="text-slate-500 font-normal">(Optional for follow-up)</span>
                   </label>
                   <input
                     type="email"
@@ -435,41 +478,6 @@ export const TesterReportModal: React.FC<TesterReportModalProps> = ({
           </div>
         )}
       </div>
-
-      {/* Discard confirmation dialog */}
-      {showDiscardConfirm && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          className="fixed inset-0 z-60 bg-slate-900/60 backdrop-blur-2xs flex items-center justify-center p-4"
-        >
-          <div className="w-full max-w-sm bg-white rounded-2xl p-5 shadow-2xl border border-slate-200 space-y-3">
-            <h3 className="text-sm font-bold text-slate-900">Discard changes?</h3>
-            <p className="text-xs text-slate-600">
-              You have typed content in your report. Your draft is saved, but do you want to close this window now?
-            </p>
-            <div className="flex items-center justify-end gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => setShowDiscardConfirm(false)}
-                className="px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-slate-700 text-xs font-medium cursor-pointer"
-              >
-                Keep Editing
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowDiscardConfirm(false);
-                  onClose();
-                }}
-                className="px-3 py-1.5 rounded-xl bg-rose-600 text-white text-xs font-medium cursor-pointer hover:bg-rose-700"
-              >
-                Discard & Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
