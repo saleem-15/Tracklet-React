@@ -1490,9 +1490,9 @@
     "semantic_hash": "37e72bc8913bd9371f1b3c8de06d67eb"
   },
   "vite.config.ts": {
-    "mtime": 1791370921.572975,
-    "ast_hash": "1f4d309f6f787f96ff24e050c0c53bab",
-    "semantic_hash": "1f4d309f6f787f96ff24e050c0c53bab"
+    "mtime": 1791377777.2318022,
+    "ast_hash": "0d1f679597001c4b51f70e95eb78221f",
+    "semantic_hash": ""
   },
   "vitest.config.ts": {
     "mtime": 1791370921.572975,
@@ -2540,8 +2540,8 @@
     "semantic_hash": ""
   },
   "src/components/feedback/TesterReportModal.tsx": {
-    "mtime": 1791373999.9507046,
-    "ast_hash": "53c03f1788f85d297c1db8f696ffba00",
+    "mtime": 1791377835.4957428,
+    "ast_hash": "7a6fa2f44b11b268b23ba49bcce3b4dc",
     "semantic_hash": ""
   },
   "src/lib/diagnosticUtils.ts": {
@@ -2550,8 +2550,8 @@
     "semantic_hash": ""
   },
   "src/lib/feedbackRepository.ts": {
-    "mtime": 1791373799.0961692,
-    "ast_hash": "6f19ef59bfbe2f5e3e4f16afd9bc2e60",
+    "mtime": 1791377787.8551705,
+    "ast_hash": "6513fa873f5ad2b7105186931d003ab4",
     "semantic_hash": ""
   },
   "src/lib/imageUtils.ts": {
@@ -2590,8 +2590,8 @@
     "semantic_hash": ""
   },
   "specs/009-tester-issue-reporting/quickstart.md": {
-    "mtime": 1791371472.1802976,
-    "ast_hash": "9f35b0812d1136e20196e0e5e5e24a02",
+    "mtime": 1791377998.0837386,
+    "ast_hash": "3254dbd3e8c0f647e96b9d6e04671f9e",
     "semantic_hash": ""
   },
   "specs/009-tester-issue-reporting/research.md": {
