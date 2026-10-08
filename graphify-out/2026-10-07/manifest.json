@@ -545,8 +545,8 @@
     "semantic_hash": "ecd2af5b01b98d6f48ba8d5ba2d4433b"
   },
   ".specify/feature.json": {
-    "mtime": 1791195458.403311,
-    "ast_hash": "ac450f39b6a6262fde3258ee07e8833a",
+    "mtime": 1791370957.6873467,
+    "ast_hash": "ba8aa190f2575cdb63c4576783d58427",
     "semantic_hash": ""
   },
   ".specify/init-options.json": {
@@ -605,13 +605,13 @@
     "semantic_hash": "a036d340e4d1080524a6ff12478938fe"
   },
   "extension/background.js": {
-    "mtime": 1791282893.8890212,
-    "ast_hash": "09091be0392fbac7f1f9e34b96bd15b3",
+    "mtime": 1791374124.933655,
+    "ast_hash": "a1863c91dc31451009ba07f31ae10895",
     "semantic_hash": ""
   },
   "extension/content.js": {
-    "mtime": 1791283007.2991965,
-    "ast_hash": "788b5f25862162e332e28e5a179602a7",
+    "mtime": 1791376102.8320727,
+    "ast_hash": "bbda554e64d8a8b8bb7183ffa40dcbe9",
     "semantic_hash": ""
   },
   "extension/manifest.json": {
@@ -620,8 +620,8 @@
     "semantic_hash": ""
   },
   "extension/popup.js": {
-    "mtime": 1791366050.2755935,
-    "ast_hash": "490d1e20d9509e019ad1189acc411806",
+    "mtime": 1791375993.2461247,
+    "ast_hash": "b4807126c63e2942f53b93f67a5697b1",
     "semantic_hash": ""
   },
   "firebase-blueprint.json": {
@@ -2050,8 +2050,8 @@
     "semantic_hash": ""
   },
   "extension/popup.html": {
-    "mtime": 1791366050.2681217,
-    "ast_hash": "828c43417c784d2838c66dffed529d7e",
+    "mtime": 1791373788.8342314,
+    "ast_hash": "5eae54529ede361ae70fb74d7ac0fd0f",
     "semantic_hash": ""
   },
   "index.html": {
@@ -2525,8 +2525,8 @@
     "semantic_hash": ""
   },
   "specs/008-extension-companion-redesign/checklists/requirements.md": {
-    "mtime": 1791283534.316198,
-    "ast_hash": "0bc6ebe08fb086b5d0775a6caf60cf36",
+    "mtime": 1791372928.474797,
+    "ast_hash": "1bb811564a563d165d4fb9d647cc2686",
     "semantic_hash": ""
   },
   "specs/008-extension-companion-redesign/contracts/candidate-profile-storage.md": {
@@ -2535,38 +2535,38 @@
     "semantic_hash": ""
   },
   "specs/008-extension-companion-redesign/contracts/side-panel-messaging.md": {
-    "mtime": 1791202842.9764807,
-    "ast_hash": "7c5d061a7f7ec60b7ac75ea1a2a2b9f6",
+    "mtime": 1791372788.0816946,
+    "ast_hash": "1f2da7a983113293f82cddcd2fb75d04",
     "semantic_hash": ""
   },
   "specs/008-extension-companion-redesign/data-model.md": {
-    "mtime": 1791283578.9815617,
-    "ast_hash": "bcd55740af38702f7b84eaf911826f5b",
+    "mtime": 1791372738.061331,
+    "ast_hash": "6e4ee8831cc4c0772549a5b59381fb15",
     "semantic_hash": ""
   },
   "specs/008-extension-companion-redesign/plan.md": {
-    "mtime": 1791202888.8489418,
-    "ast_hash": "2ca5ecf63ee260c6cc4f30ba1ff9a93c",
+    "mtime": 1791372892.8920817,
+    "ast_hash": "f13c66e58968cb5639c3cfa87023116d",
     "semantic_hash": ""
   },
   "specs/008-extension-companion-redesign/quickstart.md": {
-    "mtime": 1791283474.9517379,
-    "ast_hash": "30562d9d28c26ca2196ab8bc4e2a9172",
+    "mtime": 1791372841.4341652,
+    "ast_hash": "214375814da250a1a53fbcfb53b528e6",
     "semantic_hash": ""
   },
   "specs/008-extension-companion-redesign/research.md": {
-    "mtime": 1791283242.5453522,
-    "ast_hash": "5af2d958ee442299e990ce7e44716365",
+    "mtime": 1791372687.733734,
+    "ast_hash": "44bca71586197f2a0714d9028b3647a2",
     "semantic_hash": ""
   },
   "specs/008-extension-companion-redesign/spec.md": {
-    "mtime": 1791283284.8364677,
-    "ast_hash": "5b9d4214dc8bb441617e1f8667235513",
+    "mtime": 1791372577.472052,
+    "ast_hash": "35c607b567d4c92b28b4696dba2b5b2d",
     "semantic_hash": ""
   },
   "specs/008-extension-companion-redesign/tasks.md": {
-    "mtime": 1791210568.5202107,
-    "ast_hash": "da0171de32db2ec13d41c3ca173fd84e",
+    "mtime": 1791376336.554779,
+    "ast_hash": "81197e0de47a12df9f25761864c09ffc",
     "semantic_hash": ""
   },
   "extension/indexedDbResumeStorage.js": {
@@ -2595,8 +2595,8 @@
     "semantic_hash": ""
   },
   "tests/unit/contactClipper.test.ts": {
-    "mtime": 1791283656.4099293,
-    "ast_hash": "35f84e8c4225577378a04e86e589031d",
+    "mtime": 1791376296.5876362,
+    "ast_hash": "5ae8f2db5206b8ac8cfe89bbe6f78b7a",
     "semantic_hash": ""
   },
   "tests/unit/extensionTabContext.test.ts": {
