@@ -183,85 +183,79 @@ description: "Task list for feature 008-extension-companion-redesign implementat
 
 ---
 
+## Phase 9: User Story 7 - Real-Time In-Page SPA Route Reactivity & Context Retention (Priority: P1)
+
+**Goal**: Automatically detect when a user clicks between jobs on a job board (LinkedIn, Indeed), between email threads in Gmail/Outlook, or between recruiter profiles, immediately switching tabs and extracting content in real time with a smooth 150ms subtle transition, retaining the last viewed item on exit/inbox, cleanly discarding unsubmitted edits, and strictly guaranteeing zero automatic background saves.
+
+**Independent Test**: Navigate to LinkedIn job search, click Job 1, then click Job 2; side panel immediately refreshes to Job 2 with subtle transition without full page reload. Navigate to Gmail, open Email 1, then Email 2; side panel refreshes to Email 2. Return to Gmail inbox list; side panel retains Email 2. Verify zero writes occur in Firestore or local queues without clicking Save.
+
+### Implementation for User Story 7
+
+- [X] T046 [P] [US7] Implement in-page History API wrapper (`pushState`, `replaceState`), `hashchange`, `popstate` listeners, and debounced thread DOM observer in `extension/content.js` to dispatch `PAGE_CONTEXT_CHANGED` per `contracts/side-panel-messaging.md`
+- [X] T047 [P] [US7] Update `chrome.tabs.onUpdated` in `extension/background.js` to broadcast `ACTIVE_TAB_UPDATED` on `changeInfo.url` for SPA route transitions without waiting for `status === 'complete'`
+- [X] T048 [US7] Implement live reactive transition coordinator in `extension/popup.js` to extract data on context change, cleanly discard unsubmitted edits, and trigger smooth 150ms subtle transition
+- [X] T049 [US7] Implement Idle / Exit Context Retention in `extension/popup.js` to retain the last viewed item on screen when returning to webmail inbox list or navigating to generic pages
+- [X] T050 [US7] Enforce strict Zero Auto-Save guarantee in `extension/popup.js` ensuring page navigation and tab context switching never trigger background database writes
+
+---
+
+## Phase 10: User Story 8 - Smart Multi-Entity Duplicate Recognition & Dirty-Gated Update (Priority: P1)
+
+**Goal**: Automatically recognize when an opened job, email, or contact already exists in Tracklet. Display clear "Already Tracked" / "Already Logged" / "Already in Contacts Hub" status banners, switch the action button to "Update", and keep it disabled until form fields deviate from baseline stored data.
+
+**Independent Test**: Open a job already saved in Tracklet; side panel displays "Already tracked in Tracklet" banner and "Update Application" button is disabled. Edit notes or salary; button immediately enables. Open a webmail email already logged to the matched application; banner displays "Already logged to this job" and "Update Email Log" is disabled until edited. Open a LinkedIn profile already in Contacts Hub (matching by URL, email, or Full Name); banner displays "Already in Contacts Hub" and "Update Contact" is disabled until edited.
+
+### Implementation for User Story 8
+
+- [X] T051 [P] [US8] Implement scoped Webmail Email Duplicate Recognition in `extension/popup.js` checking currently matched application's `emails` list by `emailUrl` or `subject` + `date`
+- [X] T052 [P] [US8] Implement Contact Multi-Identifier Deduplication in `extension/popup.js` matching against Contacts Hub (`tracklet_contacts_index`) by canonical LinkedIn URL, email address, OR case-insensitive Full Name
+- [X] T053 [US8] Implement Form Dirty State Tracker in `extension/popup.js` across Job, Email, and Contact forms comparing live inputs against baseline extracted snapshot to activate "Update" buttons only on edit
+- [X] T054 [P] [US8] Add UI styling tokens for duplicate status banners, matched pills, and subtle transition animations in `extension/popup.css` and `extension/popup.html`
+
+---
+
+## Phase 11: Polish & Comprehensive Verification
+
+**Purpose**: Verify TypeScript compilation, production build, and end-to-end workflows across all new reactive capabilities.
+
+- [X] T055 Run type check verification: `npx tsc --noEmit`
+- [X] T056 Run production build verification: `npm run build`
+- [X] T057 Execute manual verification across Scenarios 7, 8, and 9 in `specs/008-extension-companion-redesign/quickstart.md`
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies
 
-- **Setup (Phase 1)**: No dependencies — can start immediately.
-- **Foundational (Phase 2)**: Depends on Setup completion — BLOCKS all user stories.
-- **User Stories (Phase 3+)**: All depend on Foundational phase completion:
-  - User Story 1 (P1): Side Panel Shell & Contextual Navigation (MVP foundation).
-  - User Story 2 (P1): LinkedIn Contact Clipper (builds on US1 shell).
-  - User Story 3 (P1): Recruiter Micro-Card (integrates with US1 Job tab and US2 contact saving).
-  - User Story 4 (P1): Webmail Companion (integrates with US1 Email tab).
-  - User Story 5 (P1): Job Clipper & Tailored CV Storage (integrates with US1 Job tab and Phase 2 IndexedDB).
-  - User Story 6 (P2): Autofill Hub (integrates with US1 Autofill tab and Phase 2 profile storage).
-- **Polish (Phase 9)**: Depends on completion of all user story phases.
+- **Phases 1–8**: Completed foundational side panel capabilities.
+- **Phase 9 (US7: Reactivity)**: Depends on Phase 1–8 shell; can execute in parallel with Phase 10 groundwork.
+- **Phase 10 (US8: Duplicates & Dirty Tracking)**: Integrates with US7 reactive extraction lifecycle in `popup.js`.
+- **Phase 11 (Polish & Verification)**: Runs after Phase 9 and Phase 10 completion.
 
 ### User Story Dependencies
 
 ```mermaid
 graph TD
-    Setup[Phase 1: Setup] --> Foundation[Phase 2: Foundational]
-    Foundation --> US1[Phase 3: US1 Side Panel Shell & Contextual Nav 🎯 MVP]
-    US1 --> US2[Phase 4: US2 LinkedIn Contact Clipper]
-    US1 --> US4[Phase 6: US4 First-Class Webmail Companion]
-    US1 --> US5[Phase 7: US5 Job Clipper & Tailored CV]
-    US2 --> US3[Phase 5: US3 Recruiter Micro-Card on Job Posts]
-    US5 --> US3
-    US1 --> US6[Phase 8: US6 Autofill Hub & ATS Detection]
-    US1 --> Polish[Phase 9: Polish & Regressions Audit]
-    US2 --> Polish
-    US3 --> Polish
-    US4 --> Polish
-    US5 --> Polish
-    US6 --> Polish
+    Foundation[Phases 1-8: Extension Companion Foundation] --> US7[Phase 9: US7 Real-Time SPA Route Reactivity]
+    Foundation --> US8[Phase 10: US8 Multi-Entity Duplicate Recognition & Dirty Update]
+    US7 --> US8
+    US7 --> Polish[Phase 11: Final Polish & Verification]
+    US8 --> Polish
 ```
 
 ### Parallel Opportunities
 
-- **Setup Phase**: T003 (`exportCsv.ts` / `importCsv.ts`) and T004 (`manifest.json`) can execute in parallel after T001/T002.
-- **Foundational Phase**: T005 (IndexedDB), T006 (Profile Storage), and T007 (Background SW) can proceed in parallel.
-- **User Stories Phase**:
-  - Once US1 is in place, US2 (Contact Clipper), US4 (Webmail Companion), and US5 (Job Clipper & CV) can be implemented independently by separate developers.
-  - All test tasks marked `[P]` (`T009`, `T014`, `T020`, `T025`, `T030`, `T035`) can be authored before or in parallel with feature implementation.
-
----
-
-## Parallel Example: User Story 1
-
-```bash
-# Launch test and background listeners in parallel:
-Task: "T009 [P] [US1] Add unit tests for tab URL classification heuristics in tests/unit/extensionTabContext.test.ts"
-Task: "T010 [US1] Add tab lifecycle listeners in extension/background.js and extension/popup.js"
-```
-
-## Parallel Example: User Story 2
-
-```bash
-# Launch test suite and DOM extractor in parallel:
-Task: "T014 [P] [US2] Add unit tests for headline keyword regex classification in tests/unit/contactClipper.test.ts"
-Task: "T016 [P] [US2] Implement Category Smart-Defaulting inference engine in extension/popup.js"
-```
+- **Phase 9 (US7)**: T046 (`content.js` SPA hooks) and T047 (`background.js` URL listener) can be implemented in parallel.
+- **Phase 10 (US8)**: T051 (Email duplicate check), T052 (Contact deduplication), and T054 (`popup.css` styling) can execute in parallel before T053 (unified dirty tracker).
 
 ---
 
 ## Implementation Strategy
 
-### MVP First (User Story 1 Only)
+### Incremental Delivery (Current Milestone)
 
-1. Complete Phase 1: Setup (`src/types.ts`, `ApplicationRepository`, `manifest.json`).
-2. Complete Phase 2: Foundational (IndexedDB, Profile Storage, Background Service Worker router).
-3. Complete Phase 3: User Story 1 (Side Panel docking, 4-tab navigation, Contextual Auto-Switching, Tab Draft Memory).
-4. **STOP and VALIDATE**: Test User Story 1 independently in Chrome Side Panel (docking, tab switching across URLs, draft memory).
-5. Deliver MVP.
+1. **Increment 1 (Reactivity)**: Hook `content.js` and `background.js` into SPA navigation and thread changes, delivering real-time tab switching with clean discard and idle retention (US7).
+2. **Increment 2 (Smart Duplicates & Dirty Tracking)**: Implement scoped email duplicate recognition, multi-identifier contact matching, and baseline input dirty tracking gating the "Update" buttons (US8).
+3. **Increment 3 (Verification)**: Full type check, production build, and quickstart validation of Scenarios 7, 8, and 9 (Phase 11).
 
-### Incremental Delivery
-
-1. **Increment 1 (MVP)**: Persistent Side Panel Shell + Contextual Auto-Switching (US1).
-2. **Increment 2**: LinkedIn Contact Clipper with Category Smart-Defaulting (US2).
-3. **Increment 3**: Recruiter Micro-Card on Job Posts with 1-click bundle saving (US3).
-4. **Increment 4**: First-Class Webmail Companion with multi-match ranking and stage advance (US4).
-5. **Increment 5**: Modernized Job Clipper with Tailored CV upload and IndexedDB storage (US5).
-6. **Increment 6**: Autofill Hub with ATS form detection and 1.5s scroll-to-field feedback (US6).
-7. **Increment 7**: Full 13-point zero-regression verification, end-to-end quickstart audit, and documentation polish (Phase 9).

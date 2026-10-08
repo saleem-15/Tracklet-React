@@ -76,3 +76,34 @@
 - **Expected Outcome**:
   - An attachment chip displays `📎 My_Custom_Resume.pdf`.
   - The file payload is persisted in IndexedDB and linked to the application record with instant preview/download availability.
+
+### Scenario 7: Real-Time In-Page SPA Navigation & Clean Discard
+- **Action**:
+  1. Open LinkedIn Job Search (`https://www.linkedin.com/jobs/search/...`).
+  2. Click on the first job card. Observe the side panel immediately extracts Job 1.
+  3. Type random notes into the Job Notes editor without clicking Save.
+  4. Click on a second job card in the LinkedIn search list.
+- **Expected Outcome**:
+  - Side panel intercepts the SPA route change in real time.
+  - Discards the unsubmitted notes from Job 1 and extracts Job 2 with a smooth 150ms subtle transition.
+  - Zero auto-saves occur in Firebase or local storage.
+
+### Scenario 8: Smart Duplicate Detection & Dirty-Gated Update
+- **Action**:
+  1. Browse to a job posting that is already saved in your Tracklet workspace.
+  2. Inspect the side panel.
+- **Expected Outcome**:
+  - The banner displays `"Already tracked in Tracklet ([Stage])"`.
+  - The action button reads `"Update Application"` and is **disabled**.
+  - Type new text into the Notes field: the `"Update Application"` button immediately **enables**.
+  - Click `"Update Application"`: the existing record updates cleanly without creating duplicates.
+  - In Gmail, open an email thread already logged to the matched application: the banner reads `"Already logged to this job"`, and `"Update Email Log"` remains disabled until edited.
+
+### Scenario 9: Idle / Exit Context Retention
+- **Action**:
+  1. In Gmail, open an active recruiter email thread. The side panel loads the email.
+  2. Click the back arrow in Gmail to return to the main Inbox list view (or open a generic tab like Google).
+- **Expected Outcome**:
+  - The side panel retains the previously opened email on screen, avoiding jarring empty states or sudden loss of context.
+  - Clicking into a new email thread immediately refreshes the panel to the new email.
+

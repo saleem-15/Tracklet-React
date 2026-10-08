@@ -179,3 +179,29 @@ interface BroadcastSavePayload {
   };
 }
 ```
+
+---
+
+### F. Real-Time In-Page Context Changed (`PAGE_CONTEXT_CHANGED` & `ACTIVE_TAB_UPDATED`)
+Sent by `content.js` or `background.js` to notify the Side Panel that the user navigated to a different job card, email thread, or profile within an SPA.
+
+**Payload:**
+```typescript
+interface PageContextChangedPayload {
+  action: 'PAGE_CONTEXT_CHANGED' | 'ACTIVE_TAB_UPDATED';
+  payload: {
+    tabId?: number;
+    url: string;
+    title?: string;
+    source: 'pushState' | 'replaceState' | 'hashchange' | 'popstate' | 'webmail_thread_mutation' | 'tab_url_updated';
+  };
+}
+```
+
+**Side Panel Handling Behavior:**
+1. Verifies that the message matches the currently active observed tab.
+2. Checks whether the newly focused page is a recognized entity (Job, Email, Contact).
+3. If it is an exit or generic page (e.g. Inbox list view, Google search), **retains the last viewed item on screen**.
+4. If it is a new valid item, **cleanly discards unsubmitted edits**, triggers unified extraction (`GET_PAGE_DATA`), evaluates duplicate state, and updates the view with a smooth 150ms subtle transition.
+5. Strictly performs ZERO background saves to database or storage queues.
+

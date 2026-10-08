@@ -25,6 +25,10 @@ This document details the architectural decisions, Chrome Manifest V3 APIs, inte
 | **R7: ATS Form Detection & Field Matching** | **4-Tier Prioritized Selector Engine** | Tiers: 1. ATS specific $\rightarrow$ 2. Standard `autocomplete` $\rightarrow$ 3. Semantic `name`/`id` $\rightarrow$ 4. Label text proximity. Covers Greenhouse, Lever, Workday. | Machine learning models (heavy bundle size); Hardcoded single selectors (breaks on minor ATS layout updates). |
 | **R8: Autofill Execution & Feedback** | **Synthetic Event Dispatch + Interactive Checklist** | Dispatches standard `input` and `change` with native value setter overrides; side panel checklist scrolls to & highlights fields on click. | Direct property assignment only (fails in React/Angular); Automatic submission (dangerous, violates user consent). |
 | **R9: Tailored CV File Attachment** | **Dropzone Upload + ATS Capture + IndexedDB Payload** | Companion dropzone captures tailored PDF/DOCX; stores metadata (`resumeFileName`, `resumeFileSize`, `resumeUploadedAt`) on Application and file payload in IndexedDB. | Base64 in Firestore (hits 1MB document limit); Raw filesystem path (blocked by browser sandbox). |
+| **R10: Real-Time SPA Route & Thread Reactivity** | **In-Page SPA Hook + Background URL Listener** | Catches `pushState`, `replaceState`, `popstate`, `hashchange`, and webmail thread DOM mutations in real time. Notifies extension via `PAGE_CONTEXT_CHANGED`. | Full-page reload only (fails on LinkedIn/Gmail SPAs); Aggressive polling (high CPU battery drain). |
+| **R11: Zero Auto-Save & Manual Confirmation** | **Strict Explicit Button Trigger** | Extraction is in-memory only; data is never written to Firestore or storage queues on page navigation or tab switches. | Auto-saving on navigation (pollutes DB with accidental views); Pre-save prompts (interrupts smooth browsing). |
+| **R12: Smart Duplicate & In-Flight State** | **Multi-Entity Duplicate Recognition with Dirty-Gated Update** | Matches existing jobs (URL / company+role), emails (scoped to matched job), and contacts (LinkedIn URL / email / full name). Disables "Update" until fields change. | Read-only modal blocking edit; Always active save creating duplicates; Scoping email duplicates globally (causes false positives across multiple roles). |
+| **R13: Idle/Exit Context Retention & Clean Discard** | **Retain Last Item on Exit + Instant Clean Load on New Item** | Retains last viewed item when exiting to webmail inbox list or generic site. Cleanses unsubmitted edits immediately when navigating to a new item. | Blanking form on inbox list (jarring loss of visual context); Blocking alerts on unsubmitted edits (slows down fast job browsing). |
 
 ---
 
@@ -141,7 +145,38 @@ This document details the architectural decisions, Chrome Manifest V3 APIs, inte
 ### R6. Code Preservation Audit
 - **Files Reused As-Is / Extended**:
   - `extension/jobBoardRegistry.js`: 100% retained.
-  - `extension/background.js`: Retained; added side panel behavior and storage bridge.
-  - `extension/content.js`: Retained; extended with LinkedIn profile parser and ATS form detector.
-  - `extension/popup.js`: Refactored cleanly into `companionController.js` preserving all sync, offline queue, Markdown parser, and stage validation logic.
-  - `extension/popup.css`: Retained; updated with side panel fluid layout and Design System tokens.
+  - `extension/background.js`: Retained; added side panel behavior, active tab URL listener, and storage bridge.
+  - `extension/content.js`: Retained; extended with SPA navigation interception, webmail thread observer, LinkedIn profile parser, and ATS form detector.
+  - `extension/popup.js`: Refactored cleanly into unified companion controller preserving all sync, offline queue, Markdown parser, stage validation, and adding dirty-tracking for update buttons.
+  - `extension/popup.css`: Retained; updated with side panel fluid layout, subtle transition tokens, and duplicate status styling.
+
+---
+
+### R10. SPA In-Page Navigation & Reactivity Interception
+- **Challenge**: Sites like LinkedIn (`/jobs/collections/...`), Gmail (`mail.google.com`), and Outlook operate as single-page applications. Clicking a job card or email thread changes URL search parameters or hash without triggering a full page reload or `chrome.tabs.onUpdated` status `complete`.
+- **Implementation**:
+  1. **Background Script**: Extend `chrome.tabs.onUpdated` listener to check `changeInfo.url` in addition to `changeInfo.status === 'complete'`, notifying the side panel via `ACTIVE_TAB_UPDATED`.
+  2. **Content Script SPA Wrapper**: Hook into `history.pushState` and `history.replaceState` via custom event dispatch (`tracklet-locationchange`), and attach `popstate` / `hashchange` listeners.
+  3. **Debounced DOM Thread Observer**: For webmail (Gmail `div[role="main"]` and Outlook reading pane), observe thread container mutations debounced at 200ms to detect thread expansion or collapse.
+  4. **Runtime Notification**: When an active posting or thread changes, dispatch `{ action: 'PAGE_CONTEXT_CHANGED', url: window.location.href }` to the runtime.
+
+---
+
+### R11. Strict Non-Auto-Save Architecture
+- **Rule**: Extension operations are strictly non-destructive.
+- **Guarantee**: Navigating between pages or switching companion tabs NEVER writes or submits data to Firestore or local storage queues.
+- **Mechanism**: Page extraction is purely in-memory, populating the companion UI. Data persistence exclusively executes inside explicit user button click handlers (`handleSave`, `handleLogEmail`, `handleSaveContact`).
+
+---
+
+### R12. Multi-Entity Duplicate Detection & Dirty Tracking
+- **Jobs**: Evaluated across `tracklet_apps_index` (plus guest / pending) via normalized URL or exact `company` + `role`. If matched, show duplicate banner, switch action button to "Update Application", and keep disabled until form fields deviate from stored state.
+- **Emails**: Scoped strictly to the matched application's `emails` array. Evaluated by `emailUrl` (thread link) or `subject` + `date`. If matched, show "Already logged to this job", switch button to "Update Email Log", and keep disabled until edits occur.
+- **Contacts**: Evaluated across Contacts Hub by canonical LinkedIn URL, email address, OR case-insensitive Full Name. If matched, display "Already in Contacts Hub", pre-populate linked job IDs and category, and keep "Update Contact" disabled until fields are edited.
+
+---
+
+### R13. Context Retention on Idle/Exit & Instant Clean Load
+- **Idle/Exit Behavior**: When navigating to a non-job webpage or returning to the webmail inbox list, the side panel retains the last viewed item on screen, avoiding jarring empty states or confusing layout shifts.
+- **Clean Invalidation**: If the user had typed unsubmitted edits in the form and navigates to a new recognized job, email, or contact, the unsubmitted edits are cleanly discarded to load the new item immediately, providing frictionless rapid-fire browsing.
+

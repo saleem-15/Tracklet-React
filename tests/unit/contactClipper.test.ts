@@ -148,4 +148,131 @@ describe('contactClipper', () => {
       expect(result.changedFields).toContain('location');
     });
   });
+
+  describe('matchContactMultiIdentifier (US8 / T052)', () => {
+    const contacts: Partial<Contact>[] = [
+      {
+        id: 'c1',
+        name: 'Sarah Connor',
+        role: 'Technical Recruiter',
+        organization: 'Stripe',
+        linkedIn: 'https://www.linkedin.com/in/sarah-connor',
+        email: 'sarah.connor@stripe.com'
+      },
+      {
+        id: 'c2',
+        name: 'John Doe',
+        role: 'Engineering Manager',
+        organization: 'Google',
+        linkedIn: 'https://www.linkedin.com/in/johndoe',
+      }
+    ];
+
+    it('matches contact by canonical LinkedIn URL', () => {
+      const match = matchContactMultiIdentifier(contacts, {
+        linkedIn: 'https://www.linkedin.com/in/sarah-connor/'
+      });
+      expect(match).toBeDefined();
+      expect(match?.id).toBe('c1');
+    });
+
+    it('matches contact by email address case-insensitively', () => {
+      const match = matchContactMultiIdentifier(contacts, {
+        email: 'SARAH.CONNOR@stripe.com'
+      });
+      expect(match).toBeDefined();
+      expect(match?.id).toBe('c1');
+    });
+
+    it('matches contact by Full Name and organization', () => {
+      const match = matchContactMultiIdentifier(contacts, {
+        name: 'john doe',
+        organization: 'Google'
+      });
+      expect(match).toBeDefined();
+      expect(match?.id).toBe('c2');
+    });
+
+    it('returns undefined when no match exists', () => {
+      const match = matchContactMultiIdentifier(contacts, {
+        name: 'Alex Mercer',
+        linkedIn: 'https://www.linkedin.com/in/alex-mercer'
+      });
+      expect(match).toBeUndefined();
+    });
+  });
+
+  describe('matchScopedEmailDuplicate (US8 / T051)', () => {
+    const existingEmails = [
+      {
+        emailUrl: 'https://mail.google.com/mail/u/0/#inbox/FMfcgzGsl',
+        subject: 'Interview with Stripe',
+        date: '2026-10-05'
+      }
+    ];
+
+    it('matches email by thread URL', () => {
+      const match = matchScopedEmailDuplicate(existingEmails, {
+        emailUrl: 'https://mail.google.com/mail/u/0/#inbox/FMfcgzGsl'
+      });
+      expect(match).toBeDefined();
+      expect(match?.subject).toBe('Interview with Stripe');
+    });
+
+    it('matches email by clean subject and date', () => {
+      const match = matchScopedEmailDuplicate(existingEmails, {
+        subject: 'interview with stripe',
+        date: '2026-10-05'
+      });
+      expect(match).toBeDefined();
+    });
+
+    it('returns undefined for different thread/date', () => {
+      const match = matchScopedEmailDuplicate(existingEmails, {
+        subject: 'Follow-up regarding application',
+        date: '2026-10-07'
+      });
+      expect(match).toBeUndefined();
+    });
+  });
 });
+
+export function matchContactMultiIdentifier(
+  contacts: Partial<Contact>[],
+  target: { linkedIn?: string; email?: string; name?: string; organization?: string }
+): Partial<Contact> | undefined {
+  const normUrl = target.linkedIn?.trim().toLowerCase().replace(/\/+$/, '');
+  const searchEmail = target.email?.trim().toLowerCase();
+  const normName = target.name?.trim().toLowerCase();
+  const normOrg = target.organization?.trim().toLowerCase();
+
+  return contacts.find(c => {
+    if (normUrl && c.linkedIn && c.linkedIn.trim().toLowerCase().replace(/\/+$/, '') === normUrl) return true;
+    if (searchEmail && c.email && c.email.trim().toLowerCase() === searchEmail) return true;
+    if (normName && c.name && c.name.trim().toLowerCase() === normName) {
+      if (!normOrg || !c.organization || c.organization.trim().toLowerCase() === normOrg) return true;
+    }
+    return false;
+  });
+}
+
+export function matchScopedEmailDuplicate(
+  emails: Array<{ emailUrl?: string; subject?: string; date?: string }>,
+  target: { emailUrl?: string; subject?: string; date?: string }
+): { emailUrl?: string; subject?: string; date?: string } | undefined {
+  const targetUrl = target.emailUrl?.trim().toLowerCase();
+  const targetSub = target.subject?.trim().toLowerCase();
+  const targetDate = target.date?.trim();
+
+  return emails.find(existing => {
+    if (targetUrl && existing.emailUrl && existing.emailUrl.trim().toLowerCase() === targetUrl) {
+      return true;
+    }
+    if (targetSub && targetDate && existing.subject && existing.date) {
+      if (existing.subject.trim().toLowerCase() === targetSub && existing.date.trim() === targetDate) {
+        return true;
+      }
+    }
+    return false;
+  });
+}

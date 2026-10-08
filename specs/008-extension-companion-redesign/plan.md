@@ -8,7 +8,7 @@
 
 ## Summary
 
-This feature modernizes the Tracklet browser companion by transitioning from an ephemeral popup into a persistent **Chrome Side Panel** (`chrome.sidePanel` API), introducing a dedicated **LinkedIn Contact Clipper** with Category Smart-Defaulting, elevating the **Webmail Companion** with multi-match prioritization, providing a **Recruiter Micro-Card** on job postings with atomic bundle-on-save linking, implementing **Tailored CV Upload & Linking**, and establishing the **Autofill Hub** with real-time ATS form detection and interactive scroll-to-field feedback.
+This feature modernizes the Tracklet browser companion by transitioning from an ephemeral popup into a persistent **Chrome Side Panel** (`chrome.sidePanel` API), introducing a dedicated **LinkedIn Contact Clipper** with Category Smart-Defaulting, elevating the **Webmail Companion** with multi-match prioritization, providing a **Recruiter Micro-Card** on job postings with atomic bundle-on-save linking, implementing **Tailored CV Upload & Linking**, establishing the **Autofill Hub** with real-time ATS form detection and interactive scroll-to-field feedback, and implementing **Real-Time SPA Browsing Reactivity & Smart Multi-Entity Duplicate Detection** (Jobs, Emails, and Contacts) with dirty-gated update buttons and a strict Zero Auto-Save guarantee.
 
 Crucially, this is a **modular redesign and capability expansion, NOT a rewrite**: all 13 battle-tested existing extension capabilities (`jobBoardRegistry.js`, sync queues, offline storage, stage safety, Markdown parser) are strictly preserved with zero regressions.
 
@@ -23,7 +23,7 @@ Crucially, this is a **modular redesign and capability expansion, NOT a rewrite*
 **Storage**:
 - Firestore REST API (`applications`, `contacts`)
 - `chrome.storage.sync` (`tracklet_candidate_profile_v1`)
-- `chrome.storage.local` (`pending_applications`, `pending_emails`, offline queue)
+- `chrome.storage.local` (`pending_applications`, `pending_emails`, offline queue, `tracklet_apps_index`, `tracklet_contacts_index`)
 - IndexedDB (`TrackletExtensionDB` / `tailored_resumes`)
 
 **Testing**:
@@ -36,17 +36,19 @@ Crucially, this is a **modular redesign and capability expansion, NOT a rewrite*
 
 **Performance Goals**:
 - Side panel transition time $\le 150\text{ms}$ with zero layout shifts (CLS = 0)
-- Contextual tab detection latency $< 50\text{ms}$
+- Contextual tab & SPA route detection latency $< 50\text{ms}$
 - DOM ATS form detection $\le 60\text{ms}$
 - 100% non-destructive autofill execution (0 premature form submissions)
+- 100% manual persistence (0 unprompted background database writes)
 
 **Constraints**:
 - Plain JavaScript in `extension/` (no bundler inside extension directory to keep dev iteration instant)
 - Zero regressions on existing 13 working extension capabilities
 - Responsive companion bounds: 360px – 440px width (default 400px), 100vh fluid vertical layout
+- Zero auto-saves to Firebase/storage on page navigation or tab switches
 
 **Scale/Scope**:
-- ~6 files modified in `extension/` (`manifest.json`, `background.js`, `content.js`, `popup.html` / `sidepanel.html`, `popup.css`, `popup.js` / companion controller)
+- ~6 files modified in `extension/` (`manifest.json`, `background.js`, `content.js`, `popup.html`, `popup.css`, `popup.js`)
 - 1 file updated in `src/types.ts` (`Application` tailored CV attributes)
 - 0 destructive database migrations
 
@@ -66,10 +68,12 @@ Crucially, this is a **modular redesign and capability expansion, NOT a rewrite*
 | **Zero Browser Dialogs** | ✅ PASS | No native `alert()`, `confirm()`, or `prompt()` calls; all confirmations use in-panel receipts |
 | **Outbound Links `target="_blank"`** | ✅ PASS | All profile links, job links, and deep links use `target="_blank" rel="noopener noreferrer"` |
 | **Lighthouse / Contrast AA Compliance** | ✅ PASS | Text tokens meet or exceed `text-slate-500` minimum contrast requirements |
+| **Strict Zero Auto-Save** | ✅ PASS | Navigating or switching tabs never triggers background database writes; persistence is exclusively user-initiated |
 | **`tsc --noEmit` & `npm run build`** | ✅ PASS | Type checks and production build must verify cleanly |
 | **No Unprompted Commits** | ✅ PASS | All modifications remain uncommitted in the working tree for user review |
 
 ---
+
 
 ## Project Structure
 

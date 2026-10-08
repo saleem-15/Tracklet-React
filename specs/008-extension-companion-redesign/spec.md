@@ -22,6 +22,16 @@
 - Q: How should the Contact Clipper handle LinkedIn profiles when the person is already recorded in the user's Contacts Hub? → A: Option A+ (Enrich & Update on Data Change Only) — Displays "Already in Contacts Hub"; the "Update Contact" action is shown ONLY if scraped fields (title, company, location) have changed compared to the stored record, while strictly preserving private notes and application links.
 - Q: When the Webmail Companion matches an incoming recruiter email to multiple applications at the same company, how should it prioritize the default match? → A: Option A (Active Stage & Recency Ranking) — Automatically targets the active pipeline application prioritizing Interview > Screening > Applied > Saved (newest first, ignoring Archived/Rejected), while displaying a badge showing the match count with a 1-click "Switch Job" popover.
 
+### Session 2026-10-07 (Interactive Reactivity & Smart Duplicate Detection)
+- Q: When navigating between jobs, emails, or contacts in your browser, how should the side panel transition? → A: Automatically switch tabs and load the new item immediately, allowing rapid-fire browsing and saving without extra clicks, but NEVER save/write to database automatically without explicit button press.
+- Q: When the extension detects that a job, email, or contact already exists in Tracklet, what should the side panel display and allow? → A: Show an "Already Tracked" status banner with its current stage/details, change the action button to "Update" (instead of duplicate create), and keep the "Update" button DISABLED until the user actually modifies any data.
+- Q: How should the extension identify whether an email is already saved in your database? → A: Check only within the currently matched job: only flag an email as already logged if the currently selected job application has this email in its records (by email URL, or subject + date/timestamp match).
+- Q: When you exit an email back to the inbox list or navigate to a non-job website, what should the side panel show in the meantime? → A: Keep the last viewed item on screen until a new valid job, email, or contact is opened.
+- Q: If you start editing a job or email in the panel, but navigate to a different job or email before hitting Save, what should happen to unsaved edits? → A: Discard the unsaved edits and load the new item immediately, keeping browsing fast and clutter-free.
+- Q: When the side panel automatically updates to a newly opened job, email, or contact, how should it visually indicate that it just refreshed? → A: A smooth subtle transition (`transition-opacity duration-150` or gentle highlight) providing clear visual feedback that the panel refreshed to the current page.
+- Q: For contacts (e.g. LinkedIn profiles or email senders), how should the extension detect existing records in your Contacts Hub? → A: Match by LinkedIn URL, Email, OR Full Name (case-insensitive, accommodating company transitions or vanity URL tweaks). Display "Already in Contacts Hub", load existing category and linked jobs, and activate "Update Contact" only when edited.
+
+
 ---
 
 ## 1. Architectural Foundation & Code Preservation Principles
@@ -279,7 +289,18 @@ When viewing an ATS application page (Greenhouse, Lever, Workday) or opening the
 - **FR-032**: The extension MUST provide a tailored CV file attachment dropzone (and/or detect host ATS file selection), capturing the uploaded CV file payload and metadata (`resumeFileName`, `resumeFileSize`, `resumeBlobId`, `resumeUploadedAt`), persisting it in storage, and linking it directly to the saved Application record with download/preview access.
 - **FR-033**: The extension MUST NEVER automatically trigger form submission; final review and submission remain under direct user control.
 
+#### Real-Time Reactivity & Smart Duplicate Detection
+- **FR-034**: The extension MUST listen to in-page Single-Page Application (SPA) navigation and DOM updates (`history.pushState`, `history.replaceState`, `popstate`, `hashchange`, and webmail thread DOM mutations) to trigger live context switching and extraction without requiring full page reloads.
+- **FR-035**: The extension MUST strictly uphold a Zero Auto-Save Guarantee: navigating between pages or switching tabs MUST NEVER trigger background writes or saves to Firestore or local storage; saving occurs exclusively upon explicit user click of the action button.
+- **FR-036**: When an opened job matches an existing application by normalized URL or (Company + Role), the side panel MUST display an "Already tracked in Tracklet" badge with current status, populate its existing details, and render the action button as "Update Application", disabled until the user modifies any field value.
+- **FR-037**: When an opened webmail thread matches an email log recorded inside the matched application's `emails` list (by email URL or Subject + Date/Timestamp), the side panel MUST display an "Already logged to this job" banner, populate the saved log fields, and render the action button as "Update Email Log", disabled until the user modifies any field value.
+- **FR-038**: When an opened profile or email sender matches a record in Contacts Hub (evaluated by LinkedIn profile URL, email address, OR case-insensitive Full Name), the Contact Clipper MUST display an "Already in Contacts Hub" badge, load their existing category and linked applications, and render the action button as "Update Contact", disabled until the user modifies any field value.
+- **FR-039**: When the user exits back to the webmail inbox list or navigates to a non-job webpage, the side panel MUST retain the last viewed item on screen until a new valid job, email, or contact is opened.
+- **FR-040**: If unsubmitted manual edits exist in the side panel and the user navigates to a new job, email, or contact, the unsaved edits MUST be cleanly discarded and immediately replaced with the newly extracted item, maintaining high-speed browsing without clutter.
+- **FR-041**: All automatic context and item refreshes MUST trigger a smooth subtle visual transition (`150ms`) without layout shifts.
+
 ---
+
 
 ## 4. Key Entities
 

@@ -201,3 +201,64 @@ stateDiagram-v2
     ScrollAndHighlight --> RenderChecklist: Highlight Fades (1.5s)
     RenderChecklist --> ManualSubmit: Candidate Reviews & Submits on Host Page
 ```
+
+---
+
+## 3. Real-Time Reactivity & Duplicate State Models
+
+### A. In-Flight Duplicate Recognition State (`EntityDuplicateStatus`)
+
+```typescript
+export interface EntityDuplicateStatus {
+  isDuplicate: boolean;
+  matchedEntityId?: string;
+  matchedDisplayLabel?: string;      // e.g. "Acme Corp (Software Engineer)" or "John Doe"
+  statusBadgeLabel?: string;         // e.g. "Already tracked in Tracklet (Interview)" or "Already in Contacts Hub"
+  primaryButtonLabel: 'Save' | 'Update';
+  isButtonEnabled: boolean;          // true if NEW entity OR (isDuplicate && isFormDirty)
+  dirtyFields: string[];             // List of field keys that differ from stored entity
+}
+```
+
+### B. Form Dirty Tracking Model (`FormDirtyState`)
+For each entity type (Job, Email, Contact), on initial page extraction or match selection, an immutable baseline snapshot is recorded:
+```typescript
+interface BaselineFormSnapshot {
+  job?: { company: string; role: string; platform: string; location?: string; workLocation?: string; employmentType?: string; notes?: string; stage: string };
+  email?: { subject: string; counterparty: string; date: string; time?: string; body?: string; direction: string; advanceStage?: string };
+  contact?: { name: string; role?: string; organization?: string; category?: string; email?: string; phone?: string; linkedIn?: string; notes?: string; applicationId?: string };
+}
+```
+Whenever an input event fires:
+- Compare current input values against `BaselineFormSnapshot`.
+- If differences exist (`dirtyFields.length > 0`), set `isFormDirty = true`, which enables the "Update" button.
+- If current input values match baseline, `isFormDirty = false`, disabling the "Update" button to prevent duplicate or redundant submissions.
+
+### C. SPA Reactivity & Idle Context State Machine
+
+```mermaid
+stateDiagram-v2
+    [*] --> IdleActiveTab: User Browsing
+    IdleActiveTab --> RouteEventDetected: pushState / hashchange / popstate / DOM mutation
+    
+    RouteEventDetected --> CheckPageType: Inspect URL & Page DOM
+    CheckPageType --> NewJobDetected: Valid Job Posting URL / DOM
+    CheckPageType --> NewEmailDetected: Webmail Thread Open
+    CheckPageType --> NewContactDetected: LinkedIn Profile (/in/*)
+    CheckPageType --> ExitOrGeneric: Inbox List or Non-Job Page
+    
+    NewJobDetected --> RefreshJobView: Discard Unsubmitted Edits + Extract New Job
+    NewEmailDetected --> RefreshEmailView: Discard Unsubmitted Edits + Extract Thread
+    NewContactDetected --> RefreshContactView: Discard Unsubmitted Edits + Extract Profile
+    ExitOrGeneric --> RetainCurrentView: Retain Last Viewed Item On Screen
+    
+    RefreshJobView --> EvaluateJobDuplicate: Check tracklet_apps_index
+    RefreshEmailView --> EvaluateEmailDuplicate: Check matchedApp.emails
+    RefreshContactView --> EvaluateContactDuplicate: Check tracklet_contacts_index (URL/Email/Name)
+    
+    EvaluateJobDuplicate --> IdleActiveTab: Wait for User Edit / Button Click (Zero Auto-Save)
+    EvaluateEmailDuplicate --> IdleActiveTab: Wait for User Edit / Button Click (Zero Auto-Save)
+    EvaluateContactDuplicate --> IdleActiveTab: Wait for User Edit / Button Click (Zero Auto-Save)
+    RetainCurrentView --> IdleActiveTab
+```
+
