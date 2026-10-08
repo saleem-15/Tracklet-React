@@ -37,7 +37,7 @@ The companion features a persistent 4-tab segmented navigation bar that automati
 - **Stage Safety Locks**:
   - New job clips are strictly restricted to **`Saved`** or **`Applied`** stage pills.
   - Existing applications already in **`Screening`**, **`Interview`**, **`Offer`**, **`Rejected`**, or **`Archived`** render as immutable badges to prevent accidental pipeline demotions.
-- **Tailored CV Upload**: Drag and drop or browse to attach a tailored resume variant (`.pdf`, `.docx`, `.doc`, `.txt`, max 10MB). Binary file payloads are saved locally in IndexedDB (`TrackletExtensionDB`), with file metadata (`resumeFileName`, `resumeFileSize`, `resumeBlobId`, `resumeUploadedAt`) linked directly to the application record.
+- **Tailored CV Upload**: Drag and drop or browse to attach a tailored resume variant (`.pdf`, `.docx`, `.doc`, `.txt`, max 2 MB). Binary file payloads are saved locally in IndexedDB (`TrackletExtensionDB`), with file metadata (`resumeFileName`, `resumeFileSize`, `resumeBlobId`, `resumeUploadedAt`) linked directly to the application record.
 - **Recruiter Micro-Card**: When browsing a job post with an identified recruiter or job poster, a micro-card renders on the Job tab with an opt-in checkbox (checked by default) to bundle contact creation and bidirectional linking in a single transaction on save.
 - **Rich Text Notes**: WYSIWYG notes editor with bidirectional Markdown synchronization.
 
