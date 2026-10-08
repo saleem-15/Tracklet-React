@@ -343,6 +343,79 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ignore
   }
 
+  // Update Alert Banner Controller
+  const updateAlertBanner = document.getElementById('update-alert-banner');
+  const updateAlertText = document.getElementById('update-alert-text');
+  const updateAlertOpenBtn = document.getElementById('update-alert-open-btn');
+  const updateAlertDismissBtn = document.getElementById('update-alert-dismiss-btn');
+
+  function checkExtensionUpdate() {
+    try {
+      const manifest = (typeof chrome !== 'undefined' && chrome.runtime?.getManifest)
+        ? chrome.runtime.getManifest()
+        : { version: '1.0.0' };
+      const currentVersion = manifest.version || '1.0.0';
+
+      chrome.storage.local.get(['tracklet_latest_version', 'tracklet_dismissed_update_version'], (res) => {
+        const latestVersion = res?.tracklet_latest_version;
+        const dismissedVersion = res?.tracklet_dismissed_update_version;
+
+        if (latestVersion && latestVersion !== currentVersion && latestVersion !== dismissedVersion) {
+          const currParts = currentVersion.split('.').map(n => parseInt(n, 10) || 0);
+          const latestParts = latestVersion.split('.').map(n => parseInt(n, 10) || 0);
+          let isNewer = false;
+          for (let i = 0; i < Math.max(currParts.length, latestParts.length); i++) {
+            if ((latestParts[i] || 0) > (currParts[i] || 0)) {
+              isNewer = true;
+              break;
+            } else if ((latestParts[i] || 0) < (currParts[i] || 0)) {
+              break;
+            }
+          }
+
+          if (isNewer && updateAlertBanner) {
+            updateAlertBanner.style.display = 'flex';
+            if (updateAlertText) {
+              updateAlertText.textContent = `Update v${latestVersion} available`;
+            }
+          }
+        }
+      });
+    } catch {
+      // ignore
+    }
+  }
+
+  if (updateAlertOpenBtn) {
+    updateAlertOpenBtn.addEventListener('click', async () => {
+      try {
+        const storageResult = await chrome.storage.local.get(['tracklet_web_origin']);
+        const targetUrl = storageResult?.tracklet_web_origin || TRACKLET_APP_URL;
+        chrome.tabs.create({ url: targetUrl });
+      } catch {
+        chrome.tabs.create({ url: TRACKLET_APP_URL });
+      }
+    });
+  }
+
+  if (updateAlertDismissBtn) {
+    updateAlertDismissBtn.addEventListener('click', () => {
+      if (updateAlertBanner) updateAlertBanner.style.display = 'none';
+      try {
+        chrome.storage.local.get(['tracklet_latest_version'], (res) => {
+          if (res?.tracklet_latest_version) {
+            chrome.storage.local.set({ tracklet_dismissed_update_version: res.tracklet_latest_version });
+          }
+        });
+      } catch {
+        // ignore
+      }
+    });
+  }
+
+  checkExtensionUpdate();
+
+
   // Custom Platform Dropdown Handlers
   platformTrigger.addEventListener('click', (e) => {
     e.stopPropagation();

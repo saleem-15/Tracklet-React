@@ -1593,8 +1593,27 @@ window.addEventListener('message', (event) => {
   if (event.source !== window || !isTrackletOrigin()) return;
   if (!event.data || typeof event.data !== 'object') return;
 
-  if (event.data.type === 'TRACKLET_WEB_AUTH_SYNC') {
+  if (event.data.type === 'TRACKLET_EXT_PING') {
     try {
+      const manifest = (typeof chrome !== 'undefined' && chrome.runtime?.getManifest)
+        ? chrome.runtime.getManifest()
+        : { version: '1.0.0', name: 'Tracklet' };
+      window.postMessage({
+        type: 'TRACKLET_EXT_PONG',
+        payload: {
+          installed: true,
+          version: manifest.version || '1.0.0',
+          name: manifest.name || 'Tracklet'
+        }
+      }, window.location.origin);
+    } catch {
+      // Extension context invalidated
+    }
+  } else if (event.data.type === 'TRACKLET_WEB_AUTH_SYNC') {
+    try {
+      if (event.data.payload?.latestVersion && typeof chrome !== 'undefined' && chrome.storage?.local) {
+        chrome.storage.local.set({ tracklet_latest_version: event.data.payload.latestVersion });
+      }
       chrome.runtime.sendMessage({
         action: 'SYNC_USER_SESSION',
         payload: {

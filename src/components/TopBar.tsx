@@ -6,6 +6,8 @@ import { MobileFilterDrawer } from './MobileFilterDrawer';
 import { UI_TOKENS } from '../theme/tokens';
 import { useNavigation } from '../context/NavigationContext';
 import { useApplicationsContext } from '../context/ApplicationsContext';
+import { ExtensionStatusBadge } from './extension/ExtensionStatusBadge';
+import { useExtensionContext } from '../context/ExtensionContext';
 
 export interface TopBarProps {
   filter?: FilterState;
@@ -79,6 +81,7 @@ const DATE_OPTIONS = [
 export const TopBar: React.FC<TopBarProps> = (props) => {
   const nav = useNavigation();
   const apps = useApplicationsContext();
+  const extensionState = useExtensionContext();
 
   const filter = props.filter ?? nav.filter;
   const setFilter = props.setFilter ?? nav.setFilter;
@@ -297,8 +300,16 @@ export const TopBar: React.FC<TopBarProps> = (props) => {
           </div>
         </div>
 
-        {/* Right Section: Add Application Button */}
+        {/* Right Section: Add Application Button & Extension Status */}
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          {/* Extension Status Badge (Hidden on mobile xs, visible on sm+) */}
+          <div className="hidden sm:flex items-center">
+            <ExtensionStatusBadge
+              extensionState={extensionState}
+              onClick={nav.openExtensionModal}
+            />
+          </div>
+
           <button
             onClick={onOpenAddModal}
             title="Add application (Press 'N')"

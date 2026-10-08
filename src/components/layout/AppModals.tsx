@@ -9,6 +9,8 @@ import { useToastContext } from '../../context/ToastContext';
 
 import { useAuth } from '../../context/AuthContext';
 import { TesterReportModal } from '../feedback/TesterReportModal';
+import { ExtensionModal } from '../extension/ExtensionModal';
+import { useExtensionContext } from '../../context/ExtensionContext';
 
 export interface AppModalsProps {
   migration?: {
@@ -27,7 +29,7 @@ export interface AppModalsProps {
  * Renders all top-level modal dialogs: AddApplicationModal (new job entry),
  * AuthModal (multi-provider sign-in/sign-up), GuestMigrationModal
  * (transfer localStorage guest data to authenticated cloud account),
- * and TesterReportModal (bug and feedback reporting).
+ * TesterReportModal (bug and feedback reporting), and ExtensionModal (Chrome extension companion).
  */
 export function AppModals({ migration }: AppModalsProps = {}) {
   const { 
@@ -35,12 +37,15 @@ export function AppModals({ migration }: AppModalsProps = {}) {
     closeAddModal, 
     isFeedbackModalOpen, 
     closeFeedbackModal, 
+    isExtensionModalOpen,
+    closeExtensionModal,
     activeTab 
   } = useNavigation();
   const { user } = useAuth();
   const { handleAddApplication } = useApplicationsContext();
   const { contacts, handleAddContact } = useContactsContext();
   const { addToast } = useToastContext();
+  const extensionState = useExtensionContext();
 
   return (
     <>
@@ -62,6 +67,14 @@ export function AppModals({ migration }: AppModalsProps = {}) {
         onClose={closeFeedbackModal}
         activeTab={activeTab}
         user={user}
+      />
+
+      {/* Browser Extension Companion Modal */}
+      <ExtensionModal
+        isOpen={isExtensionModalOpen}
+        onClose={closeExtensionModal}
+        extensionState={extensionState}
+        onShowToast={addToast}
       />
 
       {/* Guest-to-Account Data Migration Modal */}

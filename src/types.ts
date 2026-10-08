@@ -238,3 +238,36 @@ export type CreateTesterReportInput = Omit<
   TesterIssueReport, 
   'id' | 'status' | 'githubIssueNumber' | 'githubIssueUrl' | 'createdAt' | 'updatedAt'
 >;
+
+// --- Browser Extension Distribution & Status ---
+export type ExtensionStatus = 
+  | 'checking' 
+  | 'not_installed' 
+  | 'connected' 
+  | 'update_available';
+
+export interface ExtensionState {
+  status: ExtensionStatus;
+  installedVersion: string | null;
+  latestVersion: string;
+  isChecking: boolean;
+  lastCheckedAt: number | null;
+  recheck: () => Promise<void>;
+}
+
+export interface TrackletExtPingMessage {
+  type: 'TRACKLET_EXT_PING';
+  timestamp: number;
+}
+
+export interface TrackletExtPongPayload {
+  installed: boolean;
+  version: string;
+  name: string;
+}
+
+export interface TrackletExtPongMessage {
+  type: 'TRACKLET_EXT_PONG';
+  payload: TrackletExtPongPayload;
+}
+

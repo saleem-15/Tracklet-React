@@ -208,6 +208,68 @@ body {
   display: flex;
 }
 
+/* Update Alert Banner */
+.update-alert-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  background-color: #fef3c7;
+  border-bottom: 1px solid #fde68a;
+  font-size: 11px;
+  color: #92400e;
+  font-weight: 500;
+}
+
+.update-alert-content {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.update-alert-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #d97706;
+  flex-shrink: 0;
+}
+
+.update-alert-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.btn-update-action {
+  background-color: #d97706;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  padding: 2.5px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.btn-update-action:hover {
+  background-color: #b45309;
+}
+
+.btn-update-dismiss {
+  background: none;
+  border: none;
+  color: #92400e;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 0 3px;
+  line-height: 1;
+}
+
 /* Direct Form Layout */
 .form-layout {
   display: flex;
