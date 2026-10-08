@@ -349,7 +349,7 @@ export function syncApplicationsToExtension(applications: Application[], contact
       window.postMessage({
         type: 'TRACKLET_CONTACTS_INDEX_SYNC',
         payload: contacts,
-      }, '*');
+      }, window.location.origin);
     }
   } catch {
     // ignore
