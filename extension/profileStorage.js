@@ -134,7 +134,7 @@
             // Remove stale sync profile to prevent resurrecting old data
             chrome.storage.sync.remove([STORAGE_KEY], () => {
               if (chrome.runtime.lastError) {
-                return reject(chrome.runtime.lastError);
+                console.warn('[Tracklet ProfileStorage] Failed to remove stale sync profile', chrome.runtime.lastError);
               }
               resolve(normalized);
             });

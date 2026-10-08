@@ -1754,7 +1754,7 @@ function executeAutofill(profile) {
   }
 
   const detection = detectAtsForm();
-  const formRoot = (detection.formSelector ? document.querySelector(detection.formSelector) : null) || document;
+  const formRoot = (detection.formSelector && detection.formSelector !== 'form' ? document.querySelector(detection.formSelector) : null) || document;
   const populatedFields = [];
   const manualFieldsRequired = [];
 

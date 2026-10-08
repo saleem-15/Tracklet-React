@@ -567,26 +567,29 @@ async function pushContactToFirestore(contact, userSession, config) {
   });
 
   if (!res.ok) {
-    // If already exists, attempt PATCH
-    let patchUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/users/${userId}/contacts/${encodeURIComponent(contact.id)}?`;
-    if (apiKey && apiKey !== 'demo-api-key') {
-      patchUrl += `key=${encodeURIComponent(apiKey)}&`;
-    }
-    Object.keys(fields).forEach(f => {
-      patchUrl += `updateMask.fieldPaths=${encodeURIComponent(f)}&`;
-    });
-    patchUrl = patchUrl.replace(/[?&]$/, '');
+    if (res.status === 409) {
+      // If already exists, attempt PATCH
+      let patchUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/users/${userId}/contacts/${encodeURIComponent(contact.id)}?`;
+      if (apiKey && apiKey !== 'demo-api-key') {
+        patchUrl += `key=${encodeURIComponent(apiKey)}&`;
+      }
+      Object.keys(fields).forEach(f => {
+        patchUrl += `updateMask.fieldPaths=${encodeURIComponent(f)}&`;
+      });
+      patchUrl = patchUrl.replace(/[?&]$/, '');
 
-    const patchRes = await fetch(patchUrl, {
-      method: 'PATCH',
-      headers,
-      body: JSON.stringify({ fields })
-    });
+      const patchRes = await fetch(patchUrl, {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify({ fields })
+      });
 
-    if (!patchRes.ok) {
-      throw new Error(`Failed to save contact to Firestore: ${res.statusText}`);
+      if (!patchRes.ok) {
+        throw new Error(`Failed to save contact to Firestore: ${patchRes.status} ${patchRes.statusText}`);
+      }
+      return await patchRes.json();
     }
-    return await patchRes.json();
+    throw new Error(`Failed to save contact to Firestore: ${res.status} ${res.statusText}`);
   }
 
   return await res.json();
