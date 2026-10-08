@@ -880,38 +880,61 @@ document.addEventListener('DOMContentLoaded', async () => {
   const updateAlertOpenBtn = document.getElementById('update-alert-open-btn');
   const updateAlertDismissBtn = document.getElementById('update-alert-dismiss-btn');
 
-  function checkExtensionUpdate() {
+  async function checkExtensionUpdate() {
     try {
       const manifest = (typeof chrome !== 'undefined' && chrome.runtime?.getManifest)
         ? chrome.runtime.getManifest()
         : { version: '1.0.0' };
       const currentVersion = manifest.version || '1.0.0';
 
-      chrome.storage.local.get(['tracklet_latest_version', 'tracklet_dismissed_update_version'], (res) => {
-        const latestVersion = res?.tracklet_latest_version;
-        const dismissedVersion = res?.tracklet_dismissed_update_version;
+      // 1. Check storage for locally cached or synced latest version
+      const storageRes = await new Promise(resolve => {
+        chrome.storage.local.get(['tracklet_latest_version', 'tracklet_dismissed_update_version', 'tracklet_web_origin'], resolve);
+      });
 
-        if (latestVersion && latestVersion !== currentVersion && latestVersion !== dismissedVersion) {
-          const currParts = currentVersion.split('.').map(n => parseInt(n, 10) || 0);
-          const latestParts = latestVersion.split('.').map(n => parseInt(n, 10) || 0);
-          let isNewer = false;
-          for (let i = 0; i < Math.max(currParts.length, latestParts.length); i++) {
-            if ((latestParts[i] || 0) > (currParts[i] || 0)) {
-              isNewer = true;
-              break;
-            } else if ((latestParts[i] || 0) < (currParts[i] || 0)) {
-              break;
-            }
-          }
+      let latestVersion = storageRes?.tracklet_latest_version || null;
+      const dismissedVersion = storageRes?.tracklet_dismissed_update_version;
+      const origin = storageRes?.tracklet_web_origin || TRACKLET_APP_URL;
 
-          if (isNewer && updateAlertBanner) {
-            updateAlertBanner.style.display = 'flex';
-            if (updateAlertText) {
-              updateAlertText.textContent = `Update v${latestVersion} available`;
-            }
+      // 2. Fetch deployed manifest independently so users who only use the side panel get live updates
+      try {
+        const cleanBase = origin.replace(/\/+$/, '');
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 2000);
+        const remoteRes = await fetch(`${cleanBase}/version.json`, { signal: controller.signal, cache: 'no-cache' }).catch(() => null);
+        clearTimeout(timeoutId);
+
+        if (remoteRes && remoteRes.ok) {
+          const remoteData = await remoteRes.json();
+          if (remoteData?.version) {
+            latestVersion = remoteData.version;
+            chrome.storage.local.set({ tracklet_latest_version: latestVersion });
           }
         }
-      });
+      } catch {
+        // network / offline fallback
+      }
+
+      if (latestVersion && latestVersion !== currentVersion && latestVersion !== dismissedVersion) {
+        const currParts = currentVersion.split('.').map(n => parseInt(n, 10) || 0);
+        const latestParts = latestVersion.split('.').map(n => parseInt(n, 10) || 0);
+        let isNewer = false;
+        for (let i = 0; i < Math.max(currParts.length, latestParts.length); i++) {
+          if ((latestParts[i] || 0) > (currParts[i] || 0)) {
+            isNewer = true;
+            break;
+          } else if ((latestParts[i] || 0) < (currParts[i] || 0)) {
+            break;
+          }
+        }
+
+        if (isNewer && updateAlertBanner) {
+          updateAlertBanner.style.display = 'flex';
+          if (updateAlertText) {
+            updateAlertText.textContent = `Update v${latestVersion} available`;
+          }
+        }
+      }
     } catch {
       // ignore
     }
@@ -921,10 +944,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     updateAlertOpenBtn.addEventListener('click', async () => {
       try {
         const storageResult = await chrome.storage.local.get(['tracklet_web_origin']);
-        const targetUrl = storageResult?.tracklet_web_origin || TRACKLET_APP_URL;
+        const baseUrl = (storageResult?.tracklet_web_origin || TRACKLET_APP_URL).replace(/\/+$/, '');
+        const targetUrl = `${baseUrl}/?action=update-extension`;
         chrome.tabs.create({ url: targetUrl });
       } catch {
-        chrome.tabs.create({ url: TRACKLET_APP_URL });
+        const fallbackUrl = `${TRACKLET_APP_URL}/?action=update-extension`;
+        chrome.tabs.create({ url: fallbackUrl });
       }
     });
   }

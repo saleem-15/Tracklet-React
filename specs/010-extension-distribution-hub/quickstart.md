@@ -56,7 +56,7 @@
 
 1. Open `chrome://extensions` in the browser.
 2. Enable **Developer mode** toggle.
-3. Click **Load unpacked** and select the unzipped `extension/` folder.
+3. Click **Load unpacked** and select the extracted directory containing `manifest.json`.
 4. Return to the Tracklet tab (`http://localhost:3000`) and reload.
 5. **Expected Outcome**:
    - Within 500ms, the TopBar pill updates to show a solid emerald green indicator: `"Connected (v1.0.0)"`.

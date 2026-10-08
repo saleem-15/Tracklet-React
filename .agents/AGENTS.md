@@ -92,6 +92,11 @@ All components must follow the formalized guidelines in `.agents/rules/ui-ux-sta
 5. **Header Hierarchy**: Do not place dynamic record counts as subtitles directly under primary page or modal headings.
 6. **Micro-interaction Stability**: Use `transition-colors duration-150` instead of `transition-all`. Keep font-weights and borders constant across states to prevent layout shifts.
 
+### G. Browser Extension Versioning & Distribution
+1. **Synchronized Versioning**: Whenever modifying files inside `extension/`, you MUST bump the `"version"` string in `extension/manifest.json` AND update `LATEST_EXTENSION_VERSION` in `src/lib/constants.ts` in lockstep.
+2. **Automated Verification**: The test suite in `tests/unit/versionSync.test.ts` validates that `extension/manifest.json` matches `constants.ts`. Never push changes where these two values drift.
+3. **Artifact Bundling**: Run `npm run package:ext` or `npm run build` to package `public/tracklet-extension.zip`. The download anchor uses `download="tracklet-extension-v<version>.zip"` to guarantee version clarity on the user's local disk.
+
 ---
 
 ## 4. Verification Checklist Before Marking Work Complete

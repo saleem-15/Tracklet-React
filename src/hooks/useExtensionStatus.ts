@@ -19,11 +19,11 @@ export function useExtensionStatus(): ExtensionState {
 
   const mountedRef = useRef(true);
 
-  const runHandshake = useCallback(async () => {
+  const runHandshake = useCallback(async (): Promise<{ status: ExtensionStatus; version: string | null }> => {
     setIsChecking(true);
     try {
       const result = await pingExtension(EXTENSION_DISTRIBUTION_CONFIG.handshakeTimeoutMs);
-      if (!mountedRef.current) return;
+      if (!mountedRef.current) return { status: 'not_installed', version: null };
 
       setLastCheckedAt(Date.now());
       setIsChecking(false);
@@ -32,18 +32,22 @@ export function useExtensionStatus(): ExtensionState {
         setInstalledVersion(result.version);
         if (isUpdateAvailable(result.version, LATEST_EXTENSION_VERSION)) {
           setStatus('update_available');
+          return { status: 'update_available', version: result.version };
         } else {
           setStatus('connected');
+          return { status: 'connected', version: result.version };
         }
       } else {
         setInstalledVersion(null);
         setStatus('not_installed');
+        return { status: 'not_installed', version: null };
       }
     } catch {
-      if (!mountedRef.current) return;
+      if (!mountedRef.current) return { status: 'not_installed', version: null };
       setIsChecking(false);
       setStatus('not_installed');
       setInstalledVersion(null);
+      return { status: 'not_installed', version: null };
     }
   }, []);
 

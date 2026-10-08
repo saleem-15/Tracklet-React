@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   X, 
   Puzzle, 
@@ -39,12 +39,22 @@ export const ExtensionModal: React.FC<ExtensionModalProps> = ({
     return 'install';
   });
 
-  // Keep active tab in sync if status transitions while modal is open
+  // Reset active tab to sensible default only when modal transitions from closed to open
+  const prevIsOpenRef = useRef(isOpen);
   useEffect(() => {
-    if (status === 'update_available') {
-      setActiveTab('update');
+    const wasOpen = prevIsOpenRef.current;
+    prevIsOpenRef.current = isOpen;
+
+    if (!wasOpen && isOpen) {
+      if (status === 'update_available') {
+        setActiveTab('update');
+      } else if (status === 'connected') {
+        setActiveTab('features');
+      } else {
+        setActiveTab('install');
+      }
     }
-  }, [status]);
+  }, [isOpen, status]);
 
   // Handle Escape key dismissal (Mandatory rule from AGENTS.md)
   useEffect(() => {
@@ -72,15 +82,24 @@ export const ExtensionModal: React.FC<ExtensionModalProps> = ({
 
   const handleManualRecheck = async () => {
     const prevStatus = status;
-    await recheck();
-    if (prevStatus === 'update_available') {
+    const outcome = await recheck();
+
+    if (outcome.status === 'connected') {
+      if (prevStatus === 'update_available') {
+        onShowToast?.(
+          'success',
+          'Extension Updated!',
+          `Tracklet Companion has been successfully updated to v${latestVersion}.`
+        );
+      } else {
+        onShowToast?.('success', 'Connected', `Tracklet Companion v${latestVersion} is connected and ready.`);
+      }
+    } else if (outcome.status === 'update_available') {
       onShowToast?.(
-        'success',
-        'Extension Updated!',
-        `Tracklet Companion has been successfully updated to v${latestVersion}.`
+        'info',
+        'Update Still Pending',
+        `Installed version is still v${outcome.version || 'older'}. Make sure to reload the extension in chrome://extensions.`
       );
-    } else if (status === 'connected') {
-      onShowToast?.('success', 'Connected', `Tracklet Companion v${latestVersion} is connected and ready.`);
     } else {
       onShowToast?.(
         'info',

@@ -373,7 +373,7 @@ export const LATEST_EXTENSION_VERSION = '1.0.0';
 
 export const EXTENSION_DISTRIBUTION_CONFIG = {
   latestVersion: LATEST_EXTENSION_VERSION,
-  downloadFilename: 'tracklet-extension.zip',
+  downloadFilename: `tracklet-extension-v${LATEST_EXTENSION_VERSION}.zip`,
   localDownloadUrl: '/tracklet-extension.zip',
   githubReleaseDownloadUrl: 'https://github.com/saleem-15/Tracklet-React/releases/latest/download/tracklet-extension.zip',
   handshakeTimeoutMs: 500,

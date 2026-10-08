@@ -259,7 +259,7 @@ export interface ExtensionState {
   latestVersion: string;
   isChecking: boolean;
   lastCheckedAt: number | null;
-  recheck: () => Promise<void>;
+  recheck: () => Promise<{ status: ExtensionStatus; version: string | null }>;
 }
 
 export interface TrackletExtPingMessage {

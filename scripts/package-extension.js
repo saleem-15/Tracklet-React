@@ -6,7 +6,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { execSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -34,19 +34,54 @@ if (fs.existsSync(outputZip)) {
   }
 }
 
-console.log('[package-extension] Packaging extension directory into public/tracklet-extension.zip...');
+// Read manifest version
+const manifestPath = path.join(extensionDir, 'manifest.json');
+let manifestVersion = 'unknown';
+try {
+  const manifestRaw = fs.readFileSync(manifestPath, 'utf8');
+  const parsed = JSON.parse(manifestRaw);
+  if (parsed.version) {
+    manifestVersion = parsed.version;
+  }
+} catch {
+  // ignore
+}
+
+// Generate public/version.json for live side-panel updates
+try {
+  fs.writeFileSync(
+    path.join(publicDir, 'version.json'),
+    JSON.stringify({ version: manifestVersion, updatedAt: new Date().toISOString() }, null, 2),
+    'utf8'
+  );
+} catch {
+  // ignore
+}
+
+console.log(`[package-extension] Packaging extension v${manifestVersion} into public/tracklet-extension.zip...`);
 
 const isWindows = process.platform === 'win32';
 
 try {
   if (isWindows) {
-    // PowerShell Compress-Archive
-    const psCommand = `powershell -NoProfile -Command "Compress-Archive -Path '${extensionDir}\\*' -DestinationPath '${outputZip}' -Force"`;
-    execSync(psCommand, { stdio: 'inherit', cwd: rootDir });
+    // Run inside extensionDir via cwd so wildcard path is simple and literal, avoiding path interpolation issues
+    const psArgs = [
+      '-NoProfile',
+      '-Command',
+      '& { param($dest) Compress-Archive -Path * -DestinationPath $dest -Force }',
+      outputZip
+    ];
+    const res = spawnSync('powershell.exe', psArgs, { stdio: 'inherit', cwd: extensionDir });
+    if (res.error) throw res.error;
+    if (res.status !== 0) throw new Error(`PowerShell Compress-Archive exited with status ${res.status}`);
   } else {
-    // Unix zip command
-    const unixCommand = `cd "${extensionDir}" && zip -r "${outputZip}" . -x "README.md" -x "*.DS_Store"`;
-    execSync(unixCommand, { stdio: 'inherit', cwd: rootDir });
+    // Unix zip command with argument array and cwd at extensionDir
+    const res = spawnSync('zip', ['-r', outputZip, '.', '-x', 'README.md', '-x', '*.DS_Store'], {
+      stdio: 'inherit',
+      cwd: extensionDir
+    });
+    if (res.error) throw res.error;
+    if (res.status !== 0) throw new Error(`zip command exited with status ${res.status}`);
   }
 
   if (fs.existsSync(outputZip)) {

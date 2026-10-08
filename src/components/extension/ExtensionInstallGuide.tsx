@@ -117,7 +117,7 @@ export const ExtensionInstallGuide: React.FC<ExtensionInstallGuideProps> = ({ on
               Toggle Developer Mode & Load Unpacked
             </h4>
             <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-              In the top-right corner of the Extensions page, switch the <strong className="text-slate-800">Developer mode</strong> toggle to ON. Then click the <strong className="text-slate-800">Load unpacked</strong> button (top left) and select the unzipped <code className="bg-slate-200/70 px-1 py-0.5 rounded text-[11px] font-mono">extension</code> folder.
+              In the top-right corner of the Extensions page, switch the <strong className="text-slate-800">Developer mode</strong> toggle to ON. Then click the <strong className="text-slate-800">Load unpacked</strong> button (top left) and select the extracted directory containing <code className="bg-slate-200/70 px-1 py-0.5 rounded text-[11px] font-mono">manifest.json</code>.
             </p>
             <div className="mt-3 p-2.5 bg-blue-50/60 border border-blue-200/70 rounded-lg text-xs text-blue-900 flex items-center gap-2">
               <span className="text-base shrink-0">💡</span>
