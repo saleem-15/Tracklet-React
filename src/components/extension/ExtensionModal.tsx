@@ -104,7 +104,7 @@ export const ExtensionModal: React.FC<ExtensionModalProps> = ({
       onShowToast?.(
         'info',
         'Status Checked',
-        'Tracklet extension was not detected. Make sure it is enabled and loaded in Developer Mode.'
+        'Tracklet extension was not detected. Make sure it is enabled in Chrome and refresh this page (F5).'
       );
     }
   };
@@ -206,6 +206,7 @@ export const ExtensionModal: React.FC<ExtensionModalProps> = ({
             <ExtensionUpdateGuide
               installedVersion={installedVersion}
               latestVersion={latestVersion}
+              status={status}
               onDownload={handleDownloadInitiated}
               onRecheck={handleManualRecheck}
               isChecking={isChecking}

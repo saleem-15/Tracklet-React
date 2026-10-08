@@ -6,13 +6,18 @@ import {
   Check, 
   ArrowRight, 
   RotateCw,
-  FolderSync
+  FolderSync,
+  CheckCircle2,
+  AlertCircle
 } from 'lucide-react';
+import { ExtensionStatus } from '../../types';
 import { EXTENSION_DISTRIBUTION_CONFIG } from '../../lib/constants';
+import { isUpdateAvailable } from '../../lib/versionUtils';
 
 interface ExtensionUpdateGuideProps {
   installedVersion: string | null;
   latestVersion: string;
+  status?: ExtensionStatus;
   onDownload?: () => void;
   onRecheck?: () => void;
   isChecking?: boolean;
@@ -21,6 +26,7 @@ interface ExtensionUpdateGuideProps {
 export const ExtensionUpdateGuide: React.FC<ExtensionUpdateGuideProps> = ({
   installedVersion,
   latestVersion,
+  status,
   onDownload,
   onRecheck,
   isChecking = false,
@@ -37,22 +43,62 @@ export const ExtensionUpdateGuide: React.FC<ExtensionUpdateGuideProps> = ({
     }
   };
 
+  const hasUpdate = status === 'update_available' || (Boolean(installedVersion) && isUpdateAvailable(installedVersion, latestVersion));
+  const isUpToDate = status === 'connected' || (Boolean(installedVersion) && !isUpdateAvailable(installedVersion, latestVersion));
+
   return (
     <div className="space-y-4">
-      {/* Version Comparison Card */}
-      <div className="bg-amber-50/70 border border-amber-200/80 rounded-xl p-4 flex items-center justify-between gap-3">
-        <div>
-          <div className="text-xs font-bold text-amber-900">New Update Available</div>
-          <div className="text-xs text-amber-700 mt-0.5">
-            A newer version of the Tracklet Companion is ready to install.
+      {/* Version Status Card (Dynamic) */}
+      {hasUpdate ? (
+        <div className="bg-amber-50/70 border border-amber-200/80 rounded-xl p-4 flex items-center justify-between gap-3">
+          <div>
+            <div className="text-xs font-bold text-amber-900 flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse motion-reduce:animate-none" />
+              New Update Available
+            </div>
+            <div className="text-xs text-amber-700 mt-0.5">
+              A newer version of the Tracklet Companion is ready to install.
+            </div>
+          </div>
+          <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border border-amber-200 text-xs font-mono shrink-0 shadow-2xs">
+            <span className="text-slate-500 font-medium">v{installedVersion || '0.9.0'}</span>
+            <ArrowRight className="w-3.5 h-3.5 text-amber-600" />
+            <span className="text-emerald-600 font-bold">v{latestVersion}</span>
           </div>
         </div>
-        <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border border-amber-200 text-xs font-mono shrink-0 shadow-2xs">
-          <span className="text-slate-500 font-medium">v{installedVersion || '0.9.0'}</span>
-          <ArrowRight className="w-3.5 h-3.5 text-amber-600" />
-          <span className="text-emerald-600 font-bold">v{latestVersion}</span>
+      ) : isUpToDate ? (
+        <div className="bg-emerald-50/70 border border-emerald-200/80 rounded-xl p-4 flex items-center justify-between gap-3">
+          <div>
+            <div className="text-xs font-bold text-emerald-900 flex items-center gap-1.5">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              Extension is Up to Date
+            </div>
+            <div className="text-xs text-emerald-700 mt-0.5">
+              You are running the latest version of Tracklet Companion.
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-lg border border-emerald-200 text-xs font-mono shrink-0 shadow-2xs">
+            <span className="w-2 h-2 rounded-full bg-emerald-500" />
+            <span className="text-emerald-700 font-bold">v{installedVersion || latestVersion}</span>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="bg-slate-50/80 border border-slate-200/80 rounded-xl p-4 flex items-center justify-between gap-3">
+          <div>
+            <div className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+              <AlertCircle className="w-4 h-4 text-slate-500" />
+              Extension Not Detected
+            </div>
+            <div className="text-xs text-slate-600 mt-0.5">
+              Make sure the extension is loaded in Chrome, then refresh this page (F5).
+            </div>
+          </div>
+          <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-mono shrink-0 shadow-2xs">
+            <span className="text-slate-500">Latest:</span>
+            <span className="text-blue-600 font-bold">v{latestVersion}</span>
+          </div>
+        </div>
+      )}
 
       {/* Step 1: Download & Overwrite Files */}
       <div className="bg-slate-50/80 border border-slate-200/80 rounded-xl p-4 transition-colors">
@@ -98,7 +144,7 @@ export const ExtensionUpdateGuide: React.FC<ExtensionUpdateGuideProps> = ({
               Click Reload on Tracklet Card
             </h4>
             <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-              Go to <code className="bg-slate-200/70 px-1 py-0.5 rounded text-[11px] font-mono">chrome://extensions</code>, find the Tracklet extension card, and click the circular <strong>Reload (🔄)</strong> button. Chrome will instantly load the new code.
+              Go to <code className="bg-slate-200/70 px-1 py-0.5 rounded text-[11px] font-mono">chrome://extensions</code>, find the Tracklet extension card, and click the circular <strong>Reload (🔄)</strong> button. Then refresh this Tracklet page (<kbd className="bg-slate-200 px-1 py-0.5 rounded text-[11px] font-mono font-semibold">F5</kbd>) so the updated extension connects.
             </p>
             <div className="mt-2.5 flex items-center gap-2 max-w-md">
               <div className="flex-1 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-mono text-slate-700 select-all truncate">
