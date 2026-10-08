@@ -605,13 +605,13 @@
     "semantic_hash": "a036d340e4d1080524a6ff12478938fe"
   },
   "extension/background.js": {
-    "mtime": 1791381956.2360122,
-    "ast_hash": "3636e16451a23d99e3f0522006ff8069",
+    "mtime": 1791451807.912896,
+    "ast_hash": "1edcf6322483a191eda5e1f1b90efb33",
     "semantic_hash": ""
   },
   "extension/content.js": {
-    "mtime": 1791381938.0785873,
-    "ast_hash": "1dc7a31e3f6884257cf74b55c54302fb",
+    "mtime": 1791451826.3977983,
+    "ast_hash": "75675dfd4c0c8da3d40be10c0fa69b70",
     "semantic_hash": ""
   },
   "extension/manifest.json": {
@@ -1255,8 +1255,8 @@
     "semantic_hash": ""
   },
   "src/lib/extensionSync.ts": {
-    "mtime": 1791207108.5563192,
-    "ast_hash": "5757321189177209827a2925855d741d",
+    "mtime": 1791451868.638095,
+    "ast_hash": "bc3fc01c5c50f32721e70c2dd0eb5a8c",
     "semantic_hash": ""
   },
   "src/lib/filterUtils.ts": {
@@ -1280,8 +1280,8 @@
     "semantic_hash": "8add16ce68a92673482001def089737a"
   },
   "src/lib/importCsv.ts": {
-    "mtime": 1791283374.13076,
-    "ast_hash": "328ef1da7a6c551c79b34a99ca6c92b4",
+    "mtime": 1791451957.2541192,
+    "ast_hash": "11a3fe7871132bc84eaed8f65fc9854d",
     "semantic_hash": ""
   },
   "src/lib/linkUtils.ts": {
@@ -2045,8 +2045,8 @@
     "semantic_hash": ""
   },
   "extension/README.md": {
-    "mtime": 1791283453.037977,
-    "ast_hash": "6a22cd2027e7cc64477755a395d4225c",
+    "mtime": 1791451850.9297047,
+    "ast_hash": "2a06836185c2e1b5f4326255dc7286d4",
     "semantic_hash": ""
   },
   "extension/popup.html": {
@@ -2615,13 +2615,13 @@
     "semantic_hash": ""
   },
   "extension/profileStorage.js": {
-    "mtime": 1791283211.8971646,
-    "ast_hash": "d55cf8b78fd263a8db1bd1d002d8f878",
+    "mtime": 1791451910.4232996,
+    "ast_hash": "44f291554e8128e67ffe34b2f52f2f3b",
     "semantic_hash": ""
   },
   "src/lib/atsFormDetection.ts": {
-    "mtime": 1791283316.3144343,
-    "ast_hash": "86d5c1834e673d95710a3c28d588ad1f",
+    "mtime": 1791451928.9053872,
+    "ast_hash": "db44199c9b7df8e047b0b5a882dcef6c",
     "semantic_hash": ""
   },
   "src/lib/tailoredCvUtils.ts": {
@@ -2630,8 +2630,8 @@
     "semantic_hash": ""
   },
   "tests/unit/atsFormDetection.test.ts": {
-    "mtime": 1791209677.5171218,
-    "ast_hash": "015c26db0668228a5df3540ec6c19cda",
+    "mtime": 1791452009.4350674,
+    "ast_hash": "77806c7afafd071b2e9c3e66f297a9b9",
     "semantic_hash": ""
   },
   "tests/unit/contactClipper.test.ts": {
