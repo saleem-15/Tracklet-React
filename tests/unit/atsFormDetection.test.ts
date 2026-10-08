@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   detectAtsType,
   resolveFormFields,
@@ -261,6 +261,10 @@ describe('ATS Form Detection & 4-Tier Field Resolution (US6 / T035)', () => {
   describe('Scroll and Highlight Halo (FR-031)', () => {
     beforeEach(() => {
       vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
     });
 
     it('smoothly scrolls to target input, focuses it, and applies 1.5s halo outline', () => {

@@ -311,7 +311,8 @@ export function resolveFormFields(
       if (SEMANTIC_PATTERNS[key].test(labelText)) {
         let targetInput: HTMLInputElement | null = null;
         if (label.htmlFor) {
-          const docEl = container.ownerDocument?.getElementById(label.htmlFor);
+          const doc = container instanceof Document ? container : container.ownerDocument;
+          const docEl = doc?.getElementById(label.htmlFor);
           if (docEl && container.contains(docEl) && docEl instanceof HTMLInputElement) {
             targetInput = docEl;
           }
