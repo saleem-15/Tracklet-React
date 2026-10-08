@@ -91,36 +91,36 @@ export function autoDetectFieldMapping(headers: string[]): CSVFieldMapping {
     );
   };
 
-    const resumeFileSize = findIdx(['resumefilesize', 'resumesize', 'cvsize', 'filesize', 'cvbytes']);
-    const resumeUploadedAt = findIdx(['resumeuploadedat', 'cvdate', 'resumeuploaded', 'resumeupload', 'cvuploadedat']);
-    const resumeReserved = [resumeFileSize, resumeUploadedAt].filter((idx) => idx >= 0);
+  const resumeFileSize = findIdx(['resumefilesize', 'resumesize', 'cvsize', 'filesize', 'cvbytes']);
+  const resumeUploadedAt = findIdx(['resumeuploadedat', 'cvdate', 'resumeuploaded', 'resumeupload', 'cvuploadedat']);
+  const resumeReserved = [resumeFileSize, resumeUploadedAt].filter((idx) => idx >= 0);
 
-    const resumeFileName = normalizedHeaders.findIndex((h, idx) => {
-      if (resumeReserved.includes(idx)) return false;
-      if (['cv', 'resume'].includes(h)) return true;
-      return ['resumefilename', 'cvfile', 'resumefile', 'resumename', 'filename', 'cvname'].some(
-        (kw) => h === kw || h.includes(kw)
-      );
-    });
+  const resumeFileName = normalizedHeaders.findIndex((h, idx) => {
+    if (resumeReserved.includes(idx)) return false;
+    if (['cv', 'resume'].includes(h)) return true;
+    return ['resumefilename', 'cvfile', 'resumefile', 'resumename', 'filename', 'cvname'].some(
+      (kw) => h === kw || h.includes(kw)
+    );
+  });
 
-    return {
-      company: findIdx(['company', 'organization', 'employer', 'companyname']),
-      role: findIdx(['role', 'jobtitle', 'title', 'position', 'job', 'roletext']),
-      platform: findIdx(['platform', 'source', 'jobboard', 'site', 'channel', 'portal']),
-      workLocation: findIdx(['worklocation', 'workplacetype', 'worktype', 'workmodel', 'workarrangement', 'remotestatus']),
-      employmentType: findIdx(['employmenttype', 'jobtype', 'employementtype']),
-      dateApplied: findIdx(['dateapplied', 'applieddate', 'date', 'applicationdate', 'appliedon']),
-      status: findIdx(['status', 'stage', 'applicationstatus', 'state', 'progress']),
-      jobLink: findIdxExcluding(['joblink', 'joblistingurl', 'url', 'link', 'joburl', 'website', 'posting'], reservedIndices),
-      emailThreadUrl,
-      notes: findIdx(['notes', 'comments', 'description', 'note', 'details', 'remarks']),
-      contactEmail: findIdxExcluding(['contactemail', 'email', 'recruiteremail', 'contact'], reservedIndices),
-      location: findIdx(['location', 'city', 'address', 'workplace', 'remote']),
-      salary: findIdx(['salary', 'pay', 'compensation', 'rate', 'range']),
-      resumeFileName: resumeFileName >= 0 ? resumeFileName : undefined,
-      resumeFileSize: resumeFileSize >= 0 ? resumeFileSize : undefined,
-      resumeUploadedAt: resumeUploadedAt >= 0 ? resumeUploadedAt : undefined,
-    };
+  return {
+    company: findIdx(['company', 'organization', 'employer', 'companyname']),
+    role: findIdx(['role', 'jobtitle', 'title', 'position', 'job', 'roletext']),
+    platform: findIdx(['platform', 'source', 'jobboard', 'site', 'channel', 'portal']),
+    workLocation: findIdx(['worklocation', 'workplacetype', 'worktype', 'workmodel', 'workarrangement', 'remotestatus']),
+    employmentType: findIdx(['employmenttype', 'jobtype', 'employementtype']),
+    dateApplied: findIdx(['dateapplied', 'applieddate', 'date', 'applicationdate', 'appliedon']),
+    status: findIdx(['status', 'stage', 'applicationstatus', 'state', 'progress']),
+    jobLink: findIdxExcluding(['joblink', 'joblistingurl', 'url', 'link', 'joburl', 'website', 'posting'], reservedIndices),
+    emailThreadUrl,
+    notes: findIdx(['notes', 'comments', 'description', 'note', 'details', 'remarks']),
+    contactEmail: findIdxExcluding(['contactemail', 'email', 'recruiteremail', 'contact'], reservedIndices),
+    location: findIdx(['location', 'city', 'address', 'workplace', 'remote']),
+    salary: findIdx(['salary', 'pay', 'compensation', 'rate', 'range']),
+    resumeFileName: resumeFileName >= 0 ? resumeFileName : undefined,
+    resumeFileSize: resumeFileSize >= 0 ? resumeFileSize : undefined,
+    resumeUploadedAt: resumeUploadedAt >= 0 ? resumeUploadedAt : undefined,
+  };
 }
 
 export function normalizeCSVStatus(raw: string): ApplicationStatus {
