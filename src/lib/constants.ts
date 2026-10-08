@@ -387,9 +387,9 @@ export const EXTENSION_STATUS_CONFIG = {
     badgeClass: 'text-slate-600 bg-slate-100 border-slate-200',
   },
   not_installed: {
-    label: 'Get Extension',
+    label: 'Not Connected',
     dotClass: 'bg-slate-400',
-    badgeClass: 'text-slate-600 bg-slate-50 border-slate-200 hover:bg-slate-100',
+    badgeClass: 'text-slate-600 bg-slate-50 border-slate-200',
   },
   connected: {
     label: 'Connected',

@@ -545,7 +545,7 @@
     "semantic_hash": ""
   },
   ".specify/feature.json": {
-    "mtime": 1791456049.5614333,
+    "mtime": 1791458088.0096512,
     "ast_hash": "64e81976980dee87987948d4b6baddc3",
     "semantic_hash": ""
   },
@@ -610,7 +610,7 @@
     "semantic_hash": ""
   },
   "extension/content.js": {
-    "mtime": 1791456049.5624335,
+    "mtime": 1791458088.01076,
     "ast_hash": "00651337decc0b884bf075bc443ce54f",
     "semantic_hash": ""
   },
@@ -620,8 +620,8 @@
     "semantic_hash": ""
   },
   "extension/popup.js": {
-    "mtime": 1791456049.5664644,
-    "ast_hash": "1cb07b1f73578aa5faeb9551c9cf43c2",
+    "mtime": 1791458088.0146158,
+    "ast_hash": "2904478d0bb38779ec8f6dc080bf339e",
     "semantic_hash": ""
   },
   "firebase-blueprint.json": {
@@ -640,7 +640,7 @@
     "semantic_hash": "113e0310414025b172787fde44bcf14f"
   },
   "package.json": {
-    "mtime": 1791456049.5664644,
+    "mtime": 1791458088.096781,
     "ast_hash": "baedc7dea90e046cc2011c56d142ba38",
     "semantic_hash": ""
   },
@@ -775,7 +775,7 @@
     "semantic_hash": "ee1893bd7b25d79773f3e4f9752d2b4f"
   },
   "src/components/SettingsView.tsx": {
-    "mtime": 1791456049.6195526,
+    "mtime": 1791458088.1017702,
     "ast_hash": "0576d139c0a0f3820012707a3bbc7cda",
     "semantic_hash": ""
   },
@@ -810,7 +810,7 @@
     "semantic_hash": "00df6c02348ebccb25ac2a1a1bc82212"
   },
   "src/components/TopBar.tsx": {
-    "mtime": 1791456049.6195526,
+    "mtime": 1791458088.1017702,
     "ast_hash": "7c44d3b18ad0fe6ddfcb146759901553",
     "semantic_hash": ""
   },
@@ -1135,8 +1135,8 @@
     "semantic_hash": "923a50fb875ff28c150e3ccc2307f5d5"
   },
   "src/lib/constants.ts": {
-    "mtime": 1791456049.6265223,
-    "ast_hash": "bef01f5958cd9345561fc5749c093720",
+    "mtime": 1791458088.1100993,
+    "ast_hash": "befa2e578f1afa31493c00ceb74f49a2",
     "semantic_hash": ""
   },
   "src/lib/contactMigration.ts": {
@@ -1255,7 +1255,7 @@
     "semantic_hash": ""
   },
   "src/lib/extensionSync.ts": {
-    "mtime": 1791456049.6265223,
+    "mtime": 1791458088.1135745,
     "ast_hash": "680c22fadab88c6f159a713e6b84dd60",
     "semantic_hash": ""
   },
@@ -1335,8 +1335,8 @@
     "semantic_hash": "0114a323fb35c559047c44f3b17cd5ba"
   },
   "src/types.ts": {
-    "mtime": 1791456049.6275184,
-    "ast_hash": "2467d12ee40bf7556bed905c26d83bc4",
+    "mtime": 1791458088.1135745,
+    "ast_hash": "5ca7ba3ee22b5ffc4b1406a3835b2a05",
     "semantic_hash": ""
   },
   "src/vite-env.d.ts": {
@@ -1570,8 +1570,8 @@
     "semantic_hash": ""
   },
   ".agents/AGENTS.md": {
-    "mtime": 1788534901.1948526,
-    "ast_hash": "d54b825a17462ba4766591e81a7854b8",
+    "mtime": 1791458088.0085578,
+    "ast_hash": "a2ed552ee0005659cb627cc2e3ccc92e",
     "semantic_hash": ""
   },
   ".agents/rules/graphify.md": {
@@ -2050,7 +2050,7 @@
     "semantic_hash": ""
   },
   "extension/popup.html": {
-    "mtime": 1791456049.5644395,
+    "mtime": 1791458088.0124166,
     "ast_hash": "40a8c3f180660044447e4f89171aff04",
     "semantic_hash": ""
   },
@@ -2305,7 +2305,7 @@
     "semantic_hash": ""
   },
   "src/components/layout/AppModals.tsx": {
-    "mtime": 1791456049.6235154,
+    "mtime": 1791458088.1080904,
     "ast_hash": "fbf9bc1a06b535fc690d0a07c993bbef",
     "semantic_hash": ""
   },
@@ -2330,7 +2330,7 @@
     "semantic_hash": ""
   },
   "src/context/AppProviders.tsx": {
-    "mtime": 1791456049.6235154,
+    "mtime": 1791458088.1100993,
     "ast_hash": "3c2d7650c6565c52bdff9d6d47efef99",
     "semantic_hash": ""
   },
@@ -2345,8 +2345,8 @@
     "semantic_hash": ""
   },
   "src/context/NavigationContext.tsx": {
-    "mtime": 1791456049.6245317,
-    "ast_hash": "c4cad0db697926a40c61ed951d5c197c",
+    "mtime": 1791458088.1100993,
+    "ast_hash": "4f8671af14a5f65c6fcb2bee9a289a99",
     "semantic_hash": ""
   },
   "src/context/SettingsContext.tsx": {
@@ -2365,7 +2365,7 @@
     "semantic_hash": ""
   },
   "src/context/index.ts": {
-    "mtime": 1791456049.6245317,
+    "mtime": 1791458088.1100993,
     "ast_hash": "4d5eb300e2bc1fcd7fc26ad51b65ce56",
     "semantic_hash": ""
   },
@@ -2720,98 +2720,103 @@
     "semantic_hash": ""
   },
   "scripts/package-extension.js": {
-    "mtime": 1791456049.5674336,
-    "ast_hash": "b3d657fe60c29083c36e8198e00154e2",
+    "mtime": 1791458088.096781,
+    "ast_hash": "b7b5e3ba0ed9b4a1f050d3a8e98cd9c6",
     "semantic_hash": ""
   },
   "specs/010-extension-distribution-hub/contracts/handshake-contract.json": {
-    "mtime": 1791456049.5674336,
+    "mtime": 1791458088.1002321,
     "ast_hash": "62b056474bc49979c8f6d63632d1e0d0",
     "semantic_hash": ""
   },
   "src/components/extension/ExtensionInstallGuide.tsx": {
-    "mtime": 1791456049.6205146,
-    "ast_hash": "7f8271d0d0320946383fcaabef79badb",
+    "mtime": 1791459002.1062386,
+    "ast_hash": "a938a2ca552cc90c5e5d985b2b894afd",
     "semantic_hash": ""
   },
   "src/components/extension/ExtensionModal.tsx": {
-    "mtime": 1791456049.6215215,
-    "ast_hash": "99254ce9e041037bf13bdb6d5781fdca",
+    "mtime": 1791458986.599386,
+    "ast_hash": "03cebfb72798ab98c542df592406d805",
     "semantic_hash": ""
   },
   "src/components/extension/ExtensionSettingsCard.tsx": {
-    "mtime": 1791456049.6215215,
+    "mtime": 1791458088.107441,
     "ast_hash": "03755e45bf0b143296b1876da3a1acef",
     "semantic_hash": ""
   },
   "src/components/extension/ExtensionStatusBadge.tsx": {
-    "mtime": 1791456049.6225228,
+    "mtime": 1791458088.1080904,
     "ast_hash": "a07e4a88e66ef44f286ddee0a6d09287",
     "semantic_hash": ""
   },
   "src/components/extension/ExtensionUpdateGuide.tsx": {
-    "mtime": 1791456049.6225228,
-    "ast_hash": "99d18354ad34dfebd24ff1b069bfeaaf",
+    "mtime": 1791458958.9680934,
+    "ast_hash": "c2fa29025938db6b66449eb98bbe65f0",
     "semantic_hash": ""
   },
   "src/context/ExtensionContext.tsx": {
-    "mtime": 1791456049.6235154,
+    "mtime": 1791458088.1100993,
     "ast_hash": "5c27aa444d0346888ca4c55366b81154",
     "semantic_hash": ""
   },
   "src/hooks/useExtensionStatus.ts": {
-    "mtime": 1791456049.6255157,
-    "ast_hash": "01f2d5791f451b2f3b5d60484040c421",
+    "mtime": 1791458088.1100993,
+    "ast_hash": "74b08618cd510e9d2907ba5ed7a66658",
     "semantic_hash": ""
   },
   "src/lib/versionUtils.ts": {
-    "mtime": 1791456049.6275184,
+    "mtime": 1791458088.1135745,
     "ast_hash": "f530968df5cca072c32b367d81360e2a",
     "semantic_hash": ""
   },
   "tests/unit/useExtensionStatus.test.tsx": {
-    "mtime": 1791456049.6285183,
+    "mtime": 1791458088.1135745,
     "ast_hash": "3ca569ae4b200d743ad70facdf8e9e8a",
     "semantic_hash": ""
   },
   "tests/unit/versionUtils.test.ts": {
-    "mtime": 1791456049.6285183,
+    "mtime": 1791458088.1135745,
     "ast_hash": "e36af748ec4d27ebc3cda3691d48075d",
     "semantic_hash": ""
   },
   "specs/010-extension-distribution-hub/checklists/requirements.md": {
-    "mtime": 1791456049.5674336,
+    "mtime": 1791458088.096781,
     "ast_hash": "2b51bb299349c28f3405a1f4d6fafbe1",
     "semantic_hash": ""
   },
   "specs/010-extension-distribution-hub/data-model.md": {
-    "mtime": 1791456049.5689418,
+    "mtime": 1791458088.1002321,
     "ast_hash": "8a69e83d1041cfdc1fed2f1260851a33",
     "semantic_hash": ""
   },
   "specs/010-extension-distribution-hub/plan.md": {
-    "mtime": 1791456049.5689418,
+    "mtime": 1791458088.1012528,
     "ast_hash": "994b993a9c454e97bf51b78dc9e1692b",
     "semantic_hash": ""
   },
   "specs/010-extension-distribution-hub/quickstart.md": {
-    "mtime": 1791456049.5699484,
-    "ast_hash": "30b575d91af30354c73c79864b88eaff",
+    "mtime": 1791458088.1017702,
+    "ast_hash": "483f738d07cba1378ccd5d54cdaa9f41",
     "semantic_hash": ""
   },
   "specs/010-extension-distribution-hub/research.md": {
-    "mtime": 1791456049.5699484,
+    "mtime": 1791458088.1017702,
     "ast_hash": "3021fbca340199380b6a30634cf79531",
     "semantic_hash": ""
   },
   "specs/010-extension-distribution-hub/spec.md": {
-    "mtime": 1791456049.6175065,
+    "mtime": 1791458088.1017702,
     "ast_hash": "1f9c84c11b81f67a771ec1b9cc7754c8",
     "semantic_hash": ""
   },
   "specs/010-extension-distribution-hub/tasks.md": {
-    "mtime": 1791456049.6185188,
+    "mtime": 1791458088.1017702,
     "ast_hash": "0c38c7e1a5e954e45d2af66bdce1d360",
+    "semantic_hash": ""
+  },
+  "tests/unit/versionSync.test.ts": {
+    "mtime": 1791458088.1135745,
+    "ast_hash": "d1b0e452ba40b5b87493241fc09a51d8",
     "semantic_hash": ""
   }
 }
