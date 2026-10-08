@@ -5,6 +5,7 @@ import { SettingsProvider } from './SettingsContext';
 import { NavigationProvider } from './NavigationContext';
 import { ApplicationsProvider } from './ApplicationsContext';
 import { ContactsProvider } from './ContactsContext';
+import { ExtensionProvider } from './ExtensionContext';
 
 /**
  * AppProviders
@@ -16,8 +17,9 @@ import { ContactsProvider } from './ContactsContext';
  * 2. ToastProvider (system feedback queue, depends on nothing)
  * 3. SettingsProvider (app preferences, depends on nothing)
  * 4. NavigationProvider (URL query routing & drawer state, depends on nothing)
- * 5. ApplicationsProvider (Job applications domain, depends on Auth, Navigation, Toast)
- * 6. ContactsProvider (Networking domain, depends on Auth, Applications, Navigation, Toast)
+ * 5. ExtensionProvider (Browser extension handshake & connection status)
+ * 6. ApplicationsProvider (Job applications domain, depends on Auth, Navigation, Toast)
+ * 7. ContactsProvider (Networking domain, depends on Auth, Applications, Navigation, Toast)
  *
  * Direct React analogue to Flutter's MultiBlocProvider or MultiProvider.
  */
@@ -27,14 +29,17 @@ export const AppProviders: React.FC<{ children: React.ReactNode }> = ({ children
       <ToastProvider>
         <SettingsProvider>
           <NavigationProvider>
-            <ApplicationsProvider>
-              <ContactsProvider>
-                {children}
-              </ContactsProvider>
-            </ApplicationsProvider>
+            <ExtensionProvider>
+              <ApplicationsProvider>
+                <ContactsProvider>
+                  {children}
+                </ContactsProvider>
+              </ApplicationsProvider>
+            </ExtensionProvider>
           </NavigationProvider>
         </SettingsProvider>
       </ToastProvider>
     </AuthProvider>
   );
 };
+

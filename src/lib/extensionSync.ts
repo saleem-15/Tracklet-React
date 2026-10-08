@@ -6,6 +6,7 @@
 
 import { Application, ApplicationStatus, Contact, EmailLog } from '../types';
 import { User } from './firebase';
+import { LATEST_EXTENSION_VERSION } from './constants';
 
 declare const chrome: any;
 
@@ -68,7 +69,8 @@ export async function syncAuthSessionToExtension(user: User | null): Promise<voi
     config: {
       projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || 'demo-tracklet',
       apiKey: import.meta.env.VITE_FIREBASE_API_KEY || 'demo-api-key'
-    }
+    },
+    latestVersion: LATEST_EXTENSION_VERSION,
   };
 
   // 1. Content Script Bridge (Primary & universal mechanism across all origins)
@@ -410,5 +412,71 @@ export function broadcastDeletedApplication(appId: string): void {
     // ignore
   }
 }
+
+/**
+ * Performs a lightweight handshake with the Tracklet Companion content script
+ * to verify extension installation status and active manifest version.
+ */
+export function pingExtension(
+  timeoutMs: number = 500
+): Promise<{ installed: boolean; version: string | null; name?: string }> {
+  return new Promise((resolve) => {
+    if (typeof window === 'undefined') {
+      resolve({ installed: false, version: null });
+      return;
+    }
+
+    let settled = false;
+    let timer: any = null;
+
+    const cleanup = () => {
+      window.removeEventListener('message', messageHandler);
+      if (timer) clearTimeout(timer);
+    };
+
+    const messageHandler = (event: MessageEvent) => {
+      if (event.source !== window) return;
+      if (event.data && event.data.type === 'TRACKLET_EXT_PONG') {
+        if (!settled) {
+          settled = true;
+          cleanup();
+          const payload = event.data.payload || {};
+          resolve({
+            installed: Boolean(payload.installed),
+            version: payload.version || null,
+            name: payload.name,
+          });
+        }
+      }
+    };
+
+    window.addEventListener('message', messageHandler);
+
+    timer = setTimeout(() => {
+      if (!settled) {
+        settled = true;
+        cleanup();
+        resolve({ installed: false, version: null });
+      }
+    }, timeoutMs);
+
+    try {
+      window.postMessage(
+        {
+          type: 'TRACKLET_EXT_PING',
+          timestamp: Date.now(),
+        },
+        '*'
+      );
+    } catch {
+      if (!settled) {
+        settled = true;
+        cleanup();
+        resolve({ installed: false, version: null });
+      }
+    }
+  });
+}
+
 
 

@@ -874,6 +874,104 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ignore
   }
 
+  // Update Alert Banner Controller
+  const updateAlertBanner = document.getElementById('update-alert-banner');
+  const updateAlertText = document.getElementById('update-alert-text');
+  const updateAlertOpenBtn = document.getElementById('update-alert-open-btn');
+  const updateAlertDismissBtn = document.getElementById('update-alert-dismiss-btn');
+
+  async function checkExtensionUpdate() {
+    try {
+      const manifest = (typeof chrome !== 'undefined' && chrome.runtime?.getManifest)
+        ? chrome.runtime.getManifest()
+        : { version: '1.0.0' };
+      const currentVersion = manifest.version || '1.0.0';
+
+      // 1. Check storage for locally cached or synced latest version
+      const storageRes = await new Promise(resolve => {
+        chrome.storage.local.get(['tracklet_latest_version', 'tracklet_dismissed_update_version', 'tracklet_web_origin'], resolve);
+      });
+
+      let latestVersion = storageRes?.tracklet_latest_version || null;
+      const dismissedVersion = storageRes?.tracklet_dismissed_update_version;
+      const origin = storageRes?.tracklet_web_origin || TRACKLET_APP_URL;
+
+      // 2. Fetch deployed manifest independently so users who only use the side panel get live updates
+      try {
+        const cleanBase = origin.replace(/\/+$/, '');
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 2000);
+        const remoteRes = await fetch(`${cleanBase}/version.json`, { signal: controller.signal, cache: 'no-cache' }).catch(() => null);
+        clearTimeout(timeoutId);
+
+        if (remoteRes && remoteRes.ok) {
+          const remoteData = await remoteRes.json();
+          if (remoteData?.version) {
+            latestVersion = remoteData.version;
+            chrome.storage.local.set({ tracklet_latest_version: latestVersion });
+          }
+        }
+      } catch {
+        // network / offline fallback
+      }
+
+      if (latestVersion && latestVersion !== currentVersion && latestVersion !== dismissedVersion) {
+        const currParts = currentVersion.split('.').map(n => parseInt(n, 10) || 0);
+        const latestParts = latestVersion.split('.').map(n => parseInt(n, 10) || 0);
+        let isNewer = false;
+        for (let i = 0; i < Math.max(currParts.length, latestParts.length); i++) {
+          if ((latestParts[i] || 0) > (currParts[i] || 0)) {
+            isNewer = true;
+            break;
+          } else if ((latestParts[i] || 0) < (currParts[i] || 0)) {
+            break;
+          }
+        }
+
+        if (isNewer && updateAlertBanner) {
+          updateAlertBanner.style.display = 'flex';
+          if (updateAlertText) {
+            updateAlertText.textContent = `Update v${latestVersion} available`;
+          }
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  if (updateAlertOpenBtn) {
+    updateAlertOpenBtn.addEventListener('click', async () => {
+      try {
+        const storageResult = await chrome.storage.local.get(['tracklet_web_origin']);
+        const baseUrl = (storageResult?.tracklet_web_origin || TRACKLET_APP_URL).replace(/\/+$/, '');
+        const targetUrl = `${baseUrl}/?action=update-extension`;
+        chrome.tabs.create({ url: targetUrl });
+      } catch {
+        const fallbackUrl = `${TRACKLET_APP_URL}/?action=update-extension`;
+        chrome.tabs.create({ url: fallbackUrl });
+      }
+    });
+  }
+
+  if (updateAlertDismissBtn) {
+    updateAlertDismissBtn.addEventListener('click', () => {
+      if (updateAlertBanner) updateAlertBanner.style.display = 'none';
+      try {
+        chrome.storage.local.get(['tracklet_latest_version'], (res) => {
+          if (res?.tracklet_latest_version) {
+            chrome.storage.local.set({ tracklet_dismissed_update_version: res.tracklet_latest_version });
+          }
+        });
+      } catch {
+        // ignore
+      }
+    });
+  }
+
+  checkExtensionUpdate();
+
+
   // Custom Platform Dropdown Handlers
   platformTrigger.addEventListener('click', (e) => {
     e.stopPropagation();

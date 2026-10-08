@@ -28,8 +28,10 @@ import { TemplateManagerSection } from './templates/TemplateManagerSection';
 import { FollowUpTemplate } from '../types';
 import { TemplateRepository } from '../lib/templateRepository';
 import { FeedbackSettingsCard } from './feedback/FeedbackSettingsCard';
+import { ExtensionSettingsCard } from './extension/ExtensionSettingsCard';
 import { useNavigation } from '../context/NavigationContext';
 import { useAuth } from '../context/AuthContext';
+import { useExtensionContext } from '../context/ExtensionContext';
 import { UI_TOKENS } from '../theme/tokens';
 
 interface SettingsViewProps {
@@ -73,8 +75,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 }) => {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const jsonFileInputRef = useRef<HTMLInputElement>(null);
-  const { openFeedbackModal } = useNavigation();
+  const { openFeedbackModal, openExtensionModal } = useNavigation();
   const { user } = useAuth();
+  const extensionState = useExtensionContext();
   const expiringTasks = getExpiringSoonTasks(applications, settings.expiryThresholdHours);
 
   // Follow-Up Templates Library state
@@ -214,6 +217,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
       {/* Account Profile & Security Section */}
       <AccountSettingsCard onShowToast={onShowToast} onAccountDeleted={onAccountDeleted} />
+
+      {/* Browser Extension Companion Section */}
+      <ExtensionSettingsCard 
+        extensionState={extensionState} 
+        onOpenModal={openExtensionModal} 
+        onDownload={() => onShowToast?.('info', 'Download Started', 'Downloading tracklet-extension.zip.')}
+      />
 
       {/* Beta Feedback & Issue Reporting Section */}
       <FeedbackSettingsCard onOpenReportModal={openFeedbackModal} user={user} />

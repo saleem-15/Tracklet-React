@@ -368,5 +368,41 @@ export const TESTER_REPORT_SEVERITIES: { label: string; value: TesterReportSever
 
 export const STORAGE_KEY_TESTER_DRAFT = 'tracklet_tester_report_draft';
 
+// --- Browser Extension Distribution & Status ---
+export const LATEST_EXTENSION_VERSION = '1.0.0';
+
+export const EXTENSION_DISTRIBUTION_CONFIG = {
+  latestVersion: LATEST_EXTENSION_VERSION,
+  downloadFilename: `tracklet-extension-v${LATEST_EXTENSION_VERSION}.zip`,
+  localDownloadUrl: '/tracklet-extension.zip',
+  githubReleaseDownloadUrl: 'https://github.com/saleem-15/Tracklet-React/releases/latest/download/tracklet-extension.zip',
+  handshakeTimeoutMs: 500,
+  chromeExtensionsUrl: 'chrome://extensions',
+} as const;
+
+export const EXTENSION_STATUS_CONFIG = {
+  checking: {
+    label: 'Checking...',
+    dotClass: 'bg-slate-400 animate-pulse',
+    badgeClass: 'text-slate-600 bg-slate-100 border-slate-200',
+  },
+  not_installed: {
+    label: 'Get Extension',
+    dotClass: 'bg-slate-400',
+    badgeClass: 'text-slate-600 bg-slate-50 border-slate-200 hover:bg-slate-100',
+  },
+  connected: {
+    label: 'Connected',
+    dotClass: 'bg-emerald-500',
+    badgeClass: 'text-emerald-700 bg-emerald-50 border-emerald-200/80',
+  },
+  update_available: {
+    label: 'Update Ready',
+    dotClass: 'bg-amber-500 animate-pulse motion-reduce:animate-none',
+    badgeClass: 'text-amber-700 bg-amber-50 border-amber-200/80',
+  },
+} as const;
+
+
 
 
