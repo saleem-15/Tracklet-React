@@ -11,3 +11,7 @@ firebase-applet-config.json
 .firebase/
 promo.png
 graphify-out/cache/
+
+# Generated extension artifacts
+public/tracklet-extension.zip
+public/version.json
