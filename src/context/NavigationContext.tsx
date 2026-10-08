@@ -18,6 +18,10 @@ export interface NavigationContextType {
   setIsMobileSidebarOpen: (open: boolean) => void;
   openMobileSidebar: () => void;
   closeMobileSidebar: () => void;
+  isFeedbackModalOpen: boolean;
+  setIsFeedbackModalOpen: (open: boolean) => void;
+  openFeedbackModal: () => void;
+  closeFeedbackModal: () => void;
 }
 
 const NavigationContext = createContext<NavigationContextType | null>(null);
@@ -48,12 +52,16 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   } = useUrlNavigation();
 
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
 
   const openAddModal = useCallback(() => setIsAddModalOpen(true), [setIsAddModalOpen]);
   const closeAddModal = useCallback(() => setIsAddModalOpen(false), [setIsAddModalOpen]);
 
   const openMobileSidebar = useCallback(() => setIsMobileSidebarOpen(true), []);
   const closeMobileSidebar = useCallback(() => setIsMobileSidebarOpen(false), []);
+
+  const openFeedbackModal = useCallback(() => setIsFeedbackModalOpen(true), []);
+  const closeFeedbackModal = useCallback(() => setIsFeedbackModalOpen(false), []);
 
   const value = useMemo<NavigationContextType>(() => ({
     activeTab,
@@ -71,6 +79,10 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     setIsMobileSidebarOpen,
     openMobileSidebar,
     closeMobileSidebar,
+    isFeedbackModalOpen,
+    setIsFeedbackModalOpen,
+    openFeedbackModal,
+    closeFeedbackModal,
   }), [
     activeTab,
     setActiveTab,
@@ -86,6 +98,9 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     isMobileSidebarOpen,
     openMobileSidebar,
     closeMobileSidebar,
+    isFeedbackModalOpen,
+    openFeedbackModal,
+    closeFeedbackModal,
   ]);
 
   return (

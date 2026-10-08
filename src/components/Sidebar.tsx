@@ -12,7 +12,8 @@ import {
   ChevronRight,
   PanelLeftClose,
   PanelLeftOpen,
-  X
+  X,
+  Bug
 } from 'lucide-react';
 import { ActiveTab, Application, Contact, ExpiryNotificationSettings } from '../types';
 import { User } from '../lib/firebase';
@@ -356,6 +357,28 @@ export const Sidebar: React.FC<SidebarProps> = (props) => {
   // Shared Account Footer
   const renderFooter = (isMobileView = false) => (
     <div className={`border-t border-slate-200/80 space-y-1.5 bg-slate-50/90 ${isMobileView ? 'p-3' : 'p-2'}`}>
+      {/* Report an Issue Action */}
+      <button
+        type="button"
+        onClick={() => {
+          if (isMobileView && onCloseMobile) onCloseMobile();
+          nav.openFeedbackModal();
+        }}
+        title="Report an Issue or Feedback (Ctrl+Alt+B)"
+        aria-label="Report an Issue or Feedback (Ctrl+Alt+B)"
+        className={`w-full flex items-center ${
+          !isMobileView && isCollapsed ? 'justify-center p-2' : 'justify-start px-2.5 py-1.5'
+        } rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 transition-colors text-xs font-medium cursor-pointer`}
+      >
+        <Bug className="w-4 h-4 text-slate-500 shrink-0" />
+        {(isMobileView || !isCollapsed) && (
+          <div className="ml-2 flex items-center justify-between flex-1">
+            <span className="font-medium">Report Issue</span>
+            <kbd className="text-[11px] text-slate-500 font-mono">Ctrl+Alt+B</kbd>
+          </div>
+        )}
+      </button>
+
       {user ? (
         <div className={`p-2 rounded-xl bg-white border border-slate-200/80 shadow-2xs flex items-center ${!isMobileView && isCollapsed ? 'justify-center' : 'justify-between'} gap-2`}>
           <div className="flex items-center gap-2 min-w-0">

@@ -47,6 +47,15 @@ service cloud.firestore {
         && (!('applicationIds' in data) || data.applicationIds == null || (data.applicationIds is list && data.applicationIds.size() <= 100));
     }
 
+    function isValidFeedback(data) {
+      return (data.title is string && data.title.size() >= 3 && data.title.size() <= 300)
+        && (data.description is string && data.description.size() >= 10 && data.description.size() <= 20000)
+        && (data.type is string && data.type in ['bug', 'feature_request', 'ux_improvement', 'visual_glitch', 'other'])
+        && (data.severity is string && data.severity in ['low', 'medium', 'high', 'blocker'])
+        && (data.createdAt is string)
+        && (data.status is string && data.status == 'new');
+    }
+
     // User document, User Applications & User Contacts Sub-collections
     match /users/{userId} {
       allow read, write: if isOwner(userId);
@@ -60,6 +69,16 @@ service cloud.firestore {
         allow read, delete: if isOwner(userId);
         allow create, update: if isOwner(userId) && isValidContact(request.resource.data);
       }
+    }
+
+    // Tester Feedback & Bug Reports
+    match /tester_feedback/{reportId} {
+      // Anyone (authenticated user or beta guest tester) can log a report with valid structure
+      allow create: if isValidFeedback(request.resource.data);
+      // Authenticated users can read feedback entries
+      allow read: if isAuthenticated();
+      // Reports cannot be overwritten or deleted from client
+      allow update, delete: if false;
     }
 
     // Explicit default-deny for all unmatched root and collection paths

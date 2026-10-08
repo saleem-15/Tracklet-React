@@ -27,6 +27,9 @@ import { AccountSettingsCard } from './AccountSettingsCard';
 import { TemplateManagerSection } from './templates/TemplateManagerSection';
 import { FollowUpTemplate } from '../types';
 import { TemplateRepository } from '../lib/templateRepository';
+import { FeedbackSettingsCard } from './feedback/FeedbackSettingsCard';
+import { useNavigation } from '../context/NavigationContext';
+import { useAuth } from '../context/AuthContext';
 import { UI_TOKENS } from '../theme/tokens';
 
 interface SettingsViewProps {
@@ -70,6 +73,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 }) => {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const jsonFileInputRef = useRef<HTMLInputElement>(null);
+  const { openFeedbackModal } = useNavigation();
+  const { user } = useAuth();
   const expiringTasks = getExpiringSoonTasks(applications, settings.expiryThresholdHours);
 
   // Follow-Up Templates Library state
@@ -209,6 +214,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
       {/* Account Profile & Security Section */}
       <AccountSettingsCard onShowToast={onShowToast} onAccountDeleted={onAccountDeleted} />
+
+      {/* Beta Feedback & Issue Reporting Section */}
+      <FeedbackSettingsCard onOpenReportModal={openFeedbackModal} user={user} />
 
       {/* Main Setting Box: Soon to Expire Alerts */}
       <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-2xs space-y-6">
