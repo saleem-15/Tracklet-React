@@ -391,7 +391,10 @@ async function pushEmailLogToFirestore(appId, emailLog, updatedStatus, userSessi
   // Existing emails array
   const existingEmails = existingFields.emails?.arrayValue?.values || [];
   const newEmailMap = convertEmailLogToFirestoreMap(emailLog);
-  const updatedEmails = [...existingEmails, newEmailMap];
+  const emailExistsInCloud = existingEmails.some(val => val.mapValue?.fields?.id?.stringValue === emailLog.id);
+  const updatedEmails = emailExistsInCloud
+    ? existingEmails.map(val => val.mapValue?.fields?.id?.stringValue === emailLog.id ? newEmailMap : val)
+    : [...existingEmails, newEmailMap];
 
   const nowISO = new Date().toISOString();
   const patchFields = {
@@ -478,7 +481,11 @@ async function saveAndSyncEmailLog({ appId, emailLog, updatedStatus, newContact 
 
     const updateAppInList = (list) => list.map(app => {
       if (app.id !== appId) return app;
-      const emails = [...(app.emails || []), emailLog];
+      const existingList = app.emails || [];
+      const emailExists = existingList.some(e => e.id === emailLog.id);
+      const emails = emailExists
+        ? existingList.map(e => e.id === emailLog.id ? emailLog : e)
+        : [...existingList, emailLog];
       return {
         ...app,
         emails,
@@ -486,6 +493,7 @@ async function saveAndSyncEmailLog({ appId, emailLog, updatedStatus, newContact 
         updatedAt: new Date().toISOString()
       };
     });
+
 
     guestApps = updateAppInList(guestApps);
     appsIndex = updateAppInList(appsIndex);
@@ -788,11 +796,15 @@ chrome.tabs.onActivated.addListener(async (activeInfo) => {
 });
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  if (changeInfo.status === 'complete' && tab && tab.active && tab.url) {
+  const isComplete = changeInfo.status === 'complete';
+  const isSpaUrlChange = Boolean(changeInfo.url) && changeInfo.status !== 'loading' && tab.status !== 'loading';
+
+  if ((isComplete || isSpaUrlChange) && tab && tab.active && tab.url) {
     chrome.runtime.sendMessage({
       action: 'ACTIVE_TAB_UPDATED',
-      payload: { tabId: tab.id, url: tab.url, title: tab.title }
+      payload: { tabId: tab.id, url: tab.url, title: tab.title, isUrlChange: isSpaUrlChange }
     }).catch(() => {});
   }
 });
+
 

@@ -1606,76 +1606,6 @@ function ensureTransientHighlightStyles() {
   (document.head || document.documentElement).appendChild(style);
 }
 
-function extractLinkedInProfileData() {
-  const host = window.location.hostname.toLowerCase();
-  const path = window.location.pathname;
-  if (!host.includes('linkedin.com') || !path.includes('/in/')) {
-    return null;
-  }
-
-  // 1. Full Name extraction
-  let fullName = '';
-  const h1 = document.querySelector('h1.inline.t-24, .text-heading-xlarge, main section h1, h1');
-  if (h1) {
-    fullName = cleanText(h1.textContent);
-  }
-
-  // 2. Headline / Current Title extraction
-  let headline = '';
-  const headlineEl = document.querySelector('.text-body-medium.break-words, div[data-generated-suggestion-target], .pv-text-details__left-panel .text-body-medium');
-  if (headlineEl) {
-    headline = cleanText(headlineEl.textContent);
-  }
-
-  // 3. Organization extraction
-  let organization = '';
-  const companyLink = document.querySelector('a[href*="/company/"], button[aria-label*="Current company"], .pv-text-details__right-panel .inline-show-more-text');
-  if (companyLink) {
-    organization = cleanText(companyLink.textContent);
-  }
-  if (!organization) {
-    const expItem = document.querySelector('#experience ~ .pvs-list__outer-container li, section[data-section="experience"] li');
-    if (expItem) {
-      const companyEl = expItem.querySelector('span[aria-hidden="true"], .t-bold span');
-      if (companyEl) {
-        organization = cleanText(companyEl.textContent);
-      }
-    }
-  }
-
-  // 4. Location extraction
-  let location = '';
-  const locEl = document.querySelector('.text-body-small.inline.t-black--light, span.text-body-small');
-  if (locEl) {
-    location = cleanText(locEl.textContent);
-  }
-
-  // 5. Canonical LinkedIn URL
-  const canonicalUrl = `${window.location.origin}${window.location.pathname.replace(/\/+$/, '')}`;
-
-  // 6. Category Smart-Defaulting
-  let suggestedCategory = 'Other';
-  const headlineLower = headline.toLowerCase();
-  if (/talent|recruiter|recruiting|sourcer|staffing|people\s+ops/i.test(headlineLower)) {
-    suggestedCategory = 'Recruiter';
-  } else if (/vp|vice\s+president|director|head\s+of|lead|manager|engineering\s+manager|cto/i.test(headlineLower)) {
-    suggestedCategory = 'Hiring Manager';
-  } else if (/mentor|advisor|coach/i.test(headlineLower)) {
-    suggestedCategory = 'Mentor';
-  } else if (/referral|alumni|peer|engineer|developer|designer/i.test(headlineLower)) {
-    suggestedCategory = 'Peer / Alumni';
-  }
-
-  return {
-    fullName,
-    headline,
-    organization,
-    location,
-    linkedInUrl: canonicalUrl,
-    suggestedCategory
-  };
-}
-
 function detectAtsForm() {
   const host = window.location.hostname.toLowerCase();
   let ats = null;
@@ -2258,5 +2188,101 @@ if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', drainPendingItemsToTracklet);
 } else {
   drainPendingItemsToTracklet();
+}
+
+// 4. In-Page SPA Navigation & Thread Reactivity Observer (T046)
+let lastReportedUrl = window.location.href;
+let lastObservedThreadSignature = '';
+let contextChangeDebounceTimer = null;
+
+function notifyPageContextChange(source, threadSig = '') {
+  const currentUrl = window.location.href;
+  const currentTitle = document.title;
+
+  try {
+    if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+      chrome.runtime.sendMessage({
+        action: 'PAGE_CONTEXT_CHANGED',
+        payload: {
+          url: currentUrl,
+          title: currentTitle,
+          threadSignature: threadSig || lastObservedThreadSignature,
+          source: source || 'spa_navigation'
+        }
+      }).catch(() => {
+        // Side panel might not be open or listener not active
+      });
+    }
+  } catch (err) {
+    // Context invalidated
+  }
+}
+
+function checkAndDispatchContextChange(forcedSource) {
+  const currentUrl = window.location.href;
+
+  // Calculate a lightweight signature of the active email thread or job posting
+  let threadSig = '';
+  const host = window.location.hostname.toLowerCase();
+  if (host.includes('mail.google.com')) {
+    const activeSubjEl = document.querySelector('h2.hP, div[role="main"] h2');
+    const activeMsgEl = document.querySelector('div[role="main"] div[data-message-id]');
+    threadSig = (activeSubjEl?.textContent?.trim() || '') + ':::' + (activeMsgEl?.getAttribute('data-message-id') || '');
+  } else if (host.includes('outlook.')) {
+    const readingPaneSubj = document.querySelector('[role="main"] [aria-label*="subject"], div[aria-label*="reading pane"] h2');
+    threadSig = readingPaneSubj?.textContent?.trim() || '';
+  } else if (host.includes('linkedin.com')) {
+    const jobTitleEl = document.querySelector('.jobs-search__job-details h2, .job-details-jobs-unified-top-card__job-title');
+    threadSig = jobTitleEl?.textContent?.trim() || '';
+  }
+
+  const urlChanged = currentUrl !== lastReportedUrl;
+  const threadChanged = Boolean(threadSig && threadSig !== lastObservedThreadSignature);
+  const isExplicitForce = forcedSource === 'force' || forcedSource === 'manual_refresh';
+
+  if (urlChanged || threadChanged || isExplicitForce) {
+    lastReportedUrl = currentUrl;
+    lastObservedThreadSignature = threadSig;
+    const changeSource = urlChanged ? 'url_changed' : (threadChanged ? 'dom_thread_changed' : (forcedSource || 'spa_navigation'));
+    notifyPageContextChange(changeSource, threadSig);
+  }
+}
+
+function scheduleContextCheck(source) {
+  if (contextChangeDebounceTimer) {
+    clearTimeout(contextChangeDebounceTimer);
+  }
+  const delay = (source === 'thread_mutation') ? 300 : 150;
+  contextChangeDebounceTimer = setTimeout(() => {
+    checkAndDispatchContextChange(source);
+  }, delay);
+}
+
+// Listen to popstate and hashchange
+window.addEventListener('popstate', () => scheduleContextCheck('popstate'));
+window.addEventListener('hashchange', () => scheduleContextCheck('hashchange'));
+
+// Observe DOM mutations debounced to catch SPA transitions and thread expansions
+try {
+  const spaObserver = new MutationObserver(() => {
+    if (window.location.href !== lastReportedUrl) {
+      scheduleContextCheck('url_mutation');
+      return;
+    }
+    const host = window.location.hostname.toLowerCase();
+    if (host.includes('mail.google.com') || host.includes('outlook.') || host.includes('linkedin.')) {
+      scheduleContextCheck('thread_mutation');
+    }
+  });
+
+  if (document.body) {
+    spaObserver.observe(document.body, { childList: true, subtree: true });
+  } else {
+    document.addEventListener('DOMContentLoaded', () => {
+      if (document.body) spaObserver.observe(document.body, { childList: true, subtree: true });
+    });
+  }
+} catch (e) {
+  // Safe fallback
 }
 
