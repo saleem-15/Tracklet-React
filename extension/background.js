@@ -3,8 +3,19 @@
  * Manages context menus, badge indicators, external auth sync, and direct Firestore saving.
  */
 
-// Initialize Context Menu on Install
+// Configure Side Panel behavior on startup and installation
+function configureSidePanelBehavior() {
+  if (typeof chrome !== 'undefined' && chrome.sidePanel && chrome.sidePanel.setPanelBehavior) {
+    chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true })
+      .catch((err) => console.warn('[Tracklet SW] Failed to set side panel behavior:', err));
+  }
+}
+
+configureSidePanelBehavior();
+
+// Initialize Context Menu and Side Panel on Install
 chrome.runtime.onInstalled.addListener(() => {
+  configureSidePanelBehavior();
   chrome.contextMenus.create({
     id: 'tracklet-save-page',
     title: 'Save Job to Tracklet',
@@ -380,7 +391,10 @@ async function pushEmailLogToFirestore(appId, emailLog, updatedStatus, userSessi
   // Existing emails array
   const existingEmails = existingFields.emails?.arrayValue?.values || [];
   const newEmailMap = convertEmailLogToFirestoreMap(emailLog);
-  const updatedEmails = [...existingEmails, newEmailMap];
+  const emailExistsInCloud = existingEmails.some(val => val.mapValue?.fields?.id?.stringValue === emailLog.id);
+  const updatedEmails = emailExistsInCloud
+    ? existingEmails.map(val => val.mapValue?.fields?.id?.stringValue === emailLog.id ? newEmailMap : val)
+    : [...existingEmails, newEmailMap];
 
   const nowISO = new Date().toISOString();
   const patchFields = {
@@ -467,7 +481,11 @@ async function saveAndSyncEmailLog({ appId, emailLog, updatedStatus, newContact 
 
     const updateAppInList = (list) => list.map(app => {
       if (app.id !== appId) return app;
-      const emails = [...(app.emails || []), emailLog];
+      const existingList = app.emails || [];
+      const emailExists = existingList.some(e => e.id === emailLog.id);
+      const emails = emailExists
+        ? existingList.map(e => e.id === emailLog.id ? emailLog : e)
+        : [...existingList, emailLog];
       return {
         ...app,
         emails,
@@ -475,6 +493,7 @@ async function saveAndSyncEmailLog({ appId, emailLog, updatedStatus, newContact 
         updatedAt: new Date().toISOString()
       };
     });
+
 
     guestApps = updateAppInList(guestApps);
     appsIndex = updateAppInList(appsIndex);
@@ -490,6 +509,148 @@ async function saveAndSyncEmailLog({ appId, emailLog, updatedStatus, newContact 
     }, () => {
       chrome.action.setBadgeText({ text: '✓' });
       chrome.action.setBadgeBackgroundColor({ color: '#059669' });
+      setTimeout(() => {
+        chrome.action.setBadgeText({ text: '' });
+      }, 2500);
+    });
+  });
+
+  return { success: true, savedToCloud };
+}
+
+// Push Contact update or create directly to Firestore document
+async function pushContactToFirestore(contact, userSession, config) {
+  const projectId = config?.projectId || 'demo-tracklet';
+  const apiKey = config?.apiKey;
+  const userId = userSession.uid;
+  const idToken = userSession.idToken;
+
+  const fields = {
+    id: { stringValue: contact.id },
+    name: { stringValue: contact.name || '' },
+    role: { stringValue: contact.role || '' },
+    category: { stringValue: contact.category || 'Other' },
+    userId: { stringValue: userId },
+    createdAt: { stringValue: contact.createdAt || new Date().toISOString() },
+    updatedAt: { stringValue: contact.updatedAt || new Date().toISOString() }
+  };
+
+  if (contact.organization) fields.organization = { stringValue: contact.organization };
+  if (contact.location) fields.location = { stringValue: contact.location };
+  if (contact.linkedIn) fields.linkedIn = { stringValue: contact.linkedIn };
+  if (contact.email) fields.email = { stringValue: contact.email };
+  if (contact.phone) fields.phone = { stringValue: contact.phone };
+  if (contact.notes) fields.notes = { stringValue: contact.notes };
+  if (contact.nextFollowUpDate) fields.nextFollowUpDate = { stringValue: contact.nextFollowUpDate };
+
+  if (contact.applicationIds && Array.isArray(contact.applicationIds) && contact.applicationIds.length > 0) {
+    fields.applicationIds = {
+      arrayValue: {
+        values: contact.applicationIds.map(appId => ({ stringValue: appId }))
+      }
+    };
+  }
+
+  let url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/users/${userId}/contacts?documentId=${encodeURIComponent(contact.id)}&`;
+  if (apiKey && apiKey !== 'demo-api-key') {
+    url += `key=${encodeURIComponent(apiKey)}`;
+  }
+  url = url.replace(/[?&]$/, '');
+
+  const headers = { 'Content-Type': 'application/json' };
+  if (idToken) headers['Authorization'] = `Bearer ${idToken}`;
+
+  const res = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ fields })
+  });
+
+  if (!res.ok) {
+    if (res.status === 409) {
+      // If already exists, attempt PATCH
+      let patchUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/users/${userId}/contacts/${encodeURIComponent(contact.id)}?`;
+      if (apiKey && apiKey !== 'demo-api-key') {
+        patchUrl += `key=${encodeURIComponent(apiKey)}&`;
+      }
+      Object.keys(fields).forEach(f => {
+        patchUrl += `updateMask.fieldPaths=${encodeURIComponent(f)}&`;
+      });
+      patchUrl = patchUrl.replace(/[?&]$/, '');
+
+      const patchRes = await fetch(patchUrl, {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify({ fields })
+      });
+
+      if (!patchRes.ok) {
+        throw new Error(`Failed to save contact to Firestore: ${patchRes.status} ${patchRes.statusText}`);
+      }
+      return await patchRes.json();
+    }
+    throw new Error(`Failed to save contact to Firestore: ${res.status} ${res.statusText}`);
+  }
+
+  return await res.json();
+}
+
+// Save contact and broadcast to open tabs
+async function saveAndSyncContact(contactPayload) {
+  const { tracklet_user_session, tracklet_firebase_config } = await chrome.storage.local.get([
+    'tracklet_user_session',
+    'tracklet_firebase_config'
+  ]);
+
+  let savedToCloud = false;
+  if (tracklet_user_session && tracklet_user_session.uid) {
+    try {
+      await pushContactToFirestore(contactPayload, tracklet_user_session, tracklet_firebase_config);
+      savedToCloud = true;
+    } catch (e) {
+      console.warn('Direct Firestore contact save failed from background worker:', e);
+    }
+  }
+
+  // 1. Deliver to open web tabs via content scripts
+  chrome.tabs.query({}, (tabs) => {
+    tabs.forEach((t) => {
+      if (t.id) {
+        chrome.tabs.sendMessage(t.id, {
+          action: 'TRACKLET_EXT_INCOMING_CONTACT',
+          payload: contactPayload,
+          persistedToCloud: savedToCloud
+        }).catch(() => {});
+      }
+    });
+  });
+
+  // 2. Persist in chrome.storage.local
+  chrome.storage.local.get(['tracklet_guest_contacts_v1', 'tracklet_contacts_index', 'tracklet_pending_contacts'], (result) => {
+    let guestContacts = result.tracklet_guest_contacts_v1 || [];
+    let contactsIndex = result.tracklet_contacts_index || [];
+    let pendingContacts = result.tracklet_pending_contacts || [];
+
+    const existingIdx = contactsIndex.findIndex(c => c.id === contactPayload.id);
+    if (existingIdx >= 0) {
+      contactsIndex[existingIdx] = contactPayload;
+      guestContacts = guestContacts.map(c => c.id === contactPayload.id ? contactPayload : c);
+      pendingContacts = pendingContacts.map(c => c.id === contactPayload.id ? contactPayload : c);
+    } else {
+      guestContacts = [contactPayload, ...guestContacts];
+      contactsIndex = [contactPayload, ...contactsIndex];
+      if (!savedToCloud) {
+        pendingContacts = [contactPayload, ...pendingContacts];
+      }
+    }
+
+    chrome.storage.local.set({
+      tracklet_guest_contacts_v1: guestContacts,
+      tracklet_contacts_index: contactsIndex,
+      tracklet_pending_contacts: pendingContacts
+    }, () => {
+      chrome.action.setBadgeText({ text: '✓' });
+      chrome.action.setBadgeBackgroundColor({ color: '#7e22ce' });
       setTimeout(() => {
         chrome.action.setBadgeText({ text: '' });
       }, 2500);
@@ -530,6 +691,24 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
+  if (message.action === 'SYNC_CONTACTS_INDEX') {
+    chrome.storage.local.set({
+      tracklet_contacts_index: message.payload || []
+    }, () => {
+      sendResponse({ success: true });
+    });
+    return true;
+  }
+
+  if (message.action === 'SAVE_CONTACT') {
+    saveAndSyncContact(message.payload).then(res => {
+      sendResponse(res);
+    }).catch(err => {
+      sendResponse({ success: false, error: err.message });
+    });
+    return true;
+  }
+
   if (message.action === 'SAVE_EMAIL_LOG') {
     saveAndSyncEmailLog(message.payload).then(res => {
       sendResponse(res);
@@ -549,6 +728,45 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
+  if (message.action === 'BROADCAST_SAVE') {
+    chrome.tabs.query({}, (tabs) => {
+      tabs.forEach((tab) => {
+        if (tab.id) {
+          chrome.tabs.sendMessage(tab.id, {
+            action: 'TRACKLET_DATA_SAVED',
+            payload: message.payload || message
+          }).catch(() => {});
+        }
+      });
+    });
+    sendResponse({ success: true });
+    return true;
+  }
+
+  if (message.action === 'OPEN_SIDE_PANEL') {
+    if (chrome.sidePanel && chrome.sidePanel.open) {
+      const tabId = (sender && sender.tab) ? sender.tab.id : undefined;
+      if (tabId) {
+        chrome.sidePanel.open({ tabId })
+          .then(() => sendResponse({ success: true }))
+          .catch((err) => sendResponse({ success: false, error: err.message }));
+      } else {
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+          if (tabs[0] && tabs[0].id) {
+            chrome.sidePanel.open({ tabId: tabs[0].id })
+              .then(() => sendResponse({ success: true }))
+              .catch((err) => sendResponse({ success: false, error: err.message }));
+          } else {
+            sendResponse({ success: false, error: 'No active tab found' });
+          }
+        });
+      }
+      return true;
+    }
+    sendResponse({ success: false, error: 'sidePanel API unavailable' });
+    return true;
+  }
+
   return true;
 });
 
@@ -564,3 +782,32 @@ chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => 
     return true;
   }
 });
+
+// Tab lifecycle listeners to track active context and notify side panel
+chrome.tabs.onActivated.addListener(async (activeInfo) => {
+  try {
+    const tab = await chrome.tabs.get(activeInfo.tabId);
+    if (tab && tab.url) {
+      chrome.runtime.sendMessage({
+        action: 'ACTIVE_TAB_CHANGED',
+        payload: { tabId: tab.id, url: tab.url, title: tab.title }
+      }).catch(() => {});
+    }
+  } catch {
+    // tab might be closed or restricted
+  }
+});
+
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  const isComplete = changeInfo.status === 'complete';
+  const isSpaUrlChange = Boolean(changeInfo.url) && changeInfo.status !== 'loading' && tab.status !== 'loading';
+
+  if ((isComplete || isSpaUrlChange) && tab && tab.active && tab.url) {
+    chrome.runtime.sendMessage({
+      action: 'ACTIVE_TAB_UPDATED',
+      payload: { tabId: tab.id, url: tab.url, title: tab.title, isUrlChange: isSpaUrlChange }
+    }).catch(() => {});
+  }
+});
+
+

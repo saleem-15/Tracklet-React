@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Tracklet - Job Application Saver",
+  "name": "Tracklet",
   "version": "1.0.0",
   "description": "Clip and save job applications from LinkedIn, Indeed, Greenhouse, Lever, and any site directly into Tracklet.",
   "icons": {
@@ -9,13 +9,15 @@
     "128": "icons/icon128.png"
   },
   "action": {
-    "default_popup": "popup.html",
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",
       "128": "icons/icon128.png"
     },
     "default_title": "Save to Tracklet"
+  },
+  "side_panel": {
+    "default_path": "popup.html"
   },
   "background": {
     "service_worker": "background.js"
@@ -28,6 +30,8 @@
     }
   ],
   "permissions": [
+    "sidePanel",
+    "tabs",
     "activeTab",
     "storage",
     "contextMenus",

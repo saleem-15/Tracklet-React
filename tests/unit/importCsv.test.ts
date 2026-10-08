@@ -40,7 +40,7 @@ describe('importCsv', () => {
 
   describe('autoDetectFieldMapping', () => {
     it('maps common CSV header names to their respective column indices', () => {
-      const headers = ['Employer Name', 'Position Title', 'Application Date', 'Stage', 'Source Platform', 'Notes'];
+      const headers = ['Employer Name', 'Position Title', 'Application Date', 'Stage', 'Source Platform', 'Notes', 'Resume File'];
       const mapping = autoDetectFieldMapping(headers);
 
       expect(mapping.company).toBe(0);
@@ -49,6 +49,7 @@ describe('importCsv', () => {
       expect(mapping.status).toBe(3);
       expect(mapping.platform).toBe(4);
       expect(mapping.notes).toBe(5);
+      expect(mapping.resumeFileName).toBe(6);
     });
   });
 

@@ -34,7 +34,7 @@ function TrackletAppContent() {
 
   useExtensionSync({
     user, applications, setApplications, applicationsRef,
-    contacts, dataLoading, handleAddContact, handleLinkContact, setSelectedAppId, addToast,
+    contacts, setContacts, dataLoading, handleAddContact, handleLinkContact, setSelectedAppId, addToast,
   });
 
   // Global hotkey: press 'Ctrl+Alt+B' or 'Ctrl+Shift+B' to summon tester issue reporter
