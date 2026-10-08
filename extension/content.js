@@ -179,25 +179,39 @@ function parseSiteSpecific() {
       }
     });
 
-    // Detect hiring contact / recruiter
+    // Detect hiring contact / recruiter (US3)
     let contact = null;
-    const hirerCard = document.querySelector('.hirer-card__hirer-information, .jobs-poster__name, .jobs-box__html--with-bottom-action');
+    const hirerCard = document.querySelector(
+      '.job-details-jobs-unified-top-card__job-poster, ' +
+      '.hirer-card__hirer-information, ' +
+      '[data-view-name="job-details-hiring-team"], ' +
+      '.hiring-team__member, ' +
+      '.jobs-poster__name, ' +
+      '.jobs-box__html--with-bottom-action, ' +
+      '.jobs-details-job-summary__hiring-team'
+    );
     if (hirerCard) {
-      const nameEl = hirerCard.querySelector('.jobs-poster__name, strong, a[href*="/in/"]');
-      const titleEl = hirerCard.querySelector('.jobs-poster__job-title, .hirer-card__job-title, span.t-14');
+      const nameEl = hirerCard.querySelector('.jobs-poster__name, strong, a[href*="/in/"], .hiring-team__member-name, [class*="member-name"]');
+      const titleEl = hirerCard.querySelector('.jobs-poster__job-title, .hirer-card__job-title, .hiring-team__member-title, span.t-14, [class*="job-title"]');
       const profileAnchor = hirerCard.querySelector('a[href*="/in/"]');
-      const name = cleanText(nameEl ? nameEl.textContent : '');
+      const avatarImg = hirerCard.querySelector('img[src*="profile"], img.presence-entity__image, img[alt*="profile"]');
+
+      let name = cleanText(nameEl ? nameEl.textContent : '');
+      name = name.replace(/^(?:Message|Connect|Follow)\s*/i, '').replace(/\s*(?:•\s*)?(?:1st|2nd|3rd)\s*$/i, '').trim();
+
       if (name && name.length >= 2 && !name.toLowerCase().includes('message')) {
         const role = cleanText(titleEl ? titleEl.textContent : 'Recruiter');
         let linkedIn = profileAnchor ? profileAnchor.href : '';
         if (linkedIn) {
           linkedIn = linkedIn.split('?')[0].replace(/\/+$/, '');
         }
-        const isHiringManager = /manager|director|lead|head|vp|founder/i.test(role);
+        const avatarUrl = avatarImg ? avatarImg.src : '';
+        const isHiringManager = /(?:manager|director|lead|head|vp|vice\s+president|founder|cto|partner)/i.test(role);
         contact = {
           name,
           role,
           linkedIn,
+          avatarUrl,
           category: isHiringManager ? 'Hiring Manager' : 'Recruiter',
         };
       }
@@ -307,11 +321,30 @@ function parseSiteSpecific() {
     const registry = typeof JobBoardRegistry !== 'undefined' ? JobBoardRegistry : null;
     const location = (registry && registry.formatLocation) ? registry.formatLocation(rawLoc) : rawLoc;
 
+    // Detect hiring contact / recruiter if present
+    let contact = null;
+    const ghContact = document.querySelector('.recruiter-info, .hiring-team, [class*="contact-person"], [data-qa="recruiter-info"]');
+    if (ghContact) {
+      const nameEl = ghContact.querySelector('strong, h3, h4, [class*="name"]');
+      const titleEl = ghContact.querySelector('p, span, [class*="title"], [class*="role"]');
+      const mailto = ghContact.querySelector('a[href^="mailto:"]');
+      const cName = cleanText(nameEl ? nameEl.textContent : '');
+      if (cName && cName.length >= 2) {
+        contact = {
+          name: cName,
+          role: cleanText(titleEl ? titleEl.textContent : 'Recruiter'),
+          email: mailto ? mailto.href.replace(/^mailto:/i, '').split('?')[0].trim() : '',
+          category: 'Recruiter'
+        };
+      }
+    }
+
     return {
       title: cleanText(titleEl ? titleEl.textContent : ''),
       company: cleanText(companyEl ? companyEl.textContent : ''),
       location,
       atsSlug,
+      contact,
       descriptionHtml,
     };
   }
@@ -353,6 +386,23 @@ function parseSiteSpecific() {
     const registry = typeof JobBoardRegistry !== 'undefined' ? JobBoardRegistry : null;
     const location = (registry && registry.formatLocation) ? registry.formatLocation(rawLoc) : rawLoc;
 
+    let contact = null;
+    const leverContact = document.querySelector('.posting-headline .recruiter, .posting-contact, [class*="contact-person"]');
+    if (leverContact) {
+      const nameEl = leverContact.querySelector('strong, h3, h4, [class*="name"]');
+      const titleEl = leverContact.querySelector('p, span, [class*="title"], [class*="role"]');
+      const mailto = leverContact.querySelector('a[href^="mailto:"]');
+      const cName = cleanText(nameEl ? nameEl.textContent : '');
+      if (cName && cName.length >= 2) {
+        contact = {
+          name: cName,
+          role: cleanText(titleEl ? titleEl.textContent : 'Recruiter'),
+          email: mailto ? mailto.href.replace(/^mailto:/i, '').split('?')[0].trim() : '',
+          category: 'Recruiter'
+        };
+      }
+    }
+
     return {
       title: cleanText(titleEl ? titleEl.textContent : ''),
       company: cleanText(companyEl ? companyEl.textContent : ''),
@@ -360,6 +410,7 @@ function parseSiteSpecific() {
       workLocation,
       employmentType,
       atsSlug,
+      contact,
       descriptionHtml,
     };
   }
@@ -1538,9 +1589,428 @@ function extractEmailData(currentUserEmail) {
   return null;
 }
 
-// 1. Listen for runtime messages from popup or background script
+// --- Side Panel Messaging Protocol & Extraction Handlers ---
+
+function ensureTransientHighlightStyles() {
+  if (document.getElementById('tracklet-transient-highlight-style')) return;
+  const style = document.createElement('style');
+  style.id = 'tracklet-transient-highlight-style';
+  style.textContent = `
+    .tracklet-transient-highlight {
+      outline: 2px solid #2563eb !important;
+      outline-offset: 2px !important;
+      transition: outline 0.2s ease, box-shadow 0.2s ease !important;
+      box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.25) !important;
+    }
+  `;
+  (document.head || document.documentElement).appendChild(style);
+}
+
+function detectAtsForm() {
+  const host = window.location.hostname.toLowerCase();
+  let ats = null;
+  let formSelector = '';
+  let formElementFound = false;
+
+  if (host.includes('greenhouse.io') || document.querySelector('#application_form, form[action*="greenhouse"]')) {
+    ats = 'greenhouse';
+    formSelector = '#application_form, form[action*="greenhouse"], form#apply_form';
+  } else if (host.includes('lever.co') || document.querySelector('.application-form, form#application-form')) {
+    ats = 'lever';
+    formSelector = '.application-form, form#application-form';
+  } else if (host.includes('workdayjobs.com') || host.includes('myworkday.com') || document.querySelector('form[data-automation-id*="application"]')) {
+    ats = 'workday';
+    formSelector = 'form[data-automation-id*="application"], form[data-automation-id="applicationForm"]';
+  } else {
+    const genericForm = document.querySelector('form:has(input[type="email"]), form:has(input[autocomplete*="name"])');
+    if (genericForm) {
+      ats = 'generic';
+      formSelector = 'form';
+    }
+  }
+
+  let formEl = formSelector ? document.querySelector(formSelector) : null;
+  if (!formEl && ats) {
+    formEl = document.querySelector('form');
+  }
+  formElementFound = Boolean(formEl);
+
+  const fieldsMatched = [];
+  const unmatchedFields = [];
+
+  const fieldDefinitions = [
+    {
+      candidateKey: 'fullName',
+      selectors: ['input[name="name"]', 'input[autocomplete="name"]', 'input#name', 'input[placeholder*="Full Name" i]'],
+      fieldType: 'text',
+      label: 'Full Name'
+    },
+    {
+      candidateKey: 'firstName',
+      selectors: ['input[name*="first_name" i]', 'input[autocomplete="given-name"]', 'input#first_name', 'input[data-automation-id*="firstName" i]', 'input[placeholder*="First Name" i]'],
+      fieldType: 'text',
+      label: 'First Name'
+    },
+    {
+      candidateKey: 'lastName',
+      selectors: ['input[name*="last_name" i]', 'input[autocomplete="family-name"]', 'input#last_name', 'input[data-automation-id*="lastName" i]', 'input[placeholder*="Last Name" i]'],
+      fieldType: 'text',
+      label: 'Last Name'
+    },
+    {
+      candidateKey: 'email',
+      selectors: ['input[type="email"]', 'input[name*="email" i]', 'input[autocomplete="email"]', 'input#email', 'input[data-automation-id*="email" i]'],
+      fieldType: 'email',
+      label: 'Email'
+    },
+    {
+      candidateKey: 'phone',
+      selectors: ['input[type="tel"]', 'input[name*="phone" i]', 'input[autocomplete="tel"]', 'input#phone', 'input[data-automation-id*="phone" i]'],
+      fieldType: 'tel',
+      label: 'Phone'
+    },
+    {
+      candidateKey: 'location',
+      selectors: ['input[name*="location" i]', 'input[name*="city" i]', 'input[autocomplete="address-level2"]', 'input#location'],
+      fieldType: 'text',
+      label: 'Location / City'
+    },
+    {
+      candidateKey: 'linkedInUrl',
+      selectors: ['input[name*="linkedin" i]', 'input[name*="urls[LinkedIn]"]', 'input[placeholder*="linkedin" i]', 'input[id*="linkedin" i]'],
+      fieldType: 'url',
+      label: 'LinkedIn Profile'
+    },
+    {
+      candidateKey: 'githubUrl',
+      selectors: ['input[name*="github" i]', 'input[name*="urls[GitHub]"]', 'input[placeholder*="github" i]', 'input[id*="github" i]'],
+      fieldType: 'url',
+      label: 'GitHub URL'
+    },
+    {
+      candidateKey: 'portfolioUrl',
+      selectors: ['input[name*="portfolio" i]', 'input[name*="website" i]', 'input[name*="urls[Portfolio]"]', 'input[placeholder*="website" i]', 'input[placeholder*="portfolio" i]'],
+      fieldType: 'url',
+      label: 'Portfolio / Website'
+    }
+  ];
+
+  for (const def of fieldDefinitions) {
+    let matchedEl = null;
+    let chosenSelector = '';
+
+    for (const sel of def.selectors) {
+      const el = (formEl || document).querySelector(sel);
+      if (el && !fieldsMatched.some(f => f.targetSelector === sel)) {
+        matchedEl = el;
+        chosenSelector = sel;
+        break;
+      }
+    }
+
+    if (matchedEl) {
+      fieldsMatched.push({
+        candidateKey: def.candidateKey,
+        targetSelector: chosenSelector,
+        fieldType: def.fieldType,
+        label: def.label,
+        confidence: 0.95
+      });
+    } else {
+      unmatchedFields.push(def.candidateKey);
+    }
+  }
+
+  return {
+    ats,
+    confidence: formElementFound ? (ats ? 0.95 : 0.7) : 0.0,
+    formElementFound,
+    formSelector: formSelector || 'form',
+    fieldsMatched,
+    unmatchedFields
+  };
+}
+
+function setNativeInputValue(element, value) {
+  if (!element || value === undefined || value === null) return;
+  const isTextArea = element instanceof HTMLTextAreaElement;
+  const prototype = isTextArea ? window.HTMLTextAreaElement.prototype : window.HTMLInputElement.prototype;
+  const descriptor = Object.getOwnPropertyDescriptor(prototype, 'value');
+
+  if (descriptor && descriptor.set) {
+    descriptor.set.call(element, value);
+  } else {
+    element.value = value;
+  }
+
+  element.dispatchEvent(new Event('input', { bubbles: true }));
+  element.dispatchEvent(new Event('change', { bubbles: true }));
+  element.dispatchEvent(new Event('blur', { bubbles: true }));
+}
+
+function executeAutofill(profile) {
+  if (!profile) {
+    return { fieldsPopulatedCount: 0, populatedFields: [], manualFieldsRequired: [] };
+  }
+
+  const detection = detectAtsForm();
+  const formRoot = (detection.formSelector && detection.formSelector !== 'form' ? document.querySelector(detection.formSelector) : null) || document;
+  const populatedFields = [];
+  const manualFieldsRequired = [];
+
+  for (const match of detection.fieldsMatched) {
+    const val = profile[match.candidateKey];
+    if (val) {
+      const el = formRoot.querySelector(match.targetSelector);
+      if (el && (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement)) {
+        setNativeInputValue(el, val);
+        populatedFields.push({
+          candidateKey: match.candidateKey,
+          targetSelector: match.targetSelector,
+          label: match.label,
+          valueSnippet: String(val).slice(0, 30)
+        });
+      }
+    }
+  }
+
+  // Check for resume file upload input
+  const fileInput = formRoot.querySelector('input[type="file"]');
+  if (fileInput) {
+    manualFieldsRequired.push({
+      field: 'Resume File Upload',
+      reason: 'file_attachment',
+      selector: 'input[type="file"]'
+    });
+  }
+
+  return {
+    fieldsPopulatedCount: populatedFields.length,
+    populatedFields,
+    manualFieldsRequired
+  };
+}
+
+function scrollToField(targetSelector) {
+  try {
+    ensureTransientHighlightStyles();
+    const detection = detectAtsForm();
+    const formRoot = (detection.formSelector ? document.querySelector(detection.formSelector) : null) || document;
+    const el = formRoot.querySelector(targetSelector) || document.querySelector(targetSelector);
+    if (!el) return false;
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    el.focus({ preventScroll: true });
+    el.classList.add('tracklet-transient-highlight');
+    setTimeout(() => {
+      el.classList.remove('tracklet-transient-highlight');
+    }, 1500);
+    return true;
+  } catch (err) {
+    console.warn('[Tracklet] Failed to scroll to field:', err);
+    return false;
+  }
+}
+
+function inferContactCategoryContent(headline) {
+  if (!headline) return 'Other';
+  const clean = headline.trim().toLowerCase();
+
+  // 1. Recruiter & Talent Acquisition keywords
+  if (/(?:talent|recruiter|recruiting|sourcer|staffing|people\s+ops|technical\s+sourcer)/i.test(clean)) {
+    return 'Recruiter';
+  }
+
+  // 2. Leadership & Hiring Manager keywords
+  if (/(?:vp|vice\s+president|director|head\s+of|engineering\s+manager|cto|founder|co-founder|tech\s+lead\s+manager)/i.test(clean)) {
+    return 'Hiring Manager';
+  }
+
+  // 3. Mentorship & Advisory keywords
+  if (/(?:mentor|advisor|coach|career\s+guide)/i.test(clean)) {
+    return 'Mentor';
+  }
+
+  // 4. Peer / Alumni keywords
+  if (/(?:peer|alumni|fellow|graduate|class\s+of|engineer|developer|designer)/i.test(clean)) {
+    return 'Peer / Alumni';
+  }
+
+  return 'Other';
+}
+
+function extractLinkedInProfileData() {
+  try {
+    // 1. Full Name
+    const nameEl = document.querySelector(
+      'h1.inline.t-24.v-align-middle.break-words, ' +
+      'h1.text-heading-xlarge, ' +
+      'section.artdeco-card .pv-top-card--list h1, ' +
+      '.pv-top-card-section__name, ' +
+      '.top-card-layout__title, ' +
+      'h1.v-align-middle, ' +
+      'main h1'
+    );
+    let fullName = nameEl ? cleanText(nameEl.textContent) : '';
+    if (fullName) {
+      fullName = fullName
+        .replace(/\s*\b(1st|2nd|3rd)\b.*$/i, '')
+        .replace(/\s*\((?:he|him|she|her|they|them|ze|hir)[^)]*\)/i, '')
+        .trim();
+    }
+
+    // 2. Headline / Role
+    const headlineEl = document.querySelector(
+      '.text-body-medium.break-words, ' +
+      'div.pv-top-card-section__headline, ' +
+      'div.top-card-layout__headline, ' +
+      '.pv-top-card--list-bullet + div, ' +
+      '[data-generated-suggestion-target]'
+    );
+    let headline = headlineEl ? cleanText(headlineEl.textContent) : '';
+
+    // 3. Organization (Current company)
+    let organization = '';
+    const currentCompanyBtn = document.querySelector(
+      'button[aria-label^="Current company:"], ' +
+      'div[aria-label="Current company"], ' +
+      '.pv-top-card--experience-list-item'
+    );
+    if (currentCompanyBtn) {
+      const aria = currentCompanyBtn.getAttribute('aria-label') || '';
+      const ariaMatch = aria.match(/Current company:\s*([^.]+)/i);
+      if (ariaMatch && ariaMatch[1]) {
+        organization = cleanText(ariaMatch[1]);
+      } else {
+        organization = cleanText(currentCompanyBtn.textContent);
+      }
+    }
+
+    if (!organization) {
+      const expItem = document.querySelector('.pv-top-card--experience-list li, ul.pv-top-card--experience-list span');
+      if (expItem) organization = cleanText(expItem.textContent);
+    }
+
+    if (!organization && headline) {
+      const atMatch = headline.match(/(?:at|@)\s+([^,|•·\n]+)/i);
+      if (atMatch && atMatch[1]) {
+        organization = cleanText(atMatch[1]);
+      }
+    }
+
+    // 4. Location
+    const locEl = document.querySelector(
+      'span.text-body-small.inline.t-black--light.break-words, ' +
+      '.top-card-layout__first-subline, ' +
+      'div.pv-top-card--list-bullet > span, ' +
+      '.pv-top-card-section__location'
+    );
+    let location = locEl ? cleanText(locEl.textContent) : '';
+    if (location) {
+      location = location.replace(/\s*·?\s*Contact info.*$/i, '').trim();
+    }
+
+    // 5. Avatar
+    const avatarImg = document.querySelector(
+      'img.pv-top-card-profile-picture__image, ' +
+      'img.evi-image, ' +
+      'img.profile-photo-edit__preview, ' +
+      'img[alt*="profile photo" i], ' +
+      'img[alt*="profile picture" i], ' +
+      'img.presence-entity__image'
+    );
+    const avatarUrl = avatarImg ? (avatarImg.src || '') : '';
+
+    // 6. Canonical LinkedIn URL
+    let linkedInUrl = window.location.href;
+    try {
+      const parsed = new URL(window.location.href);
+      const match = parsed.pathname.match(/^(\/in\/[^/]+)/);
+      if (match) {
+        linkedInUrl = `${parsed.origin}${match[1]}`;
+      } else {
+        linkedInUrl = `${parsed.origin}${parsed.pathname.replace(/\/+$/, '')}`;
+      }
+    } catch {
+      linkedInUrl = window.location.href;
+    }
+
+    // 7. Category smart defaulting
+    const suggestedCategory = inferContactCategoryContent(headline);
+
+    return {
+      fullName,
+      name: fullName,
+      headline,
+      role: headline,
+      organization,
+      location,
+      avatarUrl,
+      linkedInUrl,
+      suggestedCategory
+    };
+  } catch (err) {
+    console.warn('[Tracklet] Failed to extract LinkedIn profile:', err);
+    return null;
+  }
+}
+
+function getPageDataUnified(userEmail) {
+  const host = window.location.hostname.toLowerCase();
+  const path = window.location.pathname;
+
+  // 1. Webmail
+  if (host.includes('mail.google.com') || host.includes('outlook.')) {
+    const emailData = extractEmailData(userEmail);
+    return {
+      success: true,
+      pageType: 'webmail',
+      emailData
+    };
+  }
+
+  // 2. LinkedIn Profile
+  if (host.includes('linkedin.com') && path.includes('/in/')) {
+    const profileData = extractLinkedInProfileData();
+    return {
+      success: true,
+      pageType: 'linkedin_profile',
+      profileData
+    };
+  }
+
+  // 3. Job Posting or ATS Form
+  const jobData = extractPageData();
+  const atsResult = detectAtsForm();
+  const hasJob = Boolean(jobData && (jobData.company || jobData.role));
+  const pageType = atsResult.formElementFound ? 'ats_form' : (hasJob ? 'job_posting' : 'unknown');
+
+  return {
+    success: true,
+    pageType,
+    jobData,
+    atsResult
+  };
+}
+
+// 1. Listen for runtime messages from popup, side panel or background script
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === 'EXTRACT_PAGE_DATA') {
+  if (request.action === 'GET_PAGE_DATA') {
+    const data = getPageDataUnified(request.userEmail);
+    sendResponse(data);
+    return true;
+  } else if (request.action === 'DETECT_ATS_FORM') {
+    const result = detectAtsForm();
+    sendResponse({ success: true, result });
+    return true;
+  } else if (request.action === 'EXECUTE_AUTOFILL') {
+    const result = executeAutofill(request.profile);
+    sendResponse({ success: true, ...result });
+    return true;
+  } else if (request.action === 'SCROLL_TO_FIELD') {
+    const scrolled = scrollToField(request.targetSelector);
+    sendResponse({ success: true, scrolled });
+    return true;
+  } else if (request.action === 'EXTRACT_PAGE_DATA') {
     const data = extractPageData();
     sendResponse(data);
   } else if (request.action === 'EXTRACT_EMAIL_DATA') {
@@ -1551,7 +2021,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       sendResponse({ received: false });
       return true;
     }
-    // Deliver newly saved application directly to Tracklet web app running in this tab
     window.postMessage({
       type: 'TRACKLET_EXT_ADD_APPLICATION',
       payload: request.payload,
@@ -1563,10 +2032,20 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       sendResponse({ received: false });
       return true;
     }
-    // Deliver newly logged email directly to Tracklet web app running in this tab
     window.postMessage({
       type: 'TRACKLET_EXT_ADD_EMAIL',
       payload: request.payload
+    }, window.location.origin);
+    sendResponse({ received: true });
+  } else if (request.action === 'TRACKLET_EXT_INCOMING_CONTACT') {
+    if (!isTrackletOrigin()) {
+      sendResponse({ received: false });
+      return true;
+    }
+    window.postMessage({
+      type: 'TRACKLET_EXT_ADD_CONTACT',
+      payload: request.payload,
+      persistedToCloud: request.persistedToCloud
     }, window.location.origin);
     sendResponse({ received: true });
   }
@@ -1614,6 +2093,15 @@ window.addEventListener('message', (event) => {
     } catch {
       // Extension context invalidated or reloaded
     }
+  } else if (event.data.type === 'TRACKLET_CONTACTS_INDEX_SYNC') {
+    try {
+      chrome.runtime.sendMessage({
+        action: 'SYNC_CONTACTS_INDEX',
+        payload: event.data.payload
+      });
+    } catch {
+      // Extension context invalidated or reloaded
+    }
   } else if (event.data.type === 'TRACKLET_EXT_EMAIL_ACK') {
     const ackId = event.data.emailLogId;
     if (ackId && typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
@@ -1646,15 +2134,16 @@ window.addEventListener('message', (event) => {
   }
 });
 
-// 3. Drain any pending clipped applications or logged emails when Tracklet tab loads
+// 3. Drain any pending clipped applications, contacts, or logged emails when Tracklet tab loads
 function drainPendingItemsToTracklet() {
   if (!isTrackletOrigin()) return;
 
   try {
     if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-      chrome.storage.local.get(['tracklet_pending_apps', 'tracklet_pending_emails'], (res) => {
+      chrome.storage.local.get(['tracklet_pending_apps', 'tracklet_pending_emails', 'tracklet_pending_contacts'], (res) => {
         const pendingApps = res?.tracklet_pending_apps || [];
         const pendingEmails = res?.tracklet_pending_emails || [];
+        const pendingContacts = res?.tracklet_pending_contacts || [];
 
         if (Array.isArray(pendingApps) && pendingApps.length > 0) {
           pendingApps.forEach(app => {
@@ -1665,6 +2154,17 @@ function drainPendingItemsToTracklet() {
             }, window.location.origin);
           });
           chrome.storage.local.remove(['tracklet_pending_apps']);
+        }
+
+        if (Array.isArray(pendingContacts) && pendingContacts.length > 0) {
+          pendingContacts.forEach(contact => {
+            window.postMessage({
+              type: 'TRACKLET_EXT_ADD_CONTACT',
+              payload: contact,
+              persistedToCloud: false
+            }, window.location.origin);
+          });
+          chrome.storage.local.remove(['tracklet_pending_contacts']);
         }
 
         if (Array.isArray(pendingEmails) && pendingEmails.length > 0) {
@@ -1688,5 +2188,101 @@ if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', drainPendingItemsToTracklet);
 } else {
   drainPendingItemsToTracklet();
+}
+
+// 4. In-Page SPA Navigation & Thread Reactivity Observer (T046)
+let lastReportedUrl = window.location.href;
+let lastObservedThreadSignature = '';
+let contextChangeDebounceTimer = null;
+
+function notifyPageContextChange(source, threadSig = '') {
+  const currentUrl = window.location.href;
+  const currentTitle = document.title;
+
+  try {
+    if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+      chrome.runtime.sendMessage({
+        action: 'PAGE_CONTEXT_CHANGED',
+        payload: {
+          url: currentUrl,
+          title: currentTitle,
+          threadSignature: threadSig || lastObservedThreadSignature,
+          source: source || 'spa_navigation'
+        }
+      }).catch(() => {
+        // Side panel might not be open or listener not active
+      });
+    }
+  } catch (err) {
+    // Context invalidated
+  }
+}
+
+function checkAndDispatchContextChange(forcedSource) {
+  const currentUrl = window.location.href;
+
+  // Calculate a lightweight signature of the active email thread or job posting
+  let threadSig = '';
+  const host = window.location.hostname.toLowerCase();
+  if (host.includes('mail.google.com')) {
+    const activeSubjEl = document.querySelector('h2.hP, div[role="main"] h2');
+    const activeMsgEl = document.querySelector('div[role="main"] div[data-message-id]');
+    threadSig = (activeSubjEl?.textContent?.trim() || '') + ':::' + (activeMsgEl?.getAttribute('data-message-id') || '');
+  } else if (host.includes('outlook.')) {
+    const readingPaneSubj = document.querySelector('[role="main"] [aria-label*="subject"], div[aria-label*="reading pane"] h2');
+    threadSig = readingPaneSubj?.textContent?.trim() || '';
+  } else if (host.includes('linkedin.com')) {
+    const jobTitleEl = document.querySelector('.jobs-search__job-details h2, .job-details-jobs-unified-top-card__job-title');
+    threadSig = jobTitleEl?.textContent?.trim() || '';
+  }
+
+  const urlChanged = currentUrl !== lastReportedUrl;
+  const threadChanged = Boolean(threadSig && threadSig !== lastObservedThreadSignature);
+  const isExplicitForce = forcedSource === 'force' || forcedSource === 'manual_refresh';
+
+  if (urlChanged || threadChanged || isExplicitForce) {
+    lastReportedUrl = currentUrl;
+    lastObservedThreadSignature = threadSig;
+    const changeSource = urlChanged ? 'url_changed' : (threadChanged ? 'dom_thread_changed' : (forcedSource || 'spa_navigation'));
+    notifyPageContextChange(changeSource, threadSig);
+  }
+}
+
+function scheduleContextCheck(source) {
+  if (contextChangeDebounceTimer) {
+    clearTimeout(contextChangeDebounceTimer);
+  }
+  const delay = (source === 'thread_mutation') ? 300 : 150;
+  contextChangeDebounceTimer = setTimeout(() => {
+    checkAndDispatchContextChange(source);
+  }, delay);
+}
+
+// Listen to popstate and hashchange
+window.addEventListener('popstate', () => scheduleContextCheck('popstate'));
+window.addEventListener('hashchange', () => scheduleContextCheck('hashchange'));
+
+// Observe DOM mutations debounced to catch SPA transitions and thread expansions
+try {
+  const spaObserver = new MutationObserver(() => {
+    if (window.location.href !== lastReportedUrl) {
+      scheduleContextCheck('url_mutation');
+      return;
+    }
+    const host = window.location.hostname.toLowerCase();
+    if (host.includes('mail.google.com') || host.includes('outlook.') || host.includes('linkedin.')) {
+      scheduleContextCheck('thread_mutation');
+    }
+  });
+
+  if (document.body) {
+    spaObserver.observe(document.body, { childList: true, subtree: true });
+  } else {
+    document.addEventListener('DOMContentLoaded', () => {
+      if (document.body) spaObserver.observe(document.body, { childList: true, subtree: true });
+    });
+  }
+} catch (e) {
+  // Safe fallback
 }
 

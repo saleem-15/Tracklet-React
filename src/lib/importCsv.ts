@@ -66,6 +66,9 @@ export interface CSVFieldMapping {
   contactEmail: number;
   location: number;
   salary: number;
+  resumeFileName?: number;
+  resumeFileSize?: number;
+  resumeUploadedAt?: number;
 }
 
 export function autoDetectFieldMapping(headers: string[]): CSVFieldMapping {
@@ -88,6 +91,18 @@ export function autoDetectFieldMapping(headers: string[]): CSVFieldMapping {
     );
   };
 
+  const resumeFileSize = findIdx(['resumefilesize', 'resumesize', 'cvsize', 'filesize', 'cvbytes']);
+  const resumeUploadedAt = findIdx(['resumeuploadedat', 'cvdate', 'resumeuploaded', 'resumeupload', 'cvuploadedat']);
+  const resumeReserved = [resumeFileSize, resumeUploadedAt].filter((idx) => idx >= 0);
+
+  const resumeFileName = normalizedHeaders.findIndex((h, idx) => {
+    if (resumeReserved.includes(idx)) return false;
+    if (['cv', 'resume'].includes(h)) return true;
+    return ['resumefilename', 'cvfile', 'resumefile', 'resumename', 'filename', 'cvname'].some(
+      (kw) => h === kw || h.includes(kw)
+    );
+  });
+
   return {
     company: findIdx(['company', 'organization', 'employer', 'companyname']),
     role: findIdx(['role', 'jobtitle', 'title', 'position', 'job', 'roletext']),
@@ -102,6 +117,9 @@ export function autoDetectFieldMapping(headers: string[]): CSVFieldMapping {
     contactEmail: findIdxExcluding(['contactemail', 'email', 'recruiteremail', 'contact'], reservedIndices),
     location: findIdx(['location', 'city', 'address', 'workplace', 'remote']),
     salary: findIdx(['salary', 'pay', 'compensation', 'rate', 'range']),
+    resumeFileName: resumeFileName >= 0 ? resumeFileName : undefined,
+    resumeFileSize: resumeFileSize >= 0 ? resumeFileSize : undefined,
+    resumeUploadedAt: resumeUploadedAt >= 0 ? resumeUploadedAt : undefined,
   };
 }
 
@@ -198,11 +216,11 @@ export function normalizeCSVDate(raw: string): string {
 }
 
 export function downloadSampleCSVTemplate() {
-  const sampleCSV = `Company,Role,Platform,Work Location,Employment Type,Job Location,Date Applied,Status,Job Listing URL,Notes
-Linear,Senior Frontend Engineer,LinkedIn,Hybrid,Full-time,San Francisco CA,2026-07-20,Interview,https://linear.app/careers/fe-eng,"Great recruiter phone screen on Monday. Technical round scheduled."
-Stripe,Full Stack Developer,Company Site,Remote,Full-time,"Seattle, WA",2026-07-18,Screening,https://stripe.com/jobs/dev,"Submitted resume via company portal."
-OpenAI,AI Product Engineer,Referral,Onsite,Contract,"San Francisco, CA",2026-07-25,Applied,https://openai.com/careers,"Referred by Alex from engineering team."
-Supabase,Support Engineer,Lever,Remote,Part-time,Remote,2026-07-26,Applied,https://supabase.com/careers,"Fully remote company with async culture."`;
+  const sampleCSV = `Company,Role,Platform,Work Location,Employment Type,Job Location,Date Applied,Status,Job Listing URL,Notes,Resume File Name
+Linear,Senior Frontend Engineer,LinkedIn,Hybrid,Full-time,San Francisco CA,2026-07-20,Interview,https://linear.app/careers/fe-eng,"Great recruiter phone screen on Monday. Technical round scheduled.",linear_lead_cv.pdf
+Stripe,Full Stack Developer,Company Site,Remote,Full-time,"Seattle, WA",2026-07-18,Screening,https://stripe.com/jobs/dev,"Submitted resume via company portal.",stripe_systems_cv.pdf
+OpenAI,AI Product Engineer,Referral,Onsite,Contract,"San Francisco, CA",2026-07-25,Applied,https://openai.com/careers,"Referred by Alex from engineering team.",openai_ai_cv.pdf
+Supabase,Support Engineer,Lever,Remote,Part-time,Remote,2026-07-26,Applied,https://supabase.com/careers,"Fully remote company with async culture.",supabase_cv.pdf`;
 
   const blob = new Blob([sampleCSV], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);

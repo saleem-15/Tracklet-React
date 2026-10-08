@@ -104,6 +104,10 @@ export class ApplicationRepository {
       stageUpdatedAt: now,
       createdAt: now,
       updatedAt: now,
+      resumeFileName: newApp.resumeFileName || undefined,
+      resumeFileSize: typeof newApp.resumeFileSize === 'number' ? newApp.resumeFileSize : undefined,
+      resumeBlobId: newApp.resumeBlobId || undefined,
+      resumeUploadedAt: newApp.resumeUploadedAt || undefined,
     };
 
     let createdApp: Application;
