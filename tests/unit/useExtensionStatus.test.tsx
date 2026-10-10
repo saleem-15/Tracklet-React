@@ -3,6 +3,7 @@ import React, { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { useExtensionStatus } from '../../src/hooks/useExtensionStatus';
 import { ExtensionState } from '../../src/types';
+import { LATEST_EXTENSION_VERSION } from '../../src/lib/constants';
 import * as extensionSyncModule from '../../src/lib/extensionSync';
 
 let host: HTMLDivElement | null = null;
@@ -64,7 +65,7 @@ describe('useExtensionStatus hook', () => {
   it('resolves to connected when extension reports current latest version', async () => {
     vi.spyOn(extensionSyncModule, 'pingExtension').mockResolvedValue({
       installed: true,
-      version: '1.0.0',
+      version: LATEST_EXTENSION_VERSION,
     });
 
     await act(async () => {
@@ -72,7 +73,7 @@ describe('useExtensionStatus hook', () => {
     });
 
     expect(currentHookState?.status).toBe('connected');
-    expect(currentHookState?.installedVersion).toBe('1.0.0');
+    expect(currentHookState?.installedVersion).toBe(LATEST_EXTENSION_VERSION);
     expect(currentHookState?.isChecking).toBe(false);
   });
 
@@ -107,7 +108,7 @@ describe('useExtensionStatus hook', () => {
     // Simulate extension becoming active before recheck
     pingSpy.mockResolvedValueOnce({
       installed: true,
-      version: '1.0.0',
+      version: LATEST_EXTENSION_VERSION,
     });
 
     await act(async () => {
@@ -115,6 +116,6 @@ describe('useExtensionStatus hook', () => {
     });
 
     expect(currentHookState?.status).toBe('connected');
-    expect(currentHookState?.installedVersion).toBe('1.0.0');
+    expect(currentHookState?.installedVersion).toBe(LATEST_EXTENSION_VERSION);
   });
 });

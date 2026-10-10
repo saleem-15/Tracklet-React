@@ -15,7 +15,7 @@ export function inferContactCategory(headline: string): ContactCategory {
   }
 
   // 2. Leadership & Hiring Manager keywords
-  if (/(?:vp|vice\s+president|director|head\s+of|engineering\s+manager|cto|founder|co-founder|tech\s+lead\s+manager)/i.test(clean)) {
+  if (/(?:vp|vice\s+president|director|head\s+of|engineering\s+manager|cto|ceo|coo|cpo|chief|founder|co-founder|tech\s+lead\s+manager)/i.test(clean)) {
     return 'Hiring Manager';
   }
 

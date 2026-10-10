@@ -17,7 +17,7 @@ export function classifyTabUrl(url: string): 'job' | 'contact' | 'email' | 'gene
       return 'email';
     }
 
-    // 2. LinkedIn Profile (must be /in/*, not /jobs/* or /feed)
+    // 2. LinkedIn
     if (host.includes('linkedin.com')) {
       if (path.startsWith('/in/') || path.includes('/in/')) {
         return 'contact';
@@ -25,9 +25,49 @@ export function classifyTabUrl(url: string): 'job' | 'contact' | 'email' | 'gene
       if (path.startsWith('/jobs/') || path.includes('/jobs/')) {
         return 'job';
       }
+      if (path.includes('/feed/update/') || path.startsWith('/posts/') || path.includes('/posts/')) {
+        return 'job';
+      }
     }
 
-    // 3. Known Job Boards and ATS Platforms
+    // 3. X / Twitter Profiles
+    if (host === 'x.com' || host.endsWith('.x.com') || host === 'twitter.com' || host.endsWith('.twitter.com')) {
+      const nonProfilePaths = ['home', 'explore', 'notifications', 'messages', 'settings', 'i', 'search', 'compose', 'lists', 'bookmarks', 'communities', 'tos', 'privacy'];
+      const segments = path.replace(/^\/+/, '').split('/').filter(Boolean);
+      if (segments.length === 1 && !nonProfilePaths.includes(segments[0])) {
+        return 'contact';
+      }
+    }
+
+    // Peerlist Profiles & Jobs
+    if (host.includes('peerlist.io')) {
+      const segments = path.replace(/^\/+/, '').split('/').filter(Boolean);
+      if (segments.length === 1 && !['jobs', 'company', 'scroll', 'projects', 'explore', 'about', 'join'].includes(segments[0].toLowerCase())) {
+        return 'contact';
+      }
+      if (path.includes('/jobs')) {
+        return 'job';
+      }
+    }
+
+    // Wellfound Profiles
+    if (host.includes('wellfound.com')) {
+      if (path.startsWith('/u/')) {
+        return 'contact';
+      }
+      return 'job';
+    }
+
+    // 4. GitHub Profiles
+    if (host === 'github.com' || host.endsWith('.github.com')) {
+      const nonProfilePaths = ['features', 'pricing', 'pulls', 'issues', 'explore', 'trending', 'marketplace', 'topics', 'settings', 'orgs', 'login', 'join', 'about', 'site', 'contact', 'security', 'notifications'];
+      const segments = path.replace(/^\/+/, '').split('/').filter(Boolean);
+      if (segments.length === 1 && !nonProfilePaths.includes(segments[0])) {
+        return 'contact';
+      }
+    }
+
+    // 5. Known Job Boards and ATS Platforms
     const jobHosts = [
       'lever.co',
       'greenhouse.io',
@@ -45,15 +85,33 @@ export function classifyTabUrl(url: string): 'job' | 'contact' | 'email' | 'gene
       'glassdoor.com',
       'builtin.com',
       'monster.com',
-      'dice.com'
+      'dice.com',
+      'arc.dev',
+      'himalayas.app',
+      'remotive.com',
+      'jobright.ai',
+      'trueup.io',
+      'workatastartup.com',
+      'techstars.com',
+      'remoteok.com',
+      'weworkremotely.com',
     ];
 
     if (jobHosts.some(jh => host === jh || host.endsWith('.' + jh))) {
       return 'job';
     }
 
-    // Career page indicators in path or query
-    if (path.includes('/careers') || path.includes('/jobs') || path.includes('/openings') || path.includes('/job/')) {
+    // 6. Career page indicators in path or query
+    if (
+      path.includes('/careers') ||
+      path.includes('/jobs') ||
+      path.includes('/openings') ||
+      path.includes('/job/') ||
+      path.includes('/roles/') ||
+      path.includes('/positions/') ||
+      path.includes('/opportunities') ||
+      path.includes('/apply/')
+    ) {
       return 'job';
     }
 
@@ -100,7 +158,24 @@ describe('extensionTabContext', () => {
       expect(classifyTabUrl('https://boards.greenhouse.io/figma/jobs/456')).toBe('job');
       expect(classifyTabUrl('https://stripe.myworkdayjobs.com/en-US/careers/job/123')).toBe('job');
       expect(classifyTabUrl('https://indeed.com/viewjob?jk=12345')).toBe('job');
+      expect(classifyTabUrl('https://arc.dev/remote-jobs/senior-frontend-engineer')).toBe('job');
+      expect(classifyTabUrl('https://arc.dev/@company')).toBe('job');
       expect(classifyTabUrl('https://example.com/careers/frontend-engineer')).toBe('job');
+      expect(classifyTabUrl('https://example.com/roles/product-designer')).toBe('job');
+      expect(classifyTabUrl('https://www.linkedin.com/feed/update/urn:li:activity:7248192837192')).toBe('job');
+      expect(classifyTabUrl('https://www.linkedin.com/posts/johndoe_hiring-remote-engineer-activity-7248192837192')).toBe('job');
+    });
+
+    it('classifies X/Twitter, GitHub, Peerlist, and Wellfound profiles correctly into contact tab', () => {
+      expect(classifyTabUrl('https://x.com/sarahconnor')).toBe('contact');
+      expect(classifyTabUrl('https://twitter.com/sama')).toBe('contact');
+      expect(classifyTabUrl('https://github.com/torvalds')).toBe('contact');
+      expect(classifyTabUrl('https://peerlist.io/johndoe')).toBe('contact');
+      expect(classifyTabUrl('https://peerlist.io/jobs/senior-frontend-engineer')).toBe('job');
+      expect(classifyTabUrl('https://wellfound.com/u/sarah-dev')).toBe('contact');
+      expect(classifyTabUrl('https://wellfound.com/jobs')).toBe('job');
+      expect(classifyTabUrl('https://x.com/home')).toBe('generic');
+      expect(classifyTabUrl('https://x.com/explore')).toBe('generic');
     });
 
     it('classifies general web pages as generic', () => {

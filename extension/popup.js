@@ -682,6 +682,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         return 'email';
       }
 
+      // 2. LinkedIn
       if (host.includes('linkedin.com')) {
         if (path.startsWith('/in/') || path.includes('/in/')) {
           return 'contact';
@@ -689,19 +690,72 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (path.startsWith('/jobs/') || path.includes('/jobs/')) {
           return 'job';
         }
+        if (path.includes('/feed/update/') || path.startsWith('/posts/') || path.includes('/posts/')) {
+          return 'job';
+        }
       }
 
+      // 3. X / Twitter Profiles
+      if (host === 'x.com' || host.endsWith('.x.com') || host === 'twitter.com' || host.endsWith('.twitter.com')) {
+        const nonProfilePaths = ['home', 'explore', 'notifications', 'messages', 'settings', 'i', 'search', 'compose', 'lists', 'bookmarks', 'communities', 'tos', 'privacy'];
+        const segments = path.replace(/^\/+/, '').split('/').filter(Boolean);
+        if (segments.length === 1 && !nonProfilePaths.includes(segments[0])) {
+          return 'contact';
+        }
+      }
+
+      // Peerlist Profiles & Jobs
+      if (host.includes('peerlist.io')) {
+        const segments = path.replace(/^\/+/, '').split('/').filter(Boolean);
+        if (segments.length === 1 && !['jobs', 'company', 'scroll', 'projects', 'explore', 'about', 'join'].includes(segments[0].toLowerCase())) {
+          return 'contact';
+        }
+        if (path.includes('/jobs')) {
+          return 'job';
+        }
+      }
+
+      // Wellfound Profiles
+      if (host.includes('wellfound.com')) {
+        if (path.startsWith('/u/')) {
+          return 'contact';
+        }
+        return 'job';
+      }
+
+      // 4. GitHub Profiles
+      if (host === 'github.com' || host.endsWith('.github.com')) {
+        const nonProfilePaths = ['features', 'pricing', 'pulls', 'issues', 'explore', 'trending', 'marketplace', 'topics', 'settings', 'orgs', 'login', 'join', 'about', 'site', 'contact', 'security', 'notifications'];
+        const segments = path.replace(/^\/+/, '').split('/').filter(Boolean);
+        if (segments.length === 1 && !nonProfilePaths.includes(segments[0])) {
+          return 'contact';
+        }
+      }
+
+      // 5. Known Job Boards and ATS Platforms
       const jobHosts = [
         'lever.co', 'greenhouse.io', 'workday.com', 'myworkdayjobs.com', 'indeed.com',
         'bayt.com', 'otta.com', 'wellfound.com', 'ashbyhq.com', 'smartrecruiters.com',
-        'jobvite.com', 'recruitee.com', 'rippling.com', 'glassdoor.com', 'builtin.com', 'monster.com', 'dice.com'
+        'jobvite.com', 'recruitee.com', 'rippling.com', 'glassdoor.com', 'builtin.com', 'monster.com', 'dice.com',
+        'arc.dev', 'himalayas.app', 'remotive.com', 'jobright.ai', 'trueup.io', 'workatastartup.com', 'techstars.com',
+        'remoteok.com', 'weworkremotely.com'
       ];
 
       if (jobHosts.some(jh => host === jh || host.endsWith('.' + jh))) {
         return 'job';
       }
 
-      if (path.includes('/careers') || path.includes('/jobs') || path.includes('/openings') || path.includes('/job/')) {
+      // 6. Career page indicators in path or query
+      if (
+        path.includes('/careers') ||
+        path.includes('/jobs') ||
+        path.includes('/openings') ||
+        path.includes('/job/') ||
+        path.includes('/roles/') ||
+        path.includes('/positions/') ||
+        path.includes('/opportunities') ||
+        path.includes('/apply/')
+      ) {
         return 'job';
       }
 
@@ -1723,7 +1777,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     validateInputs();
   }
 
-  async function inspectActiveTab(tab) {
+  async function inspectActiveTab(tab, isForceRefresh = false, targetCategory = 'generic') {
     if (!tab || !tab.id) return;
     activeObservedTabId = tab.id;
     activeObservedUrl = tab.url || '';
@@ -1738,8 +1792,78 @@ document.addEventListener('DOMContentLoaded', async () => {
       return;
     }
 
+    function processResponse(response) {
+      if (!response) return;
+
+      if (response.pageType === 'webmail') {
+        if (!userManualTabOverride) setActiveCompanionTab('email', false);
+        initWebmailMode(tab);
+        return;
+      }
+
+      if ((response.pageType === 'linkedin_profile' || response.pageType === 'contact_profile') && response.profileData) {
+        if (!userManualTabOverride) setActiveCompanionTab('contact', false);
+        applyLinkedInProfileData(response.profileData, tab);
+        return;
+      }
+
+      const hasJob = Boolean(response.jobData && (response.jobData.role || response.jobData.company));
+      if (response.pageType === 'job_posting' || response.pageType === 'ats_form' || hasJob) {
+        if (!userManualTabOverride) setActiveCompanionTab('job', false);
+        applyJobPageData(response.jobData, tab);
+        return;
+      }
+
+      // If targetCategory is contact, do NOT wipe contact form with generic fallback job data
+      if (targetCategory === 'contact') {
+        return;
+      }
+
+      // If generic page with no job or contact data, retain context (T049) unless force refreshed
+      if (targetCategory === 'generic' && !isForceRefresh) {
+        return;
+      }
+
+      applyJobPageData(response.jobData, tab);
+    }
+
+    // Check cached active tab data from local storage for instant zero-lag population
+    try {
+      chrome.storage.local.get(['tracklet_active_tab_data'], (res) => {
+        const cachedData = res?.tracklet_active_tab_data;
+        if (cachedData && cachedData.url === tab.url && (Date.now() - cachedData.timestamp) < 60000) {
+          processResponse(cachedData.data);
+        }
+      });
+    } catch {}
+
     chrome.tabs.sendMessage(tab.id, { action: 'GET_PAGE_DATA', userEmail: currentUserSession?.email }, (response) => {
       if (chrome.runtime.lastError || !response) {
+        // Attempt dynamic content script injection in case tab was loaded prior to extension install/init
+        if (typeof chrome !== 'undefined' && chrome.scripting && chrome.scripting.executeScript) {
+          chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            files: ['jobBoardRegistry.js', 'content.js']
+          }).then(() => {
+            setTimeout(() => {
+              chrome.tabs.sendMessage(tab.id, { action: 'GET_PAGE_DATA', userEmail: currentUserSession?.email }, (retryRes) => {
+                if (!chrome.runtime.lastError && retryRes) {
+                  processResponse(retryRes);
+                } else {
+                  chrome.tabs.sendMessage(tab.id, { action: 'EXTRACT_PAGE_DATA' }, (legacyRes) => {
+                    if (!chrome.runtime.lastError && legacyRes) {
+                      processResponse({ pageType: 'job_posting', jobData: legacyRes });
+                    }
+                  });
+                }
+              });
+            }, 60);
+          }).catch(() => {
+            // Tab might be restricted (e.g. chrome://)
+          });
+          return;
+        }
+
         // Fallback to EXTRACT_PAGE_DATA
         chrome.tabs.sendMessage(tab.id, { action: 'EXTRACT_PAGE_DATA' }, (legacyRes) => {
           if (!chrome.runtime.lastError && legacyRes && legacyRes.isWebmail) {
@@ -1754,17 +1878,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
       }
 
-      if (response.pageType === 'webmail') {
-        initWebmailMode(tab);
-        return;
-      }
-
-      if (response.pageType === 'linkedin_profile' && response.profileData) {
-        applyLinkedInProfileData(response.profileData, tab);
-        return;
-      }
-
-      applyJobPageData(response.jobData, tab);
+      processResponse(response);
     });
   }
 
@@ -1813,12 +1927,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const targetCategory = classifyTabUrl(tab.url);
 
-    // T049: Idle / Exit Context Retention
-    // If the user navigates to a generic page (search, blank tab, docs), retain the current item on screen
-    if (targetCategory === 'generic' && !isForceRefresh) {
-      return;
-    }
-
     if (!userManualTabOverride) {
       if (targetCategory === 'email') {
         setActiveCompanionTab('email', false);
@@ -1829,7 +1937,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     }
 
-    inspectActiveTab(tab);
+    inspectActiveTab(tab, isForceRefresh, targetCategory);
   }
 
   // Request Initial Page Extraction from Active Tab
@@ -1878,9 +1986,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       const newThreadSig = payload.threadSignature || '';
       chrome.tabs.query({ active: true, currentWindow: true }).then(([tab]) => {
         if (tab && tab.id) {
+          if (payload.data && (tab.url === payload.url || !payload.url)) {
+            processResponse(payload.data);
+          }
           const isSameUrl = (tab.url === activeObservedUrl);
           const isSameThread = Boolean(newThreadSig && newThreadSig === activeObservedThreadSig);
-          if (isSameUrl && isSameThread) {
+          if (isSameUrl && isSameThread && !payload.data) {
             return;
           }
           scheduleTabContextSwitch(tab, true, newThreadSig);
@@ -2733,7 +2844,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // 2. Leadership & Hiring Manager keywords
-    if (/(?:vp|vice\s+president|director|head\s+of|engineering\s+manager|cto|founder|co-founder|tech\s+lead\s+manager)/i.test(clean)) {
+    if (/(?:vp|vice\s+president|director|head\s+of|engineering\s+manager|cto|ceo|coo|cpo|chief|founder|co-founder|tech\s+lead\s+manager)/i.test(clean)) {
       return 'Hiring Manager';
     }
 
@@ -2929,8 +3040,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (contactNameInput) contactNameInput.value = profileData.fullName || profileData.name || '';
     if (contactRoleInput) contactRoleInput.value = profileData.role || profileData.headline || '';
     if (contactOrgInput) contactOrgInput.value = profileData.organization || '';
-    if (contactLocationInput) contactLocationInput.value = profileData.location || '';
-    if (contactLinkedInInput) contactLinkedInInput.value = profileData.linkedInUrl || (tab ? tab.url : '');
+    if (contactLinkedInInput) {
+      contactLinkedInInput.value = profileData.linkedInUrl || profileData.profileUrl || (tab ? tab.url : '');
+      if (profileData.platform === 'X') {
+        contactLinkedInInput.placeholder = 'https://x.com/...';
+      } else if (profileData.platform === 'GitHub') {
+        contactLinkedInInput.placeholder = 'https://github.com/...';
+      } else {
+        contactLinkedInInput.placeholder = 'https://linkedin.com/in/...';
+      }
+    }
 
     // 2. Avatar
     if (contactAvatarImg && contactAvatarSvg) {
@@ -3017,6 +3136,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       applyViewTransition(contactClipView);
     }
   }
+
+  const applyContactProfileData = applyLinkedInProfileData;
 
   async function pushStandaloneContactToFirestoreDirectly(payload, userSession, config, docIdToUpdate = null) {
     const projectId = config?.projectId || 'demo-tracklet';

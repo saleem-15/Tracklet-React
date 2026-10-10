@@ -37,6 +37,13 @@
     'naukri.com',
     'licdn.com',
     'indeed.net',
+    'arc.dev',
+    'himalayas.app',
+    'remotive.com',
+    'jobright.ai',
+    'trueup.io',
+    'workatastartup.com',
+    'techstars.com',
   ];
 
   const ATS_HOSTS = [

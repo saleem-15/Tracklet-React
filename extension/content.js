@@ -20,6 +20,30 @@ function getDomainFromUrl(url) {
   }
 }
 
+// Extract human-friendly domain or company name fallback
+function getDomainName(urlStr) {
+  try {
+    const url = new URL(urlStr);
+    const host = url.hostname.replace(/^www\./, '');
+    const cleanHost = host.replace(/^(?:careers|jobs|apply|recruiting|hire|join)\./i, '');
+
+    // If host is an ATS or job platform where the company is in the pathname (e.g. jobs.lever.co/linear/...)
+    const atsDomains = ['lever.co', 'workable.com', 'greenhouse.io', 'ashbyhq.com', 'smartrecruiters.com', 'recruitee.com', 'breezy.hr', 'rippling.com'];
+    if (atsDomains.some(d => cleanHost.toLowerCase().includes(d))) {
+      const parts = url.pathname.split('/').filter(Boolean);
+      if (parts.length > 0 && !['jobs', 'apply', 'careers', 'job', 'view'].includes(parts[0].toLowerCase())) {
+        const comp = parts[0];
+        return comp.charAt(0).toUpperCase() + comp.slice(1);
+      }
+    }
+
+    const name = cleanHost.split('.')[0];
+    return name.charAt(0).toUpperCase() + name.slice(1);
+  } catch (e) {
+    return 'Company';
+  }
+}
+
 // Detect job platform from hostname
 function detectPlatform(hostname) {
   const host = hostname.toLowerCase();
@@ -43,13 +67,46 @@ function detectPlatform(hostname) {
   return 'Company Site';
 }
 
+// Helper to recursively locate target Schema.org entities across root, arrays, and @graph
+function findJsonLdEntity(data, targetType) {
+  if (!data) return null;
+  const isTarget = (type) => {
+    if (!type) return false;
+    if (Array.isArray(type)) return type.some(t => isTarget(t));
+    const str = String(type).toLowerCase();
+    const cleanTarget = targetType.toLowerCase();
+    return str === cleanTarget || str.endsWith('/' + cleanTarget) || str.endsWith(':' + cleanTarget);
+  };
+
+  if (Array.isArray(data)) {
+    for (const item of data) {
+      const found = findJsonLdEntity(item, targetType);
+      if (found) return found;
+    }
+    return null;
+  }
+
+  if (typeof data === 'object') {
+    if (data['@type'] && isTarget(data['@type'])) {
+      return data;
+    }
+    if (Array.isArray(data['@graph'])) {
+      for (const item of data['@graph']) {
+        const found = findJsonLdEntity(item, targetType);
+        if (found) return found;
+      }
+    }
+  }
+  return null;
+}
+
 // Parse JSON-LD structured data (@type: JobPosting)
 function parseJsonLd() {
   const scripts = document.querySelectorAll('script[type="application/ld+json"]');
   for (const script of scripts) {
     try {
       const data = JSON.parse(script.textContent);
-      const item = Array.isArray(data) ? data.find(i => i['@type'] === 'JobPosting') : (data['@type'] === 'JobPosting' ? data : null);
+      const item = findJsonLdEntity(data, 'JobPosting');
       if (item) {
         let company = '';
         let companyUrl = '';
@@ -425,6 +482,39 @@ function parseSiteSpecific() {
     };
   }
 
+  // Arc.dev
+  if (host.includes('arc.dev')) {
+    const titleEl = document.querySelector('h1, .job-title, [data-testid="job-title"], .job-header h1, [class*="JobHeader"] h1');
+    const companyAnchor = document.querySelector('[data-testid="company-name"] a, .company-name a, a[href*="/@"], .company-info a');
+    const companyEl = companyAnchor || document.querySelector('[data-testid="company-name"], .company-name, [class*="company"]');
+    const locEl = document.querySelector('[data-testid="job-location"], .job-location, .remote-badge, [class*="remote"], [class*="location"]');
+    const salaryEl = document.querySelector('[data-testid="salary"], [class*="salary"], [class*="compensation"]');
+    const descEl = document.querySelector('.job-description, [data-testid="job-description"], .description, main');
+    const descriptionHtml = descEl ? (descEl.innerHTML || descEl.textContent) : '';
+
+    let companySlug = '';
+    if (companyAnchor && companyAnchor.href) {
+      const match = companyAnchor.href.match(/@([a-zA-Z0-9_-]+)/);
+      if (match) companySlug = match[1].toLowerCase();
+    }
+
+    const rawLoc = cleanText(locEl ? locEl.textContent : '');
+    const registry = typeof JobBoardRegistry !== 'undefined' ? JobBoardRegistry : null;
+    const location = (registry && registry.formatLocation) ? registry.formatLocation(rawLoc) : rawLoc;
+    const salary = cleanText(salaryEl ? salaryEl.textContent : '');
+
+    return {
+      title: cleanText(titleEl ? titleEl.textContent : ''),
+      company: cleanText(companyEl ? companyEl.textContent : ''),
+      companySlug,
+      location,
+      workLocation: 'Remote',
+      employmentType: 'Full-time',
+      salary,
+      descriptionHtml,
+    };
+  }
+
   return null;
 }
 
@@ -549,30 +639,358 @@ function isApplicationSubmittedPage() {
   return patterns.test(url) || patterns.test(title);
 }
 
+// Helper: Check if an element is currently visible on screen
+function isElementVisible(el) {
+  if (!el) return false;
+  try {
+    const style = window.getComputedStyle(el);
+    if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
+      return false;
+    }
+    const rect = el.getBoundingClientRect();
+    return rect.width > 50 && rect.height > 50;
+  } catch {
+    return false;
+  }
+}
+
+// Scrape job information from open modals, side panels, slide-overs, or drawers
+function extractJobFromActiveModalOrDrawer() {
+  const OVERLAY_SELECTORS = [
+    'dialog[open]',
+    '[role="dialog"]:not([aria-hidden="true"])',
+    '[role="alertdialog"]:not([aria-hidden="true"])',
+    '[aria-modal="true"]:not([aria-hidden="true"])',
+    '[data-state="open"][role="dialog"]',
+    '[data-headlessui-state="open"]',
+    '.modal.show, .modal.open, .modal.active, .modal--open, .modal-visible, .modal-open .modal, .is-open[class*="modal"]',
+    'aside:not([aria-hidden="true"])',
+    '[role="complementary"]:not([aria-hidden="true"])',
+    '.drawer.open, .drawer.show, .drawer.active, [class*="drawer"][class*="open"], [class*="drawer"][class*="active"]',
+    '[class*="sidepanel"][class*="open"], [class*="side-panel"][class*="open"], [class*="flyout"][class*="open"]',
+    '[class*="offcanvas"].show, [class*="offcanvas"].open',
+    '[data-state="open"][data-side]',
+    '.slideover.open, .slideover.show, [class*="slideover"][class*="open"], [class*="slide-over"][class*="open"]',
+    '.jobs-search__job-details',
+    '[data-view-name="job-details"]',
+    '[data-testid*="job-details"], [data-testid*="job-preview"], [data-testid*="job-drawer"], [data-testid*="selected-job"]',
+    'details[open]',
+    '[aria-expanded="true"]'
+  ];
+
+  for (const selector of OVERLAY_SELECTORS) {
+    let containers = [];
+    try {
+      containers = Array.from(document.querySelectorAll(selector));
+    } catch {
+      continue;
+    }
+
+    for (const container of containers) {
+      if (!isElementVisible(container)) continue;
+
+      // Heading / role title inside container
+      const titleEl = container.querySelector(
+        'h1, h2, h3, ' +
+        '[class*="job-title"], [class*="jobTitle"], [class*="role-title"], ' +
+        '[class*="posting-header"] h2, [data-testid*="job-title"], [data-testid*="title"]'
+      );
+      const title = cleanText(titleEl ? titleEl.textContent : '');
+      if (!title || title.length < 2) continue;
+      if (/^(?:sign in|log in|filter|search|settings|cookie|share|subscribe|menu|navigation)/i.test(title)) {
+        continue;
+      }
+
+      // Company name inside container or page fallback
+      const companyEl = container.querySelector(
+        '[class*="company-name" i], [class*="companyName" i], [class*="employer" i], ' +
+        'a[href*="/company/"], [data-testid*="company" i], [class*="organization" i]'
+      );
+      let company = cleanText(companyEl ? companyEl.textContent : '');
+      if (!company) {
+        const pageCompanyEl = document.querySelector('[data-testid="company-name"], .company-name, [class*="header"] [class*="logo"] img[alt], [class*="navbar"] img[alt]');
+        if (pageCompanyEl) {
+          company = cleanText(pageCompanyEl.getAttribute('alt') || pageCompanyEl.textContent || '');
+        }
+      }
+      if (!company) {
+        company = getDomainName(window.location.href);
+      }
+
+      // Location inside container
+      const locEl = container.querySelector(
+        '[class*="location"], [class*="workplace"], [data-testid*="location"], ' +
+        '[class*="city"], [class*="region"]'
+      );
+      let location = cleanText(locEl ? locEl.textContent : '');
+
+      // Work arrangement & employment type
+      let workLocation = null;
+      let employmentType = null;
+      const containerText = cleanText(container.innerText || container.textContent).toLowerCase();
+      if (containerText.includes('remote') || containerText.includes('work from home') || containerText.includes('telecommute')) {
+        workLocation = 'Remote';
+      } else if (containerText.includes('hybrid')) {
+        workLocation = 'Hybrid';
+      } else if (location) {
+        workLocation = 'Onsite';
+      }
+
+      if (containerText.includes('full-time') || containerText.includes('full time')) employmentType = 'Full-time';
+      else if (containerText.includes('part-time') || containerText.includes('part time')) employmentType = 'Part-time';
+      else if (containerText.includes('contract')) employmentType = 'Contract';
+      else if (containerText.includes('internship') || containerText.includes('intern')) employmentType = 'Internship';
+
+      // Salary regex inside container
+      let salary = '';
+      const salaryMatch = containerText.match(/(?:[$€£]\s*[0-9]{2,3}(?:,[0-9]{3})*(?:\s*(?:k|usd|eur|gbp))?(?:\s*-\s*[$€£]?\s*[0-9]{2,3}(?:,[0-9]{3})*(?:\s*(?:k|usd|eur|gbp))?)?(?:\s*(?:\/\s*yr|\/\s*year|\/\s*mo|\/\s*hr|per\s+year|per\s+month|per\s+hour))?)/i);
+      if (salaryMatch) {
+        salary = cleanText(salaryMatch[0]);
+      }
+
+      // Description inside container
+      const descEl = container.querySelector(
+        '[class*="description"], [class*="content"], [class*="details"], ' +
+        'article, section, [data-testid*="description"]'
+      );
+      const descriptionHtml = descEl ? (descEl.innerHTML || descEl.textContent) : '';
+
+      // Apply link inside container or embedded iframe
+      const applyAnchor = container.querySelector('a[href*="apply" i], a[class*="apply" i], a.btn-apply, a[data-testid*="apply" i]');
+      let jobLink = applyAnchor ? applyAnchor.href : window.location.href;
+
+      const iframeAts = container.querySelector('iframe[src*="greenhouse.io"], iframe[src*="lever.co"], iframe[src*="ashbyhq.com"], iframe[src*="workable.com"]') ||
+                        document.querySelector('iframe[src*="greenhouse.io"], iframe[src*="lever.co"], iframe[src*="ashbyhq.com"], iframe[src*="workable.com"]');
+      if (iframeAts && iframeAts.src && (!applyAnchor || jobLink === window.location.href)) {
+        jobLink = iframeAts.src;
+      }
+
+      return {
+        title,
+        company,
+        location,
+        workLocation,
+        employmentType,
+        salary,
+        descriptionHtml,
+        jobLink,
+        inModal: true,
+      };
+    }
+  }
+
+  return null;
+}
+
+// Scrape job details directly from a LinkedIn post / update card
+function extractLinkedInPostJobData() {
+  const host = window.location.hostname.toLowerCase();
+  const href = window.location.href;
+  if (!host.includes('linkedin.')) return null;
+
+  const isPostUrl = href.includes('/feed/update/') || href.includes('/posts/') || href.includes('/feed/');
+  if (!isPostUrl) return null;
+
+  let postContainer = document.querySelector(
+    'div[data-urn*="activity:"], div[data-id*="urn:li:activity"], ' +
+    '.feed-shared-update-v2, article.feed-shared-update-v2, ' +
+    '.feed-shared-update-v2__content, [data-view-name="feed-update"]'
+  );
+
+  const modalPost = document.querySelector(
+    '.artdeco-modal [data-urn*="activity"], ' +
+    '[role="dialog"] .feed-shared-update-v2, ' +
+    '[role="dialog"] [data-view-name="feed-update"]'
+  );
+  if (modalPost) {
+    postContainer = modalPost;
+  }
+
+  const textEl = (postContainer || document).querySelector(
+    '.update-components-text, .feed-shared-update-v2__description, ' +
+    '.feed-shared-inline-show-more-text, .feed-shared-text-view, ' +
+    '.feed-shared-update-v2__commentary, span.attributed-text-segment-list__content, ' +
+    '[data-test-id*="commentary"]'
+  );
+  const postText = cleanText(textEl ? textEl.textContent : '');
+  if (!postText) return null;
+
+  const HIRING_INTENT_REGEX = /(?:we(?:'re|\s+are)\s+hiring|i(?:'m|\s+am)\s+hiring|my\s+team\s+is\s+hiring|join\s+(?:our|my|the)\s+team|looking\s+for\s+(?:a|an)?|seeking\s+(?:a|an)?|now\s+hiring|open\s+role[s]?|job\s+opening[s]?|apply\s+(?:here|at)|dm\s+(?:me\s+)?if\s+interested|we\s+have\s+an?\s+opening|hiring\s+alert|excited\s+to\s+announce\s+we(?:'re|\s+are)\s+hiring)/i;
+
+  const hasHiringIntent = HIRING_INTENT_REGEX.test(postText);
+  const isDedicatedPostPage = href.includes('/feed/update/') || href.includes('/posts/');
+
+  if (!hasHiringIntent && !isDedicatedPostPage) {
+    return null;
+  }
+
+  // 1. Author / Poster Info
+  const actorContainer = postContainer || document;
+  const nameEl = actorContainer.querySelector(
+    '.update-components-actor__name, .feed-shared-actor__name, ' +
+    'a[href*="/in/"] span[dir="ltr"], .update-components-actor__title'
+  );
+  const headlineEl = actorContainer.querySelector(
+    '.update-components-actor__description, .feed-shared-actor__description, ' +
+    '.update-components-actor__sub-description'
+  );
+  const profileAnchor = actorContainer.querySelector('a.update-components-actor__image[href*="/in/"], a[href*="/in/"]');
+  const avatarImg = actorContainer.querySelector('img.update-components-actor__avatar-image, img.feed-shared-actor__avatar-image');
+
+  let authorName = '';
+  if (nameEl) {
+    const visibleSpan = nameEl.querySelector('span[aria-hidden="true"]');
+    authorName = cleanText((visibleSpan || nameEl).textContent);
+  }
+  authorName = authorName
+    .replace(/^(?:Message|Connect|Follow)\s*/i, '')
+    .replace(/\s*(?:•\s*)?(?:1st|2nd|3rd)\b.*$/i, '')
+    .replace(/\s*View\s+.*?profile.*$/i, '')
+    .trim();
+
+  const authorHeadline = cleanText(headlineEl ? headlineEl.textContent : '');
+  let authorLinkedIn = profileAnchor ? profileAnchor.href.split('?')[0].replace(/\/+$/, '') : '';
+  const authorAvatar = avatarImg ? avatarImg.src : '';
+
+  // 2. Company Name Extraction
+  let company = '';
+  if (authorHeadline) {
+    const atMatch = authorHeadline.match(/(?:at|@)\s+([^,|•·\n]+)/i);
+    if (atMatch && atMatch[1]) {
+      company = cleanText(atMatch[1]);
+    }
+  }
+
+  if (!company) {
+    const compAnchor = actorContainer.querySelector('a[href*="/company/"]');
+    if (compAnchor) {
+      company = cleanText(compAnchor.textContent);
+    }
+  }
+
+  if (!company) {
+    const postCompMatch = postText.match(/(?:join\s+(?:us\s+at\s+)?|hiring\s+at\s+|opening\s+at\s+)([A-Z][A-Za-z0-9&.\-_]+)/i);
+    if (postCompMatch && postCompMatch[1]) {
+      company = cleanText(postCompMatch[1]);
+    }
+  }
+
+  // 3. Role / Job Title Extraction
+  let role = '';
+  const explicitMatch = postText.match(/(?:Role|Position|Job(?:\s+Title)?|Opening)\s*:\s*([A-Za-z0-9 /#+.-]+?)(?:\.|\n|,|$)/i);
+  if (explicitMatch && explicitMatch[1]) {
+    role = cleanText(explicitMatch[1]);
+  }
+
+  if (!role) {
+    const lookingMatch = postText.match(/(?:looking\s+for\s+(?:a|an)?|seeking\s+(?:a|an)?|hiring\s+(?:a|an)?)\s+([A-Za-z0-9 /#+.-]+?(?:Engineer|Developer|Designer|Architect|Manager|Lead|Specialist|Scientist|Consultant|Analyst|Intern|Director|Head|VP))/i);
+    if (lookingMatch && lookingMatch[1]) {
+      role = cleanText(lookingMatch[1]);
+    }
+  }
+
+  if (!role) {
+    const titleRegex = /\b((?:Senior|Junior|Lead|Principal|Staff|Head of|VP of|Director of|Chief)?\s*(?:Software|Frontend|Backend|Full[- ]?Stack|Mobile|iOS|Android|DevOps|Site Reliability|SRE|Cloud|Data|Machine Learning|ML|AI|Product|UX|UI|UI\/UX|System|Security|QA|Quality Assurance|Engineering)?\s*(?:Engineer|Developer|Designer|Architect|Manager|Lead|Specialist|Scientist|Consultant|Analyst|Researcher|Officer|Director|Intern|Associate))\b/i;
+    const match = postText.match(titleRegex);
+    if (match && match[1]) {
+      role = cleanText(match[1]);
+    }
+  }
+
+  if (!role && hasHiringIntent) {
+    role = 'Open Role';
+  }
+
+  if (!role) return null;
+
+  // 4. Work Location & Location
+  let workLocation = null;
+  const lowerText = postText.toLowerCase();
+  if (lowerText.includes('remote') || lowerText.includes('wfh') || lowerText.includes('work from home')) {
+    workLocation = 'Remote';
+  } else if (lowerText.includes('hybrid')) {
+    workLocation = 'Hybrid';
+  } else if (lowerText.includes('on-site') || lowerText.includes('onsite') || lowerText.includes('in-office')) {
+    workLocation = 'Onsite';
+  }
+
+  let location = '';
+  const locMatch = postText.match(/(?:location|based in|in)\s*:\s*([A-Za-z, ]+)(?:\.|\n|$)/i);
+  if (locMatch && locMatch[1]) {
+    location = cleanText(locMatch[1]);
+  }
+
+  // 5. Salary
+  let salary = '';
+  const salMatch = postText.match(/(?:[$€£]\s*[0-9]{2,3}(?:,[0-9]{3})*(?:\s*(?:k|usd|eur|gbp))?(?:\s*-\s*[$€£]?\s*[0-9]{2,3}(?:,[0-9]{3})*(?:\s*(?:k|usd|eur|gbp))?)?(?:\s*(?:\/\s*yr|\/\s*year|\/\s*mo|\/\s*hr|per\s+year|per\s+month|per\s+hour))?)/i);
+  if (salMatch) {
+    salary = cleanText(salMatch[0]);
+  }
+
+  // 6. External Apply Link or Post URL
+  const outboundAnchor = actorContainer.querySelector(
+    'a.update-components-article__link, a[data-tracking-control-name="feed_link_click"], ' +
+    '.feed-shared-article__link, a[href*="http"]:not([href*="linkedin.com"])'
+  );
+  let jobLink = outboundAnchor ? outboundAnchor.href : href;
+
+  // 7. Poster Contact
+  let contact = null;
+  if (authorName) {
+    contact = {
+      name: authorName,
+      role: authorHeadline || 'Hiring Team',
+      linkedIn: authorLinkedIn,
+      avatarUrl: authorAvatar,
+      category: /(?:manager|director|lead|head|founder|cto|vp)/i.test(authorHeadline) ? 'Hiring Manager' : 'Recruiter',
+    };
+  }
+
+  return {
+    title: role,
+    company: company || (authorName ? `${authorName}'s Team` : 'LinkedIn Network'),
+    location,
+    workLocation,
+    employmentType: 'Full-time',
+    salary,
+    descriptionHtml: `<p>${postText}</p>`,
+    jobLink,
+    contact,
+    isPostJob: true,
+  };
+}
+
 // Master extraction function
 function extractPageData() {
   const jsonLdData = parseJsonLd();
   const siteData = parseSiteSpecific();
+  const modalData = extractJobFromActiveModalOrDrawer();
+  const postData = extractLinkedInPostJobData();
   const fallbackData = parseUniversalFallback();
 
   const domain = getDomainFromUrl(window.location.href);
   const platform = detectPlatform(domain);
   const isWebmail = isWebmailUrl(window.location.href);
 
+  // Active modal or open LinkedIn post takes precedence over background page
+  const prioritizedJob = (modalData && modalData.title) ? modalData : ((postData && postData.title) ? postData : null);
+
   // Combine extracted results by priority
-  const role = (jsonLdData && jsonLdData.title) || (siteData && siteData.title) || fallbackData.title || '';
-  const company = (jsonLdData && jsonLdData.company) || (siteData && siteData.company) || fallbackData.company || '';
+  const role = (prioritizedJob && prioritizedJob.title) || (jsonLdData && jsonLdData.title) || (siteData && siteData.title) || fallbackData.title || '';
+  const company = (prioritizedJob && prioritizedJob.company) || (jsonLdData && jsonLdData.company) || (siteData && siteData.company) || fallbackData.company || '';
 
   // Resolve sanitized company domain (NEVER job board or ATS)
   const companyDomain = resolveCompanyDomain(company, jsonLdData, siteData);
 
   // Additional fields
   const registry = typeof JobBoardRegistry !== 'undefined' ? JobBoardRegistry : null;
-  const rawLocation = (siteData && siteData.location) || (jsonLdData && jsonLdData.location) || '';
+  const rawLocation = (prioritizedJob && prioritizedJob.location) || (siteData && siteData.location) || (jsonLdData && jsonLdData.location) || '';
   const location = (registry && registry.formatLocation) ? registry.formatLocation(rawLocation) : rawLocation;
-  const workLocation = (siteData && siteData.workLocation) || (jsonLdData && jsonLdData.workLocation) || null;
-  const employmentType = (siteData && siteData.employmentType) || (jsonLdData && jsonLdData.employmentType) || null;
-  const contact = (siteData && siteData.contact) || null;
+  const workLocation = (prioritizedJob && prioritizedJob.workLocation) || (siteData && siteData.workLocation) || (jsonLdData && jsonLdData.workLocation) || null;
+  const employmentType = (prioritizedJob && prioritizedJob.employmentType) || (siteData && siteData.employmentType) || (jsonLdData && jsonLdData.employmentType) || null;
+  const contact = (prioritizedJob && prioritizedJob.contact) || (siteData && siteData.contact) || null;
+  const salary = (prioritizedJob && prioritizedJob.salary) || (siteData && siteData.salary) || null;
+  const jobLink = (prioritizedJob && prioritizedJob.jobLink) || window.location.href;
 
   // Notes: highlighted text wins; otherwise full description formatted cleanly as Markdown
   const rawSelection = window.getSelection() ? window.getSelection().toString().trim() : '';
@@ -604,12 +1022,13 @@ function extractPageData() {
     role,
     company,
     platform,
-    jobLink: window.location.href,
+    jobLink: jobLink || window.location.href,
     domain: companyDomain, // Clean hiring company domain
     companyDomain,
     location,
     workLocation,
     employmentType,
+    salary: salary || undefined,
     notes,
     suggestedStage,
     contact,
@@ -1821,7 +2240,7 @@ function inferContactCategoryContent(headline) {
   }
 
   // 2. Leadership & Hiring Manager keywords
-  if (/(?:vp|vice\s+president|director|head\s+of|engineering\s+manager|cto|founder|co-founder|tech\s+lead\s+manager)/i.test(clean)) {
+  if (/(?:vp|vice\s+president|director|head\s+of|engineering\s+manager|cto|ceo|coo|cpo|chief|founder|co-founder|tech\s+lead\s+manager)/i.test(clean)) {
     return 'Hiring Manager';
   }
 
@@ -1840,33 +2259,81 @@ function inferContactCategoryContent(headline) {
 
 function extractLinkedInProfileData() {
   try {
+    const host = window.location.hostname.toLowerCase();
+    const path = window.location.pathname;
+    if (!host.includes('linkedin.com') || !path.includes('/in/')) {
+      return null;
+    }
+
     // 1. Full Name
     const nameEl = document.querySelector(
       'h1.inline.t-24.v-align-middle.break-words, ' +
       'h1.text-heading-xlarge, ' +
+      'h2.text-heading-xlarge, ' +
+      '.pv-text-details__left-panel h1, ' +
+      '.pv-text-details__left-panel span.text-heading-xlarge, ' +
       'section.artdeco-card .pv-top-card--list h1, ' +
+      '[data-view-name="profile-card"] h1, ' +
+      '[data-view-name="profile-card"] [class*="text-heading"], ' +
       '.pv-top-card-section__name, ' +
       '.top-card-layout__title, ' +
       'h1.v-align-middle, ' +
+      'div.ph5 h1, ' +
+      'main section.pv-top-card h1, ' +
+      'main section:first-of-type h1, ' +
       'main h1'
     );
     let fullName = nameEl ? cleanText(nameEl.textContent) : '';
+    if (!fullName) {
+      const ogTitle = document.querySelector('meta[property="og:title"]');
+      if (ogTitle && ogTitle.content) {
+        const parts = ogTitle.content.split(/\s*[-–|•]\s*/);
+        if (parts[0]) fullName = cleanText(parts[0]);
+      }
+    }
+    if (!fullName && document.title) {
+      const parts = document.title.split(/\s*[-–|•]\s*/);
+      if (parts[0]) fullName = cleanText(parts[0]);
+    }
+    if (!fullName) {
+      try {
+        const scripts = document.querySelectorAll('script[type="application/ld+json"]');
+        for (const s of scripts) {
+          const d = JSON.parse(s.textContent);
+          const p = findJsonLdEntity(d, 'Person');
+          if (p && p.name) {
+            fullName = cleanText(typeof p.name === 'string' ? p.name : p.name.name || '');
+            if (fullName) break;
+          }
+        }
+      } catch {}
+    }
     if (fullName) {
       fullName = fullName
+        .replace(/^\s*\(\d+\+?\)\s*/, '') // Strip notification counts like (1), (99+)
         .replace(/\s*\b(1st|2nd|3rd)\b.*$/i, '')
         .replace(/\s*\((?:he|him|she|her|they|them|ze|hir)[^)]*\)/i, '')
+        .replace(/\s*,\s*(?:Ph\.?D\.?|MBA|M\.?S\.?|B\.?S\.?|MD|PMP|CPA|Esq\.?|PE)\b.*$/i, '')
         .trim();
     }
 
     // 2. Headline / Role
     const headlineEl = document.querySelector(
       '.text-body-medium.break-words, ' +
+      '.pv-text-details__left-panel .text-body-medium, ' +
       'div.pv-top-card-section__headline, ' +
       'div.top-card-layout__headline, ' +
+      '[data-anonymize="headline"], ' +
       '.pv-top-card--list-bullet + div, ' +
       '[data-generated-suggestion-target]'
     );
     let headline = headlineEl ? cleanText(headlineEl.textContent) : '';
+    if (!headline) {
+      const ogDesc = document.querySelector('meta[property="og:description"]');
+      if (ogDesc && ogDesc.content) {
+        headline = cleanText(ogDesc.content.split(/[.·•|]/)[0] || '');
+      }
+    }
 
     // 3. Organization (Current company)
     let organization = '';
@@ -1890,8 +2357,13 @@ function extractLinkedInProfileData() {
       if (expItem) organization = cleanText(expItem.textContent);
     }
 
+    if (!organization) {
+      const rightPanelComp = document.querySelector('.pv-text-details__right-panel button, .pv-top-card__right-panel button, #experience ~ .pvs-list__outer-container li span[aria-hidden="true"]');
+      if (rightPanelComp) organization = cleanText(rightPanelComp.textContent);
+    }
+
     if (!organization && headline) {
-      const atMatch = headline.match(/(?:at|@)\s+([^,|•·\n]+)/i);
+      const atMatch = headline.match(/(?:at|@|\||-)\s+([^,|•·\n]+)/i);
       if (atMatch && atMatch[1]) {
         organization = cleanText(atMatch[1]);
       }
@@ -1918,7 +2390,11 @@ function extractLinkedInProfileData() {
       'img[alt*="profile picture" i], ' +
       'img.presence-entity__image'
     );
-    const avatarUrl = avatarImg ? (avatarImg.src || '') : '';
+    let avatarUrl = avatarImg ? (avatarImg.src || '') : '';
+    if (!avatarUrl) {
+      const ogImg = document.querySelector('meta[property="og:image"]');
+      if (ogImg && ogImg.content) avatarUrl = ogImg.content;
+    }
 
     // 6. Canonical LinkedIn URL
     let linkedInUrl = window.location.href;
@@ -1946,7 +2422,8 @@ function extractLinkedInProfileData() {
       location,
       avatarUrl,
       linkedInUrl,
-      suggestedCategory
+      suggestedCategory,
+      platform: 'LinkedIn'
     };
   } catch (err) {
     console.warn('[Tracklet] Failed to extract LinkedIn profile:', err);
@@ -1954,11 +2431,413 @@ function extractLinkedInProfileData() {
   }
 }
 
+// Scrape profile details from X (formerly Twitter)
+function extractXProfileData() {
+  try {
+    const host = window.location.hostname.toLowerCase();
+    if (host !== 'x.com' && !host.endsWith('.x.com') && host !== 'twitter.com' && !host.endsWith('.twitter.com')) {
+      return null;
+    }
+
+    const path = window.location.pathname;
+    const nonProfileSegments = [
+      'home', 'explore', 'notifications', 'messages', 'settings', 'i', 'search',
+      'compose', 'lists', 'bookmarks', 'communities', 'tos', 'privacy'
+    ];
+    const segments = path.replace(/^\/+/, '').split('/').filter(Boolean);
+    if (segments.length !== 1 || nonProfileSegments.includes(segments[0].toLowerCase())) {
+      return null;
+    }
+
+    const username = segments[0];
+
+    // 1. Full Name / Display Name
+    const userNameContainer = document.querySelector('[data-testid="UserName"]');
+    let fullName = '';
+    if (userNameContainer) {
+      const firstTextEl = userNameContainer.querySelector('span');
+      if (firstTextEl) fullName = cleanText(firstTextEl.textContent);
+    }
+
+    if (!fullName) {
+      const ogTitle = document.querySelector('meta[property="og:title"]');
+      if (ogTitle && ogTitle.content) {
+        const match = ogTitle.content.match(/^([^(]+)/);
+        if (match && match[1]) fullName = cleanText(match[1]);
+      }
+    }
+
+    if (!fullName) {
+      fullName = username;
+    }
+
+    // 2. Headline / Bio
+    const bioEl = document.querySelector('[data-testid="UserDescription"]');
+    let headline = cleanText(bioEl ? bioEl.textContent : '');
+    if (!headline) {
+      const ogDesc = document.querySelector('meta[property="og:description"]');
+      if (ogDesc && ogDesc.content) headline = cleanText(ogDesc.content);
+    }
+
+    // 3. Organization (from bio heuristics or website link)
+    let organization = '';
+    if (headline) {
+      const orgMatch = headline.match(/(?:at|@|founder(?: at| of)?|engineer(?: at| @)?|lead(?: at| @)?)\s*([A-Za-z0-9_.-]+)/i);
+      if (orgMatch && orgMatch[1]) organization = cleanText(orgMatch[1]).replace(/[.,!;:]+$/, '');
+    }
+
+    // 4. Location
+    const locEl = document.querySelector('[data-testid="UserLocation"]');
+    const location = cleanText(locEl ? locEl.textContent : '');
+
+    // 5. Avatar
+    const avatarImg = document.querySelector('[data-testid*="UserAvatar"] img, img[src*="profile_images"]');
+    let avatarUrl = avatarImg ? (avatarImg.src || '') : '';
+    if (!avatarUrl) {
+      const ogImg = document.querySelector('meta[property="og:image"]');
+      if (ogImg && ogImg.content) avatarUrl = ogImg.content;
+    }
+
+    // 6. Canonical URL
+    const linkedInUrl = `https://x.com/${username}`;
+    const suggestedCategory = inferContactCategoryContent(headline);
+
+    return {
+      fullName,
+      name: fullName,
+      headline,
+      role: headline || `@${username}`,
+      organization,
+      location,
+      avatarUrl,
+      linkedInUrl,
+      suggestedCategory,
+      platform: 'X',
+    };
+  } catch (err) {
+    console.warn('[Tracklet] Failed to extract X profile:', err);
+    return null;
+  }
+}
+
+// Scrape profile details from GitHub
+function extractGitHubProfileData() {
+  try {
+    const host = window.location.hostname.toLowerCase();
+    if (host !== 'github.com' && !host.endsWith('.github.com')) {
+      return null;
+    }
+
+    const path = window.location.pathname;
+    const nonProfileSegments = [
+      'features', 'pricing', 'pulls', 'issues', 'explore', 'trending', 'marketplace',
+      'topics', 'settings', 'orgs', 'login', 'join', 'about', 'site', 'contact', 'security', 'notifications'
+    ];
+    const segments = path.replace(/^\/+/, '').split('/').filter(Boolean);
+    if (segments.length === 0 || nonProfileSegments.includes(segments[0].toLowerCase())) {
+      return null;
+    }
+
+    if (segments.length > 1 && !['repositories', 'projects', 'packages', 'stars'].includes(segments[1])) {
+      return null;
+    }
+
+    const username = segments[0];
+
+    const nameEl = document.querySelector('[itemprop="name"], .vcard-fullname');
+    let fullName = cleanText(nameEl ? nameEl.textContent : '');
+    if (!fullName) {
+      fullName = username;
+    }
+
+    const bioEl = document.querySelector('[data-bio-text], .user-profile-bio');
+    let headline = cleanText(bioEl ? bioEl.textContent : '');
+
+    const orgEl = document.querySelector('[itemprop="worksFor"], .p-org');
+    let organization = cleanText(orgEl ? orgEl.textContent : '');
+
+    const locEl = document.querySelector('[itemprop="homeLocation"]');
+    let location = cleanText(locEl ? locEl.textContent : '');
+
+    const avatarImg = document.querySelector('img.avatar-user, img[alt*="avatar"]');
+    let avatarUrl = avatarImg ? (avatarImg.src || '') : '';
+
+    const linkedInUrl = `https://github.com/${username}`;
+    const suggestedCategory = inferContactCategoryContent(headline);
+
+    return {
+      fullName,
+      name: fullName,
+      headline,
+      role: headline || `@${username} on GitHub`,
+      organization,
+      location,
+      avatarUrl,
+      linkedInUrl,
+      suggestedCategory,
+      platform: 'GitHub',
+    };
+  } catch (err) {
+    console.warn('[Tracklet] Failed to extract GitHub profile:', err);
+    return null;
+  }
+}
+
+// Scrape job opening details directly from an X (formerly Twitter) tweet / post
+function extractXPostJobData() {
+  try {
+    const host = window.location.hostname.toLowerCase();
+    if (host !== 'x.com' && !host.endsWith('.x.com') && host !== 'twitter.com' && !host.endsWith('.twitter.com')) {
+      return null;
+    }
+
+    const path = window.location.pathname;
+    const isStatusUrl = path.includes('/status/');
+
+    const modalTweet = document.querySelector('[role="dialog"] article[data-testid="tweet"], [aria-modal="true"] article[data-testid="tweet"]');
+    const tweetEl = modalTweet || document.querySelector('article[data-testid="tweet"]');
+    if (!tweetEl && !isStatusUrl) return null;
+
+    const tweetTextEl = (tweetEl || document).querySelector('[data-testid="tweetText"]');
+    const tweetText = cleanText(tweetTextEl ? tweetTextEl.textContent : '');
+    if (!tweetText) return null;
+
+    const HIRING_INTENT_REGEX = /(?:we(?:'re|\s+are)\s+hiring|i(?:'m|\s+am)\s+hiring|my\s+team\s+is\s+hiring|join\s+(?:our|my|the)\s+team|looking\s+for\s+(?:a|an)?|seeking\s+(?:a|an)?|now\s+hiring|open\s+role[s]?|job\s+opening[s]?|apply\s+(?:here|at)|dm\s+(?:me\s+)?if\s+interested|we\s+have\s+an?\s+opening|hiring\s+alert|excited\s+to\s+announce\s+we(?:'re|\s+are)\s+hiring)/i;
+
+    const hasHiringIntent = HIRING_INTENT_REGEX.test(tweetText);
+    if (!hasHiringIntent && !isStatusUrl) {
+      return null;
+    }
+
+    let authorName = '';
+    let authorHandle = '';
+    const userContainer = (tweetEl || document).querySelector('[data-testid="User-Name"], [data-testid="UserName"]');
+    if (userContainer) {
+      const spans = Array.from(userContainer.querySelectorAll('span')).map(s => cleanText(s.textContent)).filter(Boolean);
+      if (spans.length > 0) authorName = spans[0];
+      const handleSpan = spans.find(s => s.startsWith('@'));
+      if (handleSpan) authorHandle = handleSpan.replace(/^@/, '');
+    }
+
+    if (!authorHandle) {
+      const match = path.match(/^\/([A-Za-z0-9_]+)\/status/);
+      if (match) authorHandle = match[1];
+    }
+    if (!authorName) authorName = authorHandle || 'X User';
+
+    const avatarEl = (tweetEl || document).querySelector('[data-testid*="Avatar"] img, [data-testid*="avatar"] img');
+    const avatarUrl = avatarEl ? avatarEl.src : '';
+
+    const externalAnchors = Array.from((tweetEl || document).querySelectorAll('a[href*="http"]'))
+      .filter(a => {
+        try {
+          const h = new URL(a.href).hostname.toLowerCase();
+          return !h.includes('x.com') && !h.includes('twitter.com');
+        } catch {
+          return false;
+        }
+      });
+    const applyLink = externalAnchors.length > 0 ? externalAnchors[0].href : window.location.href;
+
+    let company = '';
+    if (externalAnchors.length > 0) {
+      const extHost = getDomainFromUrl(externalAnchors[0].href);
+      const registry = typeof JobBoardRegistry !== 'undefined' ? JobBoardRegistry : null;
+      if (registry && registry.cleanCompanyDomain) {
+        const cleaned = registry.cleanCompanyDomain(extHost);
+        if (cleaned && !registry.isJobBoardOrAts(extHost)) {
+          const compName = cleaned.split('.')[0];
+          company = compName.charAt(0).toUpperCase() + compName.slice(1);
+        }
+      }
+    }
+
+    if (!company) {
+      const atCompMatch = tweetText.match(/(?:at\s+|@|join\s+(?:us\s+at\s+)?|hiring\s+at\s+|opening\s+at\s+)([A-Z][A-Za-z0-9&.\-_]+)/i);
+      if (atCompMatch && atCompMatch[1]) {
+        company = cleanText(atCompMatch[1]);
+      }
+    }
+
+    if (!company && applyLink && applyLink !== window.location.href) {
+      company = getDomainName(applyLink);
+    }
+
+    if (!company) {
+      company = authorName ? `${authorName}'s Team` : 'Company';
+    }
+
+    let role = '';
+    const explicitMatch = tweetText.match(/(?:Role|Position|Job(?:\s+Title)?|Opening)\s*:\s*([A-Za-z0-9 /#+.-]+?)(?:\.|\n|,|$)/i);
+    if (explicitMatch && explicitMatch[1]) {
+      role = cleanText(explicitMatch[1]);
+    }
+
+    if (!role) {
+      const lookingMatch = tweetText.match(/(?:looking\s+for\s+(?:a|an)?|seeking\s+(?:a|an)?|hiring\s+(?:a|an)?)\s+([A-Za-z0-9 /#+.-]+?(?:Engineer|Developer|Designer|Architect|Manager|Lead|Specialist|Scientist|Consultant|Analyst|Intern|Director|Head|VP))/i);
+      if (lookingMatch && lookingMatch[1]) {
+        role = cleanText(lookingMatch[1]);
+      }
+    }
+
+    if (!role) {
+      const titleRegex = /\b((?:Senior|Junior|Lead|Principal|Staff|Head of|VP of|Director of|Chief)?\s*(?:Software|Frontend|Backend|Full[- ]?Stack|Mobile|iOS|Android|DevOps|Site Reliability|SRE|Cloud|Data|Machine Learning|ML|AI|Product|UX|UI|UI\/UX|System|Security|QA|Quality Assurance|Engineering)?\s*(?:Engineer|Developer|Designer|Architect|Manager|Lead|Specialist|Scientist|Consultant|Analyst|Researcher|Officer|Director|Intern|Associate))\b/i;
+      const match = tweetText.match(titleRegex);
+      if (match && match[1]) {
+        role = cleanText(match[1]);
+      }
+    }
+
+    if (!role && hasHiringIntent) {
+      role = 'Open Role';
+    }
+
+    if (!role) return null;
+
+    let workLocation = null;
+    const lower = tweetText.toLowerCase();
+    if (lower.includes('remote') || lower.includes('wfh') || lower.includes('work from home')) workLocation = 'Remote';
+    else if (lower.includes('hybrid')) workLocation = 'Hybrid';
+    else if (lower.includes('on-site') || lower.includes('onsite') || lower.includes('in-office')) workLocation = 'Onsite';
+
+    let salary = '';
+    const salMatch = tweetText.match(/(?:[$€£]\s*[0-9]{2,3}(?:,[0-9]{3})*(?:\s*(?:k|usd|eur|gbp))?(?:\s*-\s*[$€£]?\s*[0-9]{2,3}(?:,[0-9]{3})*(?:\s*(?:k|usd|eur|gbp))?)?(?:\s*(?:\/\s*yr|\/\s*year|\/\s*mo|\/\s*hr|per\s+year|per\s+month|per\s+hour))?)/i);
+    if (salMatch) salary = cleanText(salMatch[0]);
+
+    const contact = {
+      name: authorName,
+      role: authorHandle ? `@${authorHandle}` : 'X User',
+      linkedIn: authorHandle ? `https://x.com/${authorHandle}` : window.location.href,
+      avatarUrl,
+      category: 'Recruiter'
+    };
+
+    return {
+      title: role,
+      company,
+      location: '',
+      workLocation,
+      employmentType: 'Full-time',
+      salary,
+      descriptionHtml: `<p>${tweetText}</p>`,
+      jobLink: applyLink,
+      contact,
+      isPostJob: true,
+      platform: 'Other'
+    };
+  } catch (err) {
+    console.warn('[Tracklet] Failed to extract X job tweet:', err);
+    return null;
+  }
+}
+
+// Scrape profile details from Peerlist (peerlist.io/[username])
+function extractPeerlistProfileData() {
+  try {
+    const host = window.location.hostname.toLowerCase();
+    if (!host.includes('peerlist.io')) return null;
+    const path = window.location.pathname;
+    const segments = path.replace(/^\/+/, '').split('/').filter(Boolean);
+    if (segments.length !== 1 || ['jobs', 'company', 'scroll', 'projects', 'explore', 'about', 'join'].includes(segments[0].toLowerCase())) {
+      return null;
+    }
+
+    const username = segments[0];
+    const nameEl = document.querySelector('h1, [data-testid="user-profile-name"], .profile-name');
+    let fullName = cleanText(nameEl ? nameEl.textContent : '');
+    if (!fullName) {
+      const ogTitle = document.querySelector('meta[property="og:title"]');
+      if (ogTitle && ogTitle.content) fullName = cleanText(ogTitle.content.split('(')[0]);
+    }
+    if (!fullName) fullName = username;
+
+    const roleEl = document.querySelector('[data-testid="user-profile-tagline"], .profile-headline, h2');
+    const headline = cleanText(roleEl ? roleEl.textContent : '');
+
+    let organization = '';
+    const compEl = document.querySelector('[data-testid="user-profile-company"], [class*="experience"] h3');
+    if (compEl) organization = cleanText(compEl.textContent);
+
+    const locEl = document.querySelector('[data-testid="user-location"], [class*="location"]');
+    const location = cleanText(locEl ? locEl.textContent : '');
+
+    const avatarEl = document.querySelector('img[alt="avatar"], [data-testid="user-avatar"] img, img[src*="avatar"]');
+    const avatarUrl = avatarEl ? avatarEl.src : '';
+
+    return {
+      fullName,
+      name: fullName,
+      headline,
+      role: headline,
+      organization,
+      location,
+      avatarUrl,
+      linkedInUrl: `https://peerlist.io/${username}`,
+      suggestedCategory: inferContactCategoryContent(headline),
+      platform: 'Other'
+    };
+  } catch {
+    return null;
+  }
+}
+
+// Universal Person Structured Data (Schema.org Person)
+function extractUniversalPersonData() {
+  try {
+    const scripts = document.querySelectorAll('script[type="application/ld+json"]');
+    for (const script of scripts) {
+      try {
+        const data = JSON.parse(script.textContent);
+        const item = findJsonLdEntity(data, 'Person');
+        if (item && (item.name || item.givenName)) {
+          const rawName = item.name ? (typeof item.name === 'string' ? item.name : (item.name.name || '')) : `${item.givenName || ''} ${item.familyName || ''}`.trim();
+          const fullName = cleanText(rawName);
+          const headline = cleanText(item.jobTitle || item.description || '');
+          let organization = '';
+          if (typeof item.worksFor === 'string') organization = cleanText(item.worksFor);
+          else if (item.worksFor && typeof item.worksFor === 'object') organization = cleanText(item.worksFor.name || '');
+
+          let location = '';
+          if (item.address) {
+            if (typeof item.address === 'string') location = cleanText(item.address);
+            else if (typeof item.address === 'object') location = cleanText([item.address.addressLocality, item.address.addressCountry].filter(Boolean).join(', '));
+          }
+
+          let avatarUrl = '';
+          if (typeof item.image === 'string') avatarUrl = item.image;
+          else if (item.image && typeof item.image === 'object') avatarUrl = item.image.url || '';
+
+          const linkedInUrl = item.url || window.location.href;
+          const suggestedCategory = inferContactCategoryContent(headline);
+
+          return {
+            fullName,
+            name: fullName,
+            headline,
+            role: headline,
+            organization,
+            location,
+            avatarUrl,
+            linkedInUrl,
+            suggestedCategory,
+            platform: 'Other',
+          };
+        }
+      } catch {
+        // continue
+      }
+    }
+  } catch {
+    // continue
+  }
+  return null;
+}
+
 function getPageDataUnified(userEmail) {
   const host = window.location.hostname.toLowerCase();
   const path = window.location.pathname;
 
-  // 1. Webmail
+  // 1. Webmail (Gmail & Outlook)
   if (host.includes('mail.google.com') || host.includes('outlook.')) {
     const emailData = extractEmailData(userEmail);
     return {
@@ -1968,25 +2847,169 @@ function getPageDataUnified(userEmail) {
     };
   }
 
-  // 2. LinkedIn Profile
-  if (host.includes('linkedin.com') && path.includes('/in/')) {
+  // 2. LinkedIn Profile (/in/ or /pub/)
+  if (host.includes('linkedin.com') && (path.includes('/in/') || path.includes('/pub/'))) {
     const profileData = extractLinkedInProfileData();
+    if (profileData && (profileData.fullName || profileData.name)) {
+      return {
+        success: true,
+        pageType: 'contact_profile',
+        profileData
+      };
+    }
+  }
+
+  // 3. X (Twitter) Profile (exact 1 segment)
+  const xProfile = extractXProfileData();
+  if (xProfile && (xProfile.fullName || xProfile.headline)) {
     return {
       success: true,
-      pageType: 'linkedin_profile',
-      profileData
+      pageType: 'contact_profile',
+      profileData: xProfile
     };
   }
 
-  // 3. Job Posting or ATS Form
+  // 4. GitHub Profile (exact 1 segment)
+  const ghProfile = extractGitHubProfileData();
+  if (ghProfile && (ghProfile.fullName || ghProfile.headline)) {
+    return {
+      success: true,
+      pageType: 'contact_profile',
+      profileData: ghProfile
+    };
+  }
+
+  // 5. Peerlist Profile
+  const peerlistProfile = extractPeerlistProfileData();
+  if (peerlistProfile && (peerlistProfile.fullName || peerlistProfile.headline)) {
+    return {
+      success: true,
+      pageType: 'contact_profile',
+      profileData: peerlistProfile
+    };
+  }
+
+  // 6. Active Modal or Side Menu / Drawer Job Posting
+  const modalJob = extractJobFromActiveModalOrDrawer();
+  if (modalJob && modalJob.title) {
+    const domain = getDomainFromUrl(window.location.href);
+    const platform = detectPlatform(domain);
+    const registry = typeof JobBoardRegistry !== 'undefined' ? JobBoardRegistry : null;
+    const companyDomain = resolveCompanyDomain(modalJob.company, null, null);
+    const notes = (registry && registry.htmlToMarkdown && modalJob.descriptionHtml)
+      ? registry.htmlToMarkdown(modalJob.descriptionHtml)
+      : (modalJob.descriptionHtml ? modalJob.descriptionHtml.replace(/<[^>]*>/g, '').trim() : '');
+
+    const jobData = {
+      role: modalJob.title,
+      company: modalJob.company || getDomainName(window.location.href),
+      platform,
+      jobLink: modalJob.jobLink || window.location.href,
+      notes,
+      companyDomain,
+      location: modalJob.location,
+      workLocation: modalJob.workLocation,
+      employmentType: modalJob.employmentType,
+      status: 'Saved',
+      salary: modalJob.salary || undefined,
+    };
+
+    return {
+      success: true,
+      pageType: 'job_posting',
+      jobData,
+      atsResult: detectAtsForm()
+    };
+  }
+
+  // 7. LinkedIn Post Job
+  const postJob = extractLinkedInPostJobData();
+  if (postJob && postJob.title) {
+    const registry = typeof JobBoardRegistry !== 'undefined' ? JobBoardRegistry : null;
+    const notes = (registry && registry.htmlToMarkdown && postJob.descriptionHtml)
+      ? registry.htmlToMarkdown(postJob.descriptionHtml)
+      : (postJob.descriptionHtml ? postJob.descriptionHtml.replace(/<[^>]*>/g, '').trim() : '');
+
+    const jobData = {
+      role: postJob.title,
+      company: postJob.company,
+      platform: 'LinkedIn',
+      jobLink: postJob.jobLink,
+      notes,
+      companyDomain: resolveCompanyDomain(postJob.company, null, null),
+      location: postJob.location,
+      workLocation: postJob.workLocation,
+      employmentType: postJob.employmentType,
+      status: 'Saved',
+      contact: postJob.contact,
+      salary: postJob.salary || undefined,
+    };
+
+    return {
+      success: true,
+      pageType: 'job_posting',
+      jobData,
+      atsResult: { formElementFound: false }
+    };
+  }
+
+  // 8. X (Twitter) Post / Tweet Job
+  const xPostJob = extractXPostJobData();
+  if (xPostJob && xPostJob.title) {
+    const registry = typeof JobBoardRegistry !== 'undefined' ? JobBoardRegistry : null;
+    const notes = (registry && registry.htmlToMarkdown && xPostJob.descriptionHtml)
+      ? registry.htmlToMarkdown(xPostJob.descriptionHtml)
+      : (xPostJob.descriptionHtml ? xPostJob.descriptionHtml.replace(/<[^>]*>/g, '').trim() : '');
+
+    const jobData = {
+      role: xPostJob.title,
+      company: xPostJob.company,
+      platform: 'Other',
+      jobLink: xPostJob.jobLink,
+      notes,
+      companyDomain: resolveCompanyDomain(xPostJob.company, null, null),
+      location: xPostJob.location,
+      workLocation: xPostJob.workLocation,
+      employmentType: xPostJob.employmentType,
+      status: 'Saved',
+      contact: xPostJob.contact,
+      salary: xPostJob.salary || undefined,
+    };
+
+    return {
+      success: true,
+      pageType: 'job_posting',
+      jobData,
+      atsResult: { formElementFound: false }
+    };
+  }
+
+  // 9. Standard Job Posting, ATS Form, or Universal Web Page Scraper
   const jobData = extractPageData();
   const atsResult = detectAtsForm();
   const hasJob = Boolean(jobData && (jobData.company || jobData.role));
-  const pageType = atsResult.formElementFound ? 'ats_form' : (hasJob ? 'job_posting' : 'unknown');
+  if (atsResult.formElementFound || hasJob) {
+    return {
+      success: true,
+      pageType: atsResult.formElementFound ? 'ats_form' : 'job_posting',
+      jobData,
+      atsResult
+    };
+  }
+
+  // 10. Universal Person Structured Data (fallback if no job detected on page)
+  const personData = extractUniversalPersonData();
+  if (personData && personData.fullName) {
+    return {
+      success: true,
+      pageType: 'contact_profile',
+      profileData: personData
+    };
+  }
 
   return {
     success: true,
-    pageType,
+    pageType: 'generic_page',
     jobData,
     atsResult
   };
@@ -2217,6 +3240,25 @@ let contextChangeDebounceTimer = null;
 function notifyPageContextChange(source, threadSig = '') {
   const currentUrl = window.location.href;
   const currentTitle = document.title;
+  let scrapedData = null;
+  try {
+    scrapedData = getPageDataUnified();
+  } catch {}
+
+  if (scrapedData && (scrapedData.pageType === 'contact_profile' || scrapedData.pageType === 'job_posting' || scrapedData.pageType === 'ats_form' || scrapedData.pageType === 'webmail')) {
+    try {
+      if (typeof chrome !== 'undefined' && chrome.storage?.local) {
+        chrome.storage.local.set({
+          tracklet_active_tab_data: {
+            url: currentUrl,
+            title: currentTitle,
+            data: scrapedData,
+            timestamp: Date.now()
+          }
+        });
+      }
+    } catch {}
+  }
 
   try {
     if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
@@ -2226,21 +3268,19 @@ function notifyPageContextChange(source, threadSig = '') {
           url: currentUrl,
           title: currentTitle,
           threadSignature: threadSig || lastObservedThreadSignature,
-          source: source || 'spa_navigation'
+          source: source || 'spa_navigation',
+          data: scrapedData,
+          pageType: scrapedData?.pageType || 'generic_page'
         }
-      }).catch(() => {
-        // Side panel might not be open or listener not active
-      });
+      }).catch(() => {});
     }
-  } catch (err) {
-    // Context invalidated
-  }
+  } catch (err) {}
 }
 
 function checkAndDispatchContextChange(forcedSource) {
   const currentUrl = window.location.href;
 
-  // Calculate a lightweight signature of the active email thread or job posting
+  // Calculate a lightweight signature across profiles, jobs, modals, posts, and email
   let threadSig = '';
   const host = window.location.hostname.toLowerCase();
   if (host.includes('mail.google.com')) {
@@ -2251,8 +3291,29 @@ function checkAndDispatchContextChange(forcedSource) {
     const readingPaneSubj = document.querySelector('[role="main"] [aria-label*="subject"], div[aria-label*="reading pane"] h2');
     threadSig = readingPaneSubj?.textContent?.trim() || '';
   } else if (host.includes('linkedin.com')) {
+    const profileH1 = document.querySelector('h1.inline, h1.text-heading-xlarge, main section h1, [data-view-name="profile-card"] h1');
+    const profileHeadline = document.querySelector('.text-body-medium.break-words, .pv-top-card-section__headline');
+    const postEl = document.querySelector('div[data-urn*="activity:"], .feed-shared-update-v2');
+    const postUrn = postEl?.getAttribute('data-urn') || postEl?.getAttribute('data-id') || '';
     const jobTitleEl = document.querySelector('.jobs-search__job-details h2, .job-details-jobs-unified-top-card__job-title');
-    threadSig = jobTitleEl?.textContent?.trim() || '';
+    threadSig = (profileH1?.textContent?.trim() || '') + ':::' +
+                (profileHeadline?.textContent?.trim() || '') + ':::' +
+                postUrn + ':::' +
+                (jobTitleEl?.textContent?.trim() || '');
+  } else if (host.includes('x.com') || host.includes('twitter.com')) {
+    const userNameEl = document.querySelector('[data-testid="UserName"]');
+    const userDescEl = document.querySelector('[data-testid="UserDescription"]');
+    threadSig = (userNameEl?.textContent?.trim() || '') + ':::' + (userDescEl?.textContent?.trim() || '');
+  } else if (host.includes('github.com')) {
+    const ghNameEl = document.querySelector('[itemprop="name"], .vcard-fullname');
+    const ghBioEl = document.querySelector('[data-bio-text], .user-profile-bio');
+    threadSig = (ghNameEl?.textContent?.trim() || '') + ':::' + (ghBioEl?.textContent?.trim() || '');
+  } else {
+    // Universal / company sites / Arc.dev: check active modal/drawer header or main heading
+    const activeModalEl = document.querySelector('dialog[open], [role="dialog"]:not([aria-hidden="true"]), aside.drawer, .modal.show, .modal.open, [class*="drawer"][class*="open"]');
+    const modalTitle = activeModalEl?.querySelector('h1, h2, h3')?.textContent?.trim() || '';
+    const mainH1 = document.querySelector('h1, .job-title, [data-testid="job-title"]')?.textContent?.trim() || '';
+    threadSig = (activeModalEl ? 'modal:' + modalTitle : '') + ':::' + mainH1;
   }
 
   const urlChanged = currentUrl !== lastReportedUrl;
@@ -2271,7 +3332,7 @@ function scheduleContextCheck(source) {
   if (contextChangeDebounceTimer) {
     clearTimeout(contextChangeDebounceTimer);
   }
-  const delay = (source === 'thread_mutation') ? 300 : 150;
+  const delay = (source === 'thread_mutation' || source === 'dom_mutation') ? 250 : 120;
   contextChangeDebounceTimer = setTimeout(() => {
     checkAndDispatchContextChange(source);
   }, delay);
@@ -2281,17 +3342,14 @@ function scheduleContextCheck(source) {
 window.addEventListener('popstate', () => scheduleContextCheck('popstate'));
 window.addEventListener('hashchange', () => scheduleContextCheck('hashchange'));
 
-// Observe DOM mutations debounced to catch SPA transitions and thread expansions
+// Observe DOM mutations debounced to catch SPA transitions, profile renders, and modal expansions
 try {
   const spaObserver = new MutationObserver(() => {
     if (window.location.href !== lastReportedUrl) {
       scheduleContextCheck('url_mutation');
       return;
     }
-    const host = window.location.hostname.toLowerCase();
-    if (host.includes('mail.google.com') || host.includes('outlook.') || host.includes('linkedin.')) {
-      scheduleContextCheck('thread_mutation');
-    }
+    scheduleContextCheck('dom_mutation');
   });
 
   if (document.body) {
@@ -2301,6 +3359,12 @@ try {
       if (document.body) spaObserver.observe(document.body, { childList: true, subtree: true });
     });
   }
+
+  // Initial auto-scrape and backoff schedule for single page applications
+  setTimeout(() => checkAndDispatchContextChange('initial_load'), 50);
+  [350, 900, 1800].forEach(delay => {
+    setTimeout(() => checkAndDispatchContextChange('spa_hydration_retry'), delay);
+  });
 } catch (e) {
   // Safe fallback
 }

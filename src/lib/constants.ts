@@ -369,7 +369,7 @@ export const TESTER_REPORT_SEVERITIES: { label: string; value: TesterReportSever
 export const STORAGE_KEY_TESTER_DRAFT = 'tracklet_tester_report_draft';
 
 // --- Browser Extension Distribution & Status ---
-export const LATEST_EXTENSION_VERSION = '1.0.0';
+export const LATEST_EXTENSION_VERSION = '1.1.0';
 
 export const EXTENSION_DISTRIBUTION_CONFIG = {
   latestVersion: LATEST_EXTENSION_VERSION,
