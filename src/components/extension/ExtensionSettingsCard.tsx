@@ -37,12 +37,12 @@ export const ExtensionSettingsCard: React.FC<ExtensionSettingsCardProps> = ({
           <div className="space-y-1">
             <div className="flex flex-wrap items-center gap-2">
               <h3 className="text-sm font-bold text-slate-900">
-                Tracklet Companion Extension
+                Tracklet Companion
               </h3>
               {/* Dynamic Status Badge */}
               <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${statusConfig.badgeClass}`}>
                 <span className={`w-1.5 h-1.5 rounded-full ${statusConfig.dotClass}`} />
-                {status === 'connected' ? `Connected v${installedVersion}` : statusConfig.label}
+                {status === 'connected' ? `Connected • v${installedVersion}` : statusConfig.label}
               </span>
             </div>
 
@@ -66,7 +66,7 @@ export const ExtensionSettingsCard: React.FC<ExtensionSettingsCardProps> = ({
               </>
             ) : status === 'connected' ? (
               <>
-                <span>Extension Settings</span>
+                <span>Shortcuts & Features</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </>
             ) : (

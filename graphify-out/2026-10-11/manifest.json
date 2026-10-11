@@ -610,8 +610,8 @@
     "semantic_hash": ""
   },
   "extension/content.js": {
-    "mtime": 1791720343.8883946,
-    "ast_hash": "3672ddbb4fe3b8a0ba443b9e0c0aad49",
+    "mtime": 1791721460.5420573,
+    "ast_hash": "c61e9f3c8ed358285af15bf67f5825e3",
     "semantic_hash": ""
   },
   "extension/manifest.json": {
@@ -620,8 +620,8 @@
     "semantic_hash": ""
   },
   "extension/popup.js": {
-    "mtime": 1791720545.381696,
-    "ast_hash": "0bd08084794c6c2c356e4d2ae05fd724",
+    "mtime": 1791721165.3882365,
+    "ast_hash": "63c2d603fd1147d93742f7a64ae64f3f",
     "semantic_hash": ""
   },
   "firebase-blueprint.json": {
@@ -2820,13 +2820,13 @@
     "semantic_hash": ""
   },
   "tests/unit/extensionAutoScrape.test.ts": {
-    "mtime": 1791720216.9518719,
-    "ast_hash": "a06c5091c33a5e35fe234bfd5c7b4d1b",
+    "mtime": 1791721214.9400783,
+    "ast_hash": "3c6925716eaf544b9c5905acea5f9ba8",
     "semantic_hash": ""
   },
   "api/scrape-job.ts": {
-    "mtime": 1791718439.3938754,
-    "ast_hash": "cbe3e5d8a225d7fccf3241489cea4d1e",
+    "mtime": 1791721084.5590422,
+    "ast_hash": "e284def3f2f864f336dad56a6a9b69f4",
     "semantic_hash": ""
   },
   "specs/011-hybrid-job-scraping/checklists/requirements.md": {

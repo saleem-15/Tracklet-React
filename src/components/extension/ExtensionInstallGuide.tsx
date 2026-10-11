@@ -5,8 +5,7 @@ import {
   Check, 
   FolderArchive, 
   Sliders, 
-  Puzzle, 
-  ExternalLink 
+  Puzzle
 } from 'lucide-react';
 import { EXTENSION_DISTRIBUTION_CONFIG } from '../../lib/constants';
 
@@ -73,7 +72,7 @@ export const ExtensionInstallGuide: React.FC<ExtensionInstallGuideProps> = ({ on
               Open Extensions Manager
             </h4>
             <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-              Open the extensions manager in Chrome, Edge, Brave, or Arc. Browsers block external websites from opening internal settings directly, so copy the URL below and paste it into a new tab:
+              Open the extensions manager in Chrome, Edge, Brave, or Arc. Chromium security blocks web pages from navigating directly to settings, so copy and paste this URL into a new tab:
             </p>
             <div className="mt-2.5 flex items-center gap-2 max-w-md">
               <div className="flex-1 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-mono text-slate-700 select-all truncate">
@@ -117,13 +116,19 @@ export const ExtensionInstallGuide: React.FC<ExtensionInstallGuideProps> = ({ on
               Toggle Developer Mode & Load Unpacked
             </h4>
             <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-              In the top-right corner of the Extensions page, switch the <strong className="text-slate-800">Developer mode</strong> toggle to ON. Then click the <strong className="text-slate-800">Load unpacked</strong> button (top left) and select the extracted directory containing <code className="bg-slate-200/70 px-1 py-0.5 rounded text-[11px] font-mono">manifest.json</code>. Once loaded, refresh this Tracklet page (<kbd className="bg-slate-200 px-1 py-0.5 rounded text-[11px] font-mono font-semibold">F5</kbd>) so the web app and extension connect.
+              In the top-right corner of the Extensions page, switch <strong className="text-slate-800">Developer mode</strong> ON. Then click <strong className="text-slate-800">Load unpacked</strong> (top left) and select the unzipped directory containing <code className="bg-slate-200/70 px-1 py-0.5 rounded text-[11px] font-mono">manifest.json</code>. Once loaded, click <strong>Check Connection</strong> in the modal footer below.
             </p>
-            <div className="mt-3 p-2.5 bg-blue-50/60 border border-blue-200/70 rounded-lg text-xs text-blue-900 flex items-center gap-2">
+            <div className="mt-3 p-2.5 bg-blue-50/70 border border-blue-200/80 rounded-lg text-xs text-blue-900 flex items-center gap-2">
               <span className="text-base shrink-0">💡</span>
-              <span>
-                <strong>Pro tip:</strong> Click the puzzle piece icon (🧩) in your browser toolbar to pin Tracklet. Press <kbd className="font-mono bg-white px-1.5 py-0.5 rounded border border-blue-200 text-[11px]">Alt + Shift + A</kbd> anytime to dock the Side Panel!
-              </span>
+              <div className="flex-1 leading-relaxed">
+                <strong>Pro tip:</strong> Pin Tracklet in your browser toolbar, then press{' '}
+                <kbd className="font-mono bg-white px-1.5 py-0.5 rounded border border-blue-200/90 text-[11px] font-semibold text-blue-950 shadow-2xs">Alt</kbd>
+                {' + '}
+                <kbd className="font-mono bg-white px-1.5 py-0.5 rounded border border-blue-200/90 text-[11px] font-semibold text-blue-950 shadow-2xs">Shift</kbd>
+                {' + '}
+                <kbd className="font-mono bg-white px-1.5 py-0.5 rounded border border-blue-200/90 text-[11px] font-semibold text-blue-950 shadow-2xs">A</kbd>
+                {' '}to dock the Side Panel anytime!
+              </div>
             </div>
           </div>
         </div>

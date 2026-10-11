@@ -2,18 +2,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   X, 
   Puzzle, 
-  CheckCircle2, 
-  AlertCircle, 
-  RefreshCw, 
-  ExternalLink,
-  Keyboard,
-  Sparkles,
-  Download
+  RefreshCw 
 } from 'lucide-react';
 import { ExtensionState } from '../../types';
 import { EXTENSION_DISTRIBUTION_CONFIG, EXTENSION_STATUS_CONFIG } from '../../lib/constants';
 import { ExtensionInstallGuide } from './ExtensionInstallGuide';
 import { ExtensionUpdateGuide } from './ExtensionUpdateGuide';
+import { ExtensionFeaturesGuide } from './ExtensionFeaturesGuide';
 
 interface ExtensionModalProps {
   isOpen: boolean;
@@ -104,7 +99,7 @@ export const ExtensionModal: React.FC<ExtensionModalProps> = ({
       onShowToast?.(
         'info',
         'Status Checked',
-        'Tracklet extension was not detected. Make sure it is enabled in Chrome and refresh this page (F5).'
+        'Tracklet extension was not detected. Make sure it is loaded in Chrome and refresh this page.'
       );
     }
   };
@@ -130,16 +125,16 @@ export const ExtensionModal: React.FC<ExtensionModalProps> = ({
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <h3 id="extension-modal-title" className="text-sm font-bold text-slate-900 truncate">
-                  Tracklet Companion Extension
+                  Tracklet Companion
                 </h3>
                 {/* Status Badge */}
                 <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold border ${statusConfig.badgeClass} shrink-0`}>
                   <span className={`w-1.5 h-1.5 rounded-full ${statusConfig.dotClass}`} />
-                  {status === 'connected' ? `v${installedVersion}` : statusConfig.label}
+                  {status === 'connected' ? `Connected • v${installedVersion}` : statusConfig.label}
                 </span>
               </div>
               <p className="text-xs text-slate-500 mt-0.5 truncate">
-                Direct job clipping, LinkedIn contact extraction, and ATS autofill
+                Chrome Side Panel for 1-click job clipping & ATS autofill
               </p>
             </div>
           </div>
@@ -165,7 +160,7 @@ export const ExtensionModal: React.FC<ExtensionModalProps> = ({
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
             }`}
           >
-            First-Time Setup
+            Setup Guide
           </button>
 
           <button
@@ -177,7 +172,7 @@ export const ExtensionModal: React.FC<ExtensionModalProps> = ({
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
             }`}
           >
-            How to Update
+            <span>Update Guide</span>
             {status === 'update_available' && (
               <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse motion-reduce:animate-none" />
             )}
@@ -192,7 +187,7 @@ export const ExtensionModal: React.FC<ExtensionModalProps> = ({
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
             }`}
           >
-            Features & Shortcuts
+            Shortcuts & Features
           </button>
         </div>
 
@@ -208,101 +203,27 @@ export const ExtensionModal: React.FC<ExtensionModalProps> = ({
               latestVersion={latestVersion}
               status={status}
               onDownload={handleDownloadInitiated}
-              onRecheck={handleManualRecheck}
-              isChecking={isChecking}
+              onSwitchToInstall={() => setActiveTab('install')}
             />
           )}
 
           {activeTab === 'features' && (
-            <div className="space-y-4">
-              {/* Features Overview */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="p-3 rounded-xl border border-slate-200/80 bg-slate-50/60">
-                  <div className="font-bold text-slate-800 flex items-center gap-1.5">
-                    <span>📥</span> Job Clipper
-                  </div>
-                  <p className="text-slate-600 mt-1 leading-relaxed">
-                    Auto-detects job title, company, salary, and requirements from LinkedIn, Indeed, Greenhouse, and Lever.
-                  </p>
-                </div>
-
-                <div className="p-3 rounded-xl border border-slate-200/80 bg-slate-50/60">
-                  <div className="font-bold text-slate-800 flex items-center gap-1.5">
-                    <span>👤</span> Contact Clipper
-                  </div>
-                  <p className="text-slate-600 mt-1 leading-relaxed">
-                    Extracts recruiter profiles and hiring managers directly into your standalone Contacts Hub.
-                  </p>
-                </div>
-
-                <div className="p-3 rounded-xl border border-slate-200/80 bg-slate-50/60">
-                  <div className="font-bold text-slate-800 flex items-center gap-1.5">
-                    <span>✉️</span> Webmail Logger
-                  </div>
-                  <p className="text-slate-600 mt-1 leading-relaxed">
-                    Logs interview invitation emails from Gmail and Outlook straight to your active pipeline timeline.
-                  </p>
-                </div>
-
-                <div className="p-3 rounded-xl border border-slate-200/80 bg-slate-50/60">
-                  <div className="font-bold text-slate-800 flex items-center gap-1.5">
-                    <span>⚡</span> 1-Click Autofill
-                  </div>
-                  <p className="text-slate-600 mt-1 leading-relaxed">
-                    Auto-fills repetitive ATS application forms with your profile details without ever auto-submitting.
-                  </p>
-                </div>
-              </div>
-
-              {/* Keyboard Shortcuts */}
-              <div className="p-4 rounded-xl border border-blue-200/70 bg-blue-50/40">
-                <h4 className="font-bold text-slate-900 flex items-center gap-1.5 mb-2.5">
-                  <Keyboard className="w-4 h-4 text-blue-600" />
-                  Keyboard Shortcuts
-                </h4>
-                <div className="space-y-2 text-slate-700">
-                  <div className="flex items-center justify-between">
-                    <span>Open / Toggle Side Panel</span>
-                    <kbd className="font-mono bg-white px-2 py-0.5 rounded border border-slate-200 font-semibold shadow-2xs">
-                      Alt + Shift + A
-                    </kbd>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span>Save Application / Contact</span>
-                    <kbd className="font-mono bg-white px-2 py-0.5 rounded border border-slate-200 font-semibold shadow-2xs">
-                      Ctrl + Enter
-                    </kbd>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <ExtensionFeaturesGuide />
           )}
         </div>
 
         {/* Modal Footer */}
         <div className="px-5 py-3 border-t border-slate-200/80 bg-slate-50 flex items-center justify-between gap-3 shrink-0">
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={handleManualRecheck}
-              disabled={isChecking}
-              className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-500 hover:text-slate-800 transition-colors cursor-pointer disabled:opacity-50"
-              title="Ping extension to recheck active connection"
-            >
-              <RefreshCw className={`w-3 h-3 ${isChecking ? 'animate-spin' : ''}`} />
-              Recheck connection
-            </button>
-            <span className="text-slate-300">•</span>
-            <a
-              href={EXTENSION_DISTRIBUTION_CONFIG.githubReleaseDownloadUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-500 hover:text-blue-600 transition-colors"
-            >
-              GitHub Release
-              <ExternalLink className="w-2.5 h-2.5" />
-            </a>
-          </div>
+          <button
+            type="button"
+            onClick={handleManualRecheck}
+            disabled={isChecking}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+            title="Ping extension to recheck active connection"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isChecking ? 'animate-spin text-blue-600' : 'text-slate-500'}`} />
+            <span>{isChecking ? 'Checking...' : 'Check Connection'}</span>
+          </button>
 
           <button
             type="button"

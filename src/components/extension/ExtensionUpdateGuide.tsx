@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { 
   Download, 
-  RefreshCw, 
   Copy, 
   Check, 
   ArrowRight, 
@@ -19,8 +18,7 @@ interface ExtensionUpdateGuideProps {
   latestVersion: string;
   status?: ExtensionStatus;
   onDownload?: () => void;
-  onRecheck?: () => void;
-  isChecking?: boolean;
+  onSwitchToInstall?: () => void;
 }
 
 export const ExtensionUpdateGuide: React.FC<ExtensionUpdateGuideProps> = ({
@@ -28,8 +26,7 @@ export const ExtensionUpdateGuide: React.FC<ExtensionUpdateGuideProps> = ({
   latestVersion,
   status,
   onDownload,
-  onRecheck,
-  isChecking = false,
+  onSwitchToInstall,
 }) => {
   const [copiedUrl, setCopiedUrl] = useState(false);
 
@@ -48,16 +45,16 @@ export const ExtensionUpdateGuide: React.FC<ExtensionUpdateGuideProps> = ({
 
   return (
     <div className="space-y-4">
-      {/* Version Status Card (Dynamic) */}
+      {/* Contextual Version Banner */}
       {hasUpdate ? (
-        <div className="bg-amber-50/70 border border-amber-200/80 rounded-xl p-4 flex items-center justify-between gap-3">
+        <div className="bg-amber-50/70 border border-amber-200/80 rounded-xl p-3.5 flex items-center justify-between gap-3">
           <div>
             <div className="text-xs font-bold text-amber-900 flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse motion-reduce:animate-none" />
-              New Update Available
+              Update Ready to Install
             </div>
             <div className="text-xs text-amber-700 mt-0.5">
-              A newer version of the Tracklet Companion is ready to install.
+              A newer package with updated job board parsers is available.
             </div>
           </div>
           <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border border-amber-200 text-xs font-mono shrink-0 shadow-2xs">
@@ -67,7 +64,7 @@ export const ExtensionUpdateGuide: React.FC<ExtensionUpdateGuideProps> = ({
           </div>
         </div>
       ) : isUpToDate ? (
-        <div className="bg-emerald-50/70 border border-emerald-200/80 rounded-xl p-4 flex items-center justify-between gap-3">
+        <div className="bg-emerald-50/70 border border-emerald-200/80 rounded-xl p-3.5 flex items-center justify-between gap-3">
           <div>
             <div className="text-xs font-bold text-emerald-900 flex items-center gap-1.5">
               <CheckCircle2 className="w-4 h-4 text-emerald-600" />
@@ -83,20 +80,25 @@ export const ExtensionUpdateGuide: React.FC<ExtensionUpdateGuideProps> = ({
           </div>
         </div>
       ) : (
-        <div className="bg-slate-50/80 border border-slate-200/80 rounded-xl p-4 flex items-center justify-between gap-3">
+        <div className="bg-slate-50/90 border border-slate-200/90 rounded-xl p-3.5 flex items-center justify-between gap-3">
           <div>
             <div className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
               <AlertCircle className="w-4 h-4 text-slate-500" />
-              Extension Not Detected
+              Extension Not Detected Yet
             </div>
             <div className="text-xs text-slate-600 mt-0.5">
-              Make sure the extension is loaded in Chrome, then refresh this page (F5).
+              If this is your first time using Tracklet Companion, start with the setup guide.
             </div>
           </div>
-          <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-mono shrink-0 shadow-2xs">
-            <span className="text-slate-500">Latest:</span>
-            <span className="text-blue-600 font-bold">v{latestVersion}</span>
-          </div>
+          {onSwitchToInstall && (
+            <button
+              type="button"
+              onClick={onSwitchToInstall}
+              className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs shadow-2xs transition-colors cursor-pointer shrink-0"
+            >
+              First-Time Setup
+            </button>
+          )}
         </div>
       )}
 
@@ -112,7 +114,7 @@ export const ExtensionUpdateGuide: React.FC<ExtensionUpdateGuideProps> = ({
               Download & Replace Files
             </h4>
             <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-              Download the updated package and extract the contents directly into your existing extension folder, replacing the older files. Your saved settings, sync status, and login session remain completely intact.
+              Download the updated package and unzip its contents into your existing extension directory, replacing older files. Your saved settings and logins remain safe.
             </p>
             <div className="mt-3 flex items-center gap-2">
               <a
@@ -141,10 +143,10 @@ export const ExtensionUpdateGuide: React.FC<ExtensionUpdateGuideProps> = ({
           <div className="flex-1 min-w-0">
             <h4 className="text-xs font-bold text-slate-900 flex items-center gap-2">
               <RotateCw className="w-3.5 h-3.5 text-blue-600" />
-              Click Reload on Tracklet Card
+              Reload in Extensions Manager
             </h4>
             <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-              Go to <code className="bg-slate-200/70 px-1 py-0.5 rounded text-[11px] font-mono">chrome://extensions</code>, find the Tracklet extension card, and click the circular <strong>Reload (🔄)</strong> button. Then refresh this Tracklet page (<kbd className="bg-slate-200 px-1 py-0.5 rounded text-[11px] font-mono font-semibold">F5</kbd>) so the updated extension connects.
+              Open <code className="bg-slate-200/70 px-1 py-0.5 rounded text-[11px] font-mono">chrome://extensions</code>, find the Tracklet card, and click the circular <strong>Reload (🔄)</strong> button. Then click <strong>Check Connection</strong> in the footer below to verify.
             </p>
             <div className="mt-2.5 flex items-center gap-2 max-w-md">
               <div className="flex-1 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-mono text-slate-700 select-all truncate">
@@ -175,24 +177,6 @@ export const ExtensionUpdateGuide: React.FC<ExtensionUpdateGuideProps> = ({
           </div>
         </div>
       </div>
-
-      {/* Verify & Recheck Bar */}
-      {onRecheck && (
-        <div className="pt-2 flex items-center justify-between border-t border-slate-200/80">
-          <span className="text-xs text-slate-500">
-            Reloaded in Chrome already?
-          </span>
-          <button
-            type="button"
-            onClick={onRecheck}
-            disabled={isChecking}
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700 transition-colors cursor-pointer disabled:opacity-50"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${isChecking ? 'animate-spin' : ''}`} />
-            Recheck Extension Status
-          </button>
-        </div>
-      )}
     </div>
   );
 };
