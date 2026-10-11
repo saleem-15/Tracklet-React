@@ -545,8 +545,8 @@
     "semantic_hash": ""
   },
   ".specify/feature.json": {
-    "mtime": 1791461779.8737726,
-    "ast_hash": "64e81976980dee87987948d4b6baddc3",
+    "mtime": 1791645089.2071505,
+    "ast_hash": "94c7b5855d6e453726a4982e1bb2cc44",
     "semantic_hash": ""
   },
   ".specify/init-options.json": {
@@ -610,18 +610,18 @@
     "semantic_hash": ""
   },
   "extension/content.js": {
-    "mtime": 1791471166.6413107,
-    "ast_hash": "11cf422d326ea2151116747d8d311640",
+    "mtime": 1791721460.5420573,
+    "ast_hash": "c61e9f3c8ed358285af15bf67f5825e3",
     "semantic_hash": ""
   },
   "extension/manifest.json": {
-    "mtime": 1791467223.4602041,
-    "ast_hash": "9401188b9445f53b4c6668b6c45ab142",
+    "mtime": 1791715629.9576144,
+    "ast_hash": "430c8485c6bc753b3067293741de706b",
     "semantic_hash": ""
   },
   "extension/popup.js": {
-    "mtime": 1791470557.7129154,
-    "ast_hash": "3b99dc16cc584f3f568bd1078873ef6d",
+    "mtime": 1791721165.3882365,
+    "ast_hash": "63c2d603fd1147d93742f7a64ae64f3f",
     "semantic_hash": ""
   },
   "firebase-blueprint.json": {
@@ -1135,8 +1135,8 @@
     "semantic_hash": "923a50fb875ff28c150e3ccc2307f5d5"
   },
   "src/lib/constants.ts": {
-    "mtime": 1791467216.8575552,
-    "ast_hash": "15b030660fee59c29fd8142cc52bfc30",
+    "mtime": 1791715630.1641595,
+    "ast_hash": "95a7425c5e26e59ec1c5316cc6f94570",
     "semantic_hash": ""
   },
   "src/lib/contactMigration.ts": {
@@ -2050,8 +2050,8 @@
     "semantic_hash": ""
   },
   "extension/popup.html": {
-    "mtime": 1791468025.4949017,
-    "ast_hash": "f385e5b41e5cf5a7bf654c2ff57f6648",
+    "mtime": 1791716316.785538,
+    "ast_hash": "57ad3110c9037d77c0ef97a249ecb884",
     "semantic_hash": ""
   },
   "index.html": {
@@ -2640,8 +2640,8 @@
     "semantic_hash": ""
   },
   "tests/unit/extensionTabContext.test.ts": {
-    "mtime": 1791470714.9452019,
-    "ast_hash": "df40cf6109c37433280c60414917fe84",
+    "mtime": 1791716953.850235,
+    "ast_hash": "19145d7c19131596a1d6c2c4487bcedb",
     "semantic_hash": ""
   },
   "tests/unit/recruiterDetection.test.ts": {
@@ -2820,8 +2820,38 @@
     "semantic_hash": ""
   },
   "tests/unit/extensionAutoScrape.test.ts": {
-    "mtime": 1791471208.9316823,
-    "ast_hash": "2817e65c1f4f8704dbb2c119aa3ddb39",
+    "mtime": 1791721214.9400783,
+    "ast_hash": "3c6925716eaf544b9c5905acea5f9ba8",
+    "semantic_hash": ""
+  },
+  "api/scrape-job.ts": {
+    "mtime": 1791721084.5590422,
+    "ast_hash": "e284def3f2f864f336dad56a6a9b69f4",
+    "semantic_hash": ""
+  },
+  "specs/011-hybrid-job-scraping/checklists/requirements.md": {
+    "mtime": 1791645083.810601,
+    "ast_hash": "7670d9d47e8ce4609bdaa739ed2e2247",
+    "semantic_hash": ""
+  },
+  "specs/011-hybrid-job-scraping/plan.md": {
+    "mtime": 1791645075.7596262,
+    "ast_hash": "ead6a461302f4c7b35c912614eb15a66",
+    "semantic_hash": ""
+  },
+  "specs/011-hybrid-job-scraping/research.md": {
+    "mtime": 1791645338.070158,
+    "ast_hash": "b2219eccdf1520e12997969a21a18933",
+    "semantic_hash": ""
+  },
+  "specs/011-hybrid-job-scraping/spec.md": {
+    "mtime": 1791645063.2418647,
+    "ast_hash": "f344e291ddf2a38ca1bdfc80e7c3723d",
+    "semantic_hash": ""
+  },
+  "specs/011-hybrid-job-scraping/tasks.md": {
+    "mtime": 1791715694.562933,
+    "ast_hash": "c8c1e6c617c6b2fba81855e281bf9cc7",
     "semantic_hash": ""
   }
 }
