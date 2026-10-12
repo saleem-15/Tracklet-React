@@ -31,6 +31,13 @@ export const JOB_BOARD_HOSTS: readonly string[] = [
   'naukri.com',
   'licdn.com',
   'indeed.net',
+  'arc.dev',
+  'himalayas.app',
+  'remotive.com',
+  'jobright.ai',
+  'trueup.io',
+  'workatastartup.com',
+  'techstars.com',
 ];
 
 export const ATS_HOSTS: readonly string[] = [

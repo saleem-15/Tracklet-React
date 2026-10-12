@@ -650,13 +650,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Manual Override Anchoring
   let userManualTabOverride = null;
   let manualOverrideDomain = '';
+  let manualOverrideCategory = '';
 
   function setManualTabOverride(tabName, url) {
     userManualTabOverride = tabName;
+    const targetUrl = url || activeObservedUrl || window.location.href;
     try {
-      manualOverrideDomain = new URL(url || activeObservedUrl || window.location.href).hostname.replace(/^www\./, '').toLowerCase();
+      manualOverrideDomain = new URL(targetUrl).hostname.replace(/^www\./, '').toLowerCase();
+      manualOverrideCategory = classifyTabUrl(targetUrl);
     } catch {
       manualOverrideDomain = '';
+      manualOverrideCategory = '';
     }
   }
 
@@ -664,7 +668,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!userManualTabOverride || !manualOverrideDomain) return true;
     try {
       const newDomain = new URL(newUrl).hostname.replace(/^www\./, '').toLowerCase();
-      return newDomain !== manualOverrideDomain;
+      if (newDomain !== manualOverrideDomain) return true;
+      const newCategory = classifyTabUrl(newUrl);
+      if (newCategory !== 'generic' && manualOverrideCategory && newCategory !== manualOverrideCategory) {
+        return true;
+      }
+      return false;
     } catch {
       return true;
     }
@@ -682,26 +691,95 @@ document.addEventListener('DOMContentLoaded', async () => {
         return 'email';
       }
 
+      // 2. LinkedIn
       if (host.includes('linkedin.com')) {
-        if (path.startsWith('/in/') || path.includes('/in/')) {
+        if (path.startsWith('/in/') || path.includes('/in/') || path.startsWith('/pub/') || path.includes('/pub/')) {
           return 'contact';
         }
         if (path.startsWith('/jobs/') || path.includes('/jobs/')) {
           return 'job';
         }
+        if (path.includes('/feed/update/') || path.startsWith('/posts/') || path.includes('/posts/')) {
+          return 'job';
+        }
       }
 
+      // 3. X / Twitter Profiles & Posts
+      if (host === 'x.com' || host.endsWith('.x.com') || host === 'twitter.com' || host.endsWith('.twitter.com')) {
+        const nonProfilePaths = ['home', 'explore', 'notifications', 'messages', 'settings', 'i', 'search', 'compose', 'lists', 'bookmarks', 'communities', 'tos', 'privacy', 'jobs'];
+        const segments = path.replace(/^\/+/, '').split('/').filter(Boolean);
+        if (segments.length === 1 && !nonProfilePaths.includes(segments[0])) {
+          return 'contact';
+        }
+        if (segments.length >= 3 && segments[1] === 'status') {
+          return 'job';
+        }
+      }
+
+      // Peerlist Profiles & Jobs
+      if (host.includes('peerlist.io')) {
+        const segments = path.replace(/^\/+/, '').split('/').filter(Boolean);
+        if (segments.length === 1 && !['jobs', 'company', 'scroll', 'projects', 'explore', 'about', 'join'].includes(segments[0].toLowerCase())) {
+          return 'contact';
+        }
+        if (path.includes('/jobs')) {
+          return 'job';
+        }
+      }
+
+      // Wellfound / AngelList Profiles
+      if (host.includes('wellfound.com') || host.includes('angel.co')) {
+        if (path.startsWith('/u/')) {
+          return 'contact';
+        }
+        return 'job';
+      }
+
+      // 4. GitHub Profiles
+      if (host === 'github.com' || host.endsWith('.github.com')) {
+        const nonProfilePaths = ['features', 'pricing', 'pulls', 'issues', 'explore', 'trending', 'marketplace', 'topics', 'settings', 'orgs', 'login', 'join', 'about', 'site', 'contact', 'security', 'notifications'];
+        const segments = path.replace(/^\/+/, '').split('/').filter(Boolean);
+        if (segments.length === 1 && !nonProfilePaths.includes(segments[0])) {
+          return 'contact';
+        }
+      }
+
+      // 5. Known Job Boards and ATS Platforms
       const jobHosts = [
-        'lever.co', 'greenhouse.io', 'workday.com', 'myworkdayjobs.com', 'indeed.com',
+        'lever.co', 'greenhouse.io', 'workday.com', 'workdayjobs.com', 'myworkdayjobs.com', 'indeed.com',
         'bayt.com', 'otta.com', 'wellfound.com', 'ashbyhq.com', 'smartrecruiters.com',
-        'jobvite.com', 'recruitee.com', 'rippling.com', 'glassdoor.com', 'builtin.com', 'monster.com', 'dice.com'
+        'jobvite.com', 'recruitee.com', 'rippling.com', 'rippling-ats.com', 'workable.com',
+        'bamboohr.com', 'personio.de', 'personio.com', 'teamtailor.com', 'breezy.hr',
+        'icims.com', 'jazzhr.com', 'pinpointhq.com', 'applytojob.com',
+        'glassdoor.com', 'builtin.com', 'monster.com', 'dice.com', 'ziprecruiter.com',
+        'simplyhired.com', 'careerbuilder.com',
+        'arc.dev', 'himalayas.app', 'remotive.com', 'jobright.ai', 'trueup.io', 'workatastartup.com', 'techstars.com',
+        'remoteok.com', 'weworkremotely.com'
       ];
 
       if (jobHosts.some(jh => host === jh || host.endsWith('.' + jh))) {
         return 'job';
       }
 
-      if (path.includes('/careers') || path.includes('/jobs') || path.includes('/openings') || path.includes('/job/')) {
+      // 6. Career page indicators in path or query
+      if (
+        path.includes('/career') ||
+        path.includes('/karriere') ||
+        path.includes('/stellenangebote') ||
+        path.includes('/offene-stellen') ||
+        path.includes('/join-us') ||
+        path.includes('/work-with-us') ||
+        path.includes('/jobs') ||
+        path.includes('/openings') ||
+        path.includes('/job/') ||
+        path.includes('/j/') ||
+        path.includes('/roles') ||
+        path.includes('/positions') ||
+        path.includes('/opportunities') ||
+        path.includes('/vacancies') ||
+        path.includes('/verified-jobs/') ||
+        path.includes('/apply')
+      ) {
         return 'job';
       }
 
@@ -1049,6 +1127,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       opt.addEventListener('click', (e) => {
         e.stopPropagation();
         const val = opt.getAttribute('data-value') || null;
+        userEditedJobFields.add('workLocation');
         setWorkLocation(val);
         if (workplaceSelectContainer) workplaceSelectContainer.classList.remove('open');
       });
@@ -1084,6 +1163,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       opt.addEventListener('click', (e) => {
         e.stopPropagation();
         const val = opt.getAttribute('data-value') || null;
+        userEditedJobFields.add('employmentType');
         setEmploymentType(val);
         if (employmentTypeSelectContainer) employmentTypeSelectContainer.classList.remove('open');
       });
@@ -1543,7 +1623,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     }, 200);
   }
 
+  const userEditedJobFields = new Set();
+  let lastAppliedJobUrl = '';
+  let lastAiFallbackUrl = '';
+
   companyInput.addEventListener('input', () => {
+    userEditedJobFields.add('company');
     companyInput.classList.remove('input-error');
     updateCompanyAvatar(companyInput.value, currentDomain);
     validateInputs();
@@ -1551,6 +1636,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   companyDomainInput.addEventListener('input', () => {
+    userEditedJobFields.add('companyDomain');
     companyDomainInput.classList.remove('input-error');
     const rawVal = companyDomainInput.value.trim();
     let cleaned = rawVal;
@@ -1564,10 +1650,22 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   roleInput.addEventListener('input', () => {
+    userEditedJobFields.add('role');
     roleInput.classList.remove('input-error');
     validateInputs();
     triggerDupCheck();
   });
+
+  if (notesEditorEl) {
+    notesEditorEl.addEventListener('input', () => {
+      userEditedJobFields.add('notes');
+    });
+  }
+  if (notesRawEl) {
+    notesRawEl.addEventListener('input', () => {
+      userEditedJobFields.add('notes');
+    });
+  }
 
   function captureBaselineJobSnapshot() {
     baselineJobSnapshot = {
@@ -1618,18 +1716,47 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   function applyJobPageData(data, tab) {
+    const incomingUrl = (tab && tab.url) || (data && data.jobLink) || '';
+    const isSameJobUrl = Boolean(incomingUrl && lastAppliedJobUrl && incomingUrl === lastAppliedJobUrl);
+    if (incomingUrl && incomingUrl !== lastAppliedJobUrl) {
+      userEditedJobFields.clear();
+      lastAppliedJobUrl = incomingUrl;
+    }
+
     const isJobSame = Boolean(data && companyInput.value === (data.company || '') && roleInput.value === (data.role || ''));
     if (!isJobSame) {
       applyViewTransition(mainFormView);
     }
     if (data) {
-      companyInput.value = data.company || '';
-      roleInput.value = data.role || '';
-      companyDomainInput.value = data.companyDomain || data.domain || '';
-      currentDomain = companyDomainInput.value;
-      locationInput.value = data.location || '';
-      setWorkLocation(data.workLocation || null);
-      setEmploymentType(data.employmentType || null);
+      if (jobLinkInput && (data.jobLink || (tab && tab.url))) {
+        jobLinkInput.value = data.jobLink || tab.url;
+      }
+      if (!isSameJobUrl || !userEditedJobFields.has('company') || !companyInput.value.trim()) {
+        if (data.company || !isSameJobUrl) companyInput.value = data.company || '';
+      }
+      if (!isSameJobUrl || !userEditedJobFields.has('role') || !roleInput.value.trim()) {
+        if (data.role || !isSameJobUrl) roleInput.value = data.role || '';
+      }
+      const nextDomain = data.companyDomain || data.domain || '';
+      if (!isSameJobUrl || !userEditedJobFields.has('companyDomain') || !companyDomainInput.value.trim()) {
+        if (nextDomain || !isSameJobUrl) {
+          companyDomainInput.value = nextDomain;
+          currentDomain = nextDomain;
+        }
+      }
+      if (!isSameJobUrl || !userEditedJobFields.has('location') || !locationInput.value.trim()) {
+        if (data.location || !isSameJobUrl) locationInput.value = data.location || '';
+      }
+      if (!isSameJobUrl || !userEditedJobFields.has('workLocation') || !selectedWorkLocation) {
+        if (data.workLocation || !isSameJobUrl) {
+          setWorkLocation(data.workLocation || (isSameJobUrl ? selectedWorkLocation : null));
+        }
+      }
+      if (!isSameJobUrl || !userEditedJobFields.has('employmentType') || !selectedEmploymentType) {
+        if (data.employmentType || !isSameJobUrl) {
+          setEmploymentType(data.employmentType || (isSameJobUrl ? selectedEmploymentType : null));
+        }
+      }
 
       // Hiring Contact detection (US3)
       if (data.contact && data.contact.name) {
@@ -1688,17 +1815,27 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
 
       // Stage selection
-      if (data.suggestedStage) {
-        updateStageUI(data.suggestedStage);
-      } else {
-        updateStageUI('Saved');
+      if (!isSameJobUrl) {
+        if (data.suggestedStage) {
+          updateStageUI(data.suggestedStage);
+        } else {
+          updateStageUI('Saved');
+        }
       }
 
-      setPlatform(data.platform || 'Company Site');
-      notesInput.value = data.notes || '';
+      if (!isSameJobUrl) {
+        setPlatform(data.platform || 'Company Site');
+      } else if (!selectedPlatform) {
+        setPlatform(data.platform || 'Company Site');
+      }
+      if (!isSameJobUrl || !userEditedJobFields.has('notes') || !notesInput.value.trim()) {
+        if (data.notes || !isSameJobUrl) {
+          notesInput.value = data.notes || '';
+        }
+      }
 
-      updateCompanyAvatar(data.company, currentDomain);
-      checkForDuplicates(tab?.url);
+      updateCompanyAvatar(companyInput.value, currentDomain);
+      checkForDuplicates(data.jobLink || tab?.url);
     } else if (tab) {
       const pageTitle = tab.title || '';
       roleInput.value = pageTitle;
@@ -1723,8 +1860,464 @@ document.addEventListener('DOMContentLoaded', async () => {
     validateInputs();
   }
 
-  async function inspectActiveTab(tab) {
+  let pendingHydrationRetryTimer = null;
+
+  function isLowConfidenceCompanyValue(val) {
+    const clean = (val || '').trim();
+    if (!clean) return true;
+    return /^(?:company|unknown|careers?|karriere|jobs?|hiring|work|apply|home|portal|board|arc|arc\.dev|arc\s+exclusive|arc\s+verified|wellfound|angel\.?co|indeed|glassdoor|linkedin|monster|ziprecruiter|dice|bayt|otta|remotive|himalayas|jobright|trueup|remoteok|weworkremotely|workable|greenhouse|lever|ashby|full-time|part-time|contract|freelance|internship|remote|hybrid|on-site|onsite)$/i.test(clean);
+  }
+
+  function isLowConfidenceRoleValue(val) {
+    const clean = (val || '').trim();
+    if (!clean) return true;
+    return /^(?:careers?|karriere|jobs?|job\s+openings?|open\s+positions?|open\s+roles?|remote\s+jobs|remote\s+developer\s+jobs|find\s+remote\s+jobs|startup\s+jobs|browse\s+jobs|search\s+jobs|all\s+jobs|verified\s+jobs|recommended\s+jobs|arc\s+jobs|wellfound\s+jobs|vacancies|opportunities|join\s+us|join\s+our\s+team|work\s+with\s+us|stellenangebote|offene\s+stellen|about\s+us|role\s+overview)$/i.test(clean);
+  }
+
+  if (typeof window !== 'undefined' && window.__trackletPendingHydrationRetryTimer) {
+    clearTimeout(window.__trackletPendingHydrationRetryTimer);
+    window.__trackletPendingHydrationRetryTimer = null;
+  }
+
+  function scheduleHydrationRepoll(tab, targetCategory, delayMs = 800) {
     if (!tab || !tab.id) return;
+    if (pendingHydrationRetryTimer) {
+      clearTimeout(pendingHydrationRetryTimer);
+    }
+    if (typeof window !== 'undefined' && window.__trackletPendingHydrationRetryTimer) {
+      clearTimeout(window.__trackletPendingHydrationRetryTimer);
+    }
+    pendingHydrationRetryTimer = setTimeout(() => {
+      try {
+        if (tab.id !== activeObservedTabId || typeof chrome === 'undefined' || !chrome.tabs?.sendMessage) return;
+        chrome.tabs.sendMessage(tab.id, { action: 'GET_PAGE_DATA', userEmail: currentUserSession?.email }, (retryRes) => {
+          try {
+            if (!chrome.runtime?.lastError && retryRes) {
+              processScrapedResponse(retryRes, tab, true, targetCategory, false, true);
+            }
+          } catch {}
+        });
+      } catch {}
+    }, delayMs);
+    if (typeof window !== 'undefined') {
+      window.__trackletPendingHydrationRetryTimer = pendingHydrationRetryTimer;
+    }
+  }
+
+  // Non-destructive AI Fallback for incomplete job pages (calls /api/scrape-job)
+  function triggerAiJobFallback(tab, currentData) {
+    try {
+      if (!tab || !tab.id || !tab.url) return;
+      if (tab.url.startsWith('chrome://') || tab.url.startsWith('edge://') || tab.url.startsWith('chrome-extension://')) return;
+      if (lastAiFallbackUrl === tab.url) return;
+      if (typeof chrome === 'undefined' || !chrome.tabs || typeof chrome.tabs.sendMessage !== 'function') return;
+      lastAiFallbackUrl = tab.url;
+      const requestUrl = tab.url;
+
+      chrome.tabs.sendMessage(tab.id, { action: 'GET_CLEAN_PAGE_TEXT' }, async (textRes) => {
+        try {
+          if (chrome.runtime?.lastError || !textRes || !textRes.text || textRes.text.length < 50) return;
+          if (tab.id !== activeObservedTabId || (activeObservedUrl && requestUrl !== activeObservedUrl)) return;
+
+          let origin = TRACKLET_APP_URL;
+          try {
+            const storageRes = await new Promise(resolve => {
+              chrome.storage.local.get(['tracklet_web_origin'], resolve);
+            });
+            if (storageRes && storageRes.tracklet_web_origin) {
+              origin = storageRes.tracklet_web_origin;
+            }
+          } catch {}
+
+          const cleanBase = origin.replace(/\/+$/, '');
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 10000);
+          const resp = await fetch(`${cleanBase}/api/scrape-job`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              url: tab.url,
+              title: textRes.title || tab.title || '',
+              text: textRes.text,
+            }),
+            signal: controller.signal,
+          }).catch(() => null);
+          clearTimeout(timeoutId);
+
+          if (!resp || !resp.ok) return;
+          const json = await resp.json().catch(() => null);
+          if (!json || !json.fallbackAvailable || !json.jobData) return;
+          if (tab.id !== activeObservedTabId || (activeObservedUrl && requestUrl !== activeObservedUrl)) return;
+
+          const ai = json.jobData;
+          if (ai.company && !userEditedJobFields.has('company') && isLowConfidenceCompanyValue(companyInput.value)) {
+            companyInput.value = ai.company;
+          }
+          if (ai.role && !userEditedJobFields.has('role') && isLowConfidenceRoleValue(roleInput.value)) {
+            roleInput.value = ai.role;
+          }
+          if (ai.companyDomain && !userEditedJobFields.has('companyDomain') && !companyDomainInput.value.trim()) {
+            companyDomainInput.value = ai.companyDomain;
+            currentDomain = ai.companyDomain;
+          }
+          if (ai.location && !userEditedJobFields.has('location') && !locationInput.value.trim()) {
+            locationInput.value = ai.location;
+          }
+          if (ai.workLocation && !userEditedJobFields.has('workLocation') && !selectedWorkLocation) {
+            setWorkLocation(ai.workLocation);
+          }
+          if (ai.employmentType && !userEditedJobFields.has('employmentType') && !selectedEmploymentType) {
+            setEmploymentType(ai.employmentType);
+          }
+          if (ai.notes && !userEditedJobFields.has('notes') && (!notesInput.value.trim() || notesInput.value.trim().length < 100)) {
+            notesInput.value = ai.notes;
+          }
+
+          if (pendingHydrationRetryTimer) {
+            clearTimeout(pendingHydrationRetryTimer);
+            pendingHydrationRetryTimer = null;
+          }
+
+          updateCompanyAvatar(companyInput.value, currentDomain);
+          validateInputs();
+        } catch {}
+      });
+    } catch {}
+  }
+
+  function mergeProfileDataWithExperiencePriority(prev, next, fallbackUrl = '') {
+    if (!prev) return { ...next };
+    if (!next) return { ...prev };
+    const experienceRole = next.experienceRole || prev.experienceRole || '';
+    const experienceOrganization = next.experienceOrganization || prev.experienceOrganization || '';
+    const hasExperienceData = Boolean(next.hasExperienceData || prev.hasExperienceData || experienceRole || experienceOrganization);
+    const resolvedRole = experienceRole || next.role || next.headline || prev.role || prev.headline || '';
+    const resolvedOrg = experienceOrganization || next.organization || prev.organization || '';
+    const resolvedUrl = next.linkedInUrl || next.profileUrl || prev.linkedInUrl || prev.profileUrl || fallbackUrl;
+    return {
+      ...prev,
+      ...next,
+      fullName: next.fullName || next.name || prev.fullName || prev.name || '',
+      name: next.name || next.fullName || prev.name || prev.fullName || '',
+      headline: resolvedRole,
+      role: resolvedRole,
+      organization: resolvedOrg,
+      experienceRole,
+      experienceOrganization,
+      hasExperienceData,
+      location: next.location || prev.location || '',
+      avatarUrl: next.avatarUrl || prev.avatarUrl || '',
+      email: next.email || prev.email || '',
+      linkedInUrl: resolvedUrl,
+      profileUrl: resolvedUrl,
+    };
+  }
+
+  async function runPopupLanguageModelFallback(snapshot, mode = 'auto') {
+    if (!snapshot) return null;
+    try {
+      const lmNamespace = (typeof LanguageModel !== 'undefined' && LanguageModel)
+        ? LanguageModel
+        : (typeof globalThis !== 'undefined' && globalThis.ai && globalThis.ai.languageModel ? globalThis.ai.languageModel : null);
+      if (!lmNamespace || typeof lmNamespace.create !== 'function') return null;
+
+      if (typeof lmNamespace.availability === 'function') {
+        const avail = await lmNamespace.availability();
+        if (avail === 'unavailable' || avail === 'no') return null;
+      }
+
+      const session = await lmNamespace.create({
+        systemPrompt:
+          'You are a precision structured data extractor for a job & contact tracker. ' +
+          'For contacts/profiles, ALWAYS use the latest position and company from their Experience / Work History section as the source of truth for role and organization, NEVER their marketing bio/headline. ' +
+          'Never return employment types like "Part-time" or "Full-time" as a company or organization name. ' +
+          'Return ONLY valid JSON.'
+      });
+
+      try {
+        const schema = {
+          type: 'object',
+          properties: {
+            role: { type: 'string' },
+            company: { type: 'string' },
+            organization: { type: 'string' },
+            fullName: { type: 'string' },
+            location: { type: 'string' },
+            workLocation: { type: 'string' },
+            employmentType: { type: 'string' },
+            salary: { type: 'string' }
+          }
+        };
+        const raw = await session.prompt(
+          `Extract structured ${mode} fields from this webpage snapshot:\n${JSON.stringify({
+            url: snapshot.url,
+            title: snapshot.title,
+            headings: snapshot.headings,
+            modalLines: snapshot.modalLines,
+            experience: snapshot.experienceData,
+            mainLines: (snapshot.mainLines || []).slice(0, 45)
+          })}`,
+          { responseConstraint: schema }
+        );
+        return JSON.parse(raw);
+      } finally {
+        if (session && typeof session.destroy === 'function') {
+          session.destroy();
+        }
+      }
+    } catch {
+      return null;
+    }
+  }
+
+  async function triggerAiScrapeBoost(mode = 'auto', isManualClick = false) {
+    if (!activeObservedTabId || typeof chrome === 'undefined' || !chrome.tabs?.sendMessage) return;
+
+    const jobBoostBtn = document.getElementById('btn-ai-boost-job');
+    const contactBoostBtn = document.getElementById('btn-ai-boost-contact');
+    const activeBtn = mode === 'contact' ? contactBoostBtn : (mode === 'job' ? jobBoostBtn : (currentActiveTab === 'contact' ? contactBoostBtn : jobBoostBtn));
+
+    if (isManualClick && activeBtn) {
+      activeBtn.disabled = true;
+      activeBtn.textContent = '✨ Boosting...';
+    }
+
+    const restoreBtn = (label = '✨ AI Boost') => {
+      if (isManualClick && activeBtn) {
+        activeBtn.disabled = false;
+        activeBtn.innerHTML = `<span>${label}</span>`;
+        if (label !== '✨ AI Boost') {
+          setTimeout(() => {
+            if (activeBtn) activeBtn.innerHTML = '<span>✨ AI Boost</span>';
+          }, 1600);
+        }
+      }
+    };
+
+    try {
+      chrome.tabs.sendMessage(
+        activeObservedTabId,
+        { action: 'AI_SCRAPE_BOOST', mode, userEmail: currentUserSession?.email },
+        async (res) => {
+          try {
+            if (chrome.runtime?.lastError || !res) {
+              restoreBtn('✨ AI Boost');
+              return;
+            }
+
+            const aiResult = res.aiResult || { jobBoost: {}, contactBoost: {} };
+            let popupAiParsed = null;
+            if (res.snapshot && aiResult.aiProvider !== 'chrome_builtin_ai') {
+              popupAiParsed = await runPopupLanguageModelFallback(res.snapshot, mode);
+            }
+
+            const isInvalidOrgName = (v) =>
+              !v || /^(?:full-time|part-time|contract|freelance|self-employed|internship|remote|hybrid|on-site|onsite)$/i.test(String(v).trim());
+
+            if (popupAiParsed && typeof popupAiParsed === 'object') {
+              if (popupAiParsed.role && !aiResult.jobBoost.role) aiResult.jobBoost.role = popupAiParsed.role.trim();
+              if (!isInvalidOrgName(popupAiParsed.company) && !aiResult.jobBoost.company) aiResult.jobBoost.company = popupAiParsed.company.trim();
+              if (popupAiParsed.location && !aiResult.jobBoost.location) aiResult.jobBoost.location = popupAiParsed.location.trim();
+              if (popupAiParsed.workLocation && !aiResult.jobBoost.workLocation) aiResult.jobBoost.workLocation = popupAiParsed.workLocation.trim();
+              if (popupAiParsed.employmentType && !aiResult.jobBoost.employmentType) aiResult.jobBoost.employmentType = popupAiParsed.employmentType.trim();
+
+              if (popupAiParsed.fullName && !aiResult.contactBoost.fullName) aiResult.contactBoost.fullName = popupAiParsed.fullName.trim();
+              if (popupAiParsed.role && !aiResult.contactBoost.role) {
+                aiResult.contactBoost.role = popupAiParsed.role.trim();
+                aiResult.contactBoost.headline = popupAiParsed.role.trim();
+              }
+              const orgCand = popupAiParsed.organization || popupAiParsed.company;
+              if (!isInvalidOrgName(orgCand) && !aiResult.contactBoost.organization) {
+                aiResult.contactBoost.organization = orgCand.trim();
+              }
+              if (popupAiParsed.location && !aiResult.contactBoost.location) {
+                aiResult.contactBoost.location = popupAiParsed.location.trim();
+              }
+            }
+
+            const effectiveMode = mode === 'auto' ? (currentActiveTab === 'contact' ? 'contact' : 'job') : mode;
+
+            if (effectiveMode === 'contact') {
+              const cb = aiResult.contactBoost || {};
+              const unifiedProfile = res.unified?.profileData || res.profileData || {};
+              const previousProfile = (rawExtractedProfileData && (
+                rawExtractedProfileData.linkedInUrl === activeObservedUrl ||
+                rawExtractedProfileData.profileUrl === activeObservedUrl
+              )) ? rawExtractedProfileData : {};
+              const combinedProfile = mergeProfileDataWithExperiencePriority(
+                previousProfile,
+                {
+                  ...unifiedProfile,
+                  ...Object.fromEntries(Object.entries(cb).filter(([, v]) => Boolean(v)))
+                },
+                activeObservedUrl
+              );
+              if (combinedProfile.fullName || combinedProfile.role || combinedProfile.headline || combinedProfile.organization) {
+                await applyLinkedInProfileData(combinedProfile, { id: activeObservedTabId, url: activeObservedUrl });
+              }
+            } else {
+              const jb = aiResult.jobBoost || {};
+              const unifiedJob = res.unified?.jobData || res.jobData || {};
+              const candCompany =
+                (!isLowConfidenceCompanyValue(jb.company) ? jb.company : '') ||
+                (!isLowConfidenceCompanyValue(unifiedJob.company) ? unifiedJob.company : '');
+              const candRole =
+                (!isLowConfidenceRoleValue(jb.role) ? jb.role : '') ||
+                (!isLowConfidenceRoleValue(unifiedJob.role) ? unifiedJob.role : '');
+              const candLocation = jb.location || unifiedJob.location || '';
+              const candWorkLoc = jb.workLocation || unifiedJob.workLocation || '';
+              const candEmpType = jb.employmentType || unifiedJob.employmentType || '';
+
+              if (companyInput && ((isLowConfidenceCompanyValue(companyInput.value) && !userEditedJobFields.has('company')) || isManualClick) && candCompany) {
+                companyInput.value = candCompany;
+                if (typeof updateCompanyAvatar === 'function') {
+                  updateCompanyAvatar(companyInput.value, currentDomain);
+                }
+              }
+              if (roleInput && ((isLowConfidenceRoleValue(roleInput.value) && !userEditedJobFields.has('role')) || isManualClick) && candRole) {
+                roleInput.value = candRole;
+              }
+              if (locationInput && ((!locationInput.value.trim() && !userEditedJobFields.has('location')) || isManualClick) && candLocation) {
+                locationInput.value = candLocation;
+              }
+              if (((!selectedWorkLocation && !userEditedJobFields.has('workLocation')) || isManualClick) && candWorkLoc) {
+                setWorkLocation(candWorkLoc);
+              }
+              if (((!selectedEmploymentType && !userEditedJobFields.has('employmentType')) || isManualClick) && candEmpType) {
+                setEmploymentType(candEmpType);
+              }
+              if (typeof validateInputs === 'function') validateInputs();
+            }
+
+            restoreBtn('✨ Boosted');
+          } catch {
+            restoreBtn('✨ AI Boost');
+          }
+        }
+      );
+    } catch {
+      restoreBtn('✨ AI Boost');
+    }
+  }
+
+  const aiBoostJobBtn = document.getElementById('btn-ai-boost-job');
+  if (aiBoostJobBtn) {
+    aiBoostJobBtn.addEventListener('click', () => triggerAiScrapeBoost('job', true));
+  }
+  const aiBoostContactBtn = document.getElementById('btn-ai-boost-contact');
+  if (aiBoostContactBtn) {
+    aiBoostContactBtn.addEventListener('click', () => triggerAiScrapeBoost('contact', true));
+  }
+
+  function processScrapedResponse(response, tab, isForceRefresh = false, targetCategory = null, isFromCache = false, isHydrationRetry = false) {
+    if (!response) return;
+    const effectiveCategory = targetCategory || (tab && tab.url ? classifyTabUrl(tab.url) : 'generic');
+
+    if (response.pageType === 'webmail') {
+      if (!userManualTabOverride) setActiveCompanionTab('email', false);
+      initWebmailMode(tab);
+      return;
+    }
+
+    if ((response.pageType === 'linkedin_profile' || response.pageType === 'contact_profile') && response.profileData) {
+      if (!userManualTabOverride) setActiveCompanionTab('contact', false);
+      applyLinkedInProfileData(response.profileData, tab);
+      // If SPA is still hydrating headline/organization/location on live data, schedule a follow-up re-poll and AI fallback
+      const pd = response.profileData;
+      if (pd.headline && pd.organization && pd.location) {
+        if (pendingHydrationRetryTimer) {
+          clearTimeout(pendingHydrationRetryTimer);
+          pendingHydrationRetryTimer = null;
+        }
+      } else if (!isFromCache && !isHydrationRetry) {
+        scheduleHydrationRepoll(tab, effectiveCategory, 850);
+        triggerAiScrapeBoost('contact', false);
+      }
+      return;
+    }
+
+    const hasJob = Boolean(response.jobData && (response.jobData.role || response.jobData.company));
+    if (response.pageType === 'job_posting' || response.pageType === 'ats_form' || hasJob) {
+      if (!userManualTabOverride) setActiveCompanionTab('job', false);
+      applyJobPageData(response.jobData, tab);
+      const jd = response.jobData || {};
+      const isIncompleteJob =
+        isLowConfidenceRoleValue(jd.role) ||
+        isLowConfidenceCompanyValue(jd.company) ||
+        !jd.notes ||
+        String(jd.notes).trim().length < 100;
+      if (!isIncompleteJob) {
+        if (pendingHydrationRetryTimer) {
+          clearTimeout(pendingHydrationRetryTimer);
+          pendingHydrationRetryTimer = null;
+        }
+      } else if (!isFromCache && effectiveCategory === 'job') {
+        if (!isHydrationRetry) {
+          scheduleHydrationRepoll(tab, effectiveCategory, 850);
+          if (!jd.role || !jd.company) {
+            triggerAiScrapeBoost('job', false);
+          }
+        }
+        const isUnhydratedShell = !jd.role && !jd.company && (!jd.notes || String(jd.notes).trim().length < 50);
+        if (!isUnhydratedShell || isHydrationRetry) {
+          triggerAiJobFallback(tab, jd);
+        }
+      }
+      return;
+    }
+
+    // If targetCategory is contact, do NOT wipe contact form with generic fallback job data
+    if (effectiveCategory === 'contact') {
+      if (!isFromCache && !isHydrationRetry) {
+        scheduleHydrationRepoll(tab, effectiveCategory, 750);
+        triggerAiScrapeBoost('contact', false);
+      }
+      return;
+    }
+
+    const tabUrl = (tab && tab.url) ? tab.url.toLowerCase() : '';
+    const isSocialPostUrl = (
+      (tabUrl.includes('x.com/') || tabUrl.includes('twitter.com/')) && tabUrl.includes('/status/')
+    ) || (
+      tabUrl.includes('linkedin.com/') && (tabUrl.includes('/feed/update/') || tabUrl.includes('/posts/'))
+    );
+
+    // If an X status or LinkedIn post lacks job data, retain the current form and do not treat as a job
+    if (isSocialPostUrl && !hasJob && response.pageType !== 'job_posting') {
+      return;
+    }
+
+    // If generic page with no job data, retain current form regardless of isForceRefresh (prevents blanking and AI scrape boost)
+    if (effectiveCategory === 'generic' && !hasJob) {
+      return;
+    }
+
+    applyJobPageData(response.jobData, tab);
+    if (!isFromCache && (!response.jobData?.role || !response.jobData?.company)) {
+      triggerAiScrapeBoost('job', false);
+    }
+    if (!isFromCache && effectiveCategory === 'job') {
+      const jd = response.jobData || {};
+      const isIncompleteJob =
+        isLowConfidenceRoleValue(jd.role) ||
+        isLowConfidenceCompanyValue(jd.company) ||
+        !jd.notes ||
+        String(jd.notes).trim().length < 100;
+      if (isIncompleteJob) {
+        if (!isHydrationRetry) {
+          scheduleHydrationRepoll(tab, effectiveCategory, 850);
+        }
+        const isUnhydratedShell = !jd.role && !jd.company && (!jd.notes || String(jd.notes).trim().length < 50);
+        if (!isUnhydratedShell || isHydrationRetry) {
+          triggerAiJobFallback(tab, jd);
+        }
+      }
+    }
+  }
+
+  async function inspectActiveTab(tab, isForceRefresh = false, targetCategory = 'generic') {
+    if (!tab || !tab.id) return;
+    if (typeof chrome === 'undefined' || !chrome.tabs || typeof chrome.tabs.sendMessage !== 'function') return;
     activeObservedTabId = tab.id;
     activeObservedUrl = tab.url || '';
 
@@ -1738,33 +2331,95 @@ document.addEventListener('DOMContentLoaded', async () => {
       return;
     }
 
+    let liveResponseReceived = false;
+
+    // Always check cached active tab data from local storage to seed profile fields (in case user scrolled down) and provide instant zero-lag population
+    try {
+      chrome.storage?.local?.get(['tracklet_active_tab_data'], (res) => {
+        const cachedData = res?.tracklet_active_tab_data;
+        if (!cachedData || !cachedData.data || (Date.now() - cachedData.timestamp) >= 120000) return;
+
+        // If cached data is for the same profile URL, seed rawExtractedProfileData so top-card fields are retained if scrolled
+        const cachedProfile = cachedData.data.profileData;
+        if (cachedProfile && tab.url && normalizeUrl(cachedData.url || cachedProfile.linkedInUrl) === normalizeUrl(tab.url)) {
+          if (!rawExtractedProfileData || normalizeUrl(rawExtractedProfileData.linkedInUrl || rawExtractedProfileData.profileUrl || '') !== normalizeUrl(tab.url)) {
+            rawExtractedProfileData = { ...cachedProfile };
+          } else {
+            rawExtractedProfileData = mergeProfileDataWithExperiencePriority(cachedProfile, rawExtractedProfileData, tab.url);
+          }
+          if (liveResponseReceived) {
+            applyLinkedInProfileData(rawExtractedProfileData, tab);
+          }
+        }
+
+        if (!liveResponseReceived && cachedData.url === tab.url) {
+          processScrapedResponse(cachedData.data, tab, false, targetCategory, true);
+        }
+      });
+    } catch {}
+
+    if (typeof chrome === 'undefined' || !chrome.tabs || typeof chrome.tabs.sendMessage !== 'function') return;
     chrome.tabs.sendMessage(tab.id, { action: 'GET_PAGE_DATA', userEmail: currentUserSession?.email }, (response) => {
-      if (chrome.runtime.lastError || !response) {
+      if (chrome.runtime?.lastError || !response) {
+        // Attempt dynamic content script injection in case tab was loaded prior to extension install/init
+        if (typeof chrome !== 'undefined' && chrome.scripting && chrome.scripting.executeScript) {
+          chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            files: ['jobBoardRegistry.js', 'content.js']
+          }).then(() => {
+            setTimeout(() => {
+              if (typeof chrome === 'undefined' || !chrome.tabs?.sendMessage) return;
+              chrome.tabs.sendMessage(tab.id, { action: 'GET_PAGE_DATA', userEmail: currentUserSession?.email }, (retryRes) => {
+                if (!chrome.runtime?.lastError && retryRes) {
+                  liveResponseReceived = true;
+                  processScrapedResponse(retryRes, tab, isForceRefresh, targetCategory);
+                } else if (chrome.tabs?.sendMessage) {
+                  chrome.tabs.sendMessage(tab.id, { action: 'EXTRACT_PAGE_DATA' }, (legacyRes) => {
+                    if (!chrome.runtime?.lastError && legacyRes) {
+                      liveResponseReceived = true;
+                      processScrapedResponse({ pageType: 'job_posting', jobData: legacyRes }, tab, isForceRefresh, targetCategory);
+                    }
+                  });
+                }
+              });
+            }, 60);
+          }).catch(() => {
+            // Tab might be restricted (e.g. chrome://)
+          });
+          return;
+        }
+
         // Fallback to EXTRACT_PAGE_DATA
+        if (!chrome.tabs?.sendMessage) return;
         chrome.tabs.sendMessage(tab.id, { action: 'EXTRACT_PAGE_DATA' }, (legacyRes) => {
-          if (!chrome.runtime.lastError && legacyRes && legacyRes.isWebmail) {
+          if (!chrome.runtime?.lastError && legacyRes && legacyRes.isWebmail) {
+            liveResponseReceived = true;
             initWebmailMode(tab);
             return;
           }
           if (tab.status === 'loading' && (companyInput.value || roleInput.value)) {
             return;
           }
+          liveResponseReceived = true;
           applyJobPageData(legacyRes, tab);
         });
         return;
       }
 
-      if (response.pageType === 'webmail') {
-        initWebmailMode(tab);
-        return;
-      }
-
-      if (response.pageType === 'linkedin_profile' && response.profileData) {
-        applyLinkedInProfileData(response.profileData, tab);
-        return;
-      }
-
-      applyJobPageData(response.jobData, tab);
+      liveResponseReceived = true;
+      processScrapedResponse(response, tab, isForceRefresh, targetCategory);
+      try {
+        const persistedResponse = (response.pageType === 'contact_profile' && rawExtractedProfileData)
+          ? { ...response, profileData: rawExtractedProfileData }
+          : response;
+        chrome.storage?.local?.set({
+          tracklet_active_tab_data: {
+            url: tab.url,
+            timestamp: Date.now(),
+            data: persistedResponse
+          }
+        });
+      } catch {}
     });
   }
 
@@ -1813,12 +2468,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const targetCategory = classifyTabUrl(tab.url);
 
-    // T049: Idle / Exit Context Retention
-    // If the user navigates to a generic page (search, blank tab, docs), retain the current item on screen
-    if (targetCategory === 'generic' && !isForceRefresh) {
-      return;
-    }
-
     if (!userManualTabOverride) {
       if (targetCategory === 'email') {
         setActiveCompanionTab('email', false);
@@ -1829,14 +2478,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     }
 
-    inspectActiveTab(tab);
+    inspectActiveTab(tab, isForceRefresh, targetCategory);
   }
 
   // Request Initial Page Extraction from Active Tab
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (tab && tab.id) {
-      scheduleTabContextSwitch(tab);
+      scheduleTabContextSwitch(tab, true);
     }
   } catch (err) {
     console.error('Failed to query initial tab:', err);
@@ -1848,7 +2497,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       try {
         const tab = await chrome.tabs.get(activeInfo.tabId);
         if (tab && tab.url) {
-          scheduleTabContextSwitch(tab);
+          scheduleTabContextSwitch(tab, true);
         }
       } catch {
         // Tab might be restricted or closing
@@ -1857,7 +2506,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
       if (tab && tab.id === activeObservedTabId && tab.url && changeInfo.status === 'complete') {
-        scheduleTabContextSwitch(tab);
+        scheduleTabContextSwitch(tab, true);
       }
     });
   }
@@ -1865,22 +2514,29 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Background message listener for tab switches and SPA route updates (US7 / T046, T047, T048)
   chrome.runtime.onMessage.addListener((message) => {
     if (message.action === 'ACTIVE_TAB_CHANGED' || message.action === 'ACTIVE_TAB_UPDATED') {
-      if (message.payload && message.payload.tabId) {
+      if (message.payload && message.payload.tabId && typeof chrome !== 'undefined' && chrome.tabs?.get) {
         chrome.tabs.get(message.payload.tabId).then(tab => {
           if (tab && tab.active) {
-            scheduleTabContextSwitch(tab);
+            scheduleTabContextSwitch(tab, message.action === 'ACTIVE_TAB_UPDATED');
           }
         }).catch(() => {});
       }
     } else if (message.action === 'PAGE_CONTEXT_CHANGED') {
       // Direct in-page thread/route mutation broadcast from content.js
+      if (typeof chrome === 'undefined' || !chrome.tabs?.query) return;
       const payload = message.payload || {};
       const newThreadSig = payload.threadSignature || '';
       chrome.tabs.query({ active: true, currentWindow: true }).then(([tab]) => {
         if (tab && tab.id) {
           const isSameUrl = (tab.url === activeObservedUrl);
+          if (payload.data && (tab.url === payload.url || !payload.url)) {
+            if (newThreadSig) activeObservedThreadSig = newThreadSig;
+            processScrapedResponse(payload.data, tab, true);
+            if (isSameUrl) return;
+          }
           const isSameThread = Boolean(newThreadSig && newThreadSig === activeObservedThreadSig);
           if (isSameUrl && isSameThread) {
+            if (newThreadSig) activeObservedThreadSig = newThreadSig;
             return;
           }
           scheduleTabContextSwitch(tab, true, newThreadSig);
@@ -2012,6 +2668,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if (locationInput) {
     locationInput.addEventListener('input', () => {
+      userEditedJobFields.add('location');
       validateInputs();
     });
   }
@@ -2728,22 +3385,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     const clean = headline.trim().toLowerCase();
 
     // 1. Recruiter & Talent Acquisition keywords
-    if (/(?:talent|recruiter|recruiting|sourcer|staffing|people\s+ops|technical\s+sourcer)/i.test(clean)) {
+    if (/(?:talent|recruiter|recruiting|sourcer|staffing|people\s+ops|technical\s+sourcer|hr\b|human\s+resources)/i.test(clean)) {
       return 'Recruiter';
     }
 
     // 2. Leadership & Hiring Manager keywords
-    if (/(?:vp|vice\s+president|director|head\s+of|engineering\s+manager|cto|founder|co-founder|tech\s+lead\s+manager)/i.test(clean)) {
+    if (/(?:vp|vice\s+president|director|head\s+of|engineering\s+manager|cto|ceo|coo|cpo|chief|founder|co-founder|tech\s+lead\s+manager|hiring\s+manager)/i.test(clean)) {
       return 'Hiring Manager';
     }
 
     // 3. Mentorship & Advisory keywords
-    if (/(?:mentor|advisor|coach|career\s+guide)/i.test(clean)) {
+    if (/(?:mentor|advisor|coach|career\s+guide|instructor|professor|lecturer)/i.test(clean)) {
       return 'Mentor';
     }
 
     // 4. Peer / Alumni keywords
-    if (/(?:peer|alumni|fellow|graduate|class\s+of|engineer|developer|designer)/i.test(clean)) {
+    if (/(?:peer|alumni|fellow|graduate|class\s+of|engineer|developer|designer|architect|scientist|product\s+manager|program\s+manager|analyst|devops|sre|qa|tester|consultant|specialist|lead)/i.test(clean)) {
       return 'Peer / Alumni';
     }
 
@@ -2922,20 +3579,42 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   async function applyLinkedInProfileData(profileData, tab) {
-    rawExtractedProfileData = profileData;
+    if (!profileData) return;
+
+    const incomingUrl = profileData.linkedInUrl || profileData.profileUrl || (tab ? tab.url : '');
+    const prevUrl = rawExtractedProfileData ? (rawExtractedProfileData.linkedInUrl || rawExtractedProfileData.profileUrl || '') : '';
+    const isSameProfile = Boolean(incomingUrl && prevUrl && normalizeUrl(incomingUrl) === normalizeUrl(prevUrl));
+
+    const merged = (rawExtractedProfileData && isSameProfile)
+      ? mergeProfileDataWithExperiencePriority(rawExtractedProfileData, profileData, incomingUrl || prevUrl)
+      : { ...profileData };
+
+    const prevNameVal = contactNameInput ? contactNameInput.value : '';
+    const prevOrgVal = contactOrgInput ? contactOrgInput.value : '';
+
+    rawExtractedProfileData = merged;
     setActiveCompanionTab('contact', false);
 
     // 1. Populate text fields
-    if (contactNameInput) contactNameInput.value = profileData.fullName || profileData.name || '';
-    if (contactRoleInput) contactRoleInput.value = profileData.role || profileData.headline || '';
-    if (contactOrgInput) contactOrgInput.value = profileData.organization || '';
-    if (contactLocationInput) contactLocationInput.value = profileData.location || '';
-    if (contactLinkedInInput) contactLinkedInInput.value = profileData.linkedInUrl || (tab ? tab.url : '');
+    if (contactNameInput) contactNameInput.value = merged.fullName || merged.name || '';
+    if (contactRoleInput) contactRoleInput.value = merged.role || merged.headline || '';
+    if (contactOrgInput) contactOrgInput.value = merged.organization || '';
+    if (contactLocationInput) contactLocationInput.value = merged.location || '';
+    if (contactLinkedInInput) {
+      contactLinkedInInput.value = merged.linkedInUrl || merged.profileUrl || (tab ? tab.url : '');
+      if (merged.platform === 'X') {
+        contactLinkedInInput.placeholder = 'https://x.com/...';
+      } else if (merged.platform === 'GitHub') {
+        contactLinkedInInput.placeholder = 'https://github.com/...';
+      } else {
+        contactLinkedInInput.placeholder = 'https://linkedin.com/in/...';
+      }
+    }
 
     // 2. Avatar
     if (contactAvatarImg && contactAvatarSvg) {
-      if (profileData.avatarUrl) {
-        contactAvatarImg.src = profileData.avatarUrl;
+      if (merged.avatarUrl) {
+        contactAvatarImg.src = merged.avatarUrl;
         contactAvatarImg.style.display = 'block';
         contactAvatarSvg.style.display = 'none';
       } else {
@@ -2945,20 +3624,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // 3. Category smart-defaulting
-    const inferredCategory = inferContactCategory(profileData.headline || profileData.role || '');
+    const inferredCategory = inferContactCategory(merged.headline || merged.role || '');
     setContactCategory(inferredCategory);
 
     // 4. Load known applications and contacts
     await loadKnownContacts();
 
     // 5. Populate application dropdown with auto-suggestion
-    populateContactAppDropdown(profileData.organization);
+    populateContactAppDropdown(merged.organization);
 
     // 6. Multi-Identifier Deduplication & Diffing (US8 / T052)
-    const normUrl = normalizeUrl(profileData.linkedInUrl || (tab ? tab.url : ''));
-    const normName = (profileData.fullName || profileData.name || '').trim().toLowerCase();
-    const normOrg = (profileData.organization || '').trim().toLowerCase();
-    const profileEmail = (profileData.email || '').trim().toLowerCase();
+    const normUrl = normalizeUrl(merged.linkedInUrl || (tab ? tab.url : ''));
+    const normName = (merged.fullName || merged.name || '').trim().toLowerCase();
+    const normOrg = (merged.organization || '').trim().toLowerCase();
+    const profileEmail = (merged.email || '').trim().toLowerCase();
 
     const match = allKnownContactsList.find(c => {
       // 1. LinkedIn URL match
@@ -2976,7 +3655,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (match) {
       matchedExistingContact = match;
-      const diff = diffContact(matchedExistingContact, profileData);
+      const diff = diffContact(matchedExistingContact, merged);
       if (contactStatusBanner) {
         contactStatusBanner.style.display = 'flex';
         if (diff.hasChanged) {
@@ -3010,13 +3689,15 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     }
 
-    const isContactSame = Boolean(profileData && contactNameInput.value === (profileData.name || '') && contactOrgInput.value === (profileData.organization || ''));
+    const isContactSame = Boolean(merged && prevNameVal === (merged.fullName || merged.name || '') && prevOrgVal === (merged.organization || ''));
     captureBaselineContactSnapshot();
     validateContactInputs();
     if (!isContactSame) {
       applyViewTransition(contactClipView);
     }
   }
+
+  const applyContactProfileData = applyLinkedInProfileData;
 
   async function pushStandaloneContactToFirestoreDirectly(payload, userSession, config, docIdToUpdate = null) {
     const projectId = config?.projectId || 'demo-tracklet';
@@ -4535,4 +5216,4 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Initialize Stage & Platform UI
   updateStageUI('Saved');
   setPlatform('Company Site');
-});
+}, { once: true });

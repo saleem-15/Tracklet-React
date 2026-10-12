@@ -743,6 +743,25 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
+  if (message.action === 'PAGE_CONTEXT_CHANGED' || message.action === 'PAGE_AUTO_SCRAPED') {
+    const payload = message.payload || {};
+    const pageType = payload.pageType || payload.data?.pageType;
+    const tabId = (sender && sender.tab) ? sender.tab.id : undefined;
+    if (tabId) {
+      if (pageType === 'contact_profile' || pageType === 'linkedin_profile') {
+        chrome.action.setBadgeText({ text: '👤', tabId });
+        chrome.action.setBadgeBackgroundColor({ color: '#7e22ce', tabId });
+      } else if (pageType === 'job_posting' || pageType === 'ats_form') {
+        chrome.action.setBadgeText({ text: '💼', tabId });
+        chrome.action.setBadgeBackgroundColor({ color: '#059669', tabId });
+      } else {
+        chrome.action.setBadgeText({ text: '', tabId });
+      }
+    }
+    sendResponse({ success: true });
+    return true;
+  }
+
   if (message.action === 'OPEN_SIDE_PANEL') {
     if (chrome.sidePanel && chrome.sidePanel.open) {
       const tabId = (sender && sender.tab) ? sender.tab.id : undefined;
@@ -799,6 +818,9 @@ chrome.tabs.onActivated.addListener(async (activeInfo) => {
 });
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (changeInfo.status === 'loading') {
+    chrome.action.setBadgeText({ text: '', tabId }).catch(() => {});
+  }
   const isComplete = changeInfo.status === 'complete';
   const isSpaUrlChange = Boolean(changeInfo.url) && changeInfo.status !== 'loading' && tab.status !== 'loading';
 

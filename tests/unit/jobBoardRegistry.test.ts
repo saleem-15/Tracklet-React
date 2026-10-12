@@ -101,6 +101,7 @@ describe('JobBoardRegistry', () => {
       expect(JOB_BOARD_HOSTS).toContain('linkedin.com');
       expect(JOB_BOARD_HOSTS).toContain('indeed.com');
       expect(JOB_BOARD_HOSTS).toContain('glassdoor.com');
+      expect(JOB_BOARD_HOSTS).toContain('arc.dev');
       expect(ATS_HOSTS).toContain('greenhouse.io');
       expect(ATS_HOSTS).toContain('lever.co');
       expect(ATS_HOSTS).toContain('ashbyhq.com');

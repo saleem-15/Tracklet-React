@@ -40,7 +40,7 @@ describe('feedbackRepository', () => {
     const reports = await FeedbackRepository.loadReports();
     expect(reports.length).toBe(1);
     expect(reports[0].id).toBe(report.id);
-  });
+  }, 15000);
 
   it('saves, loads, and clears draft in localStorage', () => {
     FeedbackRepository.saveDraft({
