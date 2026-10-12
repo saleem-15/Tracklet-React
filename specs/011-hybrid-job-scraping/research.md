@@ -22,12 +22,17 @@ Use a **two-layer pipeline**:
 
 ### Verified Financial Math (Test Launch & Production Scale)
 - Sending cleaned visible text (`innerText` of active modal or `<main>`, capped at ~8,000–10,000 chars) uses **~2,500 input tokens** and **~120–600 output tokens**.
-- With **Gemini 2.5 Flash-Lite** (`$0.10` / 1M input, `$0.40` / 1M output):
-  - **Per AI scrape**: `$0.00030` (metadata only) to `$0.00049` (with full Markdown description) → **~2,040 to 3,330 scrapes per `$1.00`**.
+- **Gemini 3.5 Flash-Lite (Configured Primary Model)**:
+  - Input: `$0.35` / 1M input tokens. Output: `$1.50` / 1M output tokens.
+  - **Per AI scrape**: `(2,500 × $0.00000035) + (120–600 × $0.00000150)` = approximately **`$0.00105 – $0.00225`** per scrape.
   - **100 test users × 50 jobs/month = 5,000 jobs/month**:
-    - **Google AI Studio Free Tier**: **`$0.00 / month`** (1,000–1,500 free req/day = 30,000–45,000 scrapes/month).
-    - **Paid Tier (Hybrid 25–30% AI fallback)**: **`~$0.45 – $0.75 / month` total**.
-    - **Paid Tier (100% AI)**: **`~$1.50 – $2.45 / month` total**.
+    - **Google AI Studio Free Tier**: **`$0.00 / month`** (1,500 requests/day = 45,000 scrapes/month; Google AI Studio documentation confirms rate limit of 15 RPM / 1,500 RPD).
+    - **Paid Tier (Hybrid 25–30% AI fallback = 1,250–1,500 scrapes)**: **`~$1.31 – $3.38 / month` total**.
+    - **Paid Tier (100% AI = 5,000 scrapes)**: **`~$5.25 – $11.25 / month` total**.
+- **Gemini 2.5 Flash-Lite (Configured Automatic Fallback Model)** (`$0.10` / 1M input, `$0.40` / 1M output):
+  - **Per AI scrape**: `$0.00030` (metadata only) to `$0.00049` (with full Markdown description) → **~2,040 to 3,330 scrapes per `$1.00`**.
+  - **Paid Tier (Hybrid 25–30% AI fallback)**: **`~$0.45 – $0.75 / month` total**.
+  - **Paid Tier (100% AI)**: **`~$1.50 – $2.45 / month` total**.
 
 ---
 
@@ -46,7 +51,7 @@ Host the AI extraction endpoint at `/api/scrape-job` using standard HTTP/JSON se
      - With a 6-line `netlify.toml` redirect (`/api/*` → `/.netlify/functions/:splat`), both `api/report-issue` and `api/scrape-job` keep the exact `/api/*` URL path so the frontend and extension require only a base-URL constant change.
    - **Cloudflare Pages + Workers Free Tier**:
      - **100,000 function invocations / day (~3,000,000 / month)** + unlimited static bandwidth (no credit card required).
-     - Uses the exact same Web Standard `Request` / `Response` (`fetch`) signature as Netlify Functions v2.
+     - *Portability Note*: While Netlify Functions handles Node/Vercel request signatures directly, deploying to Cloudflare Pages Functions requires a route adapter under `/functions/api/scrape-job.ts` exporting an `onRequest` function handling the Web Fetch `Request` / `Response` lifecycle, rather than deploying unchanged.
    - **Supabase Edge Functions Free Tier**:
      - **500,000 invocations / month** (Deno Web Standard `Request` / `Response`).
 

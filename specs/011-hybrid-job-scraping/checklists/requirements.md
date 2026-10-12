@@ -23,4 +23,4 @@
 
 - [x] All functional requirements have clear acceptance criteria
 - [x] User scenarios cover deterministic ATS/custom scraping, SPA hydration, and Hybrid AI fallback
-- [x] Financial feasibility verified (`$0/mo` free tier, `~$0.45–$0.75/mo` paid hybrid tier for 100 active test users)
+- [x] Financial feasibility verified (`$0/mo` on free tier; `~$1.31–$3.38/mo` primary / `~$0.45–$0.75/mo` fallback paid hybrid tier for 100 active test users)
