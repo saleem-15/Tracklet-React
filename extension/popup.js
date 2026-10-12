@@ -1815,13 +1815,19 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
 
       // Stage selection
-      if (data.suggestedStage) {
-        updateStageUI(data.suggestedStage);
-      } else {
-        updateStageUI('Saved');
+      if (!isSameJobUrl) {
+        if (data.suggestedStage) {
+          updateStageUI(data.suggestedStage);
+        } else {
+          updateStageUI('Saved');
+        }
       }
 
-      setPlatform(data.platform || 'Company Site');
+      if (!isSameJobUrl) {
+        setPlatform(data.platform || 'Company Site');
+      } else if (!selectedPlatform) {
+        setPlatform(data.platform || 'Company Site');
+      }
       if (!isSameJobUrl || !userEditedJobFields.has('notes') || !notesInput.value.trim()) {
         if (data.notes || !isSameJobUrl) {
           notesInput.value = data.notes || '';
@@ -1906,11 +1912,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (lastAiFallbackUrl === tab.url) return;
       if (typeof chrome === 'undefined' || !chrome.tabs || typeof chrome.tabs.sendMessage !== 'function') return;
       lastAiFallbackUrl = tab.url;
+      const requestUrl = tab.url;
 
       chrome.tabs.sendMessage(tab.id, { action: 'GET_CLEAN_PAGE_TEXT' }, async (textRes) => {
         try {
           if (chrome.runtime?.lastError || !textRes || !textRes.text || textRes.text.length < 50) return;
-          if (tab.id !== activeObservedTabId) return;
+          if (tab.id !== activeObservedTabId || (activeObservedUrl && requestUrl !== activeObservedUrl)) return;
 
           let origin = TRACKLET_APP_URL;
           try {
@@ -1924,7 +1931,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
           const cleanBase = origin.replace(/\/+$/, '');
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 6000);
+          const timeoutId = setTimeout(() => controller.abort(), 10000);
           const resp = await fetch(`${cleanBase}/api/scrape-job`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -1940,7 +1947,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           if (!resp || !resp.ok) return;
           const json = await resp.json().catch(() => null);
           if (!json || !json.fallbackAvailable || !json.jobData) return;
-          if (tab.id !== activeObservedTabId) return;
+          if (tab.id !== activeObservedTabId || (activeObservedUrl && requestUrl !== activeObservedUrl)) return;
 
           const ai = json.jobData;
           if (ai.company && !userEditedJobFields.has('company') && isLowConfidenceCompanyValue(companyInput.value)) {
@@ -2133,8 +2140,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (effectiveMode === 'contact') {
               const cb = aiResult.contactBoost || {};
               const unifiedProfile = res.unified?.profileData || res.profileData || {};
+              const previousProfile = (rawExtractedProfileData && (
+                rawExtractedProfileData.linkedInUrl === activeObservedUrl ||
+                rawExtractedProfileData.profileUrl === activeObservedUrl
+              )) ? rawExtractedProfileData : {};
               const combinedProfile = mergeProfileDataWithExperiencePriority(
-                rawExtractedProfileData || {},
+                previousProfile,
                 {
                   ...unifiedProfile,
                   ...Object.fromEntries(Object.entries(cb).filter(([, v]) => Boolean(v)))
@@ -2264,8 +2275,20 @@ document.addEventListener('DOMContentLoaded', async () => {
       return;
     }
 
-    // If generic page with no job or contact data, retain context (T049) unless force refreshed
-    if (effectiveCategory === 'generic' && !isForceRefresh) {
+    const tabUrl = (tab && tab.url) ? tab.url.toLowerCase() : '';
+    const isSocialPostUrl = (
+      (tabUrl.includes('x.com/') || tabUrl.includes('twitter.com/')) && tabUrl.includes('/status/')
+    ) || (
+      tabUrl.includes('linkedin.com/') && (tabUrl.includes('/feed/update/') || tabUrl.includes('/posts/'))
+    );
+
+    // If an X status or LinkedIn post lacks job data, retain the current form and do not treat as a job
+    if (isSocialPostUrl && !hasJob && response.pageType !== 'job_posting') {
+      return;
+    }
+
+    // If generic page with no job data, retain current form regardless of isForceRefresh (prevents blanking and AI scrape boost)
+    if (effectiveCategory === 'generic' && !hasJob) {
       return;
     }
 

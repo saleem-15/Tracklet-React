@@ -71,6 +71,40 @@ function sendCompatResponse(res: any, statusCode: number, payload: Record<string
   });
 }
 
+// Enforceable in-memory rate limiter per client IP (sliding 60s window)
+const RATE_LIMIT_WINDOW_MS = 60 * 1000;
+const MAX_REQUESTS_PER_WINDOW = 20;
+const ipRequestHistory = new Map<string, number[]>();
+
+function checkRateLimit(clientIp: string): boolean {
+  if (!clientIp) return true;
+  const now = Date.now();
+  const timestamps = (ipRequestHistory.get(clientIp) || []).filter(t => now - t < RATE_LIMIT_WINDOW_MS);
+  if (timestamps.length >= MAX_REQUESTS_PER_WINDOW) {
+    ipRequestHistory.set(clientIp, timestamps);
+    return false;
+  }
+  timestamps.push(now);
+  ipRequestHistory.set(clientIp, timestamps);
+  // Periodic cleanup if map grows
+  if (ipRequestHistory.size > 1000) {
+    for (const [k, v] of ipRequestHistory.entries()) {
+      if (v.every(t => now - t >= RATE_LIMIT_WINDOW_MS)) {
+        ipRequestHistory.delete(k);
+      }
+    }
+  }
+  return true;
+}
+
+function getClientIp(req: any): string {
+  const forwarded = req?.headers?.['x-forwarded-for'] || (typeof req?.headers?.get === 'function' ? req.headers.get('x-forwarded-for') : '');
+  if (typeof forwarded === 'string' && forwarded) {
+    return forwarded.split(',')[0].trim();
+  }
+  return req?.socket?.remoteAddress || req?.ip || 'anonymous';
+}
+
 export default async function handler(req: any, res?: any) {
   const method = req?.method || 'GET';
 
@@ -95,6 +129,15 @@ export default async function handler(req: any, res?: any) {
     return sendCompatResponse(res, 405, {
       error: 'Method Not Allowed',
       message: 'Only POST requests are supported.',
+    });
+  }
+
+  const clientIp = getClientIp(req);
+  if (!checkRateLimit(clientIp)) {
+    return sendCompatResponse(res, 429, {
+      fallbackAvailable: false,
+      error: 'Too Many Requests',
+      message: 'Rate limit exceeded. Please wait before making more AI fallback requests.',
     });
   }
 
@@ -142,7 +185,7 @@ ${rawText}`;
 
   const modelName = process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite';
   const fallbackModelName = 'gemini-2.5-flash-lite';
-  const UPSTREAM_TIMEOUT_MS = 8000;
+  const UPSTREAM_TIMEOUT_MS = 4500;
 
   async function fetchGeminiWithTimeout(url: string, init: RequestInit): Promise<Response> {
     const controller = new AbortController();
@@ -189,10 +232,11 @@ ${rawText}`;
 
     if (!geminiRes.ok) {
       const errText = await geminiRes.text().catch(() => '');
+      console.error('[scrape-job] Upstream LLM error:', geminiRes.status, errText);
       return sendCompatResponse(res, 200, {
         fallbackAvailable: false,
         error: 'Upstream LLM Error',
-        message: errText.slice(0, 300),
+        message: 'Upstream AI model error. Local extraction preserved.',
       });
     }
 
@@ -222,10 +266,11 @@ ${rawText}`;
       },
     });
   } catch (err: any) {
+    console.error('[scrape-job] Internal error:', err);
     return sendCompatResponse(res, 200, {
       fallbackAvailable: false,
       error: 'Internal Error',
-      message: err?.message || 'Failed to parse job with LLM fallback.',
+      message: 'Failed to parse job with LLM fallback.',
     });
   }
 }

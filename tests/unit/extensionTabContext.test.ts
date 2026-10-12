@@ -32,13 +32,13 @@ export function classifyTabUrl(url: string): 'job' | 'contact' | 'email' | 'gene
 
     // 3. X / Twitter Profiles & Hiring Posts
     if (host === 'x.com' || host.endsWith('.x.com') || host === 'twitter.com' || host.endsWith('.twitter.com')) {
-      if (path.includes('/status/')) {
-        return 'job';
-      }
       const nonProfilePaths = ['home', 'explore', 'notifications', 'messages', 'settings', 'i', 'search', 'compose', 'lists', 'bookmarks', 'communities', 'tos', 'privacy', 'jobs'];
       const segments = path.replace(/^\/+/, '').split('/').filter(Boolean);
       if (segments.length === 1 && !nonProfilePaths.includes(segments[0])) {
         return 'contact';
+      }
+      if (segments.length >= 3 && segments[1] === 'status') {
+        return 'job';
       }
     }
 
@@ -218,6 +218,7 @@ describe('extensionTabContext', () => {
       expect(classifyTabUrl('https://wellfound.com/jobs')).toBe('job');
       expect(classifyTabUrl('https://x.com/home')).toBe('generic');
       expect(classifyTabUrl('https://x.com/explore')).toBe('generic');
+      expect(classifyTabUrl('https://x.com/i/web/status/123')).toBe('generic');
     });
 
     it('classifies general web pages as generic', () => {
