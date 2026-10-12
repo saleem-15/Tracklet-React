@@ -223,6 +223,37 @@ function getDomainFromUrl(url) {
   }
 }
 
+// Resolve expanded external destination URL from tracking shortlinks (e.g. t.co, lnkd.in) via title attribute, visible text, or redirect parameters
+function resolveExpandedUrl(anchor) {
+  if (!anchor) return '';
+  const rawHref = (anchor.href || anchor.getAttribute('href') || '').trim();
+  if (!rawHref) return '';
+
+  try {
+    const parsed = new URL(rawHref);
+    if (parsed.searchParams.has('url')) {
+      const target = parsed.searchParams.get('url');
+      if (target && /^https?:\/\//i.test(target)) return target.trim();
+    }
+    if (parsed.searchParams.has('dest')) {
+      const target = parsed.searchParams.get('dest');
+      if (target && /^https?:\/\//i.test(target)) return target.trim();
+    }
+  } catch {}
+
+  const titleAttr = (anchor.getAttribute('title') || '').trim();
+  if (/^https?:\/\//i.test(titleAttr) && !titleAttr.includes('t.co') && !titleAttr.includes('lnkd.in')) {
+    return titleAttr;
+  }
+
+  const text = (anchor.innerText || anchor.textContent || '').trim();
+  if (/^https?:\/\//i.test(text) && !text.includes('t.co') && !text.includes('lnkd.in')) {
+    return text;
+  }
+
+  return rawHref;
+}
+
 // Extract human-friendly domain or company name fallback
 function getDomainName(urlStr) {
   try {
@@ -1543,7 +1574,7 @@ function extractJobFromActiveModalOrDrawer() {
     '[data-state="open"][role="dialog"]',
     '[data-headlessui-state="open"]',
     '.modal.show, .modal.open, .modal.active, .modal--open, .modal-visible, .modal-open .modal, .is-open[class*="modal"]',
-    'aside.drawer, aside[class*="drawer" i], aside[class*="modal" i], aside[class*="slide" i], aside[data-state="open"], aside[class*="fixed" i]',
+    'aside.drawer, aside[class*="drawer" i], aside[class*="modal" i], aside[class*="slideover" i]',
     '.drawer.open, .drawer.show, .drawer.active, [class*="drawer"][class*="open"], [class*="drawer"][class*="active"]',
     '[class*="job-drawer" i], [class*="jobDrawer" i], [class*="job-detail-drawer" i], [class*="jobDetailDrawer" i], [class*="JobModal" i]',
     '[class*="sidepanel"][class*="open"], [class*="side-panel"][class*="open"], [class*="flyout"][class*="open"]',
@@ -1575,7 +1606,7 @@ function extractJobFromActiveModalOrDrawer() {
   try {
     const portalCandidates = Array.from(
       document.querySelectorAll(
-        'body > div, body > div > div, #__next div, #root div, #app div, body > aside, ' +
+        'body > div, body > div > div, #__next div, #root div, #app div, ' +
         '[id*="portal" i] div, [class*="fixed" i], [style*="fixed" i], ' +
         '[class*="modal" i], [class*="drawer" i], [class*="overlay" i], [class*="slideover" i]'
       )
@@ -1747,6 +1778,19 @@ function extractJobFromActiveModalOrDrawer() {
       jobLink = iframeAts.src;
     }
 
+    const hasJobSignal = Boolean(
+      hasExplicitJobTitleAttr ||
+      hasApplySelector ||
+      hasApplyButtonText ||
+      location ||
+      salary ||
+      siblingMeta.location ||
+      siblingMeta.salary ||
+      siblingMeta.employmentType ||
+      container.querySelector('[class*="location" i], [data-testid*="location" i], [class*="salary" i], [data-testid*="salary" i], a[href*="apply" i], button[class*="apply" i]')
+    );
+    if (!hasJobSignal) continue;
+
     return {
       title: cleanRoleTitle(title, company),
       company,
@@ -1780,7 +1824,7 @@ function findActiveJobModalContainer() {
 }
 
 // Shared regex & parser for extracting Role, Company, Location, WorkLocation, and Salary from social hiring post text
-var HIRING_POST_INTENT_REGEX = /(?:we(?:'re|\s+are)\s+hiring|i(?:'m|\s+am)\s+hiring|\b(?:is|are)\s+hiring\b|my\s+team\s+(?:at\s+[A-Za-z0-9&.\-_ ]+\s+)?is\s+hiring|join\s+(?:our|my|the)\s+team|looking\s+for\s+(?:a|an)?|seeking\s+(?:a|an)?|now\s+hiring|open\s+role[s]?|job\s+opening[s]?|apply\s+(?:here|at|below|now)|dm\s+(?:me\s+)?if\s+interested|we\s+have\s+an?\s+opening|hiring\s+alert|excited\s+to\s+announce\s+we(?:'re|\s+are)\s+hiring|\bhiring\s+(?:a|an|for|senior|staff|lead|principal|founding|junior|remote|frontend|backend|fullstack|full-stack|mobile|flutter|react|ios|android|python|go|rust|ai|ml|data|product|design|devops)\b|#(?:hiring|nowhiring|jobopening|wearehiring|jobsearch|techjobs)\b|\b(?:send|drop|share)\s+(?:me\s+)?your\s+(?:cv|resume|portfolio)\b|(?:role|position|vacancy)\s*:)/i;
+var HIRING_POST_INTENT_REGEX = /(?:we(?:'re|\s+are)\s+hiring|i(?:'m|\s+am)\s+hiring|\b(?:is|are)\s+hiring\b|my\s+team\s+(?:at\s+[A-Za-z0-9&.\-_ ]+\s+)?is\s+hiring|join\s+(?:our|my|the)\s+team|looking\s+for\s+(?:a|an)\s+|seeking\s+(?:a|an)\s+|now\s+hiring|open\s+role[s]?|job\s+opening[s]?|apply\s+(?:here|at|below|now)|dm\s+(?:me\s+)?if\s+interested|we\s+have\s+an?\s+opening|hiring\s+alert|excited\s+to\s+announce\s+we(?:'re|\s+are)\s+hiring|\bhiring\s+(?:a|an|for|senior|staff|lead|principal|founding|junior|remote|frontend|backend|fullstack|full-stack|mobile|flutter|react|ios|android|python|go|rust|ai|ml|data|product|design|devops)\b|#(?:hiring|nowhiring|jobopening|wearehiring|jobsearch|techjobs)\b|\b(?:send|drop|share)\s+(?:me\s+)?your\s+(?:cv|resume|portfolio)\b|(?:role|position|vacancy)\s*:)/i;
 
 var POST_ROLE_TITLE_REGEX = /\b((?:(?:Senior|Sr\.?|Junior|Jr\.?|Lead|Principal|Staff|Founding|Head\s+of|VP\s+of|Director\s+of|Chief)\s+)*(?:(?:Software|Frontend|Front[- ]?End|Backend|Back[- ]?End|Full[- ]?Stack|Mobile|iOS|Android|Flutter|React(?:\s+Native)?|Angular|Vue|Node(?:\.js)?|Python|Go|Golang|Rust|Java|Kotlin|Swift|TypeScript|JavaScript|C\+\+|C#|\.NET|Ruby|Rails|PHP|Scala|Elixir|DevOps|Site\s+Reliability|SRE|Platform|Infrastructure|Cloud|Data|Machine\s+Learning|ML|AI|GenAI|LLM|Product|Growth|UX|UI|UI\/UX|System|Systems|Embedded|Firmware|Security|Cybersecurity|QA|Quality\s+Assurance|Automation|Test|Solutions|Support|Sales|Technical|Engineering|Design|Research|Marketing|Operations)\s+)+(?:Engineer|Developer|Designer|Architect|Manager|Lead|Specialist|Scientist|Consultant|Analyst|Researcher|Officer|Director|Intern|Instructor|Advocate|Evangelist|Associate)|(?:Engineering\s+Manager|Product\s+Manager|Project\s+Manager|Program\s+Manager|Technical\s+Program\s+Manager|Scrum\s+Master|Data\s+Scientist|Product\s+Designer|UX\s+Designer|UI\s+Designer|UX\s+Researcher|DevOps\s+Engineer|Site\s+Reliability\s+Engineer|Solutions\s+Architect|Mobile\s+Architect|Software\s+Architect|Security\s+Engineer|QA\s+Engineer|Data\s+Engineer|ML\s+Engineer|AI\s+Engineer))\b/i;
 
@@ -1892,10 +1936,14 @@ function extractLinkedInPostJobData() {
   const href = window.location.href;
   if (!host.includes('linkedin.')) return null;
 
-  const isPostUrl = href.includes('/feed/update/') || href.includes('/posts/') || href.includes('/feed/') || href.includes('/search/results/content') || href.includes('/recent-activity');
-  if (!isPostUrl) return null;
-
   const isDedicatedPostPage = href.includes('/feed/update/') || href.includes('/posts/');
+  const hasOpenPostModal = Boolean(document.querySelector(
+    '.artdeco-modal [data-urn*="activity"], ' +
+    '[role="dialog"] .feed-shared-update-v2, ' +
+    '[role="dialog"] [data-view-name*="feed-"]'
+  ));
+  const isPostUrl = isDedicatedPostPage || href.includes('/search/results/content') || href.includes('/recent-activity') || (href.includes('/feed') && hasOpenPostModal);
+  if (!isPostUrl) return null;
   const POST_CONTAINER_SELECTOR =
     'div[data-urn*="activity:"], div[data-id*="urn:li:activity"], ' +
     '.feed-shared-update-v2, article.feed-shared-update-v2, ' +
@@ -2026,11 +2074,24 @@ function extractLinkedInPostJobData() {
     'a.update-components-article__link, a[data-tracking-control-name="feed_link_click"], ' +
     '.feed-shared-article__link, a[href*="http"]:not([href*="linkedin.com"])'
   );
-  let jobLink = outboundAnchor ? outboundAnchor.href : href;
+  let jobLink = outboundAnchor ? resolveExpandedUrl(outboundAnchor) : href;
   if (!outboundAnchor && postContainer) {
     const urn = postContainer.getAttribute('data-urn') || postContainer.getAttribute('data-id') || '';
     if (urn && urn.includes('urn:li:activity:') && !isDedicatedPostPage) {
       jobLink = `https://www.linkedin.com/feed/update/${urn}/`;
+    }
+  }
+
+  if (!company && outboundAnchor) {
+    const expandedUrl = resolveExpandedUrl(outboundAnchor);
+    const extHost = getDomainFromUrl(expandedUrl);
+    const registry = typeof JobBoardRegistry !== 'undefined' ? JobBoardRegistry : null;
+    if (registry && registry.cleanCompanyDomain) {
+      const cleaned = registry.cleanCompanyDomain(extHost);
+      if (cleaned && !registry.isJobBoardOrAts(extHost)) {
+        const compName = cleaned.split('.')[0];
+        company = compName.charAt(0).toUpperCase() + compName.slice(1);
+      }
     }
   }
 
@@ -4466,11 +4527,11 @@ function extractXPostJobData() {
           return false;
         }
       });
-    const applyLink = externalAnchors.length > 0 ? externalAnchors[0].href : window.location.href;
+    const applyLink = externalAnchors.length > 0 ? resolveExpandedUrl(externalAnchors[0]) : window.location.href;
 
     let company = parsedMeta.company || '';
     if (!company && externalAnchors.length > 0) {
-      const extHost = getDomainFromUrl(externalAnchors[0].href);
+      const extHost = getDomainFromUrl(resolveExpandedUrl(externalAnchors[0]));
       const registry = typeof JobBoardRegistry !== 'undefined' ? JobBoardRegistry : null;
       if (registry && registry.cleanCompanyDomain) {
         const cleaned = registry.cleanCompanyDomain(extHost);
@@ -5557,7 +5618,7 @@ function notifyPageContextChange(source, threadSig = '', precomputedData = null)
     } catch {}
   }
 
-  if (scrapedData && (scrapedData.pageType === 'contact_profile' || scrapedData.pageType === 'job_posting' || scrapedData.pageType === 'ats_form' || scrapedData.pageType === 'webmail')) {
+  if (scrapedData && (scrapedData.pageType === 'contact_profile' || scrapedData.pageType === 'job_posting' || scrapedData.pageType === 'ats_form')) {
     try {
       if (typeof chrome !== 'undefined' && chrome.storage?.local) {
         chrome.storage.local.set({

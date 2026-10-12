@@ -2431,12 +2431,14 @@ DM me if interested!</div>
         (window as any).happyDOM.setURL('https://www.linkedin.com/feed/');
       }
       document.body.innerHTML = `
-        <div class="feed-shared-update-v2" data-urn="urn:li:activity:7999999999">
-          <a href="https://www.linkedin.com/in/recruiter-jane">
-            <span dir="ltr">Jane Doe</span>
-          </a>
-          <div class="update-components-text">
-            Stripe is hiring a Senior Backend Engineer! Remote in US ($190,000 - $230,000 / yr). Send your CV!
+        <div class="artdeco-modal" role="dialog">
+          <div class="feed-shared-update-v2" data-urn="urn:li:activity:7999999999">
+            <a href="https://www.linkedin.com/in/recruiter-jane">
+              <span dir="ltr">Jane Doe</span>
+            </a>
+            <div class="update-components-text">
+              Stripe is hiring a Senior Backend Engineer! Remote in US ($190,000 - $230,000 / yr). Send your CV!
+            </div>
           </div>
         </div>
       `;
