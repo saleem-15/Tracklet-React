@@ -146,4 +146,43 @@ describe('ApplicationDetailPanel note persistence', () => {
     )!;
     expect(dirtyButton.disabled).toBe(false);
   });
+
+  describe('Status History deletion & rollback', () => {
+    it('deletes Offer milestone and reverts status to Interview without creating duplicate stage', async () => {
+      const onUpdateApp = vi.fn().mockResolvedValue(undefined);
+      const testApp = makeApp({
+        status: 'Offer',
+        history: [
+          { id: 'h1', fromStatus: 'Saved', toStatus: 'Screening', timestamp: '2026-09-01T10:00:00.000Z' },
+          { id: 'h2', fromStatus: 'Screening', toStatus: 'Interview', timestamp: '2026-09-10T10:00:00.000Z' },
+          { id: 'h3', fromStatus: 'Interview', toStatus: 'Offer', timestamp: '2026-09-20T10:00:00.000Z' },
+        ],
+      });
+
+      mountPanel(testApp, onUpdateApp);
+
+      // Find delete button on milestones (sorted newest first: index 0 is Offer)
+      const deleteButtons = host!.querySelectorAll('button[aria-label^="Delete milestone"]');
+      expect(deleteButtons.length).toBe(3);
+
+      act(() => {
+        (deleteButtons[0] as HTMLButtonElement).click();
+      });
+
+      const confirmButton = host!.querySelector('button[aria-label="Confirm delete"]') as HTMLButtonElement;
+      expect(confirmButton).toBeTruthy();
+
+      await act(async () => {
+        confirmButton.click();
+      });
+
+      expect(onUpdateApp).toHaveBeenCalledTimes(1);
+      const [appId, updates] = onUpdateApp.mock.calls[0];
+      expect(appId).toBe('app-1');
+      expect(updates.status).toBe('Interview');
+      expect(updates.history).toHaveLength(2);
+      expect(updates.history.map((h: any) => h.toStatus)).toEqual(['Screening', 'Interview']);
+      expect(updates.history.find((h: any) => h.id === 'h3')).toBeUndefined();
+    });
+  });
 });

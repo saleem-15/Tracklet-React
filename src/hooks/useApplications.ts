@@ -243,8 +243,12 @@ export function useApplications({
 
     const mergedUpdates = { ...updates };
     if (isStatusChanged && updates.status && currentApp) {
-      mergedUpdates.history = appendStatusHistory(currentApp.history, updates.status, currentApp.status, now);
-      mergedUpdates.stageUpdatedAt = now;
+      if (updates.history === undefined) {
+        mergedUpdates.history = appendStatusHistory(currentApp.history, updates.status, currentApp.status, now);
+      }
+      if (updates.stageUpdatedAt === undefined) {
+        mergedUpdates.stageUpdatedAt = now;
+      }
     }
 
     setApplications((prev) => {
@@ -264,7 +268,7 @@ export function useApplications({
         );
       }
 
-      if (isStatusChanged && updates.status && currentApp) {
+      if (isStatusChanged && updates.status && currentApp && updates.history === undefined) {
         const prevStatus = currentApp.status;
         const targetStatus = updates.status;
         const companyName = currentApp.company;

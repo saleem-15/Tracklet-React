@@ -17,6 +17,7 @@ import { TemplateRepository } from '../lib/templateRepository';
 import { addBusinessDays } from '../lib/dateUtils';
 import { resolveDraftOnOpen, clearNoteDraft } from '../lib/editor/noteDrafts';
 import { useEscapeKey } from '../lib/useEscapeKey';
+import { updateStatusHistoryEntry, deleteStatusHistoryEntry } from '../lib/statusHistoryUtils';
 
 export interface ApplicationDetailPanelProps {
   app: Application | null;
@@ -490,6 +491,90 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
     }
   };
 
+  // Status History handlers
+  const handleUpdateStatusHistoryEntry = async (
+    entryId: string,
+    updates: { toStatus?: ApplicationStatus; timestamp?: string; note?: string }
+  ) => {
+    if (!app) return;
+    const currentHistory = app.history || [];
+    const targetEntry = currentHistory.find((e) => e.id === entryId);
+    const isDeletingNote = 'note' in updates && (!updates.note || !updates.note.trim()) && Boolean(targetEntry?.note);
+    const updatedHistory = updateStatusHistoryEntry(currentHistory, entryId, updates);
+
+    const sorted = [...currentHistory].sort(
+      (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+    );
+    const isLatest = sorted[sorted.length - 1]?.id === entryId;
+    const appUpdates: Partial<Application> = {
+      history: updatedHistory,
+      updatedAt: new Date().toISOString(),
+      ...(isLatest && updates.toStatus
+        ? { status: updates.toStatus, stageUpdatedAt: updates.timestamp || new Date().toISOString() }
+        : {}),
+    };
+
+    try {
+      await onUpdateApp(app.id, appUpdates);
+      if (isDeletingNote && targetEntry?.note) {
+        onShowToast?.('info', 'Milestone note deleted', undefined, {
+          label: 'Undo',
+          onClick: () => {
+            handleUpdateStatusHistoryEntry(entryId, { note: targetEntry.note });
+          },
+        });
+      } else {
+        onShowToast?.('success', 'Timeline updated', 'Status milestone changes saved.');
+      }
+    } catch {
+      onShowToast?.('error', 'Update failed', 'Could not update timeline entry.');
+    }
+  };
+
+  const handleDeleteStatusHistoryEntry = async (entryId: string) => {
+    if (!app) return;
+    const currentHistory = app.history || [];
+    const snapshotState: Partial<Application> = {
+      history: currentHistory,
+      status: app.status,
+      stageUpdatedAt: app.stageUpdatedAt,
+    };
+
+    const { updatedHistory, rolledBackStatus, rolledBackStageUpdatedAt } = deleteStatusHistoryEntry(
+      currentHistory,
+      entryId,
+      app.status
+    );
+
+    const appUpdates: Partial<Application> = {
+      history: updatedHistory,
+      updatedAt: new Date().toISOString(),
+      ...(rolledBackStatus ? { status: rolledBackStatus, stageUpdatedAt: rolledBackStageUpdatedAt } : {}),
+    };
+
+    try {
+      await onUpdateApp(app.id, appUpdates);
+      const rollbackMsg = rolledBackStatus
+        ? `Reverted status to ${rolledBackStatus}.`
+        : 'Milestone removed from history.';
+      onShowToast?.(
+        'info',
+        'Milestone deleted',
+        rollbackMsg,
+        {
+          label: 'Undo',
+          onClick: () => {
+            onUpdateApp(app.id, snapshotState).catch(() => {});
+          },
+        },
+        rolledBackStatus
+      );
+    } catch {
+      onShowToast?.('error', 'Delete failed', 'Could not delete timeline entry.');
+    }
+  };
+
+
   return (
     <div
       role="dialog"
@@ -607,6 +692,8 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
                 currentStatus={app.status}
                 createdAt={app.createdAt}
                 stageUpdatedAt={app.stageUpdatedAt}
+                onUpdateEntry={handleUpdateStatusHistoryEntry}
+                onDeleteEntry={handleDeleteStatusHistoryEntry}
               />
             </div>
           </div>
