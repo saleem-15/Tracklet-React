@@ -4,6 +4,7 @@ import { Application, Contact } from '../types';
 import { ApplicationRepository } from '../lib/applicationRepository';
 import { ContactRepository } from '../lib/contactRepository';
 import { migrateLegacyEmbeddedContacts } from '../lib/contactMigration';
+import { posthogLogs } from '../lib/posthogLogs';
 import type { AddToastFn } from './useToast';
 
 export interface UseDataLoaderProps {
@@ -92,6 +93,7 @@ export function useDataLoader({
 
         setApplications(loadedApps);
         setContacts(loadedContacts);
+        posthogLogs.dataHydrationCompleted('firestore', loadedApps.length, loadedContacts.length, hasChanges);
 
         // Check for guest data migration
         checkAndPromptGuestMigration();
@@ -116,9 +118,11 @@ export function useDataLoader({
 
         setApplications(guestApps);
         setContacts(guestContacts);
+        posthogLogs.dataHydrationCompleted('guest_storage', guestApps.length, guestContacts.length, migratedCount > 0);
       }
     } catch (err) {
       if (requestIdRef.current !== currentRequestId) return;
+      posthogLogs.dataHydrationFailed(user ? 'firestore' : 'guest_storage');
       console.error('Error loading applications and contacts:', err);
       addToast('error', 'Load Error', 'Could not load data from repository.');
     } finally {

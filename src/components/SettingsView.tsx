@@ -33,6 +33,7 @@ import { useNavigation } from '../context/NavigationContext';
 import { useAuth } from '../context/AuthContext';
 import { useExtensionContext } from '../context/ExtensionContext';
 import { UI_TOKENS } from '../theme/tokens';
+import posthog from '../lib/posthog';
 
 interface SettingsViewProps {
   settings: ExpiryNotificationSettings;
@@ -95,6 +96,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
   const handleSaveTemplate = async (templateToSave: Omit<FollowUpTemplate, 'id' | 'createdAt' | 'updatedAt'> & { id?: string }) => {
     const saved = await TemplateRepository.saveTemplate(templateToSave, userId);
+    posthog.capture('template_saved', {
+      action: templateToSave.id ? 'updated' : 'created',
+      category: saved.category,
+      is_guest: !userId,
+    });
     setTemplates((prev) => {
       const idx = prev.findIndex((t) => t.id === saved.id);
       if (idx >= 0) {

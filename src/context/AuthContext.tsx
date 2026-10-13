@@ -1,7 +1,8 @@
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import * as Sentry from '@sentry/react';
 import { User as FirebaseUser } from 'firebase/auth';
 import { AuthRepository } from '../lib/authRepository';
+import posthog from '../lib/posthog';
 import { ApplicationRepository } from '../lib/applicationRepository';
 import { AuthUser, AuthViewMode } from '../types';
 import { getFriendlyAuthErrorMessage } from '../lib/authErrors';
@@ -40,6 +41,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [authUser, setAuthUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const identifiedUserId = useRef<string | null>(null);
 
   // Modal State
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -71,6 +73,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             // Ignore reload errors during initialization
           }
         }
+        if (identifiedUserId.current && identifiedUserId.current !== currentUser.uid) {
+          posthog.reset();
+        }
+        if (identifiedUserId.current !== currentUser.uid) {
+          posthog.identify(currentUser.uid, {
+            email: currentUser.email || undefined,
+            name: currentUser.displayName || undefined,
+          });
+          identifiedUserId.current = currentUser.uid;
+        }
         setUser(currentUser);
         setAuthUser(AuthRepository.mapToAuthUser(currentUser));
         Sentry.setUser({
@@ -78,6 +90,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           email: currentUser.email || undefined,
         });
       } else {
+        if (identifiedUserId.current) {
+          posthog.reset();
+          identifiedUserId.current = null;
+        }
         setUser(null);
         setAuthUser(null);
         Sentry.setUser(null);

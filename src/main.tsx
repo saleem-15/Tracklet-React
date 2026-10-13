@@ -1,3 +1,4 @@
+import './lib/posthog';
 import './instrument';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';

@@ -15,3 +15,4 @@ graphify-out/cache/
 # Generated extension artifacts
 public/tracklet-extension.zip
 public/version.json
+.claude/
