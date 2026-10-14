@@ -3,6 +3,7 @@ import type { User } from 'firebase/auth';
 import { Contact, Application } from '../types';
 import { ContactRepository } from '../lib/contactRepository';
 import { ApplicationRepository } from '../lib/applicationRepository';
+import posthog from '../lib/posthog';
 
 export interface UseContactsProps {
   user: User | null;
@@ -140,6 +141,11 @@ export function useContacts({
               throw new Error(`Failed to link contact to application(s): ${failedAppIds.join(', ')}`);
             }
           }
+          posthog.capture('contact_created', {
+            category: created.category,
+            linked_application_count: created.applicationIds?.length || 0,
+            is_guest: false,
+          });
         })
         .catch((err) => {
           console.error('Failed to sync contact to Firestore, rolling back:', err);
@@ -155,6 +161,12 @@ export function useContacts({
           );
           addToast('error', 'Sync Failed', `Could not save ${optimisticContact.name} to cloud.`);
         });
+    } else {
+      posthog.capture('contact_created', {
+        category: optimisticContact.category,
+        linked_application_count: optimisticContact.applicationIds?.length || 0,
+        is_guest: true,
+      });
     }
 
     return optimisticContact;
@@ -226,6 +238,11 @@ export function useContacts({
       if (user?.emailVerified) {
         await ContactRepository.updateContact(id, updates, user.uid, updatedContact);
       }
+      posthog.capture('contact_updated', {
+        category: updatedContact.category,
+        linked_application_count: updatedContact.applicationIds?.length || 0,
+        is_guest: !user?.emailVerified,
+      });
     } catch (err) {
       console.error('Failed to update contact:', err);
       if (currentContact) {
@@ -276,6 +293,11 @@ export function useContacts({
         linkedAppIds,
         targetContact
       );
+      posthog.capture('contact_deleted', {
+        category: targetContact.category,
+        linked_application_count: linkedAppIds.length,
+        is_guest: !user?.emailVerified,
+      });
 
       addToast('info', `Deleted ${targetContact.name}`, undefined, {
         label: 'Undo',

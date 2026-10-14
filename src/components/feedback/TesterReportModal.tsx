@@ -26,6 +26,7 @@ import { DiagnosticSummaryCard } from './DiagnosticSummaryCard';
 import { AttachmentDropzone } from './AttachmentDropzone';
 import { useEscapeKey } from '../../lib/useEscapeKey';
 import { useToastContext } from '../../context/ToastContext';
+import posthog from '../../lib/posthog';
 
 interface TesterReportModalProps {
   isOpen: boolean;
@@ -187,6 +188,13 @@ export const TesterReportModal: React.FC<TesterReportModalProps> = ({
       } else if (dispatchResult.fallbackUrl) {
         setSubmittedIssueUrl(dispatchResult.fallbackUrl);
       }
+
+      posthog.capture('feedback_report_submitted', {
+        category: type,
+        severity,
+        has_attachments: attachments.length > 0,
+        dispatch_succeeded: dispatchResult.success,
+      });
 
       addToast(
         'success',

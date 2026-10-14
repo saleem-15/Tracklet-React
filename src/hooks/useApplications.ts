@@ -15,6 +15,7 @@ import { broadcastDeletedApplication } from '../lib/extensionSync';
 import { findDuplicateApplications, mergeAllDuplicateGroups } from '../lib/dedupUtils';
 import { calculateDaysInStage } from '../lib/sampleData';
 import { exportApplicationsToCSV } from '../lib/exportCsv';
+import posthog from '../lib/posthog';
 
 export interface UseApplicationsProps {
   user: User | null;
@@ -207,6 +208,13 @@ export function useApplications({
         return next;
       });
       addToast('success', 'Application Added', `Logged ${newApp.company} (${newApp.role})`);
+      posthog.capture('application_created', {
+        platform: newApp.platform,
+        status: newApp.status,
+        has_linked_contacts: (newApp.contactIds?.length || 0) > 0,
+        task_count: newApp.tasks?.length || 0,
+        is_guest: !user?.emailVerified,
+      });
     } catch (err) {
       console.error('Failed to add application:', err);
       addToast('error', 'Error', 'Failed to save application.');
@@ -228,6 +236,10 @@ export function useApplications({
         return next;
       });
       addToast('success', 'Batch Import Complete', `Successfully imported ${newApps.length} applications.`);
+      posthog.capture('applications_imported', {
+        application_count: imported.length,
+        is_guest: !user?.emailVerified,
+      });
     } catch (err) {
       console.error('Batch import failed:', err);
       addToast('error', 'Import Failed', 'Could not import applications.');
@@ -269,6 +281,11 @@ export function useApplications({
       }
 
       if (isStatusChanged && updates.status && currentApp && updates.history === undefined) {
+        posthog.capture('application_stage_changed', {
+          previous_status: currentApp.status,
+          status: updates.status,
+          is_guest: !user?.emailVerified,
+        });
         const prevStatus = currentApp.status;
         const targetStatus = updates.status;
         const companyName = currentApp.company;
@@ -321,6 +338,10 @@ export function useApplications({
     try {
       await ApplicationRepository.deleteApplication(id, user?.emailVerified ? user.uid : undefined);
       if (targetApp) {
+        posthog.capture('application_deleted', {
+          status: targetApp.status,
+          is_guest: !user?.emailVerified,
+        });
         addToast(
           'info',
           `Deleted ${targetApp.company}`,
@@ -390,6 +411,11 @@ export function useApplications({
         );
       }
 
+      posthog.capture('applications_stage_bulk_updated', {
+        application_count: ids.length,
+        status: newStatus,
+        is_guest: !user?.emailVerified,
+      });
       addToast(
         'success',
         `Moved ${ids.length} application${ids.length === 1 ? '' : 's'} to`,
@@ -598,6 +624,10 @@ export function useApplications({
       }
     }
 
+    posthog.capture('duplicate_applications_merged', {
+      duplicate_count: purgedAppIds.length,
+      is_guest: !user?.emailVerified,
+    });
     addToast(
       'success',
       'Duplicates Merged',
@@ -609,11 +639,16 @@ export function useApplications({
   const handleExportCSV = useCallback(() => {
     const success = exportApplicationsToCSV(filteredAndSortedApplications);
     if (success) {
+      posthog.capture('applications_exported', {
+        application_count: filteredAndSortedApplications.length,
+        format: 'csv',
+        is_guest: !user?.emailVerified,
+      });
       addToast('success', 'Export Complete', `Exported ${filteredAndSortedApplications.length} applications to CSV.`);
     } else {
       addToast('warning', 'Export Empty', 'No applications available to export.');
     }
-  }, [filteredAndSortedApplications, addToast]);
+  }, [filteredAndSortedApplications, user, addToast]);
 
   return {
     applications,

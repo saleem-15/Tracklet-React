@@ -11,6 +11,7 @@ import { useGuestMigration } from './hooks/useGuestMigration';
 import { useExtensionSync } from './hooks/useExtensionSync';
 import { useDataLoader } from './hooks/useDataLoader';
 import { getPathForTab, isAuthPath } from './lib/routeUtils';
+import { posthogLogs } from './lib/posthogLogs';
 
 function TrackletAppContent() {
   const { user, loading: authLoading, signOut } = useAuth();
@@ -79,6 +80,7 @@ function TrackletAppContent() {
     try { localStorage.setItem('tracklet_guest_mode', 'true'); } catch { /* Ignore */ }
     setIsGuestMode(true);
     window.history.pushState(null, '', getPathForTab(activeTab));
+    posthogLogs.guestSessionStarted();
     addToast('info', 'Guest Session Started', 'Applications will be saved to this browser.');
   }, [activeTab, addToast]);
 

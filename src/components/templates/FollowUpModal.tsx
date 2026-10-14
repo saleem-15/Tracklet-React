@@ -7,6 +7,7 @@ import { TemplateManagerModal } from './TemplateManagerModal';
 import { FollowUpTemplateBar } from './FollowUpTemplateBar';
 import { FollowUpRecipientSelector, RecipientOption } from './FollowUpRecipientSelector';
 import { FollowUpComposer } from './FollowUpComposer';
+import posthog from '../../lib/posthog';
 
 export interface FollowUpTriggerDetails {
   recipientName: string;
@@ -184,6 +185,14 @@ export const FollowUpModal: React.FC<FollowUpModalProps> = ({
     setTimeout(() => setIsCopied(false), 2000);
 
     onShowToast?.('success', 'Email text copied', 'Subject and body copied to clipboard.');
+    if (activeTemplate) {
+      posthog.capture('follow_up_started', {
+        action: 'copied',
+        template_category: activeTemplate.category,
+        is_template_modified: isModified,
+        reminder_requested: addReminder,
+      });
+    }
 
     if (onFollowUpTriggered && activeTemplate) {
       await onFollowUpTriggered({
@@ -202,6 +211,14 @@ export const FollowUpModal: React.FC<FollowUpModalProps> = ({
     window.open(mailtoUrl, '_blank', 'noopener,noreferrer');
 
     onShowToast?.('success', 'Email client opened', `Drafted follow-up to ${activeRecipient.email || 'recruiter'}.`);
+    if (activeTemplate) {
+      posthog.capture('follow_up_started', {
+        action: 'opened_in_mail_client',
+        template_category: activeTemplate.category,
+        is_template_modified: isModified,
+        reminder_requested: addReminder,
+      });
+    }
 
     if (onFollowUpTriggered && activeTemplate) {
       await onFollowUpTriggered({

@@ -2,6 +2,27 @@
 // Uses Gemini 2.5 Flash-Lite REST API with strict JSON Schema output.
 // Compatible with Vercel, Netlify, Cloudflare, and standard Node/Web HTTP runtimes.
 
+import { PostHog } from 'posthog-node';
+
+const posthogKey = process.env.VITE_POSTHOG_KEY;
+const posthogHost = process.env.VITE_POSTHOG_HOST;
+
+if (!posthogKey && process.env.NODE_ENV === 'development') {
+  throw new Error(
+    'VITE_POSTHOG_KEY variable required by PostHog is missing or un-configured, this causes events to be silently missed. This error stops appearing once VITE_POSTHOG_KEY is configured',
+  );
+}
+
+if (!posthogHost && process.env.NODE_ENV === 'development') {
+  throw new Error(
+    'VITE_POSTHOG_HOST variable required by PostHog is missing or un-configured, this causes events to be silently missed. This error stops appearing once VITE_POSTHOG_HOST is configured',
+  );
+}
+
+const posthog = posthogKey && posthogHost
+  ? new PostHog(posthogKey, { host: posthogHost, privacyMode: false })
+  : null;
+
 const MAX_PAGE_TEXT_CHARS = 12000;
 
 const GEMINI_RESPONSE_SCHEMA = {
@@ -103,6 +124,62 @@ function getClientIp(req: any): string {
     return forwarded.split(',')[0].trim();
   }
   return req?.socket?.remoteAddress || req?.ip || 'anonymous';
+}
+
+async function captureGeminiGeneration({
+  traceId,
+  distinctId,
+  model,
+  prompt,
+  response,
+  startedAt,
+  candidateText,
+  usageMetadata,
+  error,
+}: {
+  traceId: string;
+  distinctId: string;
+  model: string;
+  prompt: string;
+  response?: Response;
+  startedAt: number;
+  candidateText?: string;
+  usageMetadata?: any;
+  error?: string;
+}) {
+  if (!posthog) return;
+
+  try {
+    posthog.capture({
+      distinctId,
+      event: '$ai_generation',
+      properties: {
+        $ai_trace_id: traceId,
+        $ai_session_id: null,
+        $ai_span_id: `${traceId}-${model}`,
+        $ai_span_name: 'job_page_extraction',
+        $ai_parent_id: traceId,
+        $ai_model: model,
+        $ai_provider: 'gemini',
+        $ai_input: [{ role: 'user', content: prompt }],
+        $ai_input_tokens: usageMetadata?.promptTokenCount,
+        $ai_output_choices: candidateText
+          ? [{ role: 'assistant', content: candidateText }]
+          : undefined,
+        $ai_output_tokens: usageMetadata?.candidatesTokenCount,
+        $ai_latency: (Date.now() - startedAt) / 1000,
+        $ai_http_status: response?.status,
+        $ai_base_url: 'https://generativelanguage.googleapis.com',
+        $ai_temperature: 0.1,
+        $ai_stream: false,
+        $ai_is_error: Boolean(error),
+        $ai_error: error,
+      },
+    });
+    await posthog.flush();
+  } catch (captureError) {
+    console.warn('[scrape-job] Could not capture AI observability event:', captureError);
+  }
 }
 
 export default async function handler(req: any, res?: any) {
@@ -220,17 +297,46 @@ ${rawText}`;
     }),
   };
 
+  const traceId = `scrape-job-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const distinctId = traceId;
+  let activeModel = modelName;
+  let generationStartedAt = Date.now();
+  let generationCaptured = false;
+
   try {
-    let endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(modelName)}:generateContent?key=${encodeURIComponent(apiKey)}`;
+    let endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(activeModel)}:generateContent?key=${encodeURIComponent(apiKey)}`;
     let geminiRes = await fetchGeminiWithTimeout(endpoint, requestPayload);
 
     // If the model identifier is not available on the user's API key tier, gracefully try 2.5-flash-lite
-    if (!geminiRes.ok && modelName !== fallbackModelName && geminiRes.status === 404) {
-      endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(fallbackModelName)}:generateContent?key=${encodeURIComponent(apiKey)}`;
+    if (!geminiRes.ok && activeModel !== fallbackModelName && geminiRes.status === 404) {
+      await captureGeminiGeneration({
+        traceId,
+        distinctId,
+        model: activeModel,
+        prompt,
+        response: geminiRes,
+        startedAt: generationStartedAt,
+        error: 'Gemini returned HTTP 404.',
+      });
+      generationCaptured = true;
+      activeModel = fallbackModelName;
+      generationStartedAt = Date.now();
+      generationCaptured = false;
+      endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(activeModel)}:generateContent?key=${encodeURIComponent(apiKey)}`;
       geminiRes = await fetchGeminiWithTimeout(endpoint, requestPayload);
     }
 
     if (!geminiRes.ok) {
+      await captureGeminiGeneration({
+        traceId,
+        distinctId,
+        model: activeModel,
+        prompt,
+        response: geminiRes,
+        startedAt: generationStartedAt,
+        error: `Gemini returned HTTP ${geminiRes.status}.`,
+      });
+      generationCaptured = true;
       const errText = await geminiRes.text().catch(() => '');
       console.error('[scrape-job] Upstream LLM error:', geminiRes.status, errText);
       return sendCompatResponse(res, 200, {
@@ -242,6 +348,18 @@ ${rawText}`;
 
     const geminiJson: any = await geminiRes.json();
     const candidateText = geminiJson?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    await captureGeminiGeneration({
+      traceId,
+      distinctId,
+      model: activeModel,
+      prompt,
+      response: geminiRes,
+      startedAt: generationStartedAt,
+      candidateText,
+      usageMetadata: geminiJson?.usageMetadata,
+      error: candidateText ? undefined : 'Gemini returned an empty candidate response.',
+    });
+    generationCaptured = true;
     if (!candidateText) {
       return sendCompatResponse(res, 200, {
         fallbackAvailable: false,
@@ -266,6 +384,16 @@ ${rawText}`;
       },
     });
   } catch (err: any) {
+    if (!generationCaptured) {
+      await captureGeminiGeneration({
+        traceId,
+        distinctId,
+        model: activeModel,
+        prompt,
+        startedAt: generationStartedAt,
+        error: 'Gemini request failed before a response was received.',
+      });
+    }
     console.error('[scrape-job] Internal error:', err);
     return sendCompatResponse(res, 200, {
       fallbackAvailable: false,
