@@ -71,6 +71,9 @@ export function AppSlideOvers() {
         onUnlinkFromApp={handleUnlinkContact}
         onSelectApplication={handleSwitchToApp}
         onFollowUp={handleContactFollowUp}
+        onUpdateApp={handleUpdateApplication}
+        currentUserEmail={user?.email || undefined}
+        onShowToast={addToast}
       />
     </>
   );

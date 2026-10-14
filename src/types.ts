@@ -52,6 +52,7 @@ export interface Contact {
   notes?: string;
   nextFollowUpDate?: string; // YYYY-MM-DD
   applicationIds?: string[];
+  emails?: EmailLog[];
   createdAt?: string;
   updatedAt?: string;
 }
@@ -74,6 +75,8 @@ export interface EmailLog {
   snippet?: string;
   body?: string;
   emailUrl?: string;
+  contactId?: string;
+  applicationId?: string;
 }
 
 export interface Application {

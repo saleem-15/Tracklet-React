@@ -18,6 +18,7 @@ import { addBusinessDays } from '../lib/dateUtils';
 import { resolveDraftOnOpen, clearNoteDraft } from '../lib/editor/noteDrafts';
 import { useEscapeKey } from '../lib/useEscapeKey';
 import { updateStatusHistoryEntry, deleteStatusHistoryEntry } from '../lib/statusHistoryUtils';
+import { parseCounterpartyString } from '../lib/emailCounterpartyUtils';
 
 export interface ApplicationDetailPanelProps {
   app: Application | null;
@@ -450,7 +451,37 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
   // Email handlers
   const handleAddEmailLog = async (emailData: Omit<EmailLog, 'id'>) => {
     if (!app) return;
-    const newEmailLog: EmailLog = { id: `email-${Date.now()}`, ...emailData };
+
+    // Auto-resolve contactId if counterparty matches an existing contact
+    let contactId = emailData.contactId;
+    if (!contactId && allContacts.length > 0) {
+      const senderParsed = parseCounterpartyString(emailData.sender);
+      const recipientParsed = parseCounterpartyString(emailData.recipient);
+      const sEmail = senderParsed.email?.toLowerCase();
+      const sName = senderParsed.name?.toLowerCase();
+      const rEmail = recipientParsed.email?.toLowerCase();
+      const rName = recipientParsed.name?.toLowerCase();
+
+      const matched = allContacts.find((c) => {
+        const cEmail = c.email?.toLowerCase();
+        const cName = c.name?.toLowerCase();
+        return (
+          (cEmail && (sEmail === cEmail || rEmail === cEmail)) ||
+          (cName && (sName === cName || rName === cName)) ||
+          (cEmail && (emailData.sender.toLowerCase() === cEmail || (emailData.recipient && emailData.recipient.toLowerCase() === cEmail)))
+        );
+      });
+      if (matched) {
+        contactId = matched.id;
+      }
+    }
+
+    const newEmailLog: EmailLog = {
+      id: `email-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      ...emailData,
+      applicationId: app.id,
+      contactId,
+    };
     await onUpdateApp(app.id, {
       emails: [...(app.emails || []), newEmailLog],
       updatedAt: new Date().toISOString(),

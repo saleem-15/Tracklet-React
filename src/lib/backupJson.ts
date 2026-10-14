@@ -116,6 +116,26 @@ export function validateAndParseJSONBackup(jsonString: string): JSONImportResult
     const companyDomain = typeof record.companyDomain === 'string' ? record.companyDomain.trim() : undefined;
 
     // Validate sub-arrays if present with non-null object filtering
+    const parseEmailLogArray = (rawEmails: unknown) => {
+      if (!Array.isArray(rawEmails)) return undefined;
+      return (rawEmails as unknown[])
+        .filter((e): e is Record<string, unknown> => e !== null && typeof e === 'object')
+        .map((e, idx) => ({
+          id: typeof e.id === 'string' ? e.id : `e-${idx}`,
+          subject: typeof e.subject === 'string' ? e.subject : 'Email',
+          sender: typeof e.sender === 'string' ? e.sender : 'Unknown',
+          recipient: typeof e.recipient === 'string' ? e.recipient : undefined,
+          date: typeof e.date === 'string' ? e.date : new Date().toISOString().slice(0, 10),
+          timestamp: typeof e.timestamp === 'string' ? e.timestamp : undefined,
+          direction: (e.direction === 'inbound' || e.direction === 'outbound') ? (e.direction as 'inbound' | 'outbound') : undefined,
+          snippet: typeof e.snippet === 'string' ? e.snippet : undefined,
+          body: typeof e.body === 'string' ? e.body : undefined,
+          emailUrl: typeof e.emailUrl === 'string' ? e.emailUrl : undefined,
+          contactId: typeof e.contactId === 'string' ? e.contactId : undefined,
+          applicationId: typeof e.applicationId === 'string' ? e.applicationId : undefined,
+        }));
+    };
+
     const contacts = Array.isArray(record.contacts)
       ? (record.contacts as unknown[])
           .filter((c): c is Record<string, unknown> => c !== null && typeof c === 'object')
@@ -123,10 +143,12 @@ export function validateAndParseJSONBackup(jsonString: string): JSONImportResult
             id: typeof c.id === 'string' ? c.id : `c-${idx}`,
             name: typeof c.name === 'string' ? c.name : 'Contact',
             role: typeof c.role === 'string' ? c.role : undefined,
+            organization: typeof c.organization === 'string' ? c.organization : undefined,
             email: typeof c.email === 'string' ? c.email : undefined,
             phone: typeof c.phone === 'string' ? c.phone : undefined,
             linkedIn: typeof c.linkedIn === 'string' ? c.linkedIn : undefined,
             notes: typeof c.notes === 'string' ? c.notes : undefined,
+            emails: parseEmailLogArray(c.emails),
           }))
       : undefined;
 
@@ -141,21 +163,7 @@ export function validateAndParseJSONBackup(jsonString: string): JSONImportResult
           }))
       : undefined;
 
-    const emails = Array.isArray(record.emails)
-      ? (record.emails as unknown[])
-          .filter((e): e is Record<string, unknown> => e !== null && typeof e === 'object')
-          .map((e, idx) => ({
-            id: typeof e.id === 'string' ? e.id : `e-${idx}`,
-            subject: typeof e.subject === 'string' ? e.subject : 'Email',
-            sender: typeof e.sender === 'string' ? e.sender : 'Unknown',
-            recipient: typeof e.recipient === 'string' ? e.recipient : undefined,
-            date: typeof e.date === 'string' ? e.date : new Date().toISOString().slice(0, 10),
-            direction: (e.direction === 'inbound' || e.direction === 'outbound') ? (e.direction as 'inbound' | 'outbound') : undefined,
-            snippet: typeof e.snippet === 'string' ? e.snippet : undefined,
-            body: typeof e.body === 'string' ? e.body : undefined,
-            emailUrl: typeof e.emailUrl === 'string' ? e.emailUrl : undefined,
-          }))
-      : undefined;
+    const emails = parseEmailLogArray(record.emails);
 
     const history = Array.isArray(record.history)
       ? (record.history as unknown[])

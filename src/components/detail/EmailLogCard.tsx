@@ -8,8 +8,9 @@ import {
   MoreHorizontal,
   Copy,
   Check,
+  Briefcase,
 } from 'lucide-react';
-import { Contact, EmailLog } from '../../types';
+import { Contact, EmailLog, Application } from '../../types';
 import { FormattedEmailBody } from './FormattedEmailBody';
 import { formatEmailDateTime } from '../../lib/dateUtils';
 import { resolveEmailCounterparty } from '../../lib/emailCounterpartyUtils';
@@ -18,16 +19,20 @@ export interface EmailLogCardProps {
   email: EmailLog;
   contacts?: Contact[];
   companyName?: string;
+  linkedApplication?: Application;
   onEdit?: (email: EmailLog) => void;
   onDelete?: (emailId: string) => void;
+  onNavigateToApplication?: (appId: string) => void;
 }
 
 export const EmailLogCard: React.FC<EmailLogCardProps> = ({
   email,
   contacts = [],
   companyName,
+  linkedApplication,
   onEdit,
   onDelete,
+  onNavigateToApplication,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -123,10 +128,26 @@ export const EmailLogCard: React.FC<EmailLogCardProps> = ({
           )}
         </div>
 
-        {/* Date & Time anchored with actor identity */}
-        <span className="text-[11px] font-mono text-slate-500 whitespace-nowrap shrink-0 text-right tabular-nums">
-          {formattedDateTime}
-        </span>
+        {/* Date & Time and optional Application Badge */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          {linkedApplication && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onNavigateToApplication?.(linkedApplication.id);
+              }}
+              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200/80 text-[10px] font-medium transition-colors cursor-pointer"
+              title={`View application for ${linkedApplication.company}`}
+            >
+              <Briefcase className="w-2.5 h-2.5" />
+              <span className="truncate max-w-[100px]">{linkedApplication.company}</span>
+            </button>
+          )}
+          <span className="text-[11px] font-mono text-slate-500 whitespace-nowrap text-right tabular-nums">
+            {formattedDateTime}
+          </span>
+        </div>
       </div>
 
       {/* Secondary Email Handle (Directly below sender/recipient) */}

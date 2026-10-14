@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { 
   X, 
   User, 
@@ -18,7 +18,7 @@ import {
   Unlink,
   Plus
 } from 'lucide-react';
-import { Contact, ContactCategory, Application } from '../types';
+import { Contact, ContactCategory, Application, EmailLog } from '../types';
 import { 
   CONTACT_CATEGORIES,
   CONTACT_CATEGORY_STYLES, 
@@ -32,6 +32,8 @@ import { RichTextEditor } from './editor';
 import { useEscapeKey } from '../lib/useEscapeKey';
 import { normalizeUrl } from '../lib/linkUtils';
 import { FollowUpControl } from './contacts/FollowUpControl';
+import { ContactEmailLogSection } from './contacts/ContactEmailLogSection';
+import { parseCounterpartyString } from '../lib/emailCounterpartyUtils';
 
 export interface ContactDetailPanelProps {
   contact: Contact | null;
@@ -42,6 +44,14 @@ export interface ContactDetailPanelProps {
   onUnlinkFromApp?: (contactId: string, appId: string) => Promise<void>;
   onSelectApplication: (appId: string) => void;
   onFollowUp?: (contact: Contact) => void;
+  onUpdateApp?: (id: string, updates: Partial<Application>) => Promise<void>;
+  currentUserEmail?: string;
+  onShowToast?: (
+    type: 'success' | 'error' | 'info' | 'warning',
+    title: string,
+    description?: string,
+    action?: { label: string; onClick: () => void }
+  ) => void;
 }
 
 const categoryOptions: SelectOption<ContactCategory>[] = CONTACT_CATEGORIES.map((cat) => ({
@@ -58,6 +68,9 @@ export const ContactDetailPanel: React.FC<ContactDetailPanelProps> = ({
   onUnlinkFromApp,
   onSelectApplication,
   onFollowUp,
+  onUpdateApp,
+  currentUserEmail,
+  onShowToast,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [copiedPhone, setCopiedPhone] = useState(false);
@@ -121,6 +134,58 @@ export const ContactDetailPanel: React.FC<ContactDetailPanelProps> = ({
       setShowViewModeLinkPicker(false);
     }
   }, [contact?.id]);
+
+  // Aggregated emails: combine direct contact emails + emails from applications matching this contact
+  const aggregatedEmails = useMemo(() => {
+    if (!contact) return [];
+    const directEmails = contact.emails || [];
+
+    const linkedAppIds = new Set(contact.applicationIds || []);
+    const contactEmailLower = contact.email?.toLowerCase();
+
+    const appEmails: EmailLog[] = [];
+    applications.forEach((app) => {
+      (app.emails || []).forEach((e) => {
+        const isLinkedApp = linkedAppIds.has(app.id);
+        const matchesContactId = e.contactId === contact.id;
+
+        const sParsed = parseCounterpartyString(e.sender);
+        const rParsed = parseCounterpartyString(e.recipient);
+        const sEmail = sParsed.email?.toLowerCase();
+        const rEmail = rParsed.email?.toLowerCase();
+
+        const matchesEmail =
+          contactEmailLower &&
+          (sEmail === contactEmailLower ||
+            rEmail === contactEmailLower ||
+            e.sender.toLowerCase() === contactEmailLower ||
+            (e.recipient && e.recipient.toLowerCase() === contactEmailLower));
+
+        if (matchesContactId || (isLinkedApp && matchesEmail)) {
+          appEmails.push({
+            ...e,
+            applicationId: e.applicationId || app.id,
+            contactId: e.contactId || contact.id,
+          });
+        }
+      });
+    });
+
+    const seen = new Set<string>();
+    const combined: EmailLog[] = [];
+    [...directEmails, ...appEmails].forEach((e) => {
+      if (!seen.has(e.id)) {
+        seen.add(e.id);
+        combined.push(e);
+      }
+    });
+
+    return combined.sort((a, b) => {
+      const timeA = new Date(a.timestamp || a.date).getTime();
+      const timeB = new Date(b.timestamp || b.date).getTime();
+      return (isNaN(timeA) ? 0 : timeA) < (isNaN(timeB) ? 0 : timeB) ? 1 : -1;
+    });
+  }, [contact, applications]);
 
   if (!contact) return null;
 
@@ -223,6 +288,94 @@ export const ContactDetailPanel: React.FC<ContactDetailPanelProps> = ({
 
   const handleNavigateToApp = (appId: string) => {
     onSelectApplication(appId);
+  };
+
+  const handleAddEmailLog = async (emailData: Omit<EmailLog, 'id'>, targetApplicationId?: string) => {
+    if (!contact) return;
+    const newEmailLog: EmailLog = {
+      id: `email-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      ...emailData,
+      contactId: contact.id,
+      applicationId: targetApplicationId,
+    };
+
+    if (targetApplicationId && onUpdateApp) {
+      const targetApp = applications.find((a) => a.id === targetApplicationId);
+      if (targetApp) {
+        await onUpdateApp(targetApp.id, {
+          emails: [...(targetApp.emails || []), newEmailLog],
+          updatedAt: new Date().toISOString(),
+        });
+        onShowToast?.('success', 'Email logged to job application');
+        return;
+      }
+    }
+
+    await onUpdateContact(contact.id, {
+      emails: [...(contact.emails || []), newEmailLog],
+    });
+    onShowToast?.('success', 'Email logged');
+  };
+
+  const handleUpdateEmailLog = async (emailId: string, emailData: Partial<Omit<EmailLog, 'id'>>) => {
+    if (!contact) return;
+    const targetApp = applications.find((a) => (a.emails || []).some((e) => e.id === emailId));
+    if (targetApp && onUpdateApp) {
+      const updated = (targetApp.emails || []).map((e) => (e.id === emailId ? { ...e, ...emailData } : e));
+      await onUpdateApp(targetApp.id, {
+        emails: updated,
+        updatedAt: new Date().toISOString(),
+      });
+      onShowToast?.('success', 'Email log updated');
+    } else {
+      const updated = (contact.emails || []).map((e) => (e.id === emailId ? { ...e, ...emailData } : e));
+      await onUpdateContact(contact.id, {
+        emails: updated,
+      });
+      onShowToast?.('success', 'Email log updated');
+    }
+  };
+
+  const handleDeleteEmailLog = async (emailId: string) => {
+    if (!contact) return;
+    const targetApp = applications.find((a) => (a.emails || []).some((e) => e.id === emailId));
+    if (targetApp && onUpdateApp) {
+      const deletedEmail = (targetApp.emails || []).find((e) => e.id === emailId);
+      const filtered = (targetApp.emails || []).filter((e) => e.id !== emailId);
+      await onUpdateApp(targetApp.id, {
+        emails: filtered,
+        updatedAt: new Date().toISOString(),
+      });
+      if (deletedEmail) {
+        onShowToast?.('info', `Deleted "${deletedEmail.subject}"`, undefined, {
+          label: 'Undo',
+          onClick: async () => {
+            await onUpdateApp(targetApp.id, {
+              emails: [...filtered, deletedEmail],
+              updatedAt: new Date().toISOString(),
+            });
+            onShowToast?.('success', `Restored "${deletedEmail.subject}"`);
+          },
+        });
+      }
+    } else {
+      const deletedEmail = (contact.emails || []).find((e) => e.id === emailId);
+      const filtered = (contact.emails || []).filter((e) => e.id !== emailId);
+      await onUpdateContact(contact.id, {
+        emails: filtered,
+      });
+      if (deletedEmail) {
+        onShowToast?.('info', `Deleted "${deletedEmail.subject}"`, undefined, {
+          label: 'Undo',
+          onClick: async () => {
+            await onUpdateContact(contact.id, {
+              emails: [...filtered, deletedEmail],
+            });
+            onShowToast?.('success', `Restored "${deletedEmail.subject}"`);
+          },
+        });
+      }
+    }
   };
 
   return (
@@ -697,6 +850,18 @@ export const ContactDetailPanel: React.FC<ContactDetailPanelProps> = ({
                   )}
                 </div>
               </div>
+
+              {/* Email Log */}
+              <ContactEmailLogSection
+                contact={contact}
+                emails={aggregatedEmails}
+                applications={applications}
+                currentUserEmail={currentUserEmail}
+                onAddEmailLog={handleAddEmailLog}
+                onUpdateEmailLog={handleUpdateEmailLog}
+                onDeleteEmailLog={handleDeleteEmailLog}
+                onNavigateToApplication={onSelectApplication}
+              />
 
               {/* Notes */}
               <div className="space-y-1.5">
