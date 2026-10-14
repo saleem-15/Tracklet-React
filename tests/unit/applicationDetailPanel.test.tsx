@@ -184,5 +184,50 @@ describe('ApplicationDetailPanel note persistence', () => {
       expect(updates.history.map((h: any) => h.toStatus)).toEqual(['Screening', 'Interview']);
       expect(updates.history.find((h: any) => h.id === 'h3')).toBeUndefined();
     });
+
+    it('derives application status from the chronologically latest entry in updatedHistory when an edit shifts ordering', async () => {
+      const onUpdateApp = vi.fn().mockResolvedValue(undefined);
+      const testApp = makeApp({
+        status: 'Interview',
+        history: [
+          { id: 'h1', fromStatus: 'Saved', toStatus: 'Screening', timestamp: '2026-09-01T10:00:00.000Z' },
+          { id: 'h2', fromStatus: 'Screening', toStatus: 'Interview', timestamp: '2026-09-10T10:00:00.000Z' },
+        ],
+      });
+
+      mountPanel(testApp, onUpdateApp);
+
+      const editButtons = host!.querySelectorAll('button[aria-label^="Edit milestone"]');
+      expect(editButtons.length).toBe(2);
+
+      // In sortedHistory (newest first), index 1 is h1 (Screening)
+      act(() => {
+        (editButtons[1] as HTMLButtonElement).click();
+      });
+
+      const dateInput = host!.querySelector('input[type="datetime-local"]') as HTMLInputElement;
+      expect(dateInput).toBeTruthy();
+      act(() => {
+        const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+          window.HTMLInputElement.prototype,
+          'value'
+        )?.set;
+        nativeInputValueSetter?.call(dateInput, '2026-09-20T10:00');
+        dateInput.dispatchEvent(new Event('input', { bubbles: true }));
+        dateInput.dispatchEvent(new Event('change', { bubbles: true }));
+      });
+
+      const saveBtn = Array.from(host!.querySelectorAll('button')).find((b) => b.textContent?.includes('Save Changes'));
+      expect(saveBtn).toBeTruthy();
+
+      await act(async () => {
+        saveBtn!.click();
+      });
+
+      expect(onUpdateApp).toHaveBeenCalled();
+      const [, updates] = onUpdateApp.mock.calls[0];
+      expect(updates.status).toBe('Screening');
+      expect(updates.stageUpdatedAt).toBe(new Date('2026-09-20T10:00').toISOString());
+    });
   });
 });

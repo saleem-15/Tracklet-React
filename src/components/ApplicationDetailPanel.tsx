@@ -502,15 +502,15 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
     const isDeletingNote = 'note' in updates && (!updates.note || !updates.note.trim()) && Boolean(targetEntry?.note);
     const updatedHistory = updateStatusHistoryEntry(currentHistory, entryId, updates);
 
-    const sorted = [...currentHistory].sort(
+    const sortedUpdated = [...updatedHistory].sort(
       (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
     );
-    const isLatest = sorted[sorted.length - 1]?.id === entryId;
+    const latestEntry = sortedUpdated[sortedUpdated.length - 1];
     const appUpdates: Partial<Application> = {
       history: updatedHistory,
       updatedAt: new Date().toISOString(),
-      ...(isLatest && updates.toStatus
-        ? { status: updates.toStatus, stageUpdatedAt: updates.timestamp || new Date().toISOString() }
+      ...(latestEntry
+        ? { status: latestEntry.toStatus, stageUpdatedAt: latestEntry.timestamp }
         : {}),
     };
 
@@ -534,11 +534,6 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
   const handleDeleteStatusHistoryEntry = async (entryId: string) => {
     if (!app) return;
     const currentHistory = app.history || [];
-    const snapshotState: Partial<Application> = {
-      history: currentHistory,
-      status: app.status,
-      stageUpdatedAt: app.stageUpdatedAt,
-    };
 
     const { updatedHistory, rolledBackStatus, rolledBackStageUpdatedAt } = deleteStatusHistoryEntry(
       currentHistory,
@@ -549,7 +544,8 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
     const appUpdates: Partial<Application> = {
       history: updatedHistory,
       updatedAt: new Date().toISOString(),
-      ...(rolledBackStatus ? { status: rolledBackStatus, stageUpdatedAt: rolledBackStageUpdatedAt } : {}),
+      ...(rolledBackStatus ? { status: rolledBackStatus } : {}),
+      ...(rolledBackStageUpdatedAt ? { stageUpdatedAt: rolledBackStageUpdatedAt } : {}),
     };
 
     try {
@@ -561,12 +557,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
         'info',
         'Milestone deleted',
         rollbackMsg,
-        {
-          label: 'Undo',
-          onClick: () => {
-            onUpdateApp(app.id, snapshotState).catch(() => {});
-          },
-        },
+        undefined,
         rolledBackStatus
       );
     } catch {

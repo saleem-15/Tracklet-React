@@ -184,7 +184,7 @@ export function deleteStatusHistoryEntry(
   const remainingSorted = sorted.filter((e) => e.id !== entryId);
   const remainingLatest = remainingSorted[remainingSorted.length - 1];
 
-  let rolledBackStatus: ApplicationStatus;
+  let rolledBackStatus: ApplicationStatus | undefined;
   let rolledBackStageUpdatedAt: string | undefined;
 
   if (remainingLatest) {
@@ -194,10 +194,6 @@ export function deleteStatusHistoryEntry(
   } else if (targetEntry.fromStatus) {
     // If no remaining history entries, revert to fromStatus of the deleted entry
     rolledBackStatus = targetEntry.fromStatus;
-    rolledBackStageUpdatedAt = undefined;
-  } else {
-    // Fallback to existing current status
-    rolledBackStatus = currentStatus;
     rolledBackStageUpdatedAt = undefined;
   }
 

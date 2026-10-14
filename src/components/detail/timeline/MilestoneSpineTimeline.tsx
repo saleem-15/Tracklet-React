@@ -66,7 +66,10 @@ export const MilestoneSpineTimeline: React.FC<MilestoneSpineTimelineProps> = ({
     }
 
     if (isLatest && onRollbackStatus) {
-      const previousStatus = entry.fromStatus || (sortedHistory[1] ? sortedHistory[1].toStatus : 'Applied');
+      const remainingOlderEntry = sortedHistory[1];
+      const previousStatus = remainingOlderEntry
+        ? remainingOlderEntry.toStatus
+        : (entry.fromStatus || 'Applied');
       onRollbackStatus(previousStatus);
     }
 

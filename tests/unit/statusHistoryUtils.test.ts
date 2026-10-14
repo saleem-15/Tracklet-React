@@ -152,6 +152,21 @@ describe('statusHistoryUtils', () => {
       expect(result.rolledBackStatus).toBe('Saved');
     });
 
+    it('returns empty history without emitting status rollback or timestamp when sole entry has no fromStatus', () => {
+      const history: StatusHistoryEntry[] = [
+        {
+          id: 'e1',
+          toStatus: 'Applied',
+          timestamp: '2026-09-01T10:00:00.000Z',
+        },
+      ];
+
+      const result = deleteStatusHistoryEntry(history, 'e1', 'Applied');
+      expect(result.updatedHistory).toHaveLength(0);
+      expect(result.rolledBackStatus).toBeUndefined();
+      expect(result.rolledBackStageUpdatedAt).toBeUndefined();
+    });
+
     it('correctly removes Offer and reverts to Interview when deleting the latest stage', () => {
       const history: StatusHistoryEntry[] = [
         { id: '1', fromStatus: 'Saved', toStatus: 'Screening', timestamp: '2026-09-01T10:00:00.000Z' },

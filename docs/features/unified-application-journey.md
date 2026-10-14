@@ -105,6 +105,7 @@ export interface UnifiedActivityTimelineProps {
   emails?: (EmailLog | any)[];
   tasks?: (ApplicationTask | any)[];
   createdAt?: string;
+  onToggleTask?: (taskId: string, completed: boolean) => void;
 }
 
 type ActivityFilter = 'ALL' | 'STATUS' | 'EMAIL' | 'TASK';
@@ -141,6 +142,7 @@ export const UnifiedActivityTimeline: React.FC<UnifiedActivityTimelineProps> = (
   emails = [],
   tasks = [],
   createdAt,
+  onToggleTask,
 }) => {
   const [activeFilter, setActiveFilter] = useState<ActivityFilter>('ALL');
 
@@ -157,17 +159,6 @@ export const UnifiedActivityTimeline: React.FC<UnifiedActivityTimelineProps> = (
           timestamp: h.timestamp || createdAt || new Date().toISOString(),
           data: h,
         });
-      });
-    } else if (createdAt) {
-      list.push({
-        id: 'initial-status',
-        type: 'status',
-        timestamp: createdAt,
-        data: {
-          toStatus: currentStatus,
-          timestamp: createdAt,
-          note: 'Application record created',
-        },
       });
     }
 
@@ -360,11 +351,12 @@ export const UnifiedActivityTimeline: React.FC<UnifiedActivityTimelineProps> = (
                             <span className="text-xs font-semibold text-slate-800 line-clamp-1">
                               {event.data.subject || 'Email Logged'}
                             </span>
-                            {event.data.direction === 'outbound' ? (
+                            {event.data.direction === 'outbound' && (
                               <span className="text-[10px] font-mono text-indigo-700 bg-indigo-50 border border-indigo-200/60 px-1.5 py-0.2 rounded flex items-center gap-0.5">
                                 <Send className="w-2.5 h-2.5" /> Sent
                               </span>
-                            ) : (
+                            )}
+                            {event.data.direction === 'inbound' && (
                               <span className="text-[10px] font-mono text-blue-700 bg-blue-50 border border-blue-200/60 px-1.5 py-0.2 rounded flex items-center gap-0.5">
                                 <Inbox className="w-2.5 h-2.5" /> Received
                               </span>
@@ -423,15 +415,19 @@ export const UnifiedActivityTimeline: React.FC<UnifiedActivityTimelineProps> = (
                             >
                               {event.data.title}
                             </span>
-                            <span
-                              className={`text-[10px] font-mono px-1.5 py-0.2 rounded border ${
+                            <button
+                              type="button"
+                              role="checkbox"
+                              aria-checked={Boolean(event.data.completed)}
+                              onClick={() => onToggleTask?.(event.data.id, !event.data.completed)}
+                              className={`text-[10px] font-mono px-1.5 py-0.5 rounded border transition-colors cursor-pointer ${
                                 event.data.completed
-                                  ? 'text-emerald-700 bg-emerald-50 border-emerald-200/60 font-bold'
-                                  : 'text-amber-700 bg-amber-50 border-amber-200/60 font-medium'
+                                  ? 'text-emerald-700 bg-emerald-50 border-emerald-200/60 font-bold hover:bg-emerald-100'
+                                  : 'text-amber-700 bg-amber-50 border-amber-200/60 font-medium hover:bg-amber-100'
                               }`}
                             >
                               {event.data.completed ? 'Completed' : 'Pending'}
-                            </span>
+                            </button>
                           </div>
                           <span className="text-[11px] font-mono text-slate-500 flex items-center gap-1">
                             <Calendar className="w-3 h-3 text-slate-400" />
