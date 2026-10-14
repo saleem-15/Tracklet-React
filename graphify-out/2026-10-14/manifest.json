@@ -670,8 +670,8 @@
     "semantic_hash": "c4a32baa315c52f7adbfa9682c771ae5"
   },
   "src/components/ApplicationDetailPanel.tsx": {
-    "mtime": 1791897055.015731,
-    "ast_hash": "a0e8ed4aed6a74a496295a482afc32df",
+    "mtime": 1791964449.9317355,
+    "ast_hash": "b59598beb0b29b9fac1e6aa2c91f4744",
     "semantic_hash": ""
   },
   "src/components/ApplicationSearchPicker.tsx": {
@@ -1350,8 +1350,8 @@
     "semantic_hash": "f4c87388a0c36d6cae6f7bd5feb21dd7"
   },
   "tests/unit/applicationDetailPanel.test.tsx": {
-    "mtime": 1791897055.0217538,
-    "ast_hash": "2626ac1883322c93c9bacbb85fb9c543",
+    "mtime": 1791964887.960615,
+    "ast_hash": "942878401c9ca544c2f148e0ebc1886e",
     "semantic_hash": ""
   },
   "tests/unit/backupJson.test.ts": {
@@ -2870,8 +2870,8 @@
     "semantic_hash": ""
   },
   "src/components/detail/timeline/MilestoneSpineTimeline.tsx": {
-    "mtime": 1791897055.0184784,
-    "ast_hash": "83a98d67efca6855900f8a9ebb45a45a",
+    "mtime": 1791964273.5086584,
+    "ast_hash": "a7765edc7c9250bf97e451fada6c07fc",
     "semantic_hash": ""
   },
   "src/components/detail/timeline/index.ts": {
@@ -2885,8 +2885,8 @@
     "semantic_hash": ""
   },
   "src/lib/statusHistoryUtils.ts": {
-    "mtime": 1791897055.020146,
-    "ast_hash": "07cd6f0bde410933ee5c225760da517c",
+    "mtime": 1791964081.0235877,
+    "ast_hash": "22cc4dc4e4808bd9b24a933efc1c3986",
     "semantic_hash": ""
   },
   "tests/unit/milestoneSpineTimeline.test.tsx": {
@@ -2900,8 +2900,8 @@
     "semantic_hash": ""
   },
   "tests/unit/statusHistoryUtils.test.ts": {
-    "mtime": 1791897055.0241632,
-    "ast_hash": "cbfd400bac5c17dced22d80538b0ef37",
+    "mtime": 1791964599.7343435,
+    "ast_hash": "377aac8f82032d9e5aaa22dc15222452",
     "semantic_hash": ""
   },
   ".agents/skills/design-variants-lab/SKILL.md": {
@@ -2910,8 +2910,8 @@
     "semantic_hash": ""
   },
   "docs/features/unified-application-journey.md": {
-    "mtime": 1791897115.0407355,
-    "ast_hash": "e49a3af2c2c6ac745f3aca7c92dc44d1",
+    "mtime": 1791964577.0199132,
+    "ast_hash": "32007aaaafe3f917451c3422d6ba5742",
     "semantic_hash": ""
   },
   "docs/handoff-status-history-redesign.md": {
