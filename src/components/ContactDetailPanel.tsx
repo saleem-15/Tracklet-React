@@ -33,7 +33,7 @@ import { useEscapeKey } from '../lib/useEscapeKey';
 import { normalizeUrl } from '../lib/linkUtils';
 import { FollowUpControl } from './contacts/FollowUpControl';
 import { ContactEmailLogSection } from './contacts/ContactEmailLogSection';
-import { parseCounterpartyString } from '../lib/emailCounterpartyUtils';
+import { aggregateContactEmails } from '../lib/emailCounterpartyUtils';
 
 export interface ContactDetailPanelProps {
   contact: Contact | null;
@@ -135,56 +135,14 @@ export const ContactDetailPanel: React.FC<ContactDetailPanelProps> = ({
     }
   }, [contact?.id]);
 
+  const applicationsRef = useRef(applications);
+  applicationsRef.current = applications;
+  const contactRef = useRef(contact);
+  contactRef.current = contact;
+
   // Aggregated emails: combine direct contact emails + emails from applications matching this contact
   const aggregatedEmails = useMemo(() => {
-    if (!contact) return [];
-    const directEmails = contact.emails || [];
-
-    const linkedAppIds = new Set(contact.applicationIds || []);
-    const contactEmailLower = contact.email?.toLowerCase();
-
-    const appEmails: EmailLog[] = [];
-    applications.forEach((app) => {
-      (app.emails || []).forEach((e) => {
-        const isLinkedApp = linkedAppIds.has(app.id);
-        const matchesContactId = e.contactId === contact.id;
-
-        const sParsed = parseCounterpartyString(e.sender);
-        const rParsed = parseCounterpartyString(e.recipient);
-        const sEmail = sParsed.email?.toLowerCase();
-        const rEmail = rParsed.email?.toLowerCase();
-
-        const matchesEmail =
-          contactEmailLower &&
-          (sEmail === contactEmailLower ||
-            rEmail === contactEmailLower ||
-            e.sender.toLowerCase() === contactEmailLower ||
-            (e.recipient && e.recipient.toLowerCase() === contactEmailLower));
-
-        if (matchesContactId || (isLinkedApp && matchesEmail)) {
-          appEmails.push({
-            ...e,
-            applicationId: e.applicationId || app.id,
-            contactId: e.contactId || contact.id,
-          });
-        }
-      });
-    });
-
-    const seen = new Set<string>();
-    const combined: EmailLog[] = [];
-    [...directEmails, ...appEmails].forEach((e) => {
-      if (!seen.has(e.id)) {
-        seen.add(e.id);
-        combined.push(e);
-      }
-    });
-
-    return combined.sort((a, b) => {
-      const timeA = new Date(a.timestamp || a.date).getTime();
-      const timeB = new Date(b.timestamp || b.date).getTime();
-      return (isNaN(timeA) ? 0 : timeA) < (isNaN(timeB) ? 0 : timeB) ? 1 : -1;
-    });
+    return aggregateContactEmails(contact, applications);
   }, [contact, applications]);
 
   if (!contact) return null;
@@ -319,21 +277,73 @@ export const ContactDetailPanel: React.FC<ContactDetailPanelProps> = ({
 
   const handleUpdateEmailLog = async (emailId: string, emailData: Partial<Omit<EmailLog, 'id'>>) => {
     if (!contact) return;
-    const targetApp = applications.find((a) => (a.emails || []).some((e) => e.id === emailId));
-    if (targetApp && onUpdateApp) {
-      const updated = (targetApp.emails || []).map((e) => (e.id === emailId ? { ...e, ...emailData } : e));
-      await onUpdateApp(targetApp.id, {
-        emails: updated,
-        updatedAt: new Date().toISOString(),
-      });
-      onShowToast?.('success', 'Email log updated');
+    const sourceApp = applications.find((a) => (a.emails || []).some((e) => e.id === emailId));
+    const sourceAppId = sourceApp?.id;
+    const existingEmail = sourceApp
+      ? (sourceApp.emails || []).find((e) => e.id === emailId)
+      : (contact.emails || []).find((e) => e.id === emailId);
+
+    if (!existingEmail) return;
+
+    const updatedEmail: EmailLog = {
+      ...existingEmail,
+      ...emailData,
+      id: emailId,
+    };
+
+    const newAppId = 'applicationId' in emailData ? emailData.applicationId : existingEmail.applicationId;
+    const ownershipChanged = (sourceAppId || undefined) !== (newAppId || undefined);
+
+    if (!ownershipChanged) {
+      if (sourceApp && onUpdateApp) {
+        const updated = (sourceApp.emails || []).map((e) => (e.id === emailId ? updatedEmail : e));
+        await onUpdateApp(sourceApp.id, {
+          emails: updated,
+          updatedAt: new Date().toISOString(),
+        });
+      } else {
+        const updated = (contact.emails || []).map((e) => (e.id === emailId ? updatedEmail : e));
+        await onUpdateContact(contact.id, {
+          emails: updated,
+        });
+      }
     } else {
-      const updated = (contact.emails || []).map((e) => (e.id === emailId ? { ...e, ...emailData } : e));
-      await onUpdateContact(contact.id, {
-        emails: updated,
-      });
-      onShowToast?.('success', 'Email log updated');
+      // 1. Remove from source collection
+      if (sourceApp && onUpdateApp) {
+        const filteredSource = (sourceApp.emails || []).filter((e) => e.id !== emailId);
+        await onUpdateApp(sourceApp.id, {
+          emails: filteredSource,
+          updatedAt: new Date().toISOString(),
+        });
+      } else {
+        const filteredContact = (contact.emails || []).filter((e) => e.id !== emailId);
+        await onUpdateContact(contact.id, {
+          emails: filteredContact,
+        });
+      }
+
+      // 2. Add to target collection
+      if (newAppId && onUpdateApp) {
+        const targetApp = applications.find((a) => a.id === newAppId);
+        if (targetApp) {
+          const emailForApp: EmailLog = { ...updatedEmail, applicationId: targetApp.id };
+          const targetEmails = (targetApp.emails || []).filter((e) => e.id !== emailId);
+          await onUpdateApp(targetApp.id, {
+            emails: [...targetEmails, emailForApp],
+            updatedAt: new Date().toISOString(),
+          });
+        }
+      } else {
+        const emailForContact: EmailLog = { ...updatedEmail, applicationId: undefined };
+        const currentContactEmails = sourceApp
+          ? contact.emails || []
+          : (contact.emails || []).filter((e) => e.id !== emailId);
+        await onUpdateContact(contact.id, {
+          emails: [...currentContactEmails, emailForContact],
+        });
+      }
     }
+    onShowToast?.('success', 'Email log updated');
   };
 
   const handleDeleteEmailLog = async (emailId: string) => {
@@ -350,8 +360,10 @@ export const ContactDetailPanel: React.FC<ContactDetailPanelProps> = ({
         onShowToast?.('info', `Deleted "${deletedEmail.subject}"`, undefined, {
           label: 'Undo',
           onClick: async () => {
+            const latestApp = applicationsRef.current.find((a) => a.id === targetApp.id);
+            const currentEmails = (latestApp?.emails || []).filter((e) => e.id !== emailId);
             await onUpdateApp(targetApp.id, {
-              emails: [...filtered, deletedEmail],
+              emails: [...currentEmails, deletedEmail],
               updatedAt: new Date().toISOString(),
             });
             onShowToast?.('success', `Restored "${deletedEmail.subject}"`);
@@ -368,8 +380,10 @@ export const ContactDetailPanel: React.FC<ContactDetailPanelProps> = ({
         onShowToast?.('info', `Deleted "${deletedEmail.subject}"`, undefined, {
           label: 'Undo',
           onClick: async () => {
+            const latestContact = contactRef.current;
+            const currentEmails = (latestContact?.emails || []).filter((e) => e.id !== emailId);
             await onUpdateContact(contact.id, {
-              emails: [...filtered, deletedEmail],
+              emails: [...currentEmails, deletedEmail],
             });
             onShowToast?.('success', `Restored "${deletedEmail.subject}"`);
           },

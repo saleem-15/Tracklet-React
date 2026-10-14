@@ -695,8 +695,8 @@
     "semantic_hash": "b5c08128a7a6bc55535597b9d3278773"
   },
   "src/components/ContactDetailPanel.tsx": {
-    "mtime": 1791966869.971407,
-    "ast_hash": "486ee31ad49b0a520e7250f901e25646",
+    "mtime": 1791968422.347425,
+    "ast_hash": "2ecdbee46e0da1d0e05568506264d9f8",
     "semantic_hash": ""
   },
   "src/components/ContactSearchPicker.tsx": {
@@ -1240,9 +1240,9 @@
     "semantic_hash": "5a611ad66094e296c4c9e9cd33cf7d66"
   },
   "src/lib/emailCounterpartyUtils.ts": {
-    "mtime": 1790513665.4746737,
-    "ast_hash": "b3e2c2686db9e4a244e1ec8b04574fea",
-    "semantic_hash": "b3e2c2686db9e4a244e1ec8b04574fea"
+    "mtime": 1791968322.1551044,
+    "ast_hash": "c1d2bc3b6a00d3bc8a6050a9fd010fa4",
+    "semantic_hash": ""
   },
   "src/lib/expiryUtils.ts": {
     "mtime": 1785238567.9663515,
@@ -2920,8 +2920,8 @@
     "semantic_hash": ""
   },
   "src/components/contacts/ContactEmailLogSection.tsx": {
-    "mtime": 1791966869.971407,
-    "ast_hash": "d80d966300651f3945a04b77cf5727c3",
+    "mtime": 1791968441.793643,
+    "ast_hash": "33fde1fa1d36a74fc310fa46a3185a00",
     "semantic_hash": ""
   },
   "src/components/detail/EmailLogForm.tsx": {
@@ -2940,8 +2940,8 @@
     "semantic_hash": ""
   },
   "tests/unit/contactEmailLog.test.ts": {
-    "mtime": 1791966869.9778955,
-    "ast_hash": "b4b7f1e2571dd59c450de87fc6d3800e",
+    "mtime": 1791968494.6502295,
+    "ast_hash": "3bdafea8d188c0aff95f6d57b35c1465",
     "semantic_hash": ""
   },
   "docs/adr/0009-contact-email-log-and-cross-visibility-projection.md": {

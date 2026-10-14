@@ -78,7 +78,7 @@ export const ContactEmailLogSection: React.FC<ContactEmailLogSectionProps> = ({
   const handleFormSubmit = async (payload: Omit<EmailLog, 'id'>, targetAppId?: string) => {
     const finalPayload = {
       ...payload,
-      contactId: contact.id,
+      contactId: editingEmailId ? editingEmail?.contactId : contact.id,
     };
 
     if (editingEmailId && onUpdateEmailLog) {

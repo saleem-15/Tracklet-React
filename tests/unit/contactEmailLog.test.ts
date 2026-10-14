@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { Contact, Application, EmailLog } from '../../src/types';
 import { validateAndParseJSONBackup } from '../../src/lib/backupJson';
+import { aggregateContactEmails } from '../../src/lib/emailCounterpartyUtils';
 
 describe('Contact Email Log & Cross-Visibility Domain Logic', () => {
   it('supports direct email logs on standalone mentor contacts', () => {
@@ -74,32 +75,7 @@ describe('Contact Email Log & Cross-Visibility Domain Logic', () => {
 
     const applications = [stripeApp];
 
-    // Simulate ContactDetailPanel aggregatedEmails derivation
-    const directEmails = contact.emails || [];
-    const linkedAppIds = new Set(contact.applicationIds || []);
-    const contactEmailLower = contact.email?.toLowerCase();
-
-    const appEmails: EmailLog[] = [];
-    applications.forEach((app) => {
-      (app.emails || []).forEach((e) => {
-        const isLinkedApp = linkedAppIds.has(app.id);
-        const matchesContactId = e.contactId === contact.id;
-        const matchesEmail =
-          contactEmailLower &&
-          (e.sender.toLowerCase() === contactEmailLower ||
-            (e.recipient && e.recipient.toLowerCase() === contactEmailLower));
-
-        if (matchesContactId || (isLinkedApp && matchesEmail)) {
-          appEmails.push({
-            ...e,
-            applicationId: e.applicationId || app.id,
-            contactId: e.contactId || contact.id,
-          });
-        }
-      });
-    });
-
-    const combined = [...directEmails, ...appEmails];
+    const combined = aggregateContactEmails(contact, applications);
     expect(combined).toHaveLength(2);
     expect(combined.map((e) => e.subject)).toContain('Informal coffee chat');
     expect(combined.map((e) => e.subject)).toContain('Stripe System Design Interview Invitation');
@@ -107,6 +83,95 @@ describe('Contact Email Log & Cross-Visibility Domain Logic', () => {
     // Confirm that the application's email has applicationId for badging
     const stripeEmail = combined.find((e) => e.id === 'e-stripe-interview');
     expect(stripeEmail?.applicationId).toBe('app-stripe-1');
+  });
+
+  it('deduplicates emails when the same email ID exists in both contact and application collections', () => {
+    const sharedId = 'e-shared-123';
+    const contact: Contact = {
+      id: 'c-recruiter-2',
+      name: 'Sarah Jenkins',
+      email: 'sarah@stripe.com',
+      applicationIds: ['app-stripe-1'],
+      emails: [
+        {
+          id: sharedId,
+          subject: 'Offer Discussion',
+          sender: 'sarah@stripe.com',
+          recipient: 'You',
+          date: '2026-10-08',
+          direction: 'inbound',
+        },
+      ],
+    };
+
+    const stripeApp: Application = {
+      id: 'app-stripe-1',
+      userId: 'user-1',
+      company: 'Stripe',
+      role: 'Staff Engineer',
+      platform: 'Company Site',
+      dateApplied: '2026-10-05',
+      status: 'Offer',
+      stageUpdatedAt: '2026-10-05',
+      createdAt: '2026-10-05',
+      updatedAt: '2026-10-05',
+      contactIds: ['c-recruiter-2'],
+      emails: [
+        {
+          id: sharedId,
+          subject: 'Offer Discussion',
+          sender: 'sarah@stripe.com',
+          recipient: 'You',
+          date: '2026-10-08',
+          contactId: 'c-recruiter-2',
+          applicationId: 'app-stripe-1',
+          direction: 'inbound',
+        },
+      ],
+    };
+
+    const aggregated = aggregateContactEmails(contact, [stripeApp]);
+    expect(aggregated).toHaveLength(1);
+    expect(aggregated[0].id).toBe(sharedId);
+  });
+
+  it('preserves source contactId including when absent on application emails', () => {
+    const contact: Contact = {
+      id: 'c-recruiter-3',
+      name: 'Alex Rivera',
+      email: 'alex@acme.corp',
+      applicationIds: ['app-acme-1'],
+      emails: [],
+    };
+
+    const acmeApp: Application = {
+      id: 'app-acme-1',
+      userId: 'user-1',
+      company: 'Acme Corp',
+      role: 'Frontend Architect',
+      platform: 'LinkedIn',
+      dateApplied: '2026-10-01',
+      status: 'Interview',
+      stageUpdatedAt: '2026-10-01',
+      createdAt: '2026-10-01',
+      updatedAt: '2026-10-01',
+      contactIds: ['c-recruiter-3'],
+      emails: [
+        {
+          id: 'e-no-contact-id',
+          subject: 'Technical Screen with Alex <alex@acme.corp>',
+          sender: 'Alex Rivera <alex@acme.corp>',
+          recipient: 'You',
+          date: '2026-10-02',
+          direction: 'inbound',
+          // Note: contactId is intentionally absent
+        },
+      ],
+    };
+
+    const aggregated = aggregateContactEmails(contact, [acmeApp]);
+    expect(aggregated).toHaveLength(1);
+    expect(aggregated[0].contactId).toBeUndefined();
   });
 
   it('keeps standalone mentor emails isolated from job application email logs', () => {
