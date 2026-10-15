@@ -2730,13 +2730,13 @@
     "semantic_hash": ""
   },
   "src/components/extension/ExtensionInstallGuide.tsx": {
-    "mtime": 1791803050.3456428,
-    "ast_hash": "41d90c195cad2c79e7c40e02536e048e",
+    "mtime": 1792070465.1803734,
+    "ast_hash": "0a634c7dfad65f186ae4495279176dcf",
     "semantic_hash": ""
   },
   "src/components/extension/ExtensionModal.tsx": {
-    "mtime": 1791803050.3456428,
-    "ast_hash": "947900873945bfb5d570584761a6f1e0",
+    "mtime": 1792070557.3298118,
+    "ast_hash": "7d38140d4108236c33304b8a40d1b662",
     "semantic_hash": ""
   },
   "src/components/extension/ExtensionSettingsCard.tsx": {
@@ -2750,8 +2750,8 @@
     "semantic_hash": ""
   },
   "src/components/extension/ExtensionUpdateGuide.tsx": {
-    "mtime": 1791803050.346642,
-    "ast_hash": "f6c7c9fb84fb08ae3b8ab2c96fad9753",
+    "mtime": 1792070473.582791,
+    "ast_hash": "596a3e288e7e02bde17bff68df4633c9",
     "semantic_hash": ""
   },
   "src/context/ExtensionContext.tsx": {
@@ -2997,6 +2997,21 @@
   "public/competitor-analysis.html": {
     "mtime": 1791974984.5480263,
     "ast_hash": "a1d00a94619503e27582aff18e229d49",
+    "semantic_hash": ""
+  },
+  ".agents/skills/pr/scripts/create-pr.cjs": {
+    "mtime": 1792076168.3843665,
+    "ast_hash": "42e57508823b59bd63402ada0d1f1692",
+    "semantic_hash": ""
+  },
+  ".agents/skills/pr/scripts/create-pr.ps1": {
+    "mtime": 1792076116.558006,
+    "ast_hash": "ea899fbb640fdc42a2ff4c7d197674a3",
+    "semantic_hash": ""
+  },
+  ".agents/skills/pr/SKILL.md": {
+    "mtime": 1792076202.334978,
+    "ast_hash": "0cd4dd2e6da59100e5c70e96c07e7a52",
     "semantic_hash": ""
   }
 }
