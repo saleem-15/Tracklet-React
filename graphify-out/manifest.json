@@ -605,22 +605,22 @@
     "semantic_hash": "a036d340e4d1080524a6ff12478938fe"
   },
   "extension/background.js": {
-    "mtime": 1792063179.145349,
+    "mtime": 1792067091.0321906,
     "ast_hash": "e9e602004ca8c35e93c0cef124cb0397",
     "semantic_hash": ""
   },
   "extension/content.js": {
-    "mtime": 1792063272.3203053,
-    "ast_hash": "8aeed24405995eec7fc6a0e687cb9c14",
+    "mtime": 1792068050.3806965,
+    "ast_hash": "3339e13d9483c528c7523e9b66d79bc9",
     "semantic_hash": ""
   },
   "extension/manifest.json": {
-    "mtime": 1792063301.4083385,
+    "mtime": 1792067091.037486,
     "ast_hash": "68d354352e08275ccc9fbbd3edbce630",
     "semantic_hash": ""
   },
   "extension/popup.js": {
-    "mtime": 1792063041.9800363,
+    "mtime": 1792067091.0424445,
     "ast_hash": "fe00dfa78e4c1f79e0f8492a00e0550a",
     "semantic_hash": ""
   },
@@ -780,8 +780,8 @@
     "semantic_hash": ""
   },
   "src/components/Sidebar.tsx": {
-    "mtime": 1791803050.3446424,
-    "ast_hash": "565355f2bf4b41a3238ba06eb0e48634",
+    "mtime": 1792068183.939295,
+    "ast_hash": "8a19dbd56585c792a8850214c3739f7f",
     "semantic_hash": ""
   },
   "src/components/StageSelectorDropdown.tsx": {
@@ -1135,8 +1135,8 @@
     "semantic_hash": ""
   },
   "src/lib/constants.ts": {
-    "mtime": 1792063312.3636193,
-    "ast_hash": "05e6960d6f242ac23ebb008682b652e6",
+    "mtime": 1792068118.3523233,
+    "ast_hash": "5a47cb2d2e045660d480e098f2a0ec95",
     "semantic_hash": ""
   },
   "src/lib/contactMigration.ts": {
@@ -1255,8 +1255,8 @@
     "semantic_hash": ""
   },
   "src/lib/extensionSync.ts": {
-    "mtime": 1792062953.3244193,
-    "ast_hash": "a42a493fc859902c1e5a79ddb98050bc",
+    "mtime": 1792068095.6258404,
+    "ast_hash": "1d0a658b55183025de2166bd8a2826ed",
     "semantic_hash": ""
   },
   "src/lib/filterUtils.ts": {
@@ -1515,7 +1515,7 @@
     "semantic_hash": ""
   },
   "src/hooks/useExtensionSync.ts": {
-    "mtime": 1792063248.230591,
+    "mtime": 1792067091.158055,
     "ast_hash": "6954127f0e9a8308679f90ddee9756ed",
     "semantic_hash": ""
   },
@@ -2730,28 +2730,28 @@
     "semantic_hash": ""
   },
   "src/components/extension/ExtensionInstallGuide.tsx": {
-    "mtime": 1791803050.3456428,
-    "ast_hash": "41d90c195cad2c79e7c40e02536e048e",
+    "mtime": 1792070465.1803734,
+    "ast_hash": "0a634c7dfad65f186ae4495279176dcf",
     "semantic_hash": ""
   },
   "src/components/extension/ExtensionModal.tsx": {
-    "mtime": 1791803050.3456428,
-    "ast_hash": "947900873945bfb5d570584761a6f1e0",
+    "mtime": 1792070557.3298118,
+    "ast_hash": "7d38140d4108236c33304b8a40d1b662",
     "semantic_hash": ""
   },
   "src/components/extension/ExtensionSettingsCard.tsx": {
-    "mtime": 1791803050.346642,
-    "ast_hash": "5c01174a4807a3e07c1350534e0a8a6d",
+    "mtime": 1792068210.6740944,
+    "ast_hash": "7e3a6f10cfe88f8e9368a5d7b3dbd974",
     "semantic_hash": ""
   },
   "src/components/extension/ExtensionStatusBadge.tsx": {
-    "mtime": 1791796720.130374,
-    "ast_hash": "a07e4a88e66ef44f286ddee0a6d09287",
+    "mtime": 1792068196.5947459,
+    "ast_hash": "421b6a4d8d686b4987f3ec693dbcf673",
     "semantic_hash": ""
   },
   "src/components/extension/ExtensionUpdateGuide.tsx": {
-    "mtime": 1791803050.346642,
-    "ast_hash": "f6c7c9fb84fb08ae3b8ab2c96fad9753",
+    "mtime": 1792070473.582791,
+    "ast_hash": "596a3e288e7e02bde17bff68df4633c9",
     "semantic_hash": ""
   },
   "src/context/ExtensionContext.tsx": {
@@ -2760,8 +2760,8 @@
     "semantic_hash": ""
   },
   "src/hooks/useExtensionStatus.ts": {
-    "mtime": 1791796720.1644738,
-    "ast_hash": "74b08618cd510e9d2907ba5ed7a66658",
+    "mtime": 1792068161.0439625,
+    "ast_hash": "b563d3ba06726bb5c24f8914ab98b5eb",
     "semantic_hash": ""
   },
   "src/lib/versionUtils.ts": {
@@ -2770,8 +2770,8 @@
     "semantic_hash": ""
   },
   "tests/unit/useExtensionStatus.test.tsx": {
-    "mtime": 1791803050.3879156,
-    "ast_hash": "2496036f8cfb153c21fd1f4d1be2f874",
+    "mtime": 1792068247.2361748,
+    "ast_hash": "04c5a6a40b4ff30c58f947318627b153",
     "semantic_hash": ""
   },
   "tests/unit/versionUtils.test.ts": {
