@@ -116,7 +116,7 @@ export const ExtensionInstallGuide: React.FC<ExtensionInstallGuideProps> = ({ on
               Toggle Developer Mode & Load Unpacked
             </h4>
             <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-              In the top-right corner of the Extensions page, switch <strong className="text-slate-800">Developer mode</strong> ON. Then click <strong className="text-slate-800">Load unpacked</strong> (top left) and select the unzipped directory containing <code className="bg-slate-200/70 px-1 py-0.5 rounded text-[11px] font-mono">manifest.json</code>. Once loaded, click <strong>Check Connection</strong> in the modal footer below.
+              In the top-right corner of the Extensions page, switch <strong className="text-slate-800">Developer mode</strong> ON. Then click <strong className="text-slate-800">Load unpacked</strong> (top left) and select the unzipped directory containing <code className="bg-slate-200/70 px-1 py-0.5 rounded text-[11px] font-mono">manifest.json</code>. Once loaded, Tracklet will automatically detect and connect to the extension.
             </p>
             <div className="mt-3 p-2.5 bg-blue-50/70 border border-blue-200/80 rounded-lg text-xs text-blue-900 flex items-center gap-2">
               <span className="text-base shrink-0">💡</span>

@@ -70,7 +70,7 @@ export const ExtensionStatusBadge: React.FC<ExtensionStatusBadgeProps> = ({
             Update Ready
           </span>
         ) : (
-          <span>Extension</span>
+          <span>Download</span>
         )}
       </span>
 

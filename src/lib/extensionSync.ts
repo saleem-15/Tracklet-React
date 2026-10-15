@@ -419,7 +419,7 @@ export function broadcastDeletedApplication(appId: string): void {
  * to verify extension installation status and active manifest version.
  */
 export function pingExtension(
-  timeoutMs: number = 500
+  timeoutMs: number = 1000
 ): Promise<{ installed: boolean; version: string | null; name?: string }> {
   return new Promise((resolve) => {
     if (typeof window === 'undefined') {
@@ -427,11 +427,26 @@ export function pingExtension(
       return;
     }
 
+    // 1. Instant synchronous check: did content.js already stamp documentElement?
+    if (typeof document !== 'undefined' && document.documentElement) {
+      const isDomInstalled = document.documentElement.getAttribute('data-tracklet-extension-installed') === 'true';
+      const domVersion = document.documentElement.getAttribute('data-tracklet-extension-version');
+      if (isDomInstalled && domVersion) {
+        resolve({
+          installed: true,
+          version: domVersion,
+          name: 'Tracklet'
+        });
+        return;
+      }
+    }
+
     let settled = false;
     let timer: any = null;
 
     const cleanup = () => {
       window.removeEventListener('message', messageHandler);
+      window.removeEventListener('tracklet:extension:ready', customEventHandler);
       if (timer) clearTimeout(timer);
     };
 
@@ -451,7 +466,22 @@ export function pingExtension(
       }
     };
 
+    const customEventHandler = (event: Event) => {
+      const customEvt = event as CustomEvent;
+      const payload = customEvt.detail || {};
+      if (!settled && payload.version) {
+        settled = true;
+        cleanup();
+        resolve({
+          installed: true,
+          version: payload.version,
+          name: payload.name || 'Tracklet'
+        });
+      }
+    };
+
     window.addEventListener('message', messageHandler);
+    window.addEventListener('tracklet:extension:ready', customEventHandler);
 
     timer = setTimeout(() => {
       if (!settled) {

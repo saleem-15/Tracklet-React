@@ -5461,27 +5461,50 @@ function isTrackletOrigin() {
   }
 }
 
+// Proactive handshake broadcaster: stamps DOM markers and announces presence to Tracklet web app
+function announceTrackletPresence() {
+  if (!isTrackletOrigin()) return;
+  try {
+    const manifest = (typeof chrome !== 'undefined' && chrome.runtime?.getManifest)
+      ? chrome.runtime.getManifest()
+      : { version: '1.2.3', name: 'Tracklet' };
+    const version = manifest.version || '1.2.3';
+
+    // 1. Direct DOM markers on documentElement for instant zero-latency detection
+    if (document.documentElement) {
+      document.documentElement.setAttribute('data-tracklet-extension-installed', 'true');
+      document.documentElement.setAttribute('data-tracklet-extension-version', version);
+    }
+
+    // 2. Broadcast PONG event to Tracklet web window
+    window.postMessage({
+      type: 'TRACKLET_EXT_PONG',
+      payload: {
+        installed: true,
+        version: version,
+        name: manifest.name || 'Tracklet'
+      }
+    }, window.location.origin);
+
+    // 3. Dispatch synchronous custom event for in-page listeners
+    window.dispatchEvent(new CustomEvent('tracklet:extension:ready', {
+      detail: { installed: true, version: version }
+    }));
+  } catch {
+    // Extension context invalidated
+  }
+}
+
+// Immediately announce presence upon script load
+announceTrackletPresence();
+
 // 2. Listen for auth session and applications index sync from Tracklet web app window
 window.addEventListener('message', (event) => {
   if (event.source !== window || !isTrackletOrigin()) return;
   if (!event.data || typeof event.data !== 'object') return;
 
   if (event.data.type === 'TRACKLET_EXT_PING') {
-    try {
-      const manifest = (typeof chrome !== 'undefined' && chrome.runtime?.getManifest)
-        ? chrome.runtime.getManifest()
-        : { version: '1.0.0', name: 'Tracklet' };
-      window.postMessage({
-        type: 'TRACKLET_EXT_PONG',
-        payload: {
-          installed: true,
-          version: manifest.version || '1.0.0',
-          name: manifest.name || 'Tracklet'
-        }
-      }, window.location.origin);
-    } catch {
-      // Extension context invalidated
-    }
+    announceTrackletPresence();
   } else if (event.data.type === 'TRACKLET_WEB_AUTH_SYNC') {
     try {
       if (event.data.payload?.latestVersion && typeof chrome !== 'undefined' && chrome.storage?.local) {
@@ -5605,16 +5628,21 @@ function drainPendingItemsToTracklet() {
   }
 }
 
-// Drain after DOM is fully interactive
+// Drain after DOM is fully interactive and re-announce presence
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', drainPendingItemsToTracklet);
+  document.addEventListener('DOMContentLoaded', () => {
+    announceTrackletPresence();
+    drainPendingItemsToTracklet();
+  });
 } else {
+  announceTrackletPresence();
   drainPendingItemsToTracklet();
 }
 
-// Re-drain pending items when an already-open Tracklet tab regains focus
+// Re-drain pending items and re-announce presence when an already-open Tracklet tab regains focus
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') {
+    announceTrackletPresence();
     drainPendingItemsToTracklet();
   }
 });

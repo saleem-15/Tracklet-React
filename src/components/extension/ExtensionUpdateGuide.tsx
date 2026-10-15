@@ -146,7 +146,7 @@ export const ExtensionUpdateGuide: React.FC<ExtensionUpdateGuideProps> = ({
               Reload in Extensions Manager
             </h4>
             <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-              Open <code className="bg-slate-200/70 px-1 py-0.5 rounded text-[11px] font-mono">chrome://extensions</code>, find the Tracklet card, and click the circular <strong>Reload (🔄)</strong> button. Then click <strong>Check Connection</strong> in the footer below to verify.
+              Open <code className="bg-slate-200/70 px-1 py-0.5 rounded text-[11px] font-mono">chrome://extensions</code>, find the Tracklet card, and click the circular <strong>Reload (🔄)</strong> button. Tracklet will automatically detect the updated version when you switch back.
             </p>
             <div className="mt-2.5 flex items-center gap-2 max-w-md">
               <div className="flex-1 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-mono text-slate-700 select-all truncate">
