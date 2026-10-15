@@ -610,7 +610,7 @@
     "semantic_hash": ""
   },
   "extension/content.js": {
-    "mtime": 1792068050.3806965,
+    "mtime": 1792076683.5465946,
     "ast_hash": "3339e13d9483c528c7523e9b66d79bc9",
     "semantic_hash": ""
   },
@@ -780,7 +780,7 @@
     "semantic_hash": ""
   },
   "src/components/Sidebar.tsx": {
-    "mtime": 1792068183.939295,
+    "mtime": 1792076683.6251676,
     "ast_hash": "8a19dbd56585c792a8850214c3739f7f",
     "semantic_hash": ""
   },
@@ -1135,7 +1135,7 @@
     "semantic_hash": ""
   },
   "src/lib/constants.ts": {
-    "mtime": 1792068118.3523233,
+    "mtime": 1792076683.6272483,
     "ast_hash": "5a47cb2d2e045660d480e098f2a0ec95",
     "semantic_hash": ""
   },
@@ -1255,7 +1255,7 @@
     "semantic_hash": ""
   },
   "src/lib/extensionSync.ts": {
-    "mtime": 1792068095.6258404,
+    "mtime": 1792076683.6272483,
     "ast_hash": "1d0a658b55183025de2166bd8a2826ed",
     "semantic_hash": ""
   },
@@ -2730,27 +2730,27 @@
     "semantic_hash": ""
   },
   "src/components/extension/ExtensionInstallGuide.tsx": {
-    "mtime": 1792070465.1803734,
+    "mtime": 1792076683.6251676,
     "ast_hash": "0a634c7dfad65f186ae4495279176dcf",
     "semantic_hash": ""
   },
   "src/components/extension/ExtensionModal.tsx": {
-    "mtime": 1792070557.3298118,
+    "mtime": 1792076683.6251676,
     "ast_hash": "7d38140d4108236c33304b8a40d1b662",
     "semantic_hash": ""
   },
   "src/components/extension/ExtensionSettingsCard.tsx": {
-    "mtime": 1792068210.6740944,
+    "mtime": 1792076683.6272483,
     "ast_hash": "7e3a6f10cfe88f8e9368a5d7b3dbd974",
     "semantic_hash": ""
   },
   "src/components/extension/ExtensionStatusBadge.tsx": {
-    "mtime": 1792068196.5947459,
+    "mtime": 1792076683.6272483,
     "ast_hash": "421b6a4d8d686b4987f3ec693dbcf673",
     "semantic_hash": ""
   },
   "src/components/extension/ExtensionUpdateGuide.tsx": {
-    "mtime": 1792070473.582791,
+    "mtime": 1792076683.6272483,
     "ast_hash": "596a3e288e7e02bde17bff68df4633c9",
     "semantic_hash": ""
   },
@@ -2760,7 +2760,7 @@
     "semantic_hash": ""
   },
   "src/hooks/useExtensionStatus.ts": {
-    "mtime": 1792068161.0439625,
+    "mtime": 1792076683.6272483,
     "ast_hash": "b563d3ba06726bb5c24f8914ab98b5eb",
     "semantic_hash": ""
   },
@@ -2770,7 +2770,7 @@
     "semantic_hash": ""
   },
   "tests/unit/useExtensionStatus.test.tsx": {
-    "mtime": 1792068247.2361748,
+    "mtime": 1792076683.6272483,
     "ast_hash": "04c5a6a40b4ff30c58f947318627b153",
     "semantic_hash": ""
   },
@@ -2985,18 +2985,33 @@
     "semantic_hash": ""
   },
   ".agents/startup-context.md": {
-    "mtime": 1791975001.0244036,
+    "mtime": 1792076696.318977,
     "ast_hash": "7a6aaca87d65be765bc61756ee4b5e84",
     "semantic_hash": ""
   },
   "docs/competitor-analysis.html": {
-    "mtime": 1791974882.890555,
-    "ast_hash": "a1d00a94619503e27582aff18e229d49",
+    "mtime": 1792076696.3212254,
+    "ast_hash": "e29c0dc6483cfd9efd3e6223475e5de5",
     "semantic_hash": ""
   },
   "public/competitor-analysis.html": {
-    "mtime": 1791974984.5480263,
-    "ast_hash": "a1d00a94619503e27582aff18e229d49",
+    "mtime": 1792076696.3220456,
+    "ast_hash": "e29c0dc6483cfd9efd3e6223475e5de5",
+    "semantic_hash": ""
+  },
+  ".agents/skills/ship/scripts/create-pr.cjs": {
+    "mtime": 1792076788.8110633,
+    "ast_hash": "cf4e033b13aff074660fdd65d9137e2a",
+    "semantic_hash": ""
+  },
+  ".agents/skills/ship/scripts/create-pr.ps1": {
+    "mtime": 1792076788.7553396,
+    "ast_hash": "c8404bbd8ae34e6deb38f3b9332741fc",
+    "semantic_hash": ""
+  },
+  ".agents/skills/ship/SKILL.md": {
+    "mtime": 1792076773.1439755,
+    "ast_hash": "030c9213b7ef6623cb1e800fbab1d64e",
     "semantic_hash": ""
   }
 }
