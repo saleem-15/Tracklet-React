@@ -376,7 +376,7 @@ export const EXTENSION_DISTRIBUTION_CONFIG = {
   downloadFilename: `tracklet-extension-v${LATEST_EXTENSION_VERSION}.zip`,
   localDownloadUrl: '/tracklet-extension.zip',
   githubReleaseDownloadUrl: 'https://github.com/saleem-15/Tracklet-React/releases/latest/download/tracklet-extension.zip',
-  handshakeTimeoutMs: 500,
+  handshakeTimeoutMs: 1200,
   chromeExtensionsUrl: 'chrome://extensions',
 } as const;
 

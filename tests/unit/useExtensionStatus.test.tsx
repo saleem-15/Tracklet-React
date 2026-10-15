@@ -34,9 +34,13 @@ describe('useExtensionStatus hook', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     currentHookState = null;
+    document.documentElement.removeAttribute('data-tracklet-extension-installed');
+    document.documentElement.removeAttribute('data-tracklet-extension-version');
   });
 
   afterEach(() => {
+    document.documentElement.removeAttribute('data-tracklet-extension-installed');
+    document.documentElement.removeAttribute('data-tracklet-extension-version');
     if (root) {
       act(() => root!.unmount());
       root = null;
@@ -113,6 +117,68 @@ describe('useExtensionStatus hook', () => {
 
     await act(async () => {
       await currentHookState?.recheck();
+    });
+
+    expect(currentHookState?.status).toBe('connected');
+    expect(currentHookState?.installedVersion).toBe(LATEST_EXTENSION_VERSION);
+  });
+
+  it('immediately resolves to connected when DOM attribute markers are present', async () => {
+    document.documentElement.setAttribute('data-tracklet-extension-installed', 'true');
+    document.documentElement.setAttribute('data-tracklet-extension-version', LATEST_EXTENSION_VERSION);
+
+    await act(async () => {
+      mountComponent();
+    });
+
+    expect(currentHookState?.status).toBe('connected');
+    expect(currentHookState?.installedVersion).toBe(LATEST_EXTENSION_VERSION);
+    expect(currentHookState?.isChecking).toBe(false);
+  });
+
+  it('updates to connected when tracklet:extension:ready custom event is dispatched', async () => {
+    vi.spyOn(extensionSyncModule, 'pingExtension').mockResolvedValue({
+      installed: false,
+      version: null,
+    });
+
+    await act(async () => {
+      mountComponent();
+    });
+
+    expect(currentHookState?.status).toBe('not_installed');
+
+    await act(async () => {
+      window.dispatchEvent(new CustomEvent('tracklet:extension:ready', {
+        detail: { installed: true, version: LATEST_EXTENSION_VERSION }
+      }));
+    });
+
+    expect(currentHookState?.status).toBe('connected');
+    expect(currentHookState?.installedVersion).toBe(LATEST_EXTENSION_VERSION);
+  });
+
+  it('auto-rechecks and connects on window focus when previously not installed', async () => {
+    const pingSpy = vi.spyOn(extensionSyncModule, 'pingExtension');
+    pingSpy.mockResolvedValueOnce({
+      installed: false,
+      version: null,
+    });
+
+    await act(async () => {
+      mountComponent();
+    });
+
+    expect(currentHookState?.status).toBe('not_installed');
+
+    // User switches back from chrome://extensions
+    pingSpy.mockResolvedValueOnce({
+      installed: true,
+      version: LATEST_EXTENSION_VERSION,
+    });
+
+    await act(async () => {
+      window.dispatchEvent(new Event('focus'));
     });
 
     expect(currentHookState?.status).toBe('connected');

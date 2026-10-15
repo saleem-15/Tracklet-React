@@ -370,12 +370,12 @@ export const Sidebar: React.FC<SidebarProps> = (props) => {
         }}
         title={
           extensionState.status === 'connected'
-            ? `Tracklet Companion v${extensionState.installedVersion} (Connected)`
+            ? `Tracklet Chrome Extension v${extensionState.installedVersion} (Connected)`
             : extensionState.status === 'update_available'
-            ? `Tracklet Companion update ready (v${extensionState.latestVersion})`
-            : 'Tracklet Companion Extension'
+            ? `Tracklet Chrome Extension update ready (v${extensionState.latestVersion})`
+            : 'Tracklet Chrome Extension — Click to download & install'
         }
-        aria-label="Tracklet Companion Extension"
+        aria-label="Tracklet Chrome Extension"
         className={`w-full flex items-center ${
           !isMobileView && isCollapsed ? 'justify-center p-2' : 'justify-start px-2.5 py-1.5'
         } rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 transition-colors text-xs font-medium cursor-pointer group`}
@@ -386,7 +386,7 @@ export const Sidebar: React.FC<SidebarProps> = (props) => {
               ? 'text-emerald-600'
               : extensionState.status === 'update_available'
               ? 'text-amber-600'
-              : 'text-slate-500 group-hover:text-slate-700'
+              : 'text-slate-500 group-hover:text-blue-600'
           }`} />
           {extensionState.status === 'update_available' && (
             <span className="w-1.5 h-1.5 rounded-full bg-amber-500 absolute -top-0.5 -right-0.5 animate-pulse motion-reduce:animate-none" />
@@ -394,7 +394,7 @@ export const Sidebar: React.FC<SidebarProps> = (props) => {
         </div>
         {(isMobileView || !isCollapsed) && (
           <div className="ml-2 flex items-center justify-between flex-1">
-            <span className="font-medium">Companion</span>
+            <span className="font-medium">Chrome Extension</span>
             {extensionState.status === 'connected' ? (
               <span className="text-[11px] font-mono text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-1.5 py-0.5 rounded-full font-semibold">
                 v{extensionState.installedVersion}
@@ -403,9 +403,13 @@ export const Sidebar: React.FC<SidebarProps> = (props) => {
               <span className="text-[11px] font-mono text-amber-700 bg-amber-50 border border-amber-200/60 px-1.5 py-0.5 rounded-full font-bold animate-pulse motion-reduce:animate-none">
                 Update
               </span>
+            ) : extensionState.status === 'checking' ? (
+              <span className="text-[11px] text-slate-500 font-mono">
+                Checking...
+              </span>
             ) : (
-              <span className="text-[11px] text-slate-400 font-mono">
-                v{LATEST_EXTENSION_VERSION}
+              <span className="text-[11px] text-blue-700 bg-blue-50 border border-blue-200/80 px-2 py-0.5 rounded-full font-semibold group-hover:bg-blue-100/80 transition-colors">
+                Download
               </span>
             )}
           </div>

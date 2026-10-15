@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   X, 
-  Puzzle, 
-  RefreshCw 
+  Puzzle 
 } from 'lucide-react';
 import { ExtensionState } from '../../types';
 import { EXTENSION_DISTRIBUTION_CONFIG, EXTENSION_STATUS_CONFIG } from '../../lib/constants';
@@ -25,7 +24,7 @@ export const ExtensionModal: React.FC<ExtensionModalProps> = ({
   extensionState,
   onShowToast,
 }) => {
-  const { status, installedVersion, latestVersion, isChecking, recheck } = extensionState;
+  const { status, installedVersion, latestVersion } = extensionState;
 
   // Determine initial tab based on extension state
   const [activeTab, setActiveTab] = useState<TabType>(() => {
@@ -73,35 +72,6 @@ export const ExtensionModal: React.FC<ExtensionModalProps> = ({
       'Download Started',
       `Downloading ${EXTENSION_DISTRIBUTION_CONFIG.downloadFilename} (v${latestVersion}).`
     );
-  };
-
-  const handleManualRecheck = async () => {
-    const prevStatus = status;
-    const outcome = await recheck();
-
-    if (outcome.status === 'connected') {
-      if (prevStatus === 'update_available') {
-        onShowToast?.(
-          'success',
-          'Extension Updated!',
-          `Tracklet Companion has been successfully updated to v${latestVersion}.`
-        );
-      } else {
-        onShowToast?.('success', 'Connected', `Tracklet Companion v${latestVersion} is connected and ready.`);
-      }
-    } else if (outcome.status === 'update_available') {
-      onShowToast?.(
-        'info',
-        'Update Still Pending',
-        `Installed version is still v${outcome.version || 'older'}. Make sure to reload the extension in chrome://extensions.`
-      );
-    } else {
-      onShowToast?.(
-        'info',
-        'Status Checked',
-        'Tracklet extension was not detected. Make sure it is loaded in Chrome and refresh this page.'
-      );
-    }
   };
 
   return (
@@ -214,16 +184,16 @@ export const ExtensionModal: React.FC<ExtensionModalProps> = ({
 
         {/* Modal Footer */}
         <div className="px-5 py-3 border-t border-slate-200/80 bg-slate-50 flex items-center justify-between gap-3 shrink-0">
-          <button
-            type="button"
-            onClick={handleManualRecheck}
-            disabled={isChecking}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
-            title="Ping extension to recheck active connection"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${isChecking ? 'animate-spin text-blue-600' : 'text-slate-500'}`} />
-            <span>{isChecking ? 'Checking...' : 'Check Connection'}</span>
-          </button>
+          <div className="text-[11px] text-slate-500 flex items-center gap-1.5 font-medium">
+            <span className={`w-1.5 h-1.5 rounded-full ${statusConfig.dotClass}`} />
+            <span>
+              {status === 'connected'
+                ? `Connected • v${installedVersion}`
+                : status === 'update_available'
+                ? 'Update ready — reload extension in Chrome when finished'
+                : 'Auto-detects when extension is loaded in Chrome'}
+            </span>
+          </div>
 
           <button
             type="button"
