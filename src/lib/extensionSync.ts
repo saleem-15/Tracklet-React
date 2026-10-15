@@ -42,7 +42,7 @@ export interface SyncedAppIndexItem {
 const BROADCAST_CHANNEL_NAME = 'tracklet_extension_channel';
 const PENDING_STORAGE_KEY = 'tracklet_pending_apps';
 
-let activeUserSession: { uid: string; email?: string | null; idToken?: string } | null = null;
+let activeUserSession: { uid: string; email?: string | null; idToken?: string; refreshToken?: string } | null = null;
 
 /**
  * Sync active user auth state & Firebase config to extension via BroadcastChannel and runtime messages
@@ -58,7 +58,8 @@ export async function syncAuthSessionToExtension(user: User | null): Promise<voi
     activeUserSession = {
       uid: user.uid,
       email: user.email,
-      idToken
+      idToken,
+      refreshToken: user.refreshToken
     };
   } else {
     activeUserSession = null;

@@ -5544,6 +5544,15 @@ window.addEventListener('message', (event) => {
         });
       });
     }
+  } else if (event.data.type === 'TRACKLET_EXT_APPS_DRAIN_ACK') {
+    // Web app confirmed it processed all drained pending apps — safe to clear
+    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+      chrome.storage.local.remove(['tracklet_pending_apps']);
+    }
+  } else if (event.data.type === 'TRACKLET_EXT_CONTACTS_DRAIN_ACK') {
+    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+      chrome.storage.local.remove(['tracklet_pending_contacts']);
+    }
   }
 });
 
@@ -5566,7 +5575,7 @@ function drainPendingItemsToTracklet() {
               persistedToCloud: false
             }, window.location.origin);
           });
-          chrome.storage.local.remove(['tracklet_pending_apps']);
+          // Note: Pending apps are kept until acknowledged by Tracklet via TRACKLET_EXT_APPS_DRAIN_ACK
         }
 
         if (Array.isArray(pendingContacts) && pendingContacts.length > 0) {
@@ -5577,7 +5586,7 @@ function drainPendingItemsToTracklet() {
               persistedToCloud: false
             }, window.location.origin);
           });
-          chrome.storage.local.remove(['tracklet_pending_contacts']);
+          // Note: Pending contacts are kept until acknowledged by Tracklet via TRACKLET_EXT_CONTACTS_DRAIN_ACK
         }
 
         if (Array.isArray(pendingEmails) && pendingEmails.length > 0) {
@@ -5602,6 +5611,13 @@ if (document.readyState === 'loading') {
 } else {
   drainPendingItemsToTracklet();
 }
+
+// Re-drain pending items when an already-open Tracklet tab regains focus
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    drainPendingItemsToTracklet();
+  }
+});
 
 // 4. In-Page SPA Navigation & Thread Reactivity Observer (T046)
 var lastReportedUrl = typeof lastReportedUrl !== 'undefined' ? lastReportedUrl : '';
