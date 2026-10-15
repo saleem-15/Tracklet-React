@@ -86,6 +86,58 @@ function getDomainName(urlStr) {
   }
 }
 
+// --- Token Refresh Helpers ---
+
+async function refreshFirebaseToken(refreshToken, apiKey) {
+  const res = await fetch(
+    'https://securetoken.googleapis.com/v1/token?key=' + encodeURIComponent(apiKey),
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'grant_type=refresh_token&refresh_token=' + encodeURIComponent(refreshToken)
+    }
+  );
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error('Token refresh failed (' + res.status + '): ' + errText);
+  }
+  const data = await res.json();
+  return {
+    idToken: data.id_token,
+    refreshToken: data.refresh_token
+  };
+}
+
+async function fetchWithTokenRefresh(url, options, userSession, apiKey) {
+  let response = await fetch(url, options);
+
+  if (
+    response.status === 401 &&
+    userSession &&
+    userSession.refreshToken &&
+    apiKey &&
+    apiKey !== 'demo-api-key'
+  ) {
+    try {
+      const refreshed = await refreshFirebaseToken(userSession.refreshToken, apiKey);
+      userSession.idToken = refreshed.idToken;
+      if (refreshed.refreshToken) {
+        userSession.refreshToken = refreshed.refreshToken;
+      }
+      chrome.storage.local.set({ tracklet_user_session: userSession });
+
+      const retryHeaders = Object.assign({}, options.headers, {
+        'Authorization': 'Bearer ' + refreshed.idToken
+      });
+      response = await fetch(url, Object.assign({}, options, { headers: retryHeaders }));
+    } catch (refreshErr) {
+      console.warn('[Tracklet] Token refresh failed, returning original 401:', refreshErr);
+    }
+  }
+
+  return response;
+}
+
 // Push to Firestore REST API (supports POST for create and PATCH for update)
 async function pushToFirestoreDirectly(payload, userSession, config, docIdToUpdate = null) {
   const projectId = config?.projectId || 'demo-tracklet';
@@ -162,11 +214,16 @@ async function pushToFirestoreDirectly(payload, userSession, config, docIdToUpda
   if (idToken) headers['Authorization'] = `Bearer ${idToken}`;
 
   const method = docIdToUpdate ? 'PATCH' : 'POST';
-  const response = await fetch(url, {
-    method,
-    headers,
-    body: JSON.stringify({ fields })
-  });
+  const response = await fetchWithTokenRefresh(
+    url,
+    {
+      method,
+      headers,
+      body: JSON.stringify({ fields })
+    },
+    userSession,
+    config?.apiKey
+  );
 
   if (!response.ok) {
     throw new Error(`Firestore REST error: ${response.statusText}`);
@@ -211,11 +268,16 @@ async function pushContactToFirestoreDirectly(contact, appId, userSession, confi
   if (idToken) headers['Authorization'] = `Bearer ${idToken}`;
 
   try {
-    const res = await fetch(url, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ fields })
-    });
+    const res = await fetchWithTokenRefresh(
+      url,
+      {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ fields })
+      },
+      userSession,
+      config?.apiKey
+    );
     if (res.ok) {
       const data = await res.json();
       return data.name ? data.name.split('/').pop() : null;
@@ -381,7 +443,12 @@ async function pushEmailLogToFirestore(appId, emailLog, updatedStatus, userSessi
   if (idToken) headers['Authorization'] = `Bearer ${idToken}`;
 
   // 1. GET current application document
-  const getRes = await fetch(getUrl, { method: 'GET', headers });
+  const getRes = await fetchWithTokenRefresh(
+    getUrl,
+    { method: 'GET', headers },
+    userSession,
+    config?.apiKey
+  );
   if (!getRes.ok) {
     throw new Error(`Failed to fetch application doc: ${getRes.statusText}`);
   }
@@ -431,11 +498,16 @@ async function pushEmailLogToFirestore(appId, emailLog, updatedStatus, userSessi
     patchUrl += `updateMask.fieldPaths=${f}&`;
   });
 
-  const patchRes = await fetch(patchUrl, {
-    method: 'PATCH',
-    headers,
-    body: JSON.stringify({ fields: patchFields })
-  });
+  const patchRes = await fetchWithTokenRefresh(
+    patchUrl,
+    {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify({ fields: patchFields })
+    },
+    userSession,
+    config?.apiKey
+  );
 
   if (!patchRes.ok) {
     throw new Error(`Failed to patch application doc with email log: ${patchRes.statusText}`);
@@ -560,11 +632,16 @@ async function pushContactToFirestore(contact, userSession, config) {
   const headers = { 'Content-Type': 'application/json' };
   if (idToken) headers['Authorization'] = `Bearer ${idToken}`;
 
-  const res = await fetch(url, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({ fields })
-  });
+  const res = await fetchWithTokenRefresh(
+    url,
+    {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ fields })
+    },
+    userSession,
+    config?.apiKey
+  );
 
   if (!res.ok) {
     if (res.status === 409) {
@@ -578,11 +655,16 @@ async function pushContactToFirestore(contact, userSession, config) {
       });
       patchUrl = patchUrl.replace(/[?&]$/, '');
 
-      const patchRes = await fetch(patchUrl, {
-        method: 'PATCH',
-        headers,
-        body: JSON.stringify({ fields })
-      });
+      const patchRes = await fetchWithTokenRefresh(
+        patchUrl,
+        {
+          method: 'PATCH',
+          headers,
+          body: JSON.stringify({ fields })
+        },
+        userSession,
+        config?.apiKey
+      );
 
       if (!patchRes.ok) {
         throw new Error(`Failed to save contact to Firestore: ${patchRes.status} ${patchRes.statusText}`);

@@ -7,6 +7,73 @@
 document.addEventListener('DOMContentLoaded', async () => {
   const TRACKLET_APP_URL = 'https://tracklet-eight.vercel.app';
 
+  // --- Token Refresh Helpers ---
+
+  /**
+   * Exchange a Firebase refresh token for a fresh idToken via the
+   * Secure Token API. Returns { idToken, refreshToken }.
+   */
+  async function refreshFirebaseToken(refreshToken, apiKey) {
+    const res = await fetch(
+      'https://securetoken.googleapis.com/v1/token?key=' + encodeURIComponent(apiKey),
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'grant_type=refresh_token&refresh_token=' + encodeURIComponent(refreshToken)
+      }
+    );
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error('Token refresh failed (' + res.status + '): ' + errText);
+    }
+    const data = await res.json();
+    return {
+      idToken: data.id_token,
+      refreshToken: data.refresh_token
+    };
+  }
+
+  /**
+   * Wrapper around fetch() that retries once with a refreshed token on 401.
+   * Mutates userSession.idToken in-place on successful refresh and persists
+   * the updated session to chrome.storage.local.
+   *
+   * @param {string} url
+   * @param {RequestInit} options — must include Authorization header
+   * @param {object} userSession — the cached session object (mutated on refresh)
+   * @param {string|undefined} apiKey
+   * @returns {Promise<Response>}
+   */
+  async function fetchWithTokenRefresh(url, options, userSession, apiKey) {
+    let response = await fetch(url, options);
+
+    if (
+      response.status === 401 &&
+      userSession &&
+      userSession.refreshToken &&
+      apiKey &&
+      apiKey !== 'demo-api-key'
+    ) {
+      try {
+        const refreshed = await refreshFirebaseToken(userSession.refreshToken, apiKey);
+        userSession.idToken = refreshed.idToken;
+        if (refreshed.refreshToken) {
+          userSession.refreshToken = refreshed.refreshToken;
+        }
+        chrome.storage.local.set({ tracklet_user_session: userSession });
+
+        const retryHeaders = Object.assign({}, options.headers, {
+          'Authorization': 'Bearer ' + refreshed.idToken
+        });
+        response = await fetch(url, Object.assign({}, options, { headers: retryHeaders }));
+      } catch (refreshErr) {
+        console.warn('[Tracklet] Token refresh failed, returning original 401:', refreshErr);
+      }
+    }
+
+    return response;
+  }
+
   // DOM Elements
   const companyInput = document.getElementById('company');
   const companyDomainInput = document.getElementById('companyDomain');
@@ -4240,11 +4307,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (idToken) headers['Authorization'] = `Bearer ${idToken}`;
 
     const method = docIdToUpdate ? 'PATCH' : 'POST';
-    const response = await fetch(url, {
-      method,
-      headers,
-      body: JSON.stringify({ fields })
-    });
+    const response = await fetchWithTokenRefresh(
+      url,
+      {
+        method,
+        headers,
+        body: JSON.stringify({ fields })
+      },
+      userSession,
+      config?.apiKey
+    );
 
     if (!response.ok) {
       const errText = await response.text();
@@ -4313,11 +4385,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (idToken) headers['Authorization'] = `Bearer ${idToken}`;
 
     try {
-      const res = await fetch(url, {
-        method: docIdToUpdate ? 'PATCH' : 'POST',
-        headers,
-        body: JSON.stringify({ fields })
-      });
+      const res = await fetchWithTokenRefresh(
+        url,
+        {
+          method: docIdToUpdate ? 'PATCH' : 'POST',
+          headers,
+          body: JSON.stringify({ fields })
+        },
+        userSession,
+        config?.apiKey
+      );
       if (res.ok) {
         const data = await res.json();
         return docIdToUpdate || (data.name ? data.name.split('/').pop() : null);

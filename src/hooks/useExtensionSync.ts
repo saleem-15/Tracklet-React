@@ -83,11 +83,18 @@ export function useExtensionSync({
   const pendingAppPayloadsRef = useRef<{ clippedApp: Application; persistedToCloud?: boolean }[]>([]);
   const pendingContactPayloadsRef = useRef<{ contact: Contact; persistedToCloud?: boolean }[]>([]);
 
-  // Clear pending payload queues when authenticated user changes to prevent cross-account ingestion
+  // Clear pending payload queues ONLY when switching between two different
+  // authenticated users (e.g. sign-out then sign-in as someone else).
+  // Do NOT purge on initial auth resolution (undefined/null → user) —
+  // that transition is normal page load, and any buffered extension items
+  // belong to the user who just signed in.
   const prevUserIdRef = useRef<string | undefined>(user?.uid);
   useEffect(() => {
-    if (prevUserIdRef.current !== user?.uid) {
-      prevUserIdRef.current = user?.uid;
+    const prevId = prevUserIdRef.current;
+    const newId = user?.uid;
+    prevUserIdRef.current = newId;
+
+    if (prevId && newId && prevId !== newId) {
       pendingEmailPayloadsRef.current = [];
       pendingAppPayloadsRef.current = [];
       pendingContactPayloadsRef.current = [];
@@ -395,6 +402,10 @@ export function useExtensionSync({
         appQueue.forEach(({ clippedApp, persistedToCloud }) => {
           processIncomingApplication(clippedApp, persistedToCloud);
         });
+        // Signal content script that all drained apps have been processed
+        try {
+          window.postMessage({ type: 'TRACKLET_EXT_APPS_DRAIN_ACK' }, window.location.origin);
+        } catch { /* ignore */ }
       }
       if (pendingEmailPayloadsRef.current.length > 0) {
         const emailQueue = [...pendingEmailPayloadsRef.current];
@@ -409,6 +420,10 @@ export function useExtensionSync({
         contactQueue.forEach(({ contact, persistedToCloud }) => {
           processIncomingContact(contact, persistedToCloud);
         });
+        // Signal content script that all drained contacts have been processed
+        try {
+          window.postMessage({ type: 'TRACKLET_EXT_CONTACTS_DRAIN_ACK' }, window.location.origin);
+        } catch { /* ignore */ }
       }
     }
   }, [dataLoading, processIncomingApplication, processIncomingEmail, processIncomingContact]);
