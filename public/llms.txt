@@ -8,13 +8,13 @@ Tracklet is a high-clarity job application tracker built for modern job seekers.
 
 ## Features
 
-- [Pipeline Board](https://tracklet-eight.vercel.app/pipeline) — Kanban-style view of active applications
-- [All Applications](https://tracklet-eight.vercel.app/) — Full searchable table of every application
-- [Analytics](https://tracklet-eight.vercel.app/stats) — Visual stats and charts on your job search
+- [Pipeline Board](https://usetracklet.netlify.app/pipeline) — Kanban-style view of active applications
+- [All Applications](https://usetracklet.netlify.app/) — Full searchable table of every application
+- [Analytics](https://usetracklet.netlify.app/stats) — Visual stats and charts on your job search
 - CSV import/export for data portability
 - Google Sign-In for cloud sync via Firebase
 
 ## Links
 
-- [Tracklet App](https://tracklet-eight.vercel.app/)
+- [Tracklet App](https://usetracklet.netlify.app/)
 - [GitHub Repository](https://github.com/saleem-15/Tracklet-React)
