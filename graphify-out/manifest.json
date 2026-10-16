@@ -610,18 +610,18 @@
     "semantic_hash": ""
   },
   "extension/content.js": {
-    "mtime": 1792076683.5465946,
-    "ast_hash": "3339e13d9483c528c7523e9b66d79bc9",
+    "mtime": 1792137277.736523,
+    "ast_hash": "f5eeb2b1d603fc70284fd62151179f68",
     "semantic_hash": ""
   },
   "extension/manifest.json": {
-    "mtime": 1792067091.037486,
-    "ast_hash": "68d354352e08275ccc9fbbd3edbce630",
+    "mtime": 1792137238.4330356,
+    "ast_hash": "ba3b4c508c9bf82d03bd287cdc13aba3",
     "semantic_hash": ""
   },
   "extension/popup.js": {
-    "mtime": 1792067091.0424445,
-    "ast_hash": "fe00dfa78e4c1f79e0f8492a00e0550a",
+    "mtime": 1792137290.5855098,
+    "ast_hash": "b204cc0989865b85b61bc09633b78ed6",
     "semantic_hash": ""
   },
   "firebase-blueprint.json": {
@@ -640,8 +640,8 @@
     "semantic_hash": "113e0310414025b172787fde44bcf14f"
   },
   "package.json": {
-    "mtime": 1791972551.8534522,
-    "ast_hash": "420d76cd6463ba81d65a18a1e64569b8",
+    "mtime": 1792137193.395509,
+    "ast_hash": "10e99aa1f1a66971139b751cf6da0f4b",
     "semantic_hash": ""
   },
   "src/App.tsx": {
@@ -1105,9 +1105,9 @@
     "semantic_hash": ""
   },
   "src/instrument.ts": {
-    "mtime": 1788254790.1912138,
-    "ast_hash": "4a18e7a215f5b0f9559ffcd1bded2bd0",
-    "semantic_hash": "4a18e7a215f5b0f9559ffcd1bded2bd0"
+    "mtime": 1792137213.6775596,
+    "ast_hash": "e1a2ee0c56d4ccc6742aaafcc59248b5",
+    "semantic_hash": ""
   },
   "src/lib/analyticsUtils.ts": {
     "mtime": 1786969775.660291,
@@ -1135,8 +1135,8 @@
     "semantic_hash": ""
   },
   "src/lib/constants.ts": {
-    "mtime": 1792076683.6272483,
-    "ast_hash": "5a47cb2d2e045660d480e098f2a0ec95",
+    "mtime": 1792137254.034123,
+    "ast_hash": "841d72f63b827b8aab88ae96cdb847f3",
     "semantic_hash": ""
   },
   "src/lib/contactMigration.ts": {
@@ -1325,8 +1325,8 @@
     "semantic_hash": "4c8181d4a4daa95b4f56a7cd73753631"
   },
   "src/main.tsx": {
-    "mtime": 1791972552.024342,
-    "ast_hash": "00aa058fdf84ae4ad85d2bba98b5f55f",
+    "mtime": 1792137183.183399,
+    "ast_hash": "2e9e6c5e31a8c5810523321a53ad5c30",
     "semantic_hash": ""
   },
   "src/theme/tokens.ts": {
@@ -2515,8 +2515,8 @@
     "semantic_hash": ""
   },
   "api/report-issue.ts": {
-    "mtime": 1791796718.0625713,
-    "ast_hash": "28c199373b5fc4976679fcbe6900cf5b",
+    "mtime": 1792137168.1147003,
+    "ast_hash": "9f22e57e3d6e7093badd2771486d8b02",
     "semantic_hash": ""
   },
   "specs/009-tester-issue-reporting/contracts/api-report-issue.json": {
@@ -2984,34 +2984,19 @@
     "ast_hash": "293fb63677287f8a1983b74e6c1d85a7",
     "semantic_hash": ""
   },
-  ".agents/startup-context.md": {
-    "mtime": 1792076696.318977,
-    "ast_hash": "7a6aaca87d65be765bc61756ee4b5e84",
-    "semantic_hash": ""
-  },
-  "docs/competitor-analysis.html": {
-    "mtime": 1792076696.3212254,
-    "ast_hash": "e29c0dc6483cfd9efd3e6223475e5de5",
-    "semantic_hash": ""
-  },
-  "public/competitor-analysis.html": {
-    "mtime": 1792076696.3220456,
-    "ast_hash": "e29c0dc6483cfd9efd3e6223475e5de5",
-    "semantic_hash": ""
-  },
   ".agents/skills/ship/scripts/create-pr.cjs": {
-    "mtime": 1792076788.8110633,
+    "mtime": 1792081313.3876762,
     "ast_hash": "cf4e033b13aff074660fdd65d9137e2a",
     "semantic_hash": ""
   },
   ".agents/skills/ship/scripts/create-pr.ps1": {
-    "mtime": 1792076788.7553396,
+    "mtime": 1792081313.3884835,
     "ast_hash": "c8404bbd8ae34e6deb38f3b9332741fc",
     "semantic_hash": ""
   },
   ".agents/skills/ship/SKILL.md": {
-    "mtime": 1792076773.1439755,
-    "ast_hash": "030c9213b7ef6623cb1e800fbab1d64e",
+    "mtime": 1792081313.3871105,
+    "ast_hash": "0ac2fc5a31fcd9401799328679805a9f",
     "semantic_hash": ""
   }
 }
