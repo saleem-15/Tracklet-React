@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tracklet — Deep Competitor & Market Analysis (Tsenta, Teal, Simplify, Huntr)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#f0fdf4',
+              100: '#dcfce7',
+              500: '#22c55e',
+              600: '#16a34a',
+              700: '#15803d',
+              900: '#14532d',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #0b0f19;
+      color: #cbd5e1;
+      font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    }
+    .glass-card {
+      background: rgba(17, 24, 39, 0.7);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .glass-card-hover:hover {
+      border-color: rgba(99, 102, 241, 0.3);
+      transform: translateY(-2px);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .gradient-text {
+      background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 50%, #94a3b8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .gradient-accent {
+      background: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .gradient-emerald {
+      background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .gradient-rose {
+      background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    /* Custom scrollbars */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #0b0f19; }
+    ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #334155; }
+  </style>
+</head>
+<body class="min-h-screen font-sans selection:bg-indigo-500/30 selection:text-indigo-200 antialiased">
+
+  <!-- Top Announcement / Metadata Banner -->
+  <div class="border-b border-slate-800 bg-slate-950/80 px-4 py-2.5 text-xs text-slate-400">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-2">
+        <span class="inline-flex items-center px-2 py-0.5 rounded-full font-mono font-semibold text-[11px] bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+          STRATEGIC AUDIT
+        </span>
+        <span class="text-slate-300 font-medium">Tracklet Product & Market Viability Assessment</span>
+        <span class="text-slate-600">•</span>
+        <span class="font-mono text-slate-400">Branch: startup</span>
+      </div>
+      <div class="flex items-center gap-4 text-[11px] font-mono">
+        <span class="text-emerald-400 flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          YC S26 Tsenta Teardown Included
+        </span>
+        <span class="text-slate-500">October 2026</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Header Navigation -->
+  <header class="sticky top-0 z-50 border-b border-slate-800/80 bg-slate-950/90 backdrop-blur-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-emerald-400 flex items-center justify-center font-black text-white text-lg shadow-lg shadow-indigo-500/20">
+          T
+        </div>
+        <div>
+          <span class="text-lg font-bold text-white tracking-tight">Tracklet</span>
+          <span class="text-xs text-indigo-400 font-mono ml-2 px-1.5 py-0.5 rounded bg-indigo-950/60 border border-indigo-800/50">Founder Intel</span>
+        </div>
+      </div>
+      <nav class="hidden md:flex items-center gap-1 text-xs font-medium text-slate-400">
+        <a href="#verdict" class="px-3 py-1.5 rounded-lg hover:text-white hover:bg-slate-800/60 transition-colors">Dead-Honest Verdict</a>
+        <a href="#economics" class="px-3 py-1.5 rounded-lg hover:text-white hover:bg-slate-800/60 transition-colors">The SaaS Death Trap</a>
+        <a href="#competitors" class="px-3 py-1.5 rounded-lg hover:text-white hover:bg-slate-800/60 transition-colors">Competitor Dossiers</a>
+        <a href="#matrix" class="px-3 py-1.5 rounded-lg hover:text-white hover:bg-slate-800/60 transition-colors">Feature Matrix</a>
+        <a href="#strategy" class="px-3 py-1.5 rounded-lg hover:text-white hover:bg-slate-800/60 transition-colors">How to Win</a>
+        <a href="#roadmap" class="px-3 py-1.5 rounded-lg text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 transition-colors font-semibold">90-Day Action Plan</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="relative pt-16 pb-12 overflow-hidden border-b border-slate-800">
+    <div class="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(99,102,241,0.15),rgba(255,255,255,0))]"></div>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+      <div class="max-w-3xl">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono font-medium bg-rose-500/10 text-rose-300 border border-rose-500/20 mb-6">
+          <svg class="w-3.5 h-3.5 text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+          Zero Fluff • Brutally Honest Assessment
+        </div>
+        <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight text-white mb-6 leading-tight">
+          Competitor Teardown, YC S26 Entrant <span class="gradient-accent">Tsenta</span>, &amp; The Realistic Path to Win.
+        </h1>
+        <p class="text-lg text-slate-400 leading-relaxed mb-8">
+          A definitive, data-backed teardown of the job search productivity landscape: pricing models, user traction, feature vulnerability maps, and an unvarnished audit of whether Tracklet has a fighting chance as a solo-bootstrapped contender.
+        </p>
+
+        <!-- Quick Summary Metrics Bar -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 border-t border-slate-800/80">
+          <div>
+            <div class="text-xs font-mono text-slate-500 uppercase tracking-wider">Target Competitors</div>
+            <div class="text-xl font-bold text-white mt-1">6 Deep Profiles</div>
+            <div class="text-xs text-slate-400">Tsenta, Simplify, Teal, Huntr+</div>
+          </div>
+          <div>
+            <div class="text-xs font-mono text-slate-500 uppercase tracking-wider">Top Competitor Funding</div>
+            <div class="text-xl font-bold text-indigo-400 mt-1">$14.5M+ VC</div>
+            <div class="text-xs text-slate-400">Teal ($11M), Simplify ($3M), Tsenta ($500k)</div>
+          </div>
+          <div>
+            <div class="text-xs font-mono text-slate-500 uppercase tracking-wider">Job Seeker Monthly Churn</div>
+            <div class="text-xl font-bold text-rose-400 mt-1">40% – 70%</div>
+            <div class="text-xs text-slate-400">Industry avg for B2C job tools</div>
+          </div>
+          <div>
+            <div class="text-xs font-mono text-slate-500 uppercase tracking-wider">Tracklet Survival Odds</div>
+            <div class="text-xl font-bold text-emerald-400 mt-1">65% – 75%*</div>
+            <div class="text-xs text-slate-400">*Only under Asymmetric Strategy</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 1: THE BRUTAL VERDICT -->
+  <section id="verdict" class="py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 border-b border-slate-800">
+    <div class="mb-10">
+      <div class="text-xs font-mono text-indigo-400 tracking-wider uppercase mb-1">Section 01</div>
+      <h2 class="text-3xl font-bold text-white tracking-tight">The Dead-Honest Founder Reality Check</h2>
+      <p class="text-slate-400 mt-2 max-w-2xl">You asked for no cheerleader "yes you can" answers. Here is the unvarnished mathematical and competitive truth about Tracklet's position.</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      
+      <!-- FATAL PATH 1 -->
+      <div class="glass-card rounded-2xl p-6 border-rose-500/30 bg-rose-950/10 relative overflow-hidden">
+        <div class="absolute top-0 right-0 px-3 py-1 text-[10px] font-mono font-bold uppercase tracking-wider bg-rose-500/20 text-rose-300 rounded-bl-xl border-l border-b border-rose-500/30">
+          PROBABILITY: 0%
+        </div>
+        <div class="w-10 h-10 rounded-xl bg-rose-500/20 border border-rose-500/30 flex items-center justify-center text-rose-400 mb-4">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </div>
+        <h3 class="text-lg font-bold text-white mb-2">Competing on Auto-Apply Bots (The "Tsenta / LazyApply" Game)</h3>
+        <p class="text-sm text-slate-400 mb-4 leading-relaxed">
+          Trying to build headless scraping bots that automatically apply to 50,000 career portals is a <strong>suicide mission</strong> for a solo developer.
+        </p>
+        <ul class="text-xs text-slate-400 space-y-2.5 border-t border-slate-800/80 pt-4">
+          <li class="flex items-start gap-2">
+            <span class="text-rose-400 font-bold">•</span>
+            <span><strong>Engineering Burnout:</strong> Workday, Greenhouse, Taleo, and Ashby change DOM trees weekly and actively deploy Cloudflare Turnstile CAPTCHAs.</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <span class="text-rose-400 font-bold">•</span>
+            <span><strong>ATS Blacklists:</strong> Automated bot applications are being flagged and auto-rejected by enterprise ATS spam filters.</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <span class="text-rose-400 font-bold">•</span>
+            <span><strong>Capital Deficit:</strong> Tsenta raised $500k from YC to maintain scrapers and browser farms. You have $0 runway for infrastructure burn.</span>
+          </li>
+        </ul>
+      </div>
+
+      <!-- FATAL PATH 2 -->
+      <div class="glass-card rounded-2xl p-6 border-amber-500/30 bg-amber-950/10 relative overflow-hidden">
+        <div class="absolute top-0 right-0 px-3 py-1 text-[10px] font-mono font-bold uppercase tracking-wider bg-amber-500/20 text-amber-300 rounded-bl-xl border-l border-b border-amber-500/30">
+          PROBABILITY: &lt; 5%
+        </div>
+        <div class="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 mb-4">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        </div>
+        <h3 class="text-lg font-bold text-white mb-2">Competing as a Generic $29/mo B2C SaaS (The "Teal" Game)</h3>
+        <p class="text-sm text-slate-400 mb-4 leading-relaxed">
+          Targeting "all job hunters" with a monthly recurring subscription leads straight into the <strong>Job Search Churn Meatgrinder</strong>.
+        </p>
+        <ul class="text-xs text-slate-400 space-y-2.5 border-t border-slate-800/80 pt-4">
+          <li class="flex items-start gap-2">
+            <span class="text-amber-400 font-bold">•</span>
+            <span><strong>The Churn Reality:</strong> Job search SaaS has 50–70% monthly churn. When users land a job, they cancel. When they go broke, they cancel.</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <span class="text-amber-400 font-bold">•</span>
+            <span><strong>The CAC Trap:</strong> Acquiring general job seekers via Google/Meta ads costs $35–$65. With a 2-month average lifespan, customer LTV is $50. You bleed cash on day 1.</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <span class="text-amber-400 font-bold">•</span>
+            <span><strong>"General Job Seeker" is not an ICP:</strong> A nurse, a VP of Sales, and an entry-level student have zero overlap in workflow.</span>
+          </li>
+        </ul>
+      </div>
+
+      <!-- THE WINNING ASYMMETRIC PATH -->
+      <div class="glass-card rounded-2xl p-6 border-emerald-500/40 bg-emerald-950/10 relative overflow-hidden ring-1 ring-emerald-500/20">
+        <div class="absolute top-0 right-0 px-3 py-1 text-[10px] font-mono font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-300 rounded-bl-xl border-l border-b border-emerald-500/30">
+          PROBABILITY: 65% – 75%
+        </div>
+        <div class="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 mb-4">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        </div>
+        <h3 class="text-lg font-bold text-white mb-2">The Winning Wedge: High-Touch, Anti-Bot Career Command Center</h3>
+        <p class="text-sm text-slate-400 mb-4 leading-relaxed">
+          Position Tracklet as the <strong>clean, private, relationship-first workspace</strong> for serious, high-earning candidates, coaches, and consultancies.
+        </p>
+        <ul class="text-xs text-slate-400 space-y-2.5 border-t border-slate-800/80 pt-4">
+          <li class="flex items-start gap-2">
+            <span class="text-emerald-400 font-bold">•</span>
+            <span><strong>Exploit Competitor Bloat:</strong> Teal is bloated and expensive; Simplify sells your data to employers; Tsenta is a high-risk bot. Tracklet is fast, local-first, and private.</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <span class="text-emerald-400 font-bold">•</span>
+            <span><strong>Lean into Unfair Superpowers:</strong> Tracklet already has what bots lack: a <em>Contacts &amp; Mentorship CRM Hub</em>, rich meeting notes, webmail counterparty resolution, and milestone timelines.</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <span class="text-emerald-400 font-bold">•</span>
+            <span><strong>Fair Search-Pass Pricing:</strong> Eliminate the predatory $40/mo subscription. Offer a $39–$49 "Job Search Pass" (6 months access) or $9/mo.</span>
+          </li>
+        </ul>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- SECTION 2: THE UNIT ECONOMICS DEATH TRAP -->
+  <section id="economics" class="py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 border-b border-slate-800">
+    <div class="mb-10">
+      <div class="text-xs font-mono text-indigo-400 tracking-wider uppercase mb-1">Section 02</div>
+      <h2 class="text-3xl font-bold text-white tracking-tight">The Fundamental Math of Job-Search SaaS</h2>
+      <p class="text-slate-400 mt-2 max-w-2xl">Why 90% of job seeker tools go bankrupt or pivot to B2B employer recruitment within 18 months.</p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+      
+      <div class="space-y-6">
+        <div class="glass-card rounded-2xl p-6 border-slate-800">
+          <h3 class="text-base font-bold text-white mb-2 flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+            The "Success Is Churn" Paradox
+          </h3>
+          <p class="text-sm text-slate-400 leading-relaxed">
+            In standard B2B SaaS (e.g. Slack, Datadog), happy customers stay for years, creating negative net churn. In job search tech:
+          </p>
+          <div class="mt-4 p-4 rounded-xl bg-slate-900/80 border border-slate-800 font-mono text-xs text-slate-300 space-y-2">
+            <div class="flex justify-between"><span>Average Job Search Duration:</span><span class="text-amber-400">2.5 to 4.2 Months</span></div>
+            <div class="flex justify-between"><span>Monthly Customer Churn Rate:</span><span class="text-rose-400 font-bold">45% to 65%</span></div>
+            <div class="flex justify-between"><span>Customer Lifetime (Months):</span><span class="text-slate-400">~1.8 Months</span></div>
+            <div class="flex justify-between border-t border-slate-800 pt-2 font-bold"><span>Lifetime Value (LTV) @ $20/mo:</span><span class="text-white">$36.00</span></div>
+          </div>
+        </div>
+
+        <div class="glass-card rounded-2xl p-6 border-slate-800">
+          <h3 class="text-base font-bold text-white mb-2 flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+            How the VC Competitors Survive (And Why You Can't Copy Them)
+          </h3>
+          <p class="text-sm text-slate-400 leading-relaxed">
+            <strong>Teal ($11M raised)</strong> buys massive top-of-funnel TikTok and YouTube influencer traffic to refill the churn bucket.<br>
+            <strong>Simplify ($3M raised)</strong> does not charge job seekers at all! They operate a two-sided marketplace: candidates get free autofill, and employers pay $5k–$25k to recruit candidates.<br>
+            <strong>Tsenta ($500k raised)</strong> is riding hyper-growth hype on social media (claiming fast ARR), but will face a brutal cliff once churn compounds after 90 days.
+          </p>
+        </div>
+      </div>
+
+      <!-- VISUAL COMPARISON DIAGRAM -->
+      <div class="glass-card rounded-2xl p-6 border-slate-800 bg-slate-900/40">
+        <div class="text-xs font-mono text-slate-400 uppercase tracking-wider mb-4">B2C SaaS Survival Models</div>
+        
+        <div class="space-y-4">
+          <!-- MODEL A -->
+          <div class="p-4 rounded-xl bg-slate-950/60 border border-rose-500/20">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-sm font-bold text-rose-300">The VC Churn Treadmill (Teal, Tsenta)</span>
+              <span class="text-xs font-mono text-rose-400">High Burn</span>
+            </div>
+            <p class="text-xs text-slate-400 mb-2">Requires $500k–$5M in venture subsidies to pay Google/Meta $30+ CAC to replace churned users every 60 days.</p>
+            <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+              <div class="bg-rose-500 h-full w-[85%]"></div>
+            </div>
+            <div class="text-[10px] text-slate-500 mt-1 flex justify-between font-mono"><span>CAC: $45</span><span>LTV: $50</span><span>Net Margin: 10%</span></div>
+          </div>
+
+          <!-- MODEL B -->
+          <div class="p-4 rounded-xl bg-slate-950/60 border border-indigo-500/20">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-sm font-bold text-indigo-300">The Candidate Data Monetization (Simplify)</span>
+              <span class="text-xs font-mono text-indigo-400">B2B Pivot</span>
+            </div>
+            <p class="text-xs text-slate-400 mb-2">Free for users, but requires building a dual-sided enterprise sales pipeline selling candidate profiles to recruiters.</p>
+            <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+              <div class="bg-indigo-500 h-full w-[65%]"></div>
+            </div>
+            <div class="text-[10px] text-slate-500 mt-1 flex justify-between font-mono"><span>Scale: 3M Users</span><span>Monetization: Employers</span></div>
+          </div>
+
+          <!-- MODEL C -->
+          <div class="p-4 rounded-xl bg-slate-950/60 border border-emerald-500/30 bg-emerald-950/10">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-sm font-bold text-emerald-300">The Bootstrapped Tracklet Model (High-Touch &amp; Clean Pass)</span>
+              <span class="text-xs font-mono text-emerald-400">Zero Burn • Sustainable</span>
+            </div>
+            <p class="text-xs text-slate-400 mb-2">Low organic CAC via high-trust word-of-mouth, zero server burn, and a $39 "Search Pass" or $9/mo that eliminates buyer regret.</p>
+            <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+              <div class="bg-emerald-500 h-full w-[35%]"></div>
+            </div>
+            <div class="text-[10px] text-slate-500 mt-1 flex justify-between font-mono"><span>CAC: &lt;$5 (Organic/SEO)</span><span>LTV: $40</span><span>Net Margin: 88%</span></div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- SECTION 3: COMPETITOR DOSSIERS -->
+  <section id="competitors" class="py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 border-b border-slate-800">
+    <div class="mb-10">
+      <div class="text-xs font-mono text-indigo-400 tracking-wider uppercase mb-1">Section 03</div>
+      <h2 class="text-3xl font-bold text-white tracking-tight">Competitor Intelligence Dossiers</h2>
+      <p class="text-slate-400 mt-2 max-w-2xl">Detailed profiles of the 6 key players shaping the modern career technology space.</p>
+    </div>
+
+    <!-- COMPETITOR 1: TSENTA (HIGHLIGHTED) -->
+    <div class="glass-card rounded-3xl p-8 border-indigo-500/40 bg-slate-900/80 mb-10 relative overflow-hidden ring-1 ring-indigo-500/20">
+      <div class="absolute top-0 right-0 bg-gradient-to-l from-indigo-500/20 to-transparent p-6 pointer-events-none"></div>
+      
+      <div class="flex flex-wrap items-center justify-between gap-4 mb-6 pb-6 border-b border-slate-800">
+        <div>
+          <div class="flex items-center gap-3">
+            <h3 class="text-2xl font-extrabold text-white">Tsenta</h3>
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-amber-500/10 text-amber-300 border border-amber-500/30">
+              Y Combinator S26
+            </span>
+            <span class="text-xs text-slate-400 font-mono">tsenta.com</span>
+          </div>
+          <p class="text-sm text-slate-400 mt-1">Autonomous AI Career Agent for Auto-Applying at Massive Volume</p>
+        </div>
+        <div class="flex items-center gap-4 text-xs font-mono">
+          <div class="bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800">
+            <span class="text-slate-500">Raised:</span> <span class="text-white font-bold">$500,000 (YC)</span>
+          </div>
+          <div class="bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800">
+            <span class="text-slate-500">Traction:</span> <span class="text-emerald-400 font-bold">45k–90k+ Users</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 text-sm mb-6">
+        <div>
+          <div class="text-xs font-mono text-slate-500 uppercase tracking-wider mb-1">Founders &amp; Team</div>
+          <p class="text-slate-300 font-medium">Pulkit Gupta &amp; Agnay Srivastava</p>
+          <p class="text-xs text-slate-500 mt-0.5">Rose-Hulman alumni; launched out of personal frustration after 3,000 manual applications.</p>
+        </div>
+        <div>
+          <div class="text-xs font-mono text-slate-500 uppercase tracking-wider mb-1">Target Customer</div>
+          <p class="text-slate-300 font-medium">Volume-Seeking Tech Job Hunters</p>
+          <p class="text-xs text-slate-500 mt-0.5">International students (OPT/H1-B visa crunch), entry-level CS grads, high-volume applicant mindset.</p>
+        </div>
+        <div>
+          <div class="text-xs font-mono text-slate-500 uppercase tracking-wider mb-1">Pricing Model</div>
+          <p class="text-slate-300 font-medium">Volume Subscription</p>
+          <p class="text-xs text-slate-500 mt-0.5">25 free apps; $19/mo (600 apps), $49/mo (Pro), up to $99/mo (Turbo - 4,500 apps).</p>
+        </div>
+        <div>
+          <div class="text-xs font-mono text-slate-500 uppercase tracking-wider mb-1">Core Tech Hook</div>
+          <p class="text-slate-300 font-medium">ATS Scraping &amp; "Diff Gate"</p>
+          <p class="text-xs text-slate-500 mt-0.5">Scrapes 50k+ career pages (Workday/Greenhouse) + on-device browser automation + approval diff.</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-slate-800/80">
+        <div class="rounded-xl p-4 bg-emerald-950/20 border border-emerald-500/20">
+          <div class="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            Core Strengths &amp; Why They Win Today
+          </div>
+          <ul class="text-xs text-slate-300 space-y-1.5">
+            <li>• <strong>Irresistible Viral Hook:</strong> "We apply for jobs while you sleep" touches desperate job seekers directly in the pain center.</li>
+            <li>• <strong>Human-in-the-Loop "Diff" Gate:</strong> Solves the fear of blind auto-spam by showing users what will be sent before submitting.</li>
+            <li>• <strong>Multi-Channel Interface:</strong> Can review jobs via WhatsApp, iMessage, desktop, and web app.</li>
+            <li>• <strong>YC Credibility &amp; PR:</strong> Heavy social proof and rapid viral adoption across university campus tech clubs.</li>
+          </ul>
+        </div>
+
+        <div class="rounded-xl p-4 bg-rose-950/20 border border-rose-500/20">
+          <div class="text-xs font-bold text-rose-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+            Fatal Vulnerabilities &amp; User Backlash (Reddit/HN Audit)
+          </div>
+          <ul class="text-xs text-slate-300 space-y-1.5">
+            <li>• <strong>Knockout Form Errors:</strong> Reddit users report the AI answering relocation or visa questions incorrectly, causing immediate rejections.</li>
+            <li>• <strong>Recruiter Hostility:</strong> Recruiters are catching on to AI keyword-stuffed resumes and flagging auto-submitted profiles.</li>
+            <li>• <strong>Brittle ATS Infrastructure:</strong> Workday and Greenhouse are actively implementing bot-mitigation, threatening Tsenta's core automation reliability.</li>
+            <li>• <strong>Zero Long-Term Retention:</strong> Churn rate is extreme; users cancel within 30–60 days regardless of outcome.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5 OTHER COMPETITORS GRID -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+      <!-- COMPETITOR 2: SIMPLIFY -->
+      <div class="glass-card glass-card-hover rounded-2xl p-6 border-slate-800 flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between mb-3">
+            <h4 class="text-xl font-bold text-white">Simplify</h4>
+            <span class="px-2 py-0.5 rounded text-[10px] font-mono bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">YC S21 • $3M Seed</span>
+          </div>
+          <p class="text-xs text-slate-400 mb-4 leading-relaxed">The undisputed king of 1-click browser extension application autofill.</p>
+          
+          <div class="space-y-2 text-xs border-t border-slate-800/80 pt-3">
+            <div class="flex justify-between"><span class="text-slate-500">Users:</span><span class="text-white font-semibold">3M+ active users</span></div>
+            <div class="flex justify-between"><span class="text-slate-500">Pricing:</span><span class="text-emerald-400 font-semibold">100% Free for candidates</span></div>
+            <div class="flex justify-between"><span class="text-slate-500">Monetization:</span><span class="text-slate-300">B2B Employer sourcing fees</span></div>
+            <div class="flex justify-between"><span class="text-slate-500">Target:</span><span class="text-slate-300">College students &amp; tech job seekers</span></div>
+          </div>
+        </div>
+
+        <div class="mt-4 pt-4 border-t border-slate-800/80">
+          <div class="text-[11px] text-rose-400 font-semibold mb-1">Tracklet Advantage Over Simplify:</div>
+          <p class="text-[11px] text-slate-400 leading-normal">
+            Simplify's tracker is a secondary add-on with <strong>zero networking CRM</strong>, no contact logging, no tailored meeting notes, and candidate data is shared with employers. Tracklet is a private, local-first personal command center.
+          </p>
+        </div>
+      </div>
+
+      <!-- COMPETITOR 3: TEAL -->
+      <div class="glass-card glass-card-hover rounded-2xl p-6 border-slate-800 flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between mb-3">
+            <h4 class="text-xl font-bold text-white">Teal (TealHQ)</h4>
+            <span class="px-2 py-0.5 rounded text-[10px] font-mono bg-purple-500/10 text-purple-300 border border-purple-500/20">$11M+ Raised</span>
+          </div>
+          <p class="text-xs text-slate-400 mb-4 leading-relaxed">The consumer category gorilla for AI resume tailoring &amp; visual job tracking.</p>
+          
+          <div class="space-y-2 text-xs border-t border-slate-800/80 pt-3">
+            <div class="flex justify-between"><span class="text-slate-500">Users:</span><span class="text-white font-semibold">2M+ registered users</span></div>
+            <div class="flex justify-between"><span class="text-slate-500">Pricing:</span><span class="text-rose-400 font-semibold">$9/wk, $29/mo, or $79/qtr</span></div>
+            <div class="flex justify-between"><span class="text-slate-500">Core Hook:</span><span class="text-slate-300">Resume Match Score &amp; Clipper</span></div>
+            <div class="flex justify-between"><span class="text-slate-500">Target:</span><span class="text-slate-300">Corporate &amp; white-collar job seekers</span></div>
+          </div>
+        </div>
+
+        <div class="mt-4 pt-4 border-t border-slate-800/80">
+          <div class="text-[11px] text-rose-400 font-semibold mb-1">Tracklet Advantage Over Teal:</div>
+          <p class="text-[11px] text-slate-400 leading-normal">
+            Teal has grown bloated, slow, and predatory ($36–$40/mo billed weekly). Users hate paying when unemployed. Tracklet is lightning fast, zero clutter, and has superior contact/email history.
+          </p>
+        </div>
+      </div>
+
+      <!-- COMPETITOR 4: HUNTR -->
+      <div class="glass-card glass-card-hover rounded-2xl p-6 border-slate-800 flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between mb-3">
+            <h4 class="text-xl font-bold text-white">Huntr</h4>
+            <span class="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">Bootstrapped / Profitable</span>
+          </div>
+          <p class="text-xs text-slate-400 mb-4 leading-relaxed">The original Kanban tracker that successfully pivoted to university &amp; bootcamp B2B.</p>
+          
+          <div class="space-y-2 text-xs border-t border-slate-800/80 pt-3">
+            <div class="flex justify-between"><span class="text-slate-500">Users:</span><span class="text-white font-semibold">Hundreds of thousands</span></div>
+            <div class="flex justify-between"><span class="text-slate-500">Pricing:</span><span class="text-rose-400 font-semibold">$40/mo or $120/yr B2C</span></div>
+            <div class="flex justify-between"><span class="text-slate-500">Core Hook:</span><span class="text-slate-300">Kanban Board + School Portals</span></div>
+            <div class="flex justify-between"><span class="text-slate-500">Target:</span><span class="text-slate-300">Bootcamp grads &amp; Career Advisors</span></div>
+          </div>
+        </div>
+
+        <div class="mt-4 pt-4 border-t border-slate-800/80">
+          <div class="text-[11px] text-rose-400 font-semibold mb-1">Tracklet Advantage Over Huntr:</div>
+          <p class="text-[11px] text-slate-400 leading-normal">
+            Huntr's B2C innovation has completely stalled; charging $40/mo for a 2016-era Kanban board is indefensible. Tracklet provides modern React 19 micro-interactions, rich text notes, and webmail matching.
+          </p>
+        </div>
+      </div>
+
+      <!-- COMPETITOR 5: LAZYAPPLY / LOOPCV -->
+      <div class="glass-card glass-card-hover rounded-2xl p-6 border-slate-800 flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between mb-3">
+            <h4 class="text-xl font-bold text-white">LazyApply / LoopCV</h4>
+            <span class="px-2 py-0.5 rounded text-[10px] font-mono bg-slate-800 text-slate-300">Spam Bot Class</span>
+          </div>
+          <p class="text-xs text-slate-400 mb-4 leading-relaxed">Mass application bot mills that blast hundreds of applications across LinkedIn/Indeed.</p>
+          
+          <div class="space-y-2 text-xs border-t border-slate-800/80 pt-3">
+            <div class="flex justify-between"><span class="text-slate-500">Pricing:</span><span class="text-slate-300">$29–$149/mo or $99–$249 Lifetime</span></div>
+            <div class="flex justify-between"><span class="text-slate-500">Yield:</span><span class="text-rose-400 font-semibold">&lt; 0.5% interview rate</span></div>
+            <div class="flex justify-between"><span class="text-slate-500">Reputation:</span><span class="text-rose-400">High spam / account bans</span></div>
+            <div class="flex justify-between"><span class="text-slate-500">Retention:</span><span class="text-slate-400">Near 0% (1-month burn)</span></div>
+          </div>
+        </div>
+
+        <div class="mt-4 pt-4 border-t border-slate-800/80">
+          <div class="text-[11px] text-emerald-400 font-semibold mb-1">The Tracklet Difference:</div>
+          <p class="text-[11px] text-slate-400 leading-normal">
+            We do not participate in the spam arms race. Tracklet is for candidates who realize that 10 targeted, networked applications beat 500 spam bots every single time.
+          </p>
+        </div>
+      </div>
+
+      <!-- COMPETITOR 6: NOTION & GOOGLE SHEETS -->
+      <div class="glass-card glass-card-hover rounded-2xl p-6 border-slate-800 flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between mb-3">
+            <h4 class="text-xl font-bold text-white">Notion &amp; Spreadsheets</h4>
+            <span class="px-2 py-0.5 rounded text-[10px] font-mono bg-blue-500/10 text-blue-300 border border-blue-500/20">The Real Incumbent</span>
+          </div>
+          <p class="text-xs text-slate-400 mb-4 leading-relaxed">The default status-quo choice for over 70% of organized job seekers worldwide.</p>
+          
+          <div class="space-y-2 text-xs border-t border-slate-800/80 pt-3">
+            <div class="flex justify-between"><span class="text-slate-500">Market Share:</span><span class="text-white font-semibold">~70% of organized searchers</span></div>
+            <div class="flex justify-between"><span class="text-slate-500">Pricing:</span><span class="text-emerald-400 font-semibold">100% Free</span></div>
+            <div class="flex justify-between"><span class="text-slate-500">Advantage:</span><span class="text-slate-300">Infinite flexibility &amp; zero paywalls</span></div>
+            <div class="flex justify-between"><span class="text-slate-500">Pain Point:</span><span class="text-rose-400">100% manual data entry</span></div>
+          </div>
+        </div>
+
+        <div class="mt-4 pt-4 border-t border-slate-800/80">
+          <div class="text-[11px] text-emerald-400 font-semibold mb-1">Why Tracklet Replaces Notion:</div>
+          <p class="text-[11px] text-slate-400 leading-normal">
+            Tracklet gives you the clean feel and flexibility of Notion, but with a <strong>browser clipper extension</strong>, automatic email counterparty detection, and milestone history timelines built-in.
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- SECTION 4: FEATURE & CAPABILITY MATRIX -->
+  <section id="matrix" class="py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 border-b border-slate-800">
+    <div class="mb-10">
+      <div class="text-xs font-mono text-indigo-400 tracking-wider uppercase mb-1">Section 04</div>
+      <h2 class="text-3xl font-bold text-white tracking-tight">Full Capability &amp; Feature Comparison</h2>
+      <p class="text-slate-400 mt-2 max-w-2xl">A granular inspection of capabilities across the modern career technology stack.</p>
+    </div>
+
+    <div class="glass-card rounded-2xl overflow-hidden border-slate-800">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-slate-950/80 text-slate-400 font-mono uppercase tracking-wider border-b border-slate-800">
+            <tr>
+              <th class="py-4 px-4 font-semibold">Capability Dimension</th>
+              <th class="py-4 px-4 font-bold text-white bg-indigo-950/40 border-x border-indigo-500/30">Tracklet (Current &amp; Roadmapped)</th>
+              <th class="py-4 px-4 font-semibold">Tsenta (YC S26)</th>
+              <th class="py-4 px-4 font-semibold">Simplify</th>
+              <th class="py-4 px-4 font-semibold">Teal</th>
+              <th class="py-4 px-4 font-semibold">Huntr</th>
+              <th class="py-4 px-4 font-semibold">Notion / Sheets</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-800/60 text-slate-300">
+            
+            <!-- Row 1 -->
+            <tr class="hover:bg-slate-800/30 transition-colors">
+              <td class="py-3.5 px-4 font-medium text-white">Application Volume Model</td>
+              <td class="py-3.5 px-4 font-bold text-emerald-400 bg-indigo-950/20 border-x border-indigo-500/20">Targeted &amp; High-Touch (Anti-Bot)</td>
+              <td class="py-3.5 px-4 text-indigo-300">Brute Force Mass Auto-Apply (600–4,500)</td>
+              <td class="py-3.5 px-4">Fast Autofill Manual Assist</td>
+              <td class="py-3.5 px-4">Manual Submission Only</td>
+              <td class="py-3.5 px-4">Manual Submission Only</td>
+              <td class="py-3.5 px-4">Manual Entry Only</td>
+            </tr>
+
+            <!-- Row 2 -->
+            <tr class="hover:bg-slate-800/30 transition-colors">
+              <td class="py-3.5 px-4 font-medium text-white">Browser Extension Companion</td>
+              <td class="py-3.5 px-4 font-bold text-emerald-400 bg-indigo-950/20 border-x border-indigo-500/20">Yes (Clip, Auth Sync, Webmail Matching)</td>
+              <td class="py-3.5 px-4 text-emerald-400">Yes (Local Automation Agent)</td>
+              <td class="py-3.5 px-4 text-emerald-400 font-bold">Yes (Industry-Leading Autofill)</td>
+              <td class="py-3.5 px-4 text-emerald-400">Yes (Job Board Saver)</td>
+              <td class="py-3.5 px-4 text-emerald-400">Yes (Basic Job Saver)</td>
+              <td class="py-3.5 px-4 text-rose-400">No (Third-party clippers only)</td>
+            </tr>
+
+            <!-- Row 3 -->
+            <tr class="hover:bg-slate-800/30 transition-colors">
+              <td class="py-3.5 px-4 font-medium text-white">Networking &amp; Contacts CRM</td>
+              <td class="py-3.5 px-4 font-bold text-emerald-400 bg-indigo-950/20 border-x border-indigo-500/20">Dedicated Hub + Mentors + Follow-ups</td>
+              <td class="py-3.5 px-4 text-rose-400">None (Pure Bot Machine)</td>
+              <td class="py-3.5 px-4 text-rose-400">None</td>
+              <td class="py-3.5 px-4 text-amber-400">Basic Contact List</td>
+              <td class="py-3.5 px-4 text-slate-300">Basic Contacts Table</td>
+              <td class="py-3.5 px-4 text-slate-300">Manual Setup Required</td>
+            </tr>
+
+            <!-- Row 4 -->
+            <tr class="hover:bg-slate-800/30 transition-colors">
+              <td class="py-3.5 px-4 font-medium text-white">Rich Interview Prep Notes</td>
+              <td class="py-3.5 px-4 font-bold text-emerald-400 bg-indigo-950/20 border-x border-indigo-500/20">RichTextEditor (Markdown, Lists, Code)</td>
+              <td class="py-3.5 px-4 text-rose-400">None</td>
+              <td class="py-3.5 px-4 text-rose-400">None</td>
+              <td class="py-3.5 px-4 text-slate-400">Plain text notes</td>
+              <td class="py-3.5 px-4 text-slate-400">Basic text area</td>
+              <td class="py-3.5 px-4 text-emerald-400">Full Notion Pages (Manual)</td>
+            </tr>
+
+            <!-- Row 5 -->
+            <tr class="hover:bg-slate-800/30 transition-colors">
+              <td class="py-3.5 px-4 font-medium text-white">Email Counterparty Matching</td>
+              <td class="py-3.5 px-4 font-bold text-emerald-400 bg-indigo-950/20 border-x border-indigo-500/20">Yes (Auto-matches recruiter webmail)</td>
+              <td class="py-3.5 px-4 text-slate-400">Email intake bot</td>
+              <td class="py-3.5 px-4 text-rose-400">No</td>
+              <td class="py-3.5 px-4 text-rose-400">No</td>
+              <td class="py-3.5 px-4 text-slate-400">Forwarding email address</td>
+              <td class="py-3.5 px-4 text-rose-400">No</td>
+            </tr>
+
+            <!-- Row 6 -->
+            <tr class="hover:bg-slate-800/30 transition-colors">
+              <td class="py-3.5 px-4 font-medium text-white">Milestone History Timeline</td>
+              <td class="py-3.5 px-4 font-bold text-emerald-400 bg-indigo-950/20 border-x border-indigo-500/20">Spine Timeline with Edit/Delete Audits</td>
+              <td class="py-3.5 px-4 text-slate-400">Execution log only</td>
+              <td class="py-3.5 px-4 text-rose-400">Status dropdown only</td>
+              <td class="py-3.5 px-4 text-slate-300">Basic stage tracker</td>
+              <td class="py-3.5 px-4 text-slate-300">Basic activity log</td>
+              <td class="py-3.5 px-4 text-rose-400">None (No timestamps)</td>
+            </tr>
+
+            <!-- Row 7 -->
+            <tr class="hover:bg-slate-800/30 transition-colors">
+              <td class="py-3.5 px-4 font-medium text-white">User Privacy &amp; Data Ownership</td>
+              <td class="py-3.5 px-4 font-bold text-emerald-400 bg-indigo-950/20 border-x border-indigo-500/20">Local-First Optimistic + Firebase (Zero Ads/Brokering)</td>
+              <td class="py-3.5 px-4 text-rose-400">Centralized Cloud (Stores Credentials)</td>
+              <td class="py-3.5 px-4 text-amber-400">Profiles indexed for Recruiters</td>
+              <td class="py-3.5 px-4 text-slate-400">Proprietary Cloud Database</td>
+              <td class="py-3.5 px-4 text-slate-400">Proprietary Cloud Database</td>
+              <td class="py-3.5 px-4 text-emerald-400">User-owned Notion workspace</td>
+            </tr>
+
+            <!-- Row 8 -->
+            <tr class="hover:bg-slate-800/30 transition-colors">
+              <td class="py-3.5 px-4 font-medium text-white">Pricing Model</td>
+              <td class="py-3.5 px-4 font-bold text-emerald-400 bg-indigo-950/20 border-x border-indigo-500/20">Free Core + $39 "Search Pass" or $9/mo</td>
+              <td class="py-3.5 px-4 text-rose-300 font-semibold">$19–$99 / month</td>
+              <td class="py-3.5 px-4 text-emerald-400 font-bold">$0 (Free Candidate Tier)</td>
+              <td class="py-3.5 px-4 text-rose-400 font-semibold">$9/wk ($36–$40/mo) or $79/qtr</td>
+              <td class="py-3.5 px-4 text-rose-400 font-semibold">$40 / month</td>
+              <td class="py-3.5 px-4 text-emerald-400 font-bold">$0 (Free)</td>
+            </tr>
+
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 5: HOW TO COMPETE AND WIN -->
+  <section id="strategy" class="py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 border-b border-slate-800">
+    <div class="mb-10">
+      <div class="text-xs font-mono text-indigo-400 tracking-wider uppercase mb-1">Section 05</div>
+      <h2 class="text-3xl font-bold text-white tracking-tight">The Asymmetric Battle Plan: How Tracklet Wins</h2>
+      <p class="text-slate-400 mt-2 max-w-2xl">If you try to out-spam Tsenta or out-spend Teal, you will fail. Here are the 4 asymmetric pillars where Tracklet has the structural advantage.</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+      
+      <!-- PILLAR 1 -->
+      <div class="glass-card rounded-2xl p-6 border-slate-800">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold font-mono">01</div>
+          <h3 class="text-lg font-bold text-white">The "Anti-Bot / High-Trust" Positioning</h3>
+        </div>
+        <p class="text-sm text-slate-300 leading-relaxed mb-4">
+          Mass auto-apply bots are burning their own bridges. As ATS vendors tighten bot detection and recruiters reject formulaic AI cover letters, job seekers will experience a harsh hangover.
+        </p>
+        <div class="p-4 rounded-xl bg-slate-900/80 border border-slate-800/80 text-xs text-slate-400 space-y-2">
+          <p><strong class="text-white">The Tracklet Narrative:</strong> "Bots get you blacklisted. Tracklet gets you hired."</p>
+          <p>Double down on <strong>quality over spam volume</strong>: senior engineers, managers, product leaders, and high-earning professionals who value their reputation will NEVER trust an automated bot to submit applications on their behalf.</p>
+        </div>
+      </div>
+
+      <!-- PILLAR 2 -->
+      <div class="glass-card rounded-2xl p-6 border-slate-800">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold font-mono">02</div>
+          <h3 class="text-lg font-bold text-white">Fair Pricing That Destroys Competitor Greed</h3>
+        </div>
+        <p class="text-sm text-slate-300 leading-relaxed mb-4">
+          The single biggest complaint on Reddit about Teal and Huntr is that charging $30–$40/month to unemployed people searching for work feels predatory.
+        </p>
+        <div class="p-4 rounded-xl bg-slate-900/80 border border-slate-800/80 text-xs text-slate-400 space-y-2">
+          <p><strong class="text-white">The "Search Pass" Model:</strong> Instead of an endless recurring subscription trap, offer:</p>
+          <ul class="list-disc pl-4 space-y-1">
+            <li><strong>Free Tier:</strong> Up to 25 active applications + Extension Clipper.</li>
+            <li><strong>$39 "Search Pass":</strong> 6 months of unlimited access + permanent read-only archive (matches the typical job hunt duration).</li>
+            <li><strong>$9/month Monthly:</strong> Billed without weekly traps or hidden fees.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- PILLAR 3 -->
+      <div class="glass-card rounded-2xl p-6 border-slate-800">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-8 h-8 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold font-mono">03</div>
+          <h3 class="text-lg font-bold text-white">Exploit Tracklet's Secret Superpower: The Contacts CRM</h3>
+        </div>
+        <p class="text-sm text-slate-300 leading-relaxed mb-4">
+          Over 75% of high-paying jobs are landed through referrals, recruiters, and warm networking — NOT cold website application portals.
+        </p>
+        <div class="p-4 rounded-xl bg-slate-900/80 border border-slate-800/80 text-xs text-slate-400 space-y-2">
+          <p>Tsenta and Simplify have completely ignored networking. Tracklet already has a <strong>dedicated Contacts &amp; Mentorship Hub</strong> with follow-up timers, webmail counterparty matching, and outreach templates.</p>
+          <p><strong class="text-white">Strategic Move:</strong> Make networking first-class: "Track your applications AND the humans who decide them."</p>
+        </div>
+      </div>
+
+      <!-- PILLAR 4 -->
+      <div class="glass-card rounded-2xl p-6 border-slate-800">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold font-mono">04</div>
+          <h3 class="text-lg font-bold text-white">The B2B Career Coach &amp; Outplacement Trojan Horse</h3>
+        </div>
+        <p class="text-sm text-slate-300 leading-relaxed mb-4">
+          Huntr built a multi-million-dollar bootstrapped business by selling "Huntr for Education" to universities and bootcamps. You can execute this modernly.
+        </p>
+        <div class="p-4 rounded-xl bg-slate-900/80 border border-slate-800/80 text-xs text-slate-400 space-y-2">
+          <p><strong class="text-white">Career Coaches Have 10–50 Clients:</strong> They currently force clients to use Google Sheets or Huntr. A lightweight "Tracklet for Coaches" (share client pipelines with 1 click) solves the CAC problem completely because coaches bring their own cohorts.</p>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- SECTION 6: 90-DAY ACTION PLAN -->
+  <section id="roadmap" class="py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="mb-10">
+      <div class="text-xs font-mono text-emerald-400 tracking-wider uppercase mb-1">Section 06</div>
+      <h2 class="text-3xl font-bold text-white tracking-tight">The 90-Day Solo-Founder Execution Roadmap</h2>
+      <p class="text-slate-400 mt-2 max-w-2xl">Concrete tactical milestones to validate Tracklet with outside users and establish early revenue.</p>
+    </div>
+
+    <div class="space-y-6">
+      
+      <!-- MONTH 1 -->
+      <div class="glass-card rounded-2xl p-6 border-slate-800">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-3">
+            <span class="px-2.5 py-1 rounded-md text-xs font-mono font-bold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">DAYS 1–30</span>
+            <h3 class="text-base font-bold text-white">Product Hardening &amp; The Killer Extension Clipper</h3>
+          </div>
+          <span class="text-xs text-slate-500 font-mono">Focus: Product Polish</span>
+        </div>
+        <ul class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs text-slate-300">
+          <li class="p-3 rounded-xl bg-slate-900/60 border border-slate-800/60">
+            <span class="font-bold text-white block mb-1">1. Flawless Chrome Extension Clipper</span>
+            Ensure 1-click clipping from LinkedIn, Indeed, Greenhouse, and Ashby works with 99% metadata capture accuracy.
+          </li>
+          <li class="p-3 rounded-xl bg-slate-900/60 border border-slate-800/60">
+            <span class="font-bold text-white block mb-1">2. Polish the Contacts CRM Connection</span>
+            Link applications to contacts seamlessly so users can see "Referrer: Sarah (VP Eng)" on the job card itself.
+          </li>
+          <li class="p-3 rounded-xl bg-slate-900/60 border border-slate-800/60">
+            <span class="font-bold text-white block mb-1">3. Zero-Bug Daily Driver Test</span>
+            Verify Lighthouse AA accessibility, instant optimistic updates, and clean CSV backup/restore.
+          </li>
+        </ul>
+      </div>
+
+      <!-- MONTH 2 -->
+      <div class="glass-card rounded-2xl p-6 border-slate-800">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-3">
+            <span class="px-2.5 py-1 rounded-md text-xs font-mono font-bold bg-purple-500/10 text-purple-400 border border-purple-500/20">DAYS 31–60</span>
+            <h3 class="text-base font-bold text-white">Targeted Beta &amp; The Anti-Bot Manifesto Launch</h3>
+          </div>
+          <span class="text-xs text-slate-500 font-mono">Focus: Distribution &amp; Validation</span>
+        </div>
+        <ul class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs text-slate-300">
+          <li class="p-3 rounded-xl bg-slate-900/60 border border-slate-800/60">
+            <span class="font-bold text-white block mb-1">1. Publish "Why Auto-Apply Bots Hurt You"</span>
+            Publish a high-signal technical teardown showing how ATS filters detect bot submissions and why networking converts 10x higher.
+          </li>
+          <li class="p-3 rounded-xl bg-slate-900/60 border border-slate-800/60">
+            <span class="font-bold text-white block mb-1">2. Onboard 50 Beta Power Users</span>
+            Target senior engineering and product communities (r/ExperiencedDevs, Blind, Tech Twitter) with a zero-noise pitch.
+          </li>
+          <li class="p-3 rounded-xl bg-slate-900/60 border border-slate-800/60">
+            <span class="font-bold text-white block mb-1">3. Interview 10 Active Job Seekers</span>
+            Observe where users experience friction and identify the exact "aha!" moment that creates retention.
+          </li>
+        </ul>
+      </div>
+
+      <!-- MONTH 3 -->
+      <div class="glass-card rounded-2xl p-6 border-slate-800">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-3">
+            <span class="px-2.5 py-1 rounded-md text-xs font-mono font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">DAYS 61–90</span>
+            <h3 class="text-base font-bold text-white">Monetization Rollout &amp; Career Coach Partnerships</h3>
+          </div>
+          <span class="text-xs text-slate-500 font-mono">Focus: First Revenue</span>
+        </div>
+        <ul class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs text-slate-300">
+          <li class="p-3 rounded-xl bg-slate-900/60 border border-slate-800/60">
+            <span class="font-bold text-white block mb-1">1. Launch $39 Search Pass via Stripe</span>
+            Introduce the transparent, non-predatory 6-month pass. Target $1,000 in first-month revenue.
+          </li>
+          <li class="p-3 rounded-xl bg-slate-900/60 border border-slate-800/60">
+            <span class="font-bold text-white block mb-1">2. Cold Outreach to 20 Career Coaches</span>
+            Offer them a free cohort license to test Tracklet with their active job-seeking clients.
+          </li>
+          <li class="p-3 rounded-xl bg-slate-900/60 border border-slate-800/60">
+            <span class="font-bold text-white block mb-1">3. Public Launch (ProductHunt &amp; HackerNews)</span>
+            Frame launch around: "The distraction-free, local-first job command center for serious candidates."
+          </li>
+        </ul>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="border-t border-slate-800 bg-slate-950 py-10 text-center text-xs text-slate-500 font-mono">
+    <div class="max-w-7xl mx-auto px-4">
+      <p>Prepared for Tracklet Founder • Strategic Intelligence Assessment • Branch: startup</p>
+      <p class="mt-2 text-slate-600">Built in accordance with Antigravity Competitive Analysis &amp; Market Research Frameworks</p>
+    </div>
+  </footer>
+
+</body>
+</html>
