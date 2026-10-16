@@ -610,18 +610,18 @@
     "semantic_hash": ""
   },
   "extension/content.js": {
-    "mtime": 1792137277.736523,
-    "ast_hash": "f5eeb2b1d603fc70284fd62151179f68",
+    "mtime": 1792141987.6098888,
+    "ast_hash": "04af5fe94f1f92ae49b430ce26342770",
     "semantic_hash": ""
   },
   "extension/manifest.json": {
-    "mtime": 1792137238.4330356,
-    "ast_hash": "ba3b4c508c9bf82d03bd287cdc13aba3",
+    "mtime": 1792141997.1477208,
+    "ast_hash": "68fae6d531f0f8ee68a25e86b0b94190",
     "semantic_hash": ""
   },
   "extension/popup.js": {
-    "mtime": 1792137290.5855098,
-    "ast_hash": "b204cc0989865b85b61bc09633b78ed6",
+    "mtime": 1792142035.701181,
+    "ast_hash": "a92785785f0654c865716c4a886d15a0",
     "semantic_hash": ""
   },
   "firebase-blueprint.json": {
@@ -640,7 +640,7 @@
     "semantic_hash": "113e0310414025b172787fde44bcf14f"
   },
   "package.json": {
-    "mtime": 1792137193.395509,
+    "mtime": 1792141834.0291562,
     "ast_hash": "10e99aa1f1a66971139b751cf6da0f4b",
     "semantic_hash": ""
   },
@@ -1105,7 +1105,7 @@
     "semantic_hash": ""
   },
   "src/instrument.ts": {
-    "mtime": 1792137213.6775596,
+    "mtime": 1792141834.0301576,
     "ast_hash": "e1a2ee0c56d4ccc6742aaafcc59248b5",
     "semantic_hash": ""
   },
@@ -1135,8 +1135,8 @@
     "semantic_hash": ""
   },
   "src/lib/constants.ts": {
-    "mtime": 1792137254.034123,
-    "ast_hash": "841d72f63b827b8aab88ae96cdb847f3",
+    "mtime": 1792142007.408685,
+    "ast_hash": "e28787b3d14e0d02cbcac1b70f7c13b1",
     "semantic_hash": ""
   },
   "src/lib/contactMigration.ts": {
@@ -1325,7 +1325,7 @@
     "semantic_hash": "4c8181d4a4daa95b4f56a7cd73753631"
   },
   "src/main.tsx": {
-    "mtime": 1792137183.183399,
+    "mtime": 1792141834.0311549,
     "ast_hash": "2e9e6c5e31a8c5810523321a53ad5c30",
     "semantic_hash": ""
   },
@@ -2055,8 +2055,8 @@
     "semantic_hash": ""
   },
   "index.html": {
-    "mtime": 1786969775.6252055,
-    "ast_hash": "262bf59af06a26d9058e5594b21a9ec9",
+    "mtime": 1792142055.0889153,
+    "ast_hash": "323d9b3808cfa23fd5e0e35c9042a57b",
     "semantic_hash": ""
   },
   "lighthouse-report.html": {
@@ -2065,18 +2065,18 @@
     "semantic_hash": ""
   },
   "public/__/auth/action.html": {
-    "mtime": 1786974916.5643134,
-    "ast_hash": "960bfc60649a0aea59c4413adb030ab8",
+    "mtime": 1792142109.1150067,
+    "ast_hash": "47cd488d72c981e320c825a6071f36c8",
     "semantic_hash": ""
   },
   "public/llms.txt": {
-    "mtime": 1786969775.6268423,
-    "ast_hash": "96dfb144216f4fbd1b6d88d644f7077f",
+    "mtime": 1792142090.8914397,
+    "ast_hash": "c6164e3824229c5794c3af0dd295d7ac",
     "semantic_hash": ""
   },
   "public/robots.txt": {
-    "mtime": 1786969775.6268423,
-    "ast_hash": "e2ccc6cbf85f97daa7bf9fd89f1d80c4",
+    "mtime": 1792142074.8788042,
+    "ast_hash": "7a7b431e0e653e5f0b38bf674f9e6ba9",
     "semantic_hash": ""
   },
   "specs/001-kanban-board-view/checklists/requirements.md": {
@@ -2515,7 +2515,7 @@
     "semantic_hash": ""
   },
   "api/report-issue.ts": {
-    "mtime": 1792137168.1147003,
+    "mtime": 1792141833.9348094,
     "ast_hash": "9f22e57e3d6e7093badd2771486d8b02",
     "semantic_hash": ""
   },

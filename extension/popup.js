@@ -5,7 +5,7 @@
  */
 
 document.addEventListener('DOMContentLoaded', async () => {
-  const TRACKLET_APP_URL = 'https://tracklet-eight.vercel.app';
+  const TRACKLET_APP_URL = 'https://usetracklet.netlify.app';
 
   // --- Token Refresh Helpers ---
 
