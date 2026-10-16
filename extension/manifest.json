@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Tracklet",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "description": "Clip and save job applications from LinkedIn, Indeed, Greenhouse, Lever, and any site directly into Tracklet.",
   "icons": {
     "16": "icons/icon16.png",
@@ -49,7 +49,8 @@
       "http://127.0.0.1:*/*",
       "https://*.firebaseapp.com/*",
       "https://*.web.app/*",
-      "https://*.vercel.app/*"
+      "https://*.vercel.app/*",
+      "https://*.netlify.app/*"
     ]
   },
   "commands": {
