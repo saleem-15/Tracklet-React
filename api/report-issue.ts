@@ -1,29 +1,70 @@
-// Vercel Serverless Function to dispatch bug reports to GitHub Issues
-// 100% Free Tier (Vercel Hobby) - Zero Credit Card Required
+// Platform-Agnostic Serverless Function to dispatch bug reports to GitHub Issues
+// Compatible with Netlify Functions (v2 Web API), Vercel, and standard Node/Web HTTP runtimes.
 
-export default async function handler(req: any, res: any) {
-  // CORS Pre-flight and Headers for cross-origin security
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader(
-    'Access-Control-Allow-Headers',
-    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
-  );
+function sendCompatResponse(res: any, statusCode: number, payload: Record<string, unknown>) {
+  const headers: Record<string, string> = {
+    'Access-Control-Allow-Credentials': 'true',
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers':
+      'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization',
+    'Content-Type': 'application/json',
+  };
 
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
+  if (res && typeof res.status === 'function') {
+    Object.entries(headers).forEach(([k, v]) => {
+      if (typeof res.setHeader === 'function') res.setHeader(k, v);
+    });
+    return res.status(statusCode).json(payload);
   }
 
-  if (req.method !== 'POST') {
-    return res.status(405).json({ 
+  return new Response(JSON.stringify(payload), {
+    status: statusCode,
+    headers,
+  });
+}
+
+export default async function handler(req: any, res?: any) {
+  const method = req?.method || 'GET';
+
+  if (method === 'OPTIONS') {
+    if (res && typeof res.status === 'function') {
+      res.setHeader('Access-Control-Allow-Credentials', 'true');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+      res.setHeader(
+        'Access-Control-Allow-Headers',
+        'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization'
+      );
+      return res.status(200).end();
+    }
+    return new Response(null, {
+      status: 200,
+      headers: {
+        'Access-Control-Allow-Credentials': 'true',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers':
+          'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization',
+      },
+    });
+  }
+
+  if (method !== 'POST') {
+    return sendCompatResponse(res, 405, { 
       error: 'Method Not Allowed', 
       message: 'Only POST requests are supported.' 
     });
   }
 
-  let bodyData = req.body;
-  if (typeof bodyData === 'string') {
+  let bodyData: any = req?.body;
+  if (!bodyData && typeof req?.json === 'function') {
+    try {
+      bodyData = await req.json();
+    } catch {
+      bodyData = {};
+    }
+  } else if (typeof bodyData === 'string') {
     try {
       bodyData = JSON.parse(bodyData);
     } catch {
@@ -44,7 +85,7 @@ export default async function handler(req: any, res: any) {
   } = bodyData || {};
 
   if (!title || !description || !diagnostics) {
-    return res.status(400).json({ 
+    return sendCompatResponse(res, 400, { 
       error: 'Bad Request', 
       message: 'Missing required fields: title, description, or diagnostics.' 
     });
@@ -54,9 +95,9 @@ export default async function handler(req: any, res: any) {
   const githubRepo = process.env.GITHUB_REPO || 'saleem-15/Tracklet-React';
 
   if (!githubToken) {
-    return res.status(500).json({
+    return sendCompatResponse(res, 500, {
       error: 'Configuration Missing',
-      message: 'GITHUB_TOKEN environment variable is not configured on Vercel.',
+      message: 'GITHUB_TOKEN environment variable is not configured.',
     });
   }
 
@@ -116,21 +157,21 @@ ${errorRows}
 
     if (!ghResponse.ok) {
       const errorData = await ghResponse.text();
-      return res.status(ghResponse.status).json({
+      return sendCompatResponse(res, ghResponse.status, {
         error: 'GitHub API Error',
         message: errorData,
       });
     }
 
     const issue = await ghResponse.json();
-    return res.status(201).json({
+    return sendCompatResponse(res, 201, {
       success: true,
       issueNumber: issue.number,
       issueUrl: issue.html_url,
       message: `Issue #${issue.number} created successfully.`,
     });
   } catch (err: any) {
-    return res.status(500).json({
+    return sendCompatResponse(res, 500, {
       error: 'Internal Server Error',
       message: err.message || 'Failed connecting to GitHub API.',
     });

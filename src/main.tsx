@@ -3,7 +3,6 @@ import './instrument';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { reactErrorHandler } from '@sentry/react';
-import { Analytics } from '@vercel/analytics/react';
 import App from './App.tsx';
 import { ErrorBoundary } from './components/ErrorBoundary.tsx';
 import './index.css';
@@ -16,7 +15,6 @@ createRoot(document.getElementById('root')!, {
   <StrictMode>
     <ErrorBoundary>
       <App />
-      <Analytics />
     </ErrorBoundary>
   </StrictMode>,
 );

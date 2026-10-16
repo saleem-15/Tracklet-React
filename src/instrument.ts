@@ -27,7 +27,7 @@ Sentry.init({
 
   // Performance Tracing (Production sample rate)
   tracesSampleRate: 0.2,
-  tracePropagationTargets: ['localhost', /^https:\/\/.*\.vercel\.app/, /^https:\/\/tracklet/],
+  tracePropagationTargets: ['localhost', /^https:\/\/.*\.vercel\.app/, /^https:\/\/.*\.netlify\.app/, /^https:\/\/tracklet/],
 
   // Session Replay
   replaysSessionSampleRate: 0.1,
