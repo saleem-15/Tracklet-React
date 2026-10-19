@@ -14,6 +14,18 @@ if (!posthogKey || !posthogHost) {
   posthog.init(posthogKey, {
     api_host: posthogHost,
     defaults: '2026-05-30',
+    person_profiles: 'identified_only',
+    capture_pageview: true,
+    capture_pageleave: true,
+    autocapture: true,
+    disable_session_recording: false,
+    session_recording: {
+      maskAllInputs: false,
+      maskInputOptions: {
+        password: true,
+      },
+    },
+    enable_recording_console_log: true,
     logs: {
       serviceName: 'tracklet-web',
       environment: import.meta.env.MODE,
@@ -26,6 +38,11 @@ if (!posthogKey || !posthogHost) {
       capture_console_errors: false,
     },
     loaded: (ph) => {
+      if (import.meta.env.DEV) {
+        console.log('[Tracklet Analytics] PostHog initialized successfully.', {
+          distinctId: ph.get_distinct_id(),
+        });
+      }
       // Connect PostHog session replay to Sentry tags
       const sessionId = ph.get_session_id();
       if (sessionId) {
