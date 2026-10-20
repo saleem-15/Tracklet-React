@@ -1150,8 +1150,8 @@
     "semantic_hash": ""
   },
   "src/lib/contactUtils.ts": {
-    "mtime": 1792506044.8827605,
-    "ast_hash": "0304f3cc6ef24583dd8ce463bbfb27b5",
+    "mtime": 1792507971.694935,
+    "ast_hash": "e16b68b33add8a3d8961114a04cbccdf",
     "semantic_hash": ""
   },
   "src/lib/dateUtils.ts": {
@@ -2340,8 +2340,8 @@
     "semantic_hash": ""
   },
   "src/context/ContactsContext.tsx": {
-    "mtime": 1792506044.876749,
-    "ast_hash": "1b88aff3ee66c0bf2884a5a02e1840a0",
+    "mtime": 1792507934.0863252,
+    "ast_hash": "758350f3401005bcb6fc0b8de82673dc",
     "semantic_hash": ""
   },
   "src/context/NavigationContext.tsx": {
@@ -3045,13 +3045,13 @@
     "semantic_hash": ""
   },
   "tests/unit/contactDeduplication.test.ts": {
-    "mtime": 1792506045.023476,
-    "ast_hash": "1040c3777ce5dffc72633a4fab2cd574",
+    "mtime": 1792508005.417072,
+    "ast_hash": "c0447381971035a525ccde5bc83e5c68",
     "semantic_hash": ""
   },
   "tests/unit/contactFollowUpAndFilter.test.ts": {
-    "mtime": 1792506045.0248344,
-    "ast_hash": "56df41a03c8aefdb8437070350665d5f",
+    "mtime": 1792508066.323715,
+    "ast_hash": "b1320514953a3564523c6a022b921455",
     "semantic_hash": ""
   },
   "tests/unit/contactModalDeduplication.test.tsx": {
@@ -3060,8 +3060,8 @@
     "semantic_hash": ""
   },
   "tests/unit/contactNavigationEscape.test.tsx": {
-    "mtime": 1792506045.0273564,
-    "ast_hash": "8002bf576e0e4370cd3c44d8a927ae13",
+    "mtime": 1792508169.3181987,
+    "ast_hash": "c441bbadb9960b8467b9bfddc2eba2eb",
     "semantic_hash": ""
   }
 }
