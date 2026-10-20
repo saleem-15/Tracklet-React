@@ -790,8 +790,8 @@
     "semantic_hash": ""
   },
   "src/components/StatsView.tsx": {
-    "mtime": 1792511802.7350159,
-    "ast_hash": "326256b688286d58106911e7ad9c230b",
+    "mtime": 1792512537.7448597,
+    "ast_hash": "59ea5ed0ef819df8d7019c705d2541d9",
     "semantic_hash": ""
   },
   "src/components/StatusBadge.tsx": {
@@ -880,8 +880,8 @@
     "semantic_hash": "fbaf3a93c88894108519389dafdbbdbc"
   },
   "src/components/analytics/ResponseVelocityCard.tsx": {
-    "mtime": 1792511802.7387147,
-    "ast_hash": "d7a40207359cae5e33a48ed7485887b8",
+    "mtime": 1792512575.0240622,
+    "ast_hash": "4ac27964819df4f007bae590b012be02",
     "semantic_hash": ""
   },
   "src/components/auth/AuthTextField.tsx": {
@@ -1110,8 +1110,8 @@
     "semantic_hash": ""
   },
   "src/lib/analyticsUtils.ts": {
-    "mtime": 1792511802.7420366,
-    "ast_hash": "84a236be2c7ac55dec1bc44ba1532380",
+    "mtime": 1792512486.0807433,
+    "ast_hash": "1535743c93fa9c7ea2fe86fe41591ceb",
     "semantic_hash": ""
   },
   "src/lib/applicationRepository.ts": {
@@ -3065,8 +3065,8 @@
     "semantic_hash": ""
   },
   "tests/unit/analyticsUtils.test.ts": {
-    "mtime": 1792511802.746584,
-    "ast_hash": "3cb7c1651bbb084de9e12b73ef125e63",
+    "mtime": 1792512692.8301597,
+    "ast_hash": "8313c9444c7b91c2b7568240a04e607c",
     "semantic_hash": ""
   }
 }
