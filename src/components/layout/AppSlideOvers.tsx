@@ -1,7 +1,6 @@
 import { ApplicationDetailPanel } from '../ApplicationDetailPanel';
 import { ContactDetailPanel } from '../ContactDetailPanel';
 import { useAuth } from '../../context/AuthContext';
-import { useNavigation } from '../../context/NavigationContext';
 import { useApplicationsContext } from '../../context/ApplicationsContext';
 import { useContactsContext } from '../../context/ContactsContext';
 import { useToastContext } from '../../context/ToastContext';
@@ -18,7 +17,6 @@ import { useToastContext } from '../../context/ToastContext';
  */
 export function AppSlideOvers() {
   const { user } = useAuth();
-  const { setSelectedAppId } = useNavigation();
   const { addToast } = useToastContext();
 
   const {
@@ -31,7 +29,8 @@ export function AppSlideOvers() {
   const {
     contacts,
     selectedContact,
-    setSelectedContactId,
+    handleCloseContact,
+    handleCloseApp,
     handleUpdateContact,
     handleDeleteContact,
     handleLinkContact,
@@ -49,7 +48,7 @@ export function AppSlideOvers() {
         app={selectedApp}
         allContacts={contacts}
         currentUserEmail={user?.email || undefined}
-        onClose={() => setSelectedAppId(null)}
+        onClose={handleCloseApp}
         onUpdateApp={handleUpdateApplication}
         onDeleteApp={handleDeleteApplication}
         onLinkContact={handleLinkContact}
@@ -65,7 +64,7 @@ export function AppSlideOvers() {
       <ContactDetailPanel
         contact={selectedContact}
         applications={applications}
-        onClose={() => setSelectedContactId(null)}
+        onClose={handleCloseContact}
         onUpdateContact={handleUpdateContact}
         onDeleteContact={handleDeleteContact}
         onUnlinkFromApp={handleUnlinkContact}

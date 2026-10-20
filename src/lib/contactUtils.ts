@@ -23,7 +23,7 @@ export function filterContacts(
     if (onlyFollowUpDue) {
       if (!contact.nextFollowUpDate) return false;
       const hours = getContactFollowUpHoursRemaining(contact.nextFollowUpDate);
-      if (hours === null || hours > thresholdHours || hours < -120) return false;
+      if (hours === null || hours > thresholdHours) return false;
     }
 
     // Category match
@@ -132,7 +132,7 @@ export function formatContactHoursLeft(hours: number): string {
 }
 
 /**
- * Returns all contacts with follow-ups due within thresholdHours (or overdue up to 120h).
+ * Returns all contacts with follow-ups due within thresholdHours or overdue.
  */
 export function getContactsFollowUpDueSoon(
   contacts: Contact[],
@@ -146,8 +146,8 @@ export function getContactsFollowUpDueSoon(
 
     const hoursLeft = getContactFollowUpHoursRemaining(contact.nextFollowUpDate, now);
     if (hoursLeft !== null) {
-      // Due within thresholdHours, or overdue up to 5 days
-      if (hoursLeft <= thresholdHours && hoursLeft >= -120) {
+      // Due within thresholdHours, or overdue
+      if (hoursLeft <= thresholdHours) {
         result.push({
           contact,
           hoursLeft,
@@ -257,4 +257,72 @@ export function getPresetDate(daysAhead: number, baseDate = new Date()): string 
   return `${year}-${month}-${day}`;
 }
 
+/**
+ * Checks whether a candidate contact matches any existing contact in the list.
+ * Match criteria:
+ * 1. Email match (case-insensitive, trimmed) if both have an email.
+ * 2. Name + Organization match (normalized text) if both have name and the same organization.
+ * 3. Identical Name match if both have the same name and neither specifies an organization.
+ * 4. Phone match if both have non-empty phone numbers (digits only, >= 7 digits).
+ *
+ * @param candidate The contact fields being added or evaluated.
+ * @param existingContacts The current contacts list.
+ * @param excludeContactId Optional ID to exclude from matching (useful when editing).
+ * @returns The matching duplicate contact, or null if no duplicate is found.
+ */
+export function findDuplicateContact(
+  candidate: {
+    name?: string;
+    email?: string;
+    phone?: string;
+    organization?: string;
+  },
+  existingContacts: Contact[],
+  excludeContactId?: string
+): Contact | null {
+  const normCandName = candidate.name ? candidate.name.toLowerCase().trim().replace(/\s+/g, ' ') : '';
+  const normCandEmail = candidate.email ? candidate.email.toLowerCase().trim() : '';
+  const normCandOrg = candidate.organization ? candidate.organization.toLowerCase().trim().replace(/\s+/g, ' ') : '';
+  const candDigits = candidate.phone ? candidate.phone.replace(/\D/g, '') : '';
 
+  for (const existing of existingContacts) {
+    if (excludeContactId && existing.id === excludeContactId) {
+      continue;
+    }
+
+    const normExistEmail = existing.email ? existing.email.toLowerCase().trim() : '';
+    // 1. Exact Email Match (strongest identifier)
+    if (normCandEmail && normExistEmail && normCandEmail === normExistEmail) {
+      return existing;
+    }
+
+    const normExistName = existing.name ? existing.name.toLowerCase().trim().replace(/\s+/g, ' ') : '';
+    const normExistOrg = existing.organization ? existing.organization.toLowerCase().trim().replace(/\s+/g, ' ') : '';
+
+    // 2. Name match
+    if (normCandName && normExistName && normCandName === normExistName) {
+      // If both specify organization and they match
+      if (normCandOrg && normExistOrg && normCandOrg === normExistOrg) {
+        return existing;
+      }
+      // If neither specifies an organization
+      if (!normCandOrg && !normExistOrg) {
+        return existing;
+      }
+    }
+
+    // 3. Phone match (normalized digits, min 7 digits, handles optional country code e.g. +1)
+    const existDigits = existing.phone ? existing.phone.replace(/\D/g, '') : '';
+    if (candDigits && existDigits && candDigits.length >= 7 && existDigits.length >= 7) {
+      const phoneMatches =
+        candDigits === existDigits ||
+        (candDigits.length === 10 && existDigits.length === 11 && existDigits.endsWith(candDigits)) ||
+        (existDigits.length === 10 && candDigits.length === 11 && candDigits.endsWith(existDigits));
+      if (phoneMatches) {
+        return existing;
+      }
+    }
+  }
+
+  return null;
+}

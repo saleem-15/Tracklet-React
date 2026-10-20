@@ -4,6 +4,7 @@ import { Application, Contact } from '../types';
 import { ApplicationRepository } from '../lib/applicationRepository';
 import { ContactRepository } from '../lib/contactRepository';
 import { appendStatusHistory } from '../lib/historyService';
+import { findDuplicateContact } from '../lib/contactUtils';
 import { 
   setupExtensionSync, 
   syncAuthSessionToExtension, 
@@ -193,15 +194,25 @@ export function useExtensionSync({
 
     // Auto-link discovered contact only when email was successfully added
     if (newContact && newContact.name && newContact.email) {
-      handleAddContactRef.current({
-        name: newContact.name,
-        email: newContact.email,
-        organization: newContact.organization || undefined,
-        category: 'Recruiter',
-        applicationIds: [appId],
-      }).catch((err) => {
-        console.warn('Failed to auto-create contact from email log:', err);
-      });
+      const existingMatch = findDuplicateContact(newContact, contactsRef.current);
+      if (existingMatch) {
+        const isAlreadyLinked = (existingMatch.applicationIds || []).includes(appId);
+        if (!isAlreadyLinked && handleLinkContactRef.current) {
+          handleLinkContactRef.current(existingMatch.id, appId).catch((err) => {
+            console.warn('Failed to link existing contact from email log:', err);
+          });
+        }
+      } else {
+        handleAddContactRef.current({
+          name: newContact.name,
+          email: newContact.email,
+          organization: newContact.organization || undefined,
+          category: 'Recruiter',
+          applicationIds: [appId],
+        }).catch((err) => {
+          console.warn('Failed to auto-create contact from email log:', err);
+        });
+      }
     }
   }, [user, addToast, setApplications, setSelectedAppId, applicationsRef]);
 

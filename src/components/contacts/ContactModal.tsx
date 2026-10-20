@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { X, User, Briefcase, Building2, Mail, Phone, Linkedin, Calendar, Check } from 'lucide-react';
+import { X, User, Briefcase, Building2, Mail, Phone, Linkedin, Calendar, Check, AlertCircle } from 'lucide-react';
+import { findDuplicateContact } from '../../lib/contactUtils';
 import { Contact, ContactCategory, Application } from '../../types';
 import { CONTACT_CATEGORIES } from '../../lib/constants';
 import { CustomSelectDropdown, SelectOption } from '../CustomSelectDropdown';
@@ -10,8 +11,10 @@ import { useEscapeKey } from '../../lib/useEscapeKey';
 interface ContactModalProps {
   isOpen: boolean;
   editingContact?: Contact | null;
+  contacts?: Contact[];
   applications?: Application[];
   onClose: () => void;
+  onSelectContact?: (contactId: string) => void;
   onSave: (contactData: Omit<Contact, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => Promise<void>;
 }
 
@@ -23,8 +26,10 @@ const categoryOptions: SelectOption<ContactCategory>[] = CONTACT_CATEGORIES.map(
 export const ContactModal: React.FC<ContactModalProps> = ({
   isOpen,
   editingContact = null,
+  contacts = [],
   applications = [],
   onClose,
+  onSelectContact,
   onSave,
 }) => {
   const [name, setName] = useState('');
@@ -39,6 +44,7 @@ export const ContactModal: React.FC<ContactModalProps> = ({
   const [selectedAppIds, setSelectedAppIds] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [duplicateContact, setDuplicateContact] = useState<Contact | null>(null);
 
   // Close on Escape key (stack-aware)
   useEscapeKey(onClose, isOpen);
@@ -69,31 +75,22 @@ export const ContactModal: React.FC<ContactModalProps> = ({
         setSelectedAppIds([]);
       }
       setError(null);
+      setDuplicateContact(null);
     }
   }, [isOpen, editingContact]);
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+    const executeSave = () => {
     const trimmedName = name.trim();
-    if (!trimmedName) {
-      setError('Contact name is required.');
-      return;
-    }
-
     const trimmedEmail = email.trim();
-    if (trimmedEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
-      setError('Please enter a valid email address (e.g. name.family@company.com).');
-      return;
-    }
-
     let formattedLinkedIn = linkedIn.trim();
     if (formattedLinkedIn && !/^https?:\/\//i.test(formattedLinkedIn)) {
       formattedLinkedIn = `https://${formattedLinkedIn}`;
     }
 
     setError(null);
+    setDuplicateContact(null);
     onSave({
       name: trimmedName,
       role: role.trim() || undefined,
@@ -110,6 +107,40 @@ export const ContactModal: React.FC<ContactModalProps> = ({
     });
 
     onClose();
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmedName = name.trim();
+    if (!trimmedName) {
+      setError('Contact name is required.');
+      return;
+    }
+
+    const trimmedEmail = email.trim();
+    if (trimmedEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      setError('Please enter a valid email address (e.g. name.family@company.com).');
+      return;
+    }
+
+    // Duplicate guard for new contacts
+    if (!editingContact && contacts && contacts.length > 0) {
+      const match = findDuplicateContact(
+        {
+          name: trimmedName,
+          email: trimmedEmail || undefined,
+          phone: phone.trim() || undefined,
+          organization: organization.trim() || undefined,
+        },
+        contacts
+      );
+      if (match && !duplicateContact) {
+        setDuplicateContact(match);
+        return;
+      }
+    }
+
+    executeSave();
   };
 
   const toggleApplicationLink = (appId: string) => {
@@ -158,8 +189,45 @@ export const ContactModal: React.FC<ContactModalProps> = ({
               {error}
             </div>
           )}
-
-          {/* Name & Category */}
+          {duplicateContact && (
+            <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs space-y-2.5 animate-in fade-in duration-150">
+              <div className="flex items-start gap-2.5">
+                <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <p className="font-semibold text-amber-900">
+                    A matching contact already exists
+                  </p>
+                  <p className="text-amber-800 leading-relaxed">
+                    <span className="font-medium text-amber-950">{duplicateContact.name}</span>
+                    {duplicateContact.organization ? ` at ${duplicateContact.organization}` : ''}
+                    {duplicateContact.email ? ` (${duplicateContact.email})` : ''} is already in your network.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 pt-1 border-t border-amber-200/60">
+                {onSelectContact && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onClose();
+                      onSelectContact(duplicateContact.id);
+                    }}
+                    className="px-2.5 py-1 text-xs font-semibold bg-white text-slate-800 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
+                  >
+                    View Existing Contact
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={executeSave}
+                  className="px-2.5 py-1 text-xs font-medium text-amber-800 hover:text-amber-950 underline cursor-pointer"
+                >
+                  Create duplicate anyway
+                </button>
+              </div>
+            </div>
+          )}
+                    {/* Name & Category */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1">
               <label className="block text-xs font-semibold text-slate-700">
@@ -170,7 +238,7 @@ export const ContactModal: React.FC<ContactModalProps> = ({
                   type="text"
                   required
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={(e) => { setName(e.target.value); if (duplicateContact) setDuplicateContact(null); }}
                   placeholder="Jane Doe"
                   className="w-full bg-slate-50/60 text-slate-900 placeholder-slate-400 pl-8 pr-3 h-[38px] rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500 focus:bg-white text-xs font-medium transition-all"
                 />
@@ -218,7 +286,7 @@ export const ContactModal: React.FC<ContactModalProps> = ({
                 <input
                   type="text"
                   value={organization}
-                  onChange={(e) => setOrganization(e.target.value)}
+                  onChange={(e) => { setOrganization(e.target.value); if (duplicateContact) setDuplicateContact(null); }}
                   placeholder="e.g. Google"
                   className="w-full bg-slate-50/60 text-slate-900 placeholder-slate-400 pl-8 pr-3 h-[38px] rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500 focus:bg-white text-xs transition-all"
                 />
@@ -237,7 +305,7 @@ export const ContactModal: React.FC<ContactModalProps> = ({
                 <input
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => { setEmail(e.target.value); if (duplicateContact) setDuplicateContact(null); }}
                   placeholder="jane@company.com"
                   className="w-full bg-slate-50/60 text-slate-900 placeholder-slate-400 pl-8 pr-3 h-[38px] rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500 focus:bg-white text-xs font-mono transition-all"
                 />
@@ -253,7 +321,7 @@ export const ContactModal: React.FC<ContactModalProps> = ({
                 <input
                   type="tel"
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  onChange={(e) => { setPhone(e.target.value); if (duplicateContact) setDuplicateContact(null); }}
                   placeholder="+1 (555) 000-0000"
                   className="w-full bg-slate-50/60 text-slate-900 placeholder-slate-400 pl-8 pr-3 h-[38px] rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500 focus:bg-white text-xs font-mono transition-all"
                 />
