@@ -144,7 +144,7 @@ describe('Extension Synchronization Bug Fixes (#45, #44, #43)', () => {
           lastError: null,
           sendMessage: vi.fn(),
           onMessage: { addListener: vi.fn() },
-          getManifest: () => ({ version: '1.2.6', name: 'Tracklet' }),
+          getManifest: () => ({ version: '1.2.7', name: 'Tracklet' }),
         },
         action: {
           setBadgeText: vi.fn(),
@@ -254,8 +254,9 @@ describe('Extension Synchronization Bug Fixes (#45, #44, #43)', () => {
             ])
           ),
           get: vi.fn(() => Promise.resolve({ id: 102, active: true })),
-          sendMessage: vi.fn(() =>
-            Promise.resolve({
+          sendMessage: vi.fn((tabId: number, message: any, optionsOrCallback?: any, responseCallback?: any) => {
+            const cb = typeof optionsOrCallback === 'function' ? optionsOrCallback : responseCallback;
+            const res = {
               pageType: 'contact_profile',
               profileData: {
                 fullName: 'Sarah Connor',
@@ -264,8 +265,10 @@ describe('Extension Synchronization Bug Fixes (#45, #44, #43)', () => {
                 organization: 'Cyberdyne',
                 linkedInUrl: 'https://linkedin.com/in/sarah-connor',
               },
-            })
-          ),
+            };
+            if (cb) cb(res);
+            return Promise.resolve(res);
+          }),
           onActivated: { addListener: vi.fn() },
           onUpdated: { addListener: vi.fn() },
         },
@@ -273,7 +276,7 @@ describe('Extension Synchronization Bug Fixes (#45, #44, #43)', () => {
           lastError: null,
           sendMessage: vi.fn(),
           onMessage: { addListener: vi.fn() },
-          getManifest: () => ({ version: '1.2.6', name: 'Tracklet' }),
+          getManifest: () => ({ version: '1.2.7', name: 'Tracklet' }),
         },
         action: {
           setBadgeText: vi.fn(),
@@ -285,7 +288,7 @@ describe('Extension Synchronization Bug Fixes (#45, #44, #43)', () => {
       executePopup();
 
       document.dispatchEvent(new Event('DOMContentLoaded'));
-      await new Promise((r) => setTimeout(r, 60));
+      await new Promise((r) => setTimeout(r, 200));
 
       // Stale entry should have been pruned from tracklet_guest_contacts_v1
       expect(mockStorage.tracklet_guest_contacts_v1).toEqual([]);
@@ -295,9 +298,9 @@ describe('Extension Synchronization Bug Fixes (#45, #44, #43)', () => {
       const isBannerVisible = statusBanner && statusBanner.style.display !== 'none';
       expect(isBannerVisible).toBeFalsy();
 
-      // Save button should show "Save Contact" (not "Update Contact")
+      // Save button should show "Save Contact to Tracklet" (not "Update Contact")
       const saveBtnText = document.getElementById('save-contact-btn')?.querySelector('span')?.textContent;
-      expect(saveBtnText).toBe('Save Contact');
+      expect(saveBtnText).toBe('Save Contact to Tracklet');
     });
   });
 
@@ -359,16 +362,19 @@ describe('Extension Synchronization Bug Fixes (#45, #44, #43)', () => {
             ])
           ),
           get: vi.fn(() => Promise.resolve({ id: 103, active: true })),
-          sendMessage: vi.fn(() =>
-            Promise.resolve({
+          sendMessage: vi.fn((tabId: number, message: any, optionsOrCallback?: any, responseCallback?: any) => {
+            const cb = typeof optionsOrCallback === 'function' ? optionsOrCallback : responseCallback;
+            const res = {
               pageType: 'job_posting',
               jobData: {
                 company: 'Acme Corp',
                 role: 'Staff Engineer',
                 url: 'https://acme.com/jobs/staff',
               },
-            })
-          ),
+            };
+            if (cb) cb(res);
+            return Promise.resolve(res);
+          }),
           onActivated: { addListener: vi.fn() },
           onUpdated: { addListener: vi.fn() },
         },
@@ -376,7 +382,7 @@ describe('Extension Synchronization Bug Fixes (#45, #44, #43)', () => {
           lastError: null,
           sendMessage: vi.fn(),
           onMessage: { addListener: vi.fn() },
-          getManifest: () => ({ version: '1.2.6', name: 'Tracklet' }),
+          getManifest: () => ({ version: '1.2.7', name: 'Tracklet' }),
         },
         action: {
           setBadgeText: vi.fn(),

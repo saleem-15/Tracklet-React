@@ -3923,14 +3923,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     if (!res.ok) {
-      if (docIdToUpdate && (res.status === 404 || res.status === 400)) {
+      if (docIdToUpdate && res.status === 404) {
         console.warn(`[Tracklet] Target contact ${docIdToUpdate} no longer exists in Firestore. Falling back to fresh creation.`);
-        chrome.storage.local.get(['tracklet_contacts_index', 'tracklet_guest_contacts_v1'], (st) => {
-          const cleanIdx = (st.tracklet_contacts_index || []).filter(c => c.id !== docIdToUpdate);
-          const cleanGuest = (st.tracklet_guest_contacts_v1 || []).filter(c => c.id !== docIdToUpdate);
-          chrome.storage.local.set({ tracklet_contacts_index: cleanIdx, tracklet_guest_contacts_v1: cleanGuest });
-        });
-        return pushStandaloneContactToFirestoreDirectly(payload, userSession, config, null);
+        const recreated = await pushStandaloneContactToFirestoreDirectly(payload, userSession, config, null);
+        return { ...recreated, replacedId: docIdToUpdate };
       }
       const errText = await res.text();
       throw new Error(`Firestore Contact Error [${res.status}]: ${errText}`);
@@ -3992,13 +3988,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 1. Direct Firestore save via REST API if logged in
     if (currentUserSession && currentUserSession.uid) {
       try {
-        await pushStandaloneContactToFirestoreDirectly(
+        const savedContactDoc = await pushStandaloneContactToFirestoreDirectly(
           contactPayload,
           currentUserSession,
           currentFirebaseConfig,
           matchedExistingContact?.id
         );
         savedToCloud = true;
+        if (savedContactDoc?.replacedId) {
+          const newDocId = savedContactDoc.name ? savedContactDoc.name.split('/').pop() : contactPayload.id;
+          contactPayload.id = newDocId;
+          contactPayload.replacedId = savedContactDoc.replacedId;
+        }
       } catch (err) {
         console.warn('[Tracklet] Direct Firestore contact save failed:', err);
       }
@@ -4031,7 +4032,15 @@ document.addEventListener('DOMContentLoaded', async () => {
       let contactsIndex = result.tracklet_contacts_index || [];
       let pendingContacts = result.tracklet_pending_contacts || [];
 
-      if (matchedExistingContact) {
+      const replacedId = contactPayload.replacedId;
+      if (replacedId) {
+        guestContacts = [contactPayload, ...guestContacts.filter(c => c.id !== replacedId && c.id !== contactPayload.id)];
+        contactsIndex = [contactPayload, ...contactsIndex.filter(c => c.id !== replacedId && c.id !== contactPayload.id)];
+        pendingContacts = pendingContacts.filter(c => c.id !== replacedId && c.id !== contactPayload.id);
+        if (!savedToCloud) {
+          pendingContacts = [contactPayload, ...pendingContacts];
+        }
+      } else if (matchedExistingContact) {
         guestContacts = guestContacts.map(c => c.id === matchedExistingContact.id ? contactPayload : c);
         contactsIndex = contactsIndex.map(c => c.id === matchedExistingContact.id ? contactPayload : c);
         pendingContacts = pendingContacts.map(c => c.id === matchedExistingContact.id ? contactPayload : c);
@@ -4426,14 +4435,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     );
 
     if (!response.ok) {
-      if (docIdToUpdate && (response.status === 404 || response.status === 400)) {
+      if (docIdToUpdate && response.status === 404) {
         console.warn(`[Tracklet] Target document ${docIdToUpdate} no longer exists in Firestore. Creating new application.`);
-        chrome.storage.local.get(['tracklet_apps_index', 'tracklet_guest_apps_v1'], (st) => {
-          const cleanIdx = (st.tracklet_apps_index || []).filter(a => a.id !== docIdToUpdate);
-          const cleanGuest = (st.tracklet_guest_apps_v1 || []).filter(a => a.id !== docIdToUpdate);
-          chrome.storage.local.set({ tracklet_apps_index: cleanIdx, tracklet_guest_apps_v1: cleanGuest });
-        });
-        return pushToFirestoreDirectly(payload, userSession, config, null);
+        const recreated = await pushToFirestoreDirectly(payload, userSession, config, null);
+        return { ...recreated, replacedId: docIdToUpdate };
       }
       const errText = await response.text();
       throw new Error(`Firestore REST HTTP ${response.status}: ${errText}`);
@@ -4516,14 +4521,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         const data = await res.json();
         return docIdToUpdate || (data.name ? data.name.split('/').pop() : null);
       }
-      if (docIdToUpdate && (res.status === 404 || res.status === 400)) {
+      if (docIdToUpdate && res.status === 404) {
         console.warn(`[Tracklet] Target contact ${docIdToUpdate} no longer exists in Firestore. Creating new contact.`);
-        chrome.storage.local.get(['tracklet_contacts_index', 'tracklet_guest_contacts_v1'], (st) => {
-          const cleanIdx = (st.tracklet_contacts_index || []).filter(c => c.id !== docIdToUpdate);
-          const cleanGuest = (st.tracklet_guest_contacts_v1 || []).filter(c => c.id !== docIdToUpdate);
-          chrome.storage.local.set({ tracklet_contacts_index: cleanIdx, tracklet_guest_contacts_v1: cleanGuest });
-        });
-        return pushContactToFirestoreDirectly({ ...contact, id: undefined }, appId, userSession, config);
+        return await pushContactToFirestoreDirectly({ ...contact, id: undefined }, appId, userSession, config);
       }
     } catch (e) {
       console.warn('Direct Firestore contact push failed:', e);
@@ -4706,8 +4706,53 @@ document.addEventListener('DOMContentLoaded', async () => {
               ...(bundledContactPayload.applicationIds || []).filter(id => !id.startsWith('ext-'))
             ]));
           }
+          const originalBundledContactId = bundledContactPayload.id;
           const pushedContactId = await pushContactToFirestoreDirectly(bundledContactPayload, finalizedApp.id, currentUserSession, currentFirebaseConfig);
           contactSavedToCloud = Boolean(pushedContactId);
+
+          if (pushedContactId && pushedContactId !== originalBundledContactId) {
+            bundledContactPayload.id = pushedContactId;
+            bundledContactPayload.replacedId = originalBundledContactId;
+            basePayload.contactIds = (basePayload.contactIds || []).map(id => id === originalBundledContactId ? pushedContactId : id);
+            if (!basePayload.contactIds.includes(pushedContactId)) {
+              basePayload.contactIds.push(pushedContactId);
+            }
+            if (finalizedApp) {
+              finalizedApp.contactIds = [...basePayload.contactIds];
+            }
+            try {
+              const projectId = currentFirebaseConfig?.projectId || 'demo-tracklet';
+              const apiKey = currentFirebaseConfig?.apiKey;
+              const userId = currentUserSession.uid;
+              let patchUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/users/${userId}/applications/${finalizedApp.id}?updateMask.fieldPaths=contactIds`;
+              if (apiKey && apiKey !== 'demo-api-key') {
+                patchUrl += `&key=${encodeURIComponent(apiKey)}`;
+              }
+              await fetchWithTokenRefresh(
+                patchUrl,
+                {
+                  method: 'PATCH',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${currentUserSession.idToken}`
+                  },
+                  body: JSON.stringify({
+                    fields: {
+                      contactIds: {
+                        arrayValue: {
+                          values: basePayload.contactIds.map(id => ({ stringValue: id }))
+                        }
+                      }
+                    }
+                  })
+                },
+                currentUserSession,
+                currentFirebaseConfig?.apiKey
+              );
+            } catch (patchErr) {
+              console.warn('[Tracklet] Failed to update application with recreated contactId:', patchErr);
+            }
+          }
         }
       } catch (cloudErr) {
         console.warn('Direct Firestore push failed (offline or auth expired), falling back to local storage:', cloudErr);
@@ -4757,16 +4802,26 @@ document.addEventListener('DOMContentLoaded', async () => {
         let guestContacts = res?.tracklet_guest_contacts_v1 || [];
         let pendingContacts = res?.tracklet_pending_contacts || [];
 
-        const existingIdx = contactsIndex.findIndex(c => c.id === bundledContactPayload.id);
-        if (existingIdx >= 0) {
-          contactsIndex[existingIdx] = bundledContactPayload;
-          guestContacts = guestContacts.map(c => c.id === bundledContactPayload.id ? bundledContactPayload : c);
-          pendingContacts = pendingContacts.map(c => c.id === bundledContactPayload.id ? bundledContactPayload : c);
-        } else {
-          contactsIndex = [bundledContactPayload, ...contactsIndex];
-          guestContacts = [bundledContactPayload, ...guestContacts];
+        const replacedContactId = bundledContactPayload.replacedId;
+        if (replacedContactId) {
+          contactsIndex = [bundledContactPayload, ...contactsIndex.filter(c => c.id !== replacedContactId && c.id !== bundledContactPayload.id)];
+          guestContacts = [bundledContactPayload, ...guestContacts.filter(c => c.id !== replacedContactId && c.id !== bundledContactPayload.id)];
+          pendingContacts = pendingContacts.filter(c => c.id !== replacedContactId && c.id !== bundledContactPayload.id);
           if (!contactSavedToCloud) {
             pendingContacts = [bundledContactPayload, ...pendingContacts];
+          }
+        } else {
+          const existingIdx = contactsIndex.findIndex(c => c.id === bundledContactPayload.id);
+          if (existingIdx >= 0) {
+            contactsIndex[existingIdx] = bundledContactPayload;
+            guestContacts = guestContacts.map(c => c.id === bundledContactPayload.id ? bundledContactPayload : c);
+            pendingContacts = pendingContacts.map(c => c.id === bundledContactPayload.id ? bundledContactPayload : c);
+          } else {
+            contactsIndex = [bundledContactPayload, ...contactsIndex];
+            guestContacts = [bundledContactPayload, ...guestContacts];
+            if (!contactSavedToCloud) {
+              pendingContacts = [bundledContactPayload, ...pendingContacts];
+            }
           }
         }
 
@@ -4784,7 +4839,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       let guestApps = result.tracklet_guest_apps_v1 || [];
       let appsIndex = result.tracklet_apps_index || [];
 
-      if (matchedApplication?.id) {
+      if (finalizedApp?.replacedId) {
+        guestApps = [finalizedApp, ...guestApps.filter(a => a.id !== finalizedApp.replacedId)];
+        appsIndex = [finalizedApp, ...appsIndex.filter(a => a.id !== finalizedApp.replacedId)];
+        pending = pending.filter(a => a.id !== finalizedApp.replacedId);
+        if (!savedToCloud) {
+          pending = [finalizedApp, ...pending];
+        }
+      } else if (matchedApplication?.id) {
         guestApps = guestApps.map(a => a.id === matchedApplication.id ? finalizedApp : a);
         appsIndex = appsIndex.map(a => a.id === matchedApplication.id ? finalizedApp : a);
         pending = pending.map(a => a.id === matchedApplication.id ? finalizedApp : a);

@@ -262,9 +262,6 @@ export function useContacts({
     const targetContact = contactsRef.current.find((c) => c.id === id);
     if (!targetContact) return;
 
-    // Notify extension to purge from its pending/sync storage
-    broadcastDeletedContact(id);
-
     const linkedAppIds = targetContact.applicationIds || [];
 
     setContacts((prev) => {
@@ -297,6 +294,8 @@ export function useContacts({
         linkedAppIds,
         targetContact
       );
+      // Notify extension to purge from its pending/sync storage
+      broadcastDeletedContact(id);
       posthog.capture('contact_deleted', {
         category: targetContact.category,
         linked_application_count: linkedAppIds.length,
@@ -378,9 +377,6 @@ export function useContacts({
 
   // Batch Delete Contacts
   const handleBatchDeleteContacts = useCallback(async (ids: string[]) => {
-    // Notify extension to purge from its pending/sync storage
-    broadcastDeletedContact(ids);
-
     const currentContacts = contactsRef.current;
     const deleted = currentContacts.filter((c) => ids.includes(c.id));
     const deletedSet = new Set(ids);
@@ -425,6 +421,8 @@ export function useContacts({
         linkedAppIds,
         deleted
       );
+      // Notify extension to purge from its pending/sync storage
+      broadcastDeletedContact(ids);
       addToast('info', `Deleted ${ids.length} contacts`);
     } catch (err) {
       console.error('Bulk delete contacts failed:', err);

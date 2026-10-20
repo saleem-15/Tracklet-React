@@ -227,14 +227,10 @@ async function pushToFirestoreDirectly(payload, userSession, config, docIdToUpda
   );
 
   if (!response.ok) {
-    if (docIdToUpdate && (response.status === 404 || response.status === 400)) {
+    if (docIdToUpdate && response.status === 404) {
       console.warn(`[Tracklet] Target document ${docIdToUpdate} no longer exists in Firestore. Creating new application.`);
-      chrome.storage.local.get(['tracklet_apps_index', 'tracklet_guest_apps_v1'], (st) => {
-        const cleanIdx = (st.tracklet_apps_index || []).filter(a => a.id !== docIdToUpdate);
-        const cleanGuest = (st.tracklet_guest_apps_v1 || []).filter(a => a.id !== docIdToUpdate);
-        chrome.storage.local.set({ tracklet_apps_index: cleanIdx, tracklet_guest_apps_v1: cleanGuest });
-      });
-      return pushToFirestoreDirectly(payload, userSession, config, null);
+      const recreated = await pushToFirestoreDirectly(payload, userSession, config, null);
+      return { ...recreated, replacedId: docIdToUpdate };
     }
     throw new Error(`Firestore REST error: ${response.statusText}`);
   }
@@ -395,7 +391,14 @@ async function saveAndSyncApplication(appData) {
     let guestApps = result.tracklet_guest_apps_v1 || [];
     let appsIndex = result.tracklet_apps_index || [];
 
-    if (existingAppId) {
+    if (finalizedApp.replacedId) {
+      guestApps = [finalizedApp, ...guestApps.filter(app => app.id !== finalizedApp.replacedId)];
+      appsIndex = [finalizedApp, ...appsIndex.filter(app => app.id !== finalizedApp.replacedId)];
+      pending = pending.filter(app => app.id !== finalizedApp.replacedId);
+      if (!savedToCloud) {
+        pending = [finalizedApp, ...pending];
+      }
+    } else if (existingAppId) {
       guestApps = guestApps.map(app => app.id === existingAppId ? finalizedApp : app);
       appsIndex = appsIndex.map(app => app.id === existingAppId ? finalizedApp : app);
       pending = pending.map(app => app.id === existingAppId ? finalizedApp : app);
