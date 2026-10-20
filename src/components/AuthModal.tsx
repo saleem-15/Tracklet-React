@@ -13,6 +13,7 @@ interface AuthModalProps {
 
 export const AuthModal: React.FC<AuthModalProps> = ({ onShowToast }) => {
   const {
+    user,
     isAuthModalOpen,
     authModalMode,
     openAuthModal,
@@ -37,6 +38,16 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onShowToast }) => {
   // Dismiss on Escape key
   useEscapeKey(closeAuthModal, isAuthModalOpen);
 
+  const resetForm = React.useCallback(() => {
+    setEmail('');
+    setPassword('');
+    setConfirmPassword('');
+    setLocalError(null);
+    setFieldErrors({});
+    setResetSent(false);
+    clearError();
+  }, [clearError]);
+
   // Cooldown countdown for password reset
   useEffect(() => {
     if (resetCooldown <= 0) return;
@@ -46,15 +57,28 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onShowToast }) => {
     return () => clearInterval(timer);
   }, [resetCooldown]);
 
-  // Reset form state on open / mode change
+  // Reset form state on open / close
   useEffect(() => {
-    if (isAuthModalOpen) {
-      setLocalError(null);
-      setFieldErrors({});
-      setResetSent(false);
-      clearError();
+    resetForm();
+  }, [isAuthModalOpen, resetForm]);
+
+  // Reset password inputs and clear errors on mode tab change
+  useEffect(() => {
+    setPassword('');
+    setConfirmPassword('');
+    setLocalError(null);
+    setFieldErrors({});
+    setResetSent(false);
+    clearError();
+  }, [authModalMode, clearError]);
+
+  // Dismiss modal and reset state if user is authenticated while modal is open
+  useEffect(() => {
+    if (user && isAuthModalOpen) {
+      closeAuthModal();
+      resetForm();
     }
-  }, [isAuthModalOpen, authModalMode, clearError]);
+  }, [user, isAuthModalOpen, closeAuthModal, resetForm]);
 
   const modalRef = React.useRef<HTMLDivElement>(null);
   const previousFocusRef = React.useRef<HTMLElement | null>(null);
@@ -143,6 +167,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onShowToast }) => {
     setIsSubmitting(true);
     try {
       await signInWithGoogle();
+      resetForm();
+      closeAuthModal();
       onShowToast?.('success', 'Signed In', 'Welcome back to Tracklet!');
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : getFriendlyAuthErrorMessage(err);
@@ -178,6 +204,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onShowToast }) => {
       setIsSubmitting(true);
       try {
         await signUpWithEmail(email.trim(), password);
+        resetForm();
+        closeAuthModal();
         onShowToast?.(
           'success',
           'Account Created',
@@ -194,6 +222,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onShowToast }) => {
       setIsSubmitting(true);
       try {
         await signInWithEmail(email.trim(), password);
+        resetForm();
+        closeAuthModal();
         onShowToast?.('success', 'Signed In', 'Welcome back!');
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : getFriendlyAuthErrorMessage(err);
@@ -205,7 +235,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onShowToast }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 animate-in fade-in duration-200"
+      onClick={closeAuthModal}
+    >
       <div
         ref={modalRef}
         role="dialog"
