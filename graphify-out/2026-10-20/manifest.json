@@ -665,8 +665,8 @@
     "semantic_hash": "67eb14276ecb8c75b4bcb683dbfd6dac"
   },
   "src/components/AllApplicationsTable.tsx": {
-    "mtime": 1792493862.2448983,
-    "ast_hash": "9121edcd12ae720f4d2170e67b66110e",
+    "mtime": 1792497506.8945196,
+    "ast_hash": "f56b4c436b8c4e22d77d1fa55ca4dd55",
     "semantic_hash": ""
   },
   "src/components/ApplicationDetailPanel.tsx": {
@@ -780,13 +780,13 @@
     "semantic_hash": ""
   },
   "src/components/Sidebar.tsx": {
-    "mtime": 1792493745.2805173,
-    "ast_hash": "74bd4f515386a80ad627007ffe2be5fd",
+    "mtime": 1792497507.1465764,
+    "ast_hash": "3d3ae6193413e62176bb9db39ce9cb09",
     "semantic_hash": ""
   },
   "src/components/StageSelectorDropdown.tsx": {
-    "mtime": 1792493805.5662434,
-    "ast_hash": "d28678f8578a8d0ea4cc29f02fb46418",
+    "mtime": 1792497506.8964064,
+    "ast_hash": "5059570f15d599e793d840bcb3b430c7",
     "semantic_hash": ""
   },
   "src/components/StatsView.tsx": {
@@ -1570,8 +1570,8 @@
     "semantic_hash": ""
   },
   ".agents/AGENTS.md": {
-    "mtime": 1792493283.1232798,
-    "ast_hash": "a2ed552ee0005659cb627cc2e3ccc92e",
+    "mtime": 1792497507.2235904,
+    "ast_hash": "ea04d5c8f28266ce28bde45855cfad25",
     "semantic_hash": ""
   },
   ".agents/rules/graphify.md": {
@@ -1580,8 +1580,8 @@
     "semantic_hash": ""
   },
   ".agents/rules/ui-ux-standards.md": {
-    "mtime": 1792493283.1252754,
-    "ast_hash": "ffb1af04d639c518ad37aea935e0c6cd",
+    "mtime": 1792497507.2247267,
+    "ast_hash": "77ab1a9960bd54f06784bf6bc623d2af",
     "semantic_hash": ""
   },
   ".agents/skills/add-component/SKILL.md": {
@@ -1975,8 +1975,8 @@
     "semantic_hash": ""
   },
   "DESIGN.md": {
-    "mtime": 1792493283.340101,
-    "ast_hash": "5ca3d5ed46b510baa6109e22b5a7a74c",
+    "mtime": 1792497507.2252626,
+    "ast_hash": "43b88d0ac1ec24a97066bf88fca2b392",
     "semantic_hash": ""
   },
   "PRODUCT.md": {
@@ -2930,8 +2930,8 @@
     "semantic_hash": ""
   },
   "src/lib/posthog.ts": {
-    "mtime": 1792493284.3068635,
-    "ast_hash": "1e8208658d9e0f953005b6eedf5bebac",
+    "mtime": 1792497506.7858055,
+    "ast_hash": "006a37be208b541abaa25be59d449819",
     "semantic_hash": ""
   },
   "src/lib/posthogLogs.ts": {
@@ -3000,18 +3000,23 @@
     "semantic_hash": ""
   },
   "src/components/table/BulkActionsBar.tsx": {
-    "mtime": 1792493824.4246533,
-    "ast_hash": "c4216656429923668e38380f584d34af",
+    "mtime": 1792497506.8987188,
+    "ast_hash": "85f996884cb8dce6eef2082948fcdeb8",
     "semantic_hash": ""
   },
   "src/components/table/BulkDeleteConfirmModal.tsx": {
-    "mtime": 1792493814.9110005,
-    "ast_hash": "0ce015cdd929cc1d9be2bb4c995d67b5",
+    "mtime": 1792497506.9004738,
+    "ast_hash": "2650dade68d548e20c8eab34f191e05d",
     "semantic_hash": ""
   },
   "tests/unit/allApplicationsTableBulkActions.test.tsx": {
-    "mtime": 1792493947.6988332,
-    "ast_hash": "7825249e218cf60f155a1cf03c8f9351",
+    "mtime": 1792497506.9022257,
+    "ast_hash": "caf1637567eba71e3044d49578c87d6c",
+    "semantic_hash": ""
+  },
+  "docs/adr/0010-action-only-navigation-badges-and-inventory-placement.md": {
+    "mtime": 1792497507.2263682,
+    "ast_hash": "3941b988d7ef648cea57a12ce80b8445",
     "semantic_hash": ""
   }
 }

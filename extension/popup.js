@@ -351,6 +351,44 @@ document.addEventListener('DOMContentLoaded', async () => {
   let currentEmailDirection = 'inbound';
   let selectedEmailMatchedApp = null;
   let allKnownAppsList = [];
+
+  async function loadKnownApplications() {
+    try {
+      const storage = await chrome.storage.local.get([
+        'tracklet_apps_index',
+        'tracklet_guest_apps_v1',
+        'tracklet_pending_apps'
+      ]);
+      const indexApps = storage.tracklet_apps_index;
+      const pendingApps = storage.tracklet_pending_apps || [];
+      const pendingIds = new Set(pendingApps.map(a => a?.id).filter(Boolean));
+      let guestApps = storage.tracklet_guest_apps_v1 || [];
+
+      if (Array.isArray(indexApps)) {
+        const indexIds = new Set(indexApps.map(a => a?.id).filter(Boolean));
+        const prunedGuestApps = guestApps.filter(a => a?.id && (indexIds.has(a.id) || pendingIds.has(a.id)));
+        if (prunedGuestApps.length !== guestApps.length) {
+          guestApps = prunedGuestApps;
+          chrome.storage.local.set({ tracklet_guest_apps_v1: guestApps }).catch(() => {});
+        }
+      }
+
+      const appMap = new Map();
+      [
+        ...(indexApps || guestApps),
+        ...guestApps,
+        ...pendingApps
+      ].forEach(a => {
+        if (a && a.id && !appMap.has(a.id)) {
+          appMap.set(a.id, a);
+        }
+      });
+      allKnownAppsList = Array.from(appMap.values());
+    } catch {
+      allKnownAppsList = [];
+    }
+    return allKnownAppsList;
+  }
   let discoveredRecruiterName = '';
   let discoveredRecruiterEmail = '';
   let currentEmailUrl = '';
@@ -887,6 +925,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (tabName === 'autofill') {
       checkAtsFormOnActiveTab();
+    } else if (tabName === 'email') {
+      loadKnownApplications();
+    } else if (tabName === 'contact') {
+      loadKnownApplications();
+      loadKnownContacts();
     }
   }
 
@@ -1847,8 +1890,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         // Check if contact already exists in Contacts Hub
-        chrome.storage.local.get(['tracklet_contacts_index', 'tracklet_guest_contacts_v1'], (res) => {
-          const allContacts = res?.tracklet_contacts_index || res?.tracklet_guest_contacts_v1 || [];
+        chrome.storage.local.get(['tracklet_contacts_index', 'tracklet_guest_contacts_v1', 'tracklet_pending_contacts'], (res) => {
+          const indexContacts = res?.tracklet_contacts_index;
+          const pendingContacts = res?.tracklet_pending_contacts || [];
+          const pendingIds = new Set(pendingContacts.map(c => c?.id).filter(Boolean));
+          let guestContacts = res?.tracklet_guest_contacts_v1 || [];
+          if (Array.isArray(indexContacts)) {
+            const indexIds = new Set(indexContacts.map(c => c?.id).filter(Boolean));
+            guestContacts = guestContacts.filter(c => c?.id && (indexIds.has(c.id) || pendingIds.has(c.id)));
+          }
+          const allContacts = [
+            ...(indexContacts || guestContacts),
+            ...guestContacts,
+            ...pendingContacts
+          ];
           const normLinkedIn = (data.contact.linkedIn || '').toLowerCase().trim();
           const normName = data.contact.name.toLowerCase().trim();
           const normOrg = (data.company || '').toLowerCase().trim();
@@ -2642,10 +2697,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     chrome.storage.local.get(['tracklet_apps_index', 'tracklet_guest_apps_v1', 'tracklet_pending_apps'], (result) => {
       if (isExplicitNewEntry) return;
 
+      const indexApps = result.tracklet_apps_index;
+      const pendingApps = result.tracklet_pending_apps || [];
+      const pendingIds = new Set(pendingApps.map(a => a?.id).filter(Boolean));
+      let guestApps = result.tracklet_guest_apps_v1 || [];
+
+      if (Array.isArray(indexApps)) {
+        const indexIds = new Set(indexApps.map(a => a?.id).filter(Boolean));
+        const prunedGuestApps = guestApps.filter(a => a?.id && (indexIds.has(a.id) || pendingIds.has(a.id)));
+        if (prunedGuestApps.length !== guestApps.length) {
+          guestApps = prunedGuestApps;
+          chrome.storage.local.set({ tracklet_guest_apps_v1: guestApps }).catch(() => {});
+        }
+      }
+
       const allKnown = [
-        ...(result.tracklet_apps_index || []),
-        ...(result.tracklet_guest_apps_v1 || []),
-        ...(result.tracklet_pending_apps || [])
+        ...(indexApps || guestApps),
+        ...pendingApps
       ];
 
       const match = allKnown.find(app => {
@@ -2815,8 +2883,20 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   function updateContactDiscoveryUI() {
-    chrome.storage.local.get(['tracklet_contacts_index', 'tracklet_guest_contacts_v1'], (res) => {
-      const allContacts = res?.tracklet_contacts_index || res?.tracklet_guest_contacts_v1 || [];
+    chrome.storage.local.get(['tracklet_contacts_index', 'tracklet_guest_contacts_v1', 'tracklet_pending_contacts'], (res) => {
+      const indexContacts = res?.tracklet_contacts_index;
+      const pendingContacts = res?.tracklet_pending_contacts || [];
+      const pendingIds = new Set(pendingContacts.map(c => c?.id).filter(Boolean));
+      let guestContacts = res?.tracklet_guest_contacts_v1 || [];
+      if (Array.isArray(indexContacts)) {
+        const indexIds = new Set(indexContacts.map(c => c?.id).filter(Boolean));
+        guestContacts = guestContacts.filter(c => c?.id && (indexIds.has(c.id) || pendingIds.has(c.id)));
+      }
+      const allContacts = [
+        ...(indexContacts || guestContacts),
+        ...guestContacts,
+        ...pendingContacts
+      ];
       const normEmail = (discoveredRecruiterEmail || '').toLowerCase().trim();
       const normName = (discoveredRecruiterName || '').toLowerCase().trim();
       const isKnownContact = selectedEmailMatchedApp?.contactEmails?.some(e => e.toLowerCase() === normEmail) ||
@@ -2850,16 +2930,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     setActiveCompanionTab('email');
 
     // 1. Load known applications for matching
-    const storage = await chrome.storage.local.get(['tracklet_apps_index', 'tracklet_guest_apps_v1']);
-    const indexApps = storage.tracklet_apps_index || [];
-    const guestApps = storage.tracklet_guest_apps_v1 || [];
-    const appMap = new Map();
-    [...indexApps, ...guestApps].forEach(a => {
-      if (a && a.id && !appMap.has(a.id)) {
-        appMap.set(a.id, a);
-      }
-    });
-    allKnownAppsList = Array.from(appMap.values());
+    await loadKnownApplications();
 
     // 2. Request active email data from content script
     let hasAttemptedInjection = false;
@@ -3173,6 +3244,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     appSelectorList.innerHTML = '';
     highlightedAppIndex = -1;
 
+    if (allKnownAppsList.length === 0) {
+      loadKnownApplications().then(apps => {
+        if (apps && apps.length > 0 && appSelectorPopover && appSelectorPopover.style.display !== 'none') {
+          renderAppSelectorList(appSearchInput ? appSearchInput.value : '');
+        }
+      });
+    }
+
     const filtered = allKnownAppsList.filter(a => 
       !cleanFilter || 
       a.company.toLowerCase().includes(cleanFilter) || 
@@ -3241,10 +3320,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   dirInboundBtn.addEventListener('click', () => setEmailDirection('inbound'));
   dirOutboundBtn.addEventListener('click', () => setEmailDirection('outbound'));
 
-  changeAppBtn.addEventListener('click', (e) => {
+  changeAppBtn.addEventListener('click', async (e) => {
     e.stopPropagation();
     const isVisible = appSelectorPopover.style.display !== 'none';
     if (!isVisible) {
+      await loadKnownApplications();
       renderAppSelectorList();
       appSelectorPopover.style.display = 'flex';
       appSearchInput.value = '';
@@ -3549,11 +3629,24 @@ document.addEventListener('DOMContentLoaded', async () => {
         'tracklet_guest_contacts_v1',
         'tracklet_pending_contacts'
       ]);
+      const indexContacts = storage.tracklet_contacts_index;
+      const pendingContacts = storage.tracklet_pending_contacts || [];
+      const pendingIds = new Set(pendingContacts.map(c => c?.id).filter(Boolean));
+      let guestContacts = storage.tracklet_guest_contacts_v1 || [];
+
+      if (Array.isArray(indexContacts)) {
+        const indexIds = new Set(indexContacts.map(c => c?.id).filter(Boolean));
+        const prunedGuestContacts = guestContacts.filter(c => c?.id && (indexIds.has(c.id) || pendingIds.has(c.id)));
+        if (prunedGuestContacts.length !== guestContacts.length) {
+          guestContacts = prunedGuestContacts;
+          chrome.storage.local.set({ tracklet_guest_contacts_v1: guestContacts }).catch(() => {});
+        }
+      }
+
       const map = new Map();
       [
-        ...(storage.tracklet_contacts_index || []),
-        ...(storage.tracklet_guest_contacts_v1 || []),
-        ...(storage.tracklet_pending_contacts || [])
+        ...(indexContacts || guestContacts),
+        ...pendingContacts
       ].forEach(c => {
         if (c && (c.id || c.name)) {
           const key = c.id || `${c.name}:::${c.organization || ''}`;
@@ -3566,8 +3659,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  function populateContactAppDropdown(preferredCompany = '') {
+  async function populateContactAppDropdown(preferredCompany = '') {
     if (!contactAppDropdown) return;
+    if (allKnownAppsList.length === 0) {
+      await loadKnownApplications();
+    }
     contactAppDropdown.innerHTML = '';
 
     // Option 1: Standalone Contact
@@ -3698,7 +3794,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadKnownContacts();
 
     // 5. Populate application dropdown with auto-suggestion
-    populateContactAppDropdown(merged.organization);
+    await populateContactAppDropdown(merged.organization);
 
     // 6. Multi-Identifier Deduplication & Diffing (US8 / T052)
     const normUrl = normalizeUrl(merged.linkedInUrl || (tab ? tab.url : ''));
@@ -3811,6 +3907,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       updateFields.forEach(f => {
         url += `updateMask.fieldPaths=${encodeURIComponent(f)}&`;
       });
+      url += 'currentDocument.exists=true&';
     }
 
     url = url.replace(/[?&]$/, '');
@@ -3826,6 +3923,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     if (!res.ok) {
+      if (docIdToUpdate && res.status === 404) {
+        console.warn(`[Tracklet] Target contact ${docIdToUpdate} no longer exists in Firestore. Falling back to fresh creation.`);
+        const recreated = await pushStandaloneContactToFirestoreDirectly(payload, userSession, config, null);
+        return { ...recreated, replacedId: docIdToUpdate };
+      }
       const errText = await res.text();
       throw new Error(`Firestore Contact Error [${res.status}]: ${errText}`);
     }
@@ -3886,13 +3988,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 1. Direct Firestore save via REST API if logged in
     if (currentUserSession && currentUserSession.uid) {
       try {
-        await pushStandaloneContactToFirestoreDirectly(
+        const savedContactDoc = await pushStandaloneContactToFirestoreDirectly(
           contactPayload,
           currentUserSession,
           currentFirebaseConfig,
           matchedExistingContact?.id
         );
         savedToCloud = true;
+        if (savedContactDoc?.replacedId) {
+          const newDocId = savedContactDoc.name ? savedContactDoc.name.split('/').pop() : contactPayload.id;
+          contactPayload.id = newDocId;
+          contactPayload.replacedId = savedContactDoc.replacedId;
+        }
       } catch (err) {
         console.warn('[Tracklet] Direct Firestore contact save failed:', err);
       }
@@ -3925,7 +4032,15 @@ document.addEventListener('DOMContentLoaded', async () => {
       let contactsIndex = result.tracklet_contacts_index || [];
       let pendingContacts = result.tracklet_pending_contacts || [];
 
-      if (matchedExistingContact) {
+      const replacedId = contactPayload.replacedId;
+      if (replacedId) {
+        guestContacts = [contactPayload, ...guestContacts.filter(c => c.id !== replacedId && c.id !== contactPayload.id)];
+        contactsIndex = [contactPayload, ...contactsIndex.filter(c => c.id !== replacedId && c.id !== contactPayload.id)];
+        pendingContacts = pendingContacts.filter(c => c.id !== replacedId && c.id !== contactPayload.id);
+        if (!savedToCloud) {
+          pendingContacts = [contactPayload, ...pendingContacts];
+        }
+      } else if (matchedExistingContact) {
         guestContacts = guestContacts.map(c => c.id === matchedExistingContact.id ? contactPayload : c);
         contactsIndex = contactsIndex.map(c => c.id === matchedExistingContact.id ? contactPayload : c);
         pendingContacts = pendingContacts.map(c => c.id === matchedExistingContact.id ? contactPayload : c);
@@ -4298,6 +4413,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           queryParams.push(`updateMask.fieldPaths=${f}`);
         }
       });
+      queryParams.push('currentDocument.exists=true');
     }
     if (queryParams.length > 0) {
       url += `?${queryParams.join('&')}`;
@@ -4319,6 +4435,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     );
 
     if (!response.ok) {
+      if (docIdToUpdate && response.status === 404) {
+        console.warn(`[Tracklet] Target document ${docIdToUpdate} no longer exists in Firestore. Creating new application.`);
+        const recreated = await pushToFirestoreDirectly(payload, userSession, config, null);
+        return { ...recreated, replacedId: docIdToUpdate };
+      }
       const errText = await response.text();
       throw new Error(`Firestore REST HTTP ${response.status}: ${errText}`);
     }
@@ -4376,6 +4497,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       queryParams.push('updateMask.fieldPaths=updatedAt');
       if (contact.role) queryParams.push('updateMask.fieldPaths=role');
       if (contact.organization) queryParams.push('updateMask.fieldPaths=organization');
+      queryParams.push('currentDocument.exists=true');
     }
     if (queryParams.length > 0) {
       url += `?${queryParams.join('&')}`;
@@ -4398,6 +4520,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (res.ok) {
         const data = await res.json();
         return docIdToUpdate || (data.name ? data.name.split('/').pop() : null);
+      }
+      if (docIdToUpdate && res.status === 404) {
+        console.warn(`[Tracklet] Target contact ${docIdToUpdate} no longer exists in Firestore. Creating new contact.`);
+        return await pushContactToFirestoreDirectly({ ...contact, id: undefined }, appId, userSession, config);
       }
     } catch (e) {
       console.warn('Direct Firestore contact push failed:', e);
@@ -4580,8 +4706,53 @@ document.addEventListener('DOMContentLoaded', async () => {
               ...(bundledContactPayload.applicationIds || []).filter(id => !id.startsWith('ext-'))
             ]));
           }
+          const originalBundledContactId = bundledContactPayload.id;
           const pushedContactId = await pushContactToFirestoreDirectly(bundledContactPayload, finalizedApp.id, currentUserSession, currentFirebaseConfig);
           contactSavedToCloud = Boolean(pushedContactId);
+
+          if (pushedContactId && pushedContactId !== originalBundledContactId) {
+            bundledContactPayload.id = pushedContactId;
+            bundledContactPayload.replacedId = originalBundledContactId;
+            basePayload.contactIds = (basePayload.contactIds || []).map(id => id === originalBundledContactId ? pushedContactId : id);
+            if (!basePayload.contactIds.includes(pushedContactId)) {
+              basePayload.contactIds.push(pushedContactId);
+            }
+            if (finalizedApp) {
+              finalizedApp.contactIds = [...basePayload.contactIds];
+            }
+            try {
+              const projectId = currentFirebaseConfig?.projectId || 'demo-tracklet';
+              const apiKey = currentFirebaseConfig?.apiKey;
+              const userId = currentUserSession.uid;
+              let patchUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/users/${userId}/applications/${finalizedApp.id}?updateMask.fieldPaths=contactIds`;
+              if (apiKey && apiKey !== 'demo-api-key') {
+                patchUrl += `&key=${encodeURIComponent(apiKey)}`;
+              }
+              await fetchWithTokenRefresh(
+                patchUrl,
+                {
+                  method: 'PATCH',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${currentUserSession.idToken}`
+                  },
+                  body: JSON.stringify({
+                    fields: {
+                      contactIds: {
+                        arrayValue: {
+                          values: basePayload.contactIds.map(id => ({ stringValue: id }))
+                        }
+                      }
+                    }
+                  })
+                },
+                currentUserSession,
+                currentFirebaseConfig?.apiKey
+              );
+            } catch (patchErr) {
+              console.warn('[Tracklet] Failed to update application with recreated contactId:', patchErr);
+            }
+          }
         }
       } catch (cloudErr) {
         console.warn('Direct Firestore push failed (offline or auth expired), falling back to local storage:', cloudErr);
@@ -4631,16 +4802,26 @@ document.addEventListener('DOMContentLoaded', async () => {
         let guestContacts = res?.tracklet_guest_contacts_v1 || [];
         let pendingContacts = res?.tracklet_pending_contacts || [];
 
-        const existingIdx = contactsIndex.findIndex(c => c.id === bundledContactPayload.id);
-        if (existingIdx >= 0) {
-          contactsIndex[existingIdx] = bundledContactPayload;
-          guestContacts = guestContacts.map(c => c.id === bundledContactPayload.id ? bundledContactPayload : c);
-          pendingContacts = pendingContacts.map(c => c.id === bundledContactPayload.id ? bundledContactPayload : c);
-        } else {
-          contactsIndex = [bundledContactPayload, ...contactsIndex];
-          guestContacts = [bundledContactPayload, ...guestContacts];
+        const replacedContactId = bundledContactPayload.replacedId;
+        if (replacedContactId) {
+          contactsIndex = [bundledContactPayload, ...contactsIndex.filter(c => c.id !== replacedContactId && c.id !== bundledContactPayload.id)];
+          guestContacts = [bundledContactPayload, ...guestContacts.filter(c => c.id !== replacedContactId && c.id !== bundledContactPayload.id)];
+          pendingContacts = pendingContacts.filter(c => c.id !== replacedContactId && c.id !== bundledContactPayload.id);
           if (!contactSavedToCloud) {
             pendingContacts = [bundledContactPayload, ...pendingContacts];
+          }
+        } else {
+          const existingIdx = contactsIndex.findIndex(c => c.id === bundledContactPayload.id);
+          if (existingIdx >= 0) {
+            contactsIndex[existingIdx] = bundledContactPayload;
+            guestContacts = guestContacts.map(c => c.id === bundledContactPayload.id ? bundledContactPayload : c);
+            pendingContacts = pendingContacts.map(c => c.id === bundledContactPayload.id ? bundledContactPayload : c);
+          } else {
+            contactsIndex = [bundledContactPayload, ...contactsIndex];
+            guestContacts = [bundledContactPayload, ...guestContacts];
+            if (!contactSavedToCloud) {
+              pendingContacts = [bundledContactPayload, ...pendingContacts];
+            }
           }
         }
 
@@ -4658,7 +4839,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       let guestApps = result.tracklet_guest_apps_v1 || [];
       let appsIndex = result.tracklet_apps_index || [];
 
-      if (matchedApplication?.id) {
+      if (finalizedApp?.replacedId) {
+        guestApps = [finalizedApp, ...guestApps.filter(a => a.id !== finalizedApp.replacedId)];
+        appsIndex = [finalizedApp, ...appsIndex.filter(a => a.id !== finalizedApp.replacedId)];
+        pending = pending.filter(a => a.id !== finalizedApp.replacedId);
+        if (!savedToCloud) {
+          pending = [finalizedApp, ...pending];
+        }
+      } else if (matchedApplication?.id) {
         guestApps = guestApps.map(a => a.id === matchedApplication.id ? finalizedApp : a);
         appsIndex = appsIndex.map(a => a.id === matchedApplication.id ? finalizedApp : a);
         pending = pending.map(a => a.id === matchedApplication.id ? finalizedApp : a);
@@ -5290,6 +5478,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Load candidate profile on extension startup
   loadAndRenderCandidateProfile();
+
+  // Preload known applications & contacts for immediate picker responsiveness and deduplication
+  loadKnownApplications();
+  loadKnownContacts();
 
   // Initialize Stage & Platform UI
   updateStageUI('Saved');

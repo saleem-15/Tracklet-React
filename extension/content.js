@@ -5472,8 +5472,8 @@ function announceTrackletPresence() {
   try {
     const manifest = (typeof chrome !== 'undefined' && chrome.runtime?.getManifest)
       ? chrome.runtime.getManifest()
-      : { version: '1.2.5', name: 'Tracklet' };
-    const version = manifest.version || '1.2.5';
+      : { version: '1.2.7', name: 'Tracklet' };
+    const version = manifest.version || '1.2.7';
 
     // 1. Direct DOM markers on documentElement for instant zero-latency detection
     if (document.documentElement) {
@@ -5571,6 +5571,36 @@ window.addEventListener('message', (event) => {
           tracklet_apps_index: appsIndex,
         });
       });
+      try {
+        chrome.runtime.sendMessage({
+          action: 'DELETE_APPLICATION',
+          payload: { id: deletedId }
+        });
+      } catch {
+        // Extension context invalidated
+      }
+    }
+  } else if (event.data.type === 'TRACKLET_EXT_DELETE_CONTACT') {
+    const deletedIds = event.data.payload?.ids || (event.data.payload?.id ? [event.data.payload.id] : []);
+    if (deletedIds.length > 0 && typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+      chrome.storage.local.get(['tracklet_pending_contacts', 'tracklet_guest_contacts_v1', 'tracklet_contacts_index'], (res) => {
+        const pending = (res?.tracklet_pending_contacts || []).filter((c) => !deletedIds.includes(c?.id));
+        const guestContacts = (res?.tracklet_guest_contacts_v1 || []).filter((c) => !deletedIds.includes(c?.id));
+        const contactsIndex = (res?.tracklet_contacts_index || []).filter((c) => !deletedIds.includes(c?.id));
+        chrome.storage.local.set({
+          tracklet_pending_contacts: pending,
+          tracklet_guest_contacts_v1: guestContacts,
+          tracklet_contacts_index: contactsIndex,
+        });
+      });
+      try {
+        chrome.runtime.sendMessage({
+          action: 'DELETE_CONTACT',
+          payload: { ids: deletedIds }
+        });
+      } catch {
+        // Extension context invalidated
+      }
     }
   } else if (event.data.type === 'TRACKLET_EXT_APPS_DRAIN_ACK') {
     // Web app confirmed it processed all drained pending apps — safe to clear

@@ -3,6 +3,7 @@ import type { User } from 'firebase/auth';
 import { Contact, Application } from '../types';
 import { ContactRepository } from '../lib/contactRepository';
 import { ApplicationRepository } from '../lib/applicationRepository';
+import { broadcastDeletedContact } from '../lib/extensionSync';
 import posthog from '../lib/posthog';
 
 export interface UseContactsProps {
@@ -293,6 +294,8 @@ export function useContacts({
         linkedAppIds,
         targetContact
       );
+      // Notify extension to purge from its pending/sync storage
+      broadcastDeletedContact(id);
       posthog.capture('contact_deleted', {
         category: targetContact.category,
         linked_application_count: linkedAppIds.length,
@@ -418,6 +421,8 @@ export function useContacts({
         linkedAppIds,
         deleted
       );
+      // Notify extension to purge from its pending/sync storage
+      broadcastDeletedContact(ids);
       addToast('info', `Deleted ${ids.length} contacts`);
     } catch (err) {
       console.error('Bulk delete contacts failed:', err);
