@@ -85,4 +85,91 @@ describe('feedbackRepository', () => {
     expect(url).toContain('title=Kanban%20drag%20flickers');
     expect(url).toContain('labels=bug%2Ctester-feedback%2Cseverity%3A%20medium');
   });
+
+  it('dispatches report to API successfully and updates cache with issue details', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 201,
+      json: async () => ({
+        success: true,
+        issueNumber: 42,
+        issueUrl: 'https://github.com/saleem-15/Tracklet-React/issues/42',
+      }),
+    });
+    global.fetch = mockFetch;
+
+    const report = await FeedbackRepository.saveReport(sampleInput);
+    const result = await FeedbackRepository.dispatchToApi(report);
+
+    expect(result.success).toBe(true);
+    expect(result.issueNumber).toBe(42);
+    expect(result.issueUrl).toBe('https://github.com/saleem-15/Tracklet-React/issues/42');
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+
+    const callBody = JSON.parse(mockFetch.mock.calls[0][1].body);
+    expect(callBody.reportId).toBe(report.id);
+    expect(callBody.title).toBe(sampleInput.title);
+    expect(callBody.attachments).toEqual([]);
+  });
+
+  it('handles dev simulation response when GITHUB_TOKEN is not configured', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        success: true,
+        devMode: true,
+        issueNumber: null,
+        issueUrl: null,
+        message: 'Report logged successfully (local dev simulation: GITHUB_TOKEN not configured).',
+      }),
+    });
+    global.fetch = mockFetch;
+
+    const report = await FeedbackRepository.saveReport(sampleInput);
+    const result = await FeedbackRepository.dispatchToApi(report);
+
+    expect(result.success).toBe(true);
+    expect(result.issueNumber).toBeUndefined();
+    expect(result.issueUrl).toBeUndefined();
+    expect(result.error).toBeUndefined();
+  });
+
+  it('handles API error without returning fallback URL or falsely marking success', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 400,
+      json: async () => ({
+        error: 'Bad Request',
+        message: 'Missing required fields: title, description, or diagnostics.',
+      }),
+    });
+    global.fetch = mockFetch;
+
+    const report = await FeedbackRepository.saveReport(sampleInput);
+    const result = await FeedbackRepository.dispatchToApi(report);
+
+    expect(result.success).toBe(false);
+    expect(result.issueNumber).toBeUndefined();
+    expect(result.error).toContain('Missing required fields');
+    expect(result.fallbackUrl).toBeUndefined();
+  });
+
+  it('handles API error when server returns non-JSON plain text or HTML error cleanly', async () => {
+    // When a server error like 502 Bad Gateway or 500 HTML is returned, response.text() resolves with string
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 502,
+      text: async () => '502 Bad Gateway: Upstream connection timeout',
+    });
+    global.fetch = mockFetch;
+
+    const report = await FeedbackRepository.saveReport(sampleInput);
+    const result = await FeedbackRepository.dispatchToApi(report);
+
+    expect(result.success).toBe(false);
+    expect(result.error).toBe('502 Bad Gateway: Upstream connection timeout');
+    // Ensure it did not crash with 'Body is unusable: Body has already been read'
+    expect(result.error).not.toContain('Body is unusable');
+  });
 });

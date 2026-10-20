@@ -56,20 +56,50 @@ export class FeedbackRepository {
     // 2. Persist to local cache for offline recovery and history
     this.saveToLocalCache(report);
 
-    // 3. Clear draft from localStorage upon successful save
-    this.clearDraft();
+    // Draft is intentionally NOT cleared here; it will be cleared once dispatchToApi succeeds.
 
     return report;
   }
 
   /**
-   * Dispatches the report to the Vercel serverless function `/api/report-issue`.
-   * If the endpoint is unavailable (e.g., in local Vite dev), falls back smoothly to local URL generation.
+   * Updates local cache and Firestore when GitHub issue details are returned.
+   */
+  static async updateReportWithGitHubIssue(
+    id: string,
+    issueNumber: number,
+    issueUrl: string
+  ): Promise<void> {
+    try {
+      const existing = this.loadFromLocalCache();
+      const updated = existing.map((r) =>
+        r.id === id
+          ? { ...r, githubIssueNumber: issueNumber, githubIssueUrl: issueUrl, updatedAt: new Date().toISOString() }
+          : r
+      );
+      localStorage.setItem(STORAGE_KEY_SUBMITTED_REPORTS, JSON.stringify(updated));
+
+      if (isFirebaseConfigured) {
+        const feedbackCol = collection(db, 'tester_feedback');
+        const docRef = doc(feedbackCol, id);
+        await setDoc(
+          docRef,
+          { githubIssueNumber: issueNumber, githubIssueUrl: issueUrl, updatedAt: new Date().toISOString() },
+          { merge: true }
+        );
+      }
+    } catch (e) {
+      console.warn('[FeedbackRepository] Could not record GitHub issue details on report:', e);
+    }
+  }
+
+  /**
+   * Dispatches the report to the serverless function `/api/report-issue`.
+   * Automatically creates the GitHub issue in the background.
    */
   static async dispatchToApi(
     report: TesterIssueReport, 
-    repo = DEFAULT_REPO
-  ): Promise<{ success: boolean; issueNumber?: number; issueUrl?: string; fallbackUrl?: string }> {
+    _repo = DEFAULT_REPO
+  ): Promise<{ success: boolean; issueNumber?: number; issueUrl?: string; error?: string; fallbackUrl?: string }> {
     try {
       const response = await fetch('/api/report-issue', {
         method: 'POST',
@@ -84,29 +114,65 @@ export class FeedbackRepository {
           reporterEmail: report.reporterEmail,
           diagnostics: report.diagnostics,
           screenshotUrl: report.attachments[0]?.storageUrl,
+          attachments: report.attachments,
         }),
       });
 
       if (response.ok) {
-        const data = await response.json();
+        let data: any = {};
+        try {
+          data = await response.json();
+        } catch {
+          // 2xx response was not JSON
+        }
+        if (typeof data.issueNumber === 'number' && typeof data.issueUrl === 'string') {
+          await this.updateReportWithGitHubIssue(report.id, data.issueNumber, data.issueUrl);
+        }
         return {
           success: true,
-          issueNumber: data.issueNumber,
-          issueUrl: data.issueUrl,
+          issueNumber: typeof data.issueNumber === 'number' ? data.issueNumber : undefined,
+          issueUrl: typeof data.issueUrl === 'string' ? data.issueUrl : undefined,
         };
       } else {
-        const errorText = await response.text();
-        console.warn(`[FeedbackRepository] /api/report-issue error (${response.status}):`, errorText);
+        let errorMessage = `Server responded with status ${response.status}`;
+        try {
+          if (typeof response.text === 'function') {
+            const rawText = await response.text();
+            if (rawText) {
+              try {
+                const errData = JSON.parse(rawText);
+                if (errData?.message) {
+                  errorMessage = errData.message;
+                } else if (errData?.error) {
+                  errorMessage = errData.error;
+                } else {
+                  errorMessage = rawText;
+                }
+              } catch {
+                errorMessage = rawText;
+              }
+            }
+          } else if (typeof response.json === 'function') {
+            const errData = await response.json();
+            if (errData?.message) errorMessage = errData.message;
+            else if (errData?.error) errorMessage = errData.error;
+          }
+        } catch (readErr) {
+          console.warn('[FeedbackRepository] Could not read response body:', readErr);
+        }
+        console.warn(`[FeedbackRepository] /api/report-issue error (${response.status}):`, errorMessage);
+        return {
+          success: false,
+          error: errorMessage,
+        };
       }
-    } catch (err) {
-      console.warn('[FeedbackRepository] API call failed, using fallback:', err);
+    } catch (err: any) {
+      console.warn('[FeedbackRepository] API call failed:', err);
+      return {
+        success: false,
+        error: err?.message || 'Failed connecting to issue reporter service.',
+      };
     }
-
-    // Fallback: Return pre-filled GitHub Issue URL template
-    return {
-      success: false,
-      fallbackUrl: this.generateGitHubIssueUrl(report, repo),
-    };
   }
 
   /**

@@ -226,16 +226,35 @@ export default async function handler(req: any, res?: any) {
     });
   }
 
-  let bodyData: any = req?.body;
-  if (!bodyData && typeof req?.json === 'function') {
+  let bodyData: any = {};
+  if (
+    req?.body &&
+    typeof req.body === 'object' &&
+    typeof (req.body as any).getReader !== 'function' &&
+    typeof (req.body as any).pipe !== 'function' &&
+    !(typeof Buffer !== 'undefined' && Buffer.isBuffer(req.body)) &&
+    Object.keys(req.body).length > 0
+  ) {
+    bodyData = req.body;
+  } else if (typeof req?.json === 'function') {
     try {
       bodyData = await req.json();
     } catch {
       bodyData = {};
     }
-  } else if (typeof bodyData === 'string') {
+  } else if (typeof req?.body === 'string') {
     try {
-      bodyData = JSON.parse(bodyData);
+      const raw =
+        req.isBase64Encoded && typeof Buffer !== 'undefined'
+          ? Buffer.from(req.body, 'base64').toString('utf8')
+          : req.body;
+      bodyData = JSON.parse(raw);
+    } catch {
+      bodyData = {};
+    }
+  } else if (typeof Buffer !== 'undefined' && Buffer.isBuffer(req?.body)) {
+    try {
+      bodyData = JSON.parse(req.body.toString('utf8'));
     } catch {
       bodyData = {};
     }

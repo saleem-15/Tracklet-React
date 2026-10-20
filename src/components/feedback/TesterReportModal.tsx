@@ -4,10 +4,7 @@ import {
   Send, 
   CheckCircle2, 
   AlertTriangle, 
-  ExternalLink, 
-  Bug, 
-  Sparkles,
-  MessageSquare
+  Bug
 } from 'lucide-react';
 import { 
   TesterReportCategory, 
@@ -81,16 +78,12 @@ export const TesterReportModal: React.FC<TesterReportModalProps> = ({
   // UI State
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedReportId, setSubmittedReportId] = useState<string | null>(null);
-  const [submittedIssueNumber, setSubmittedIssueNumber] = useState<number | null>(null);
-  const [submittedIssueUrl, setSubmittedIssueUrl] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Load draft on mount / open
   useEffect(() => {
     if (isOpen) {
       setSubmittedReportId(null);
-      setSubmittedIssueNumber(null);
-      setSubmittedIssueUrl(null);
       setErrorMessage(null);
 
       const draft = FeedbackRepository.loadDraft();
@@ -176,24 +169,28 @@ export const TesterReportModal: React.FC<TesterReportModalProps> = ({
         attachments,
       });
 
-      // Dispatch to Vercel Serverless / GitHub
+      // Dispatch to Serverless / GitHub
       const dispatchResult = await FeedbackRepository.dispatchToApi(savedReport);
 
-      setSubmittedReportId(savedReport.id);
-      if (dispatchResult.success && dispatchResult.issueNumber) {
-        setSubmittedIssueNumber(dispatchResult.issueNumber);
-        setSubmittedIssueUrl(dispatchResult.issueUrl || null);
-      } else if (dispatchResult.issueUrl) {
-        setSubmittedIssueUrl(dispatchResult.issueUrl);
-      } else if (dispatchResult.fallbackUrl) {
-        setSubmittedIssueUrl(dispatchResult.fallbackUrl);
+      if (!dispatchResult.success) {
+        setErrorMessage(
+          dispatchResult.error
+            ? `Submission failed: ${dispatchResult.error.replace(/\.+$/, '')}. Your report and attachments have been preserved. Please retry.`
+            : 'Failed to submit report. Your report and attachments have been preserved. Please retry.'
+        );
+        return;
       }
+
+      // Success! Clear draft now that dispatch succeeded
+      FeedbackRepository.clearDraft();
+
+      setSubmittedReportId(savedReport.id);
 
       posthog.capture('feedback_report_submitted', {
         category: type,
         severity,
         has_attachments: attachments.length > 0,
-        dispatch_succeeded: dispatchResult.success,
+        dispatch_succeeded: true,
       });
 
       addToast(
@@ -201,9 +198,11 @@ export const TesterReportModal: React.FC<TesterReportModalProps> = ({
         'Report Submitted',
         `Thanks for testing Tracklet! Logged as ${savedReport.id}.`
       );
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed submitting report:', err);
-      setErrorMessage('Failed to submit report. Your typed text is preserved. Please retry.');
+      setErrorMessage(
+        err?.message || 'Failed to submit report. Your typed text is preserved. Please retry.'
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -265,40 +264,6 @@ export const TesterReportModal: React.FC<TesterReportModalProps> = ({
                 </div>
               </div>
 
-              {submittedIssueNumber ? (
-                <div className="pt-2 flex flex-col items-center gap-2">
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-semibold">
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    <span>GitHub Issue #{submittedIssueNumber} Created</span>
-                  </div>
-                  {submittedIssueUrl && (
-                    <a
-                      href={submittedIssueUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 text-white hover:bg-slate-800 text-xs font-semibold shadow-2xs transition-all"
-                    >
-                      <span>View Issue #{submittedIssueNumber} on GitHub</span>
-                      <ExternalLink className="w-3.5 h-3.5" />
-                    </a>
-                  )}
-                </div>
-              ) : submittedIssueUrl ? (
-                <div className="pt-2 flex flex-col items-center gap-2">
-                  <p className="text-2xs text-slate-500">
-                    Automated GitHub sync not configured. You can submit directly via GitHub Issues:
-                  </p>
-                  <a
-                    href={submittedIssueUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 text-white hover:bg-slate-800 text-xs font-semibold shadow-2xs transition-all"
-                  >
-                    <span>Open Pre-filled GitHub Issue</span>
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </a>
-                </div>
-              ) : null}
 
               <div className="pt-4">
                 <button

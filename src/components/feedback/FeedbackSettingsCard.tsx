@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Bug, Copy, Check, ExternalLink, Laptop, ShieldCheck } from 'lucide-react';
+import { Bug, Copy, Check, Laptop, ShieldCheck } from 'lucide-react';
 import { collectDiagnosticContext } from '../../lib/diagnosticUtils';
 import { AuthUser } from '../../types';
 import { useToastContext } from '../../context/ToastContext';
