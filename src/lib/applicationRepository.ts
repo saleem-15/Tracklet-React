@@ -335,7 +335,7 @@ export class ApplicationRepository {
 
           const initialHistory = Array.isArray(appItem.history) && appItem.history.length > 0
             ? appItem.history.slice(0, 100)
-            : [createStatusHistoryEntry(validStatus, undefined, now)];
+            : [createStatusHistoryEntry(validStatus, undefined, ((appItem as Record<string, unknown>).stageUpdatedAt as string) || ((appItem as Record<string, unknown>).createdAt as string) || now)];
 
           // Extract and strip any existing client ID / userId to avoid document payload pollution
           const { id: _oldId, userId: _oldUserId, ...restFields } = appItem as Record<string, unknown>;
@@ -401,7 +401,7 @@ export class ApplicationRepository {
 
         const initialHistory = Array.isArray(appItem.history) && appItem.history.length > 0
           ? appItem.history.slice(0, 100)
-          : [createStatusHistoryEntry(validStatus, undefined, now)];
+          : [createStatusHistoryEntry(validStatus, undefined, ((appItem as Record<string, unknown>).stageUpdatedAt as string) || ((appItem as Record<string, unknown>).createdAt as string) || now)];
 
         const { id: oldId, userId: _oldUserId, ...restFields } = appItem as Record<string, unknown>;
 
@@ -436,7 +436,7 @@ export class ApplicationRepository {
       contactIds: item.contactIds || [],
       history: item.history && item.history.length > 0
         ? item.history
-        : [createStatusHistoryEntry(item.status, undefined, item.createdAt || now)],
+        : [createStatusHistoryEntry(item.status, undefined, item.stageUpdatedAt || item.createdAt || now)],
     }));
 
     if (userId) {

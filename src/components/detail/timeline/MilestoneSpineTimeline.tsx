@@ -131,7 +131,7 @@ export const MilestoneSpineTimeline: React.FC<MilestoneSpineTimelineProps> = ({
               const isCurrent = idx === 0;
               const nextChronological = idx > 0 ? sortedHistory[idx - 1] : null;
               const dwell = calculateDwellTime(
-                entry.timestamp,
+                isCurrent ? (stageUpdatedAt || entry.timestamp) : entry.timestamp,
                 nextChronological ? nextChronological.timestamp : undefined
               );
 
@@ -183,7 +183,7 @@ export const MilestoneSpineTimeline: React.FC<MilestoneSpineTimelineProps> = ({
                             <div className="flex items-center gap-2 text-[11px] font-mono text-slate-500 mt-0.5 flex-wrap">
                               <span className="flex items-center gap-1">
                                 <Calendar className="w-3 h-3 text-slate-400 shrink-0" />
-                                <span>{formatTimelineTimestamp(entry.timestamp)}</span>
+                                <span>{formatTimelineTimestamp(isCurrent ? (stageUpdatedAt || entry.timestamp) : entry.timestamp)}</span>
                               </span>
                               <span className="text-slate-300">·</span>
                               <span className="flex items-center gap-1 text-slate-600 font-medium tabular-nums">
