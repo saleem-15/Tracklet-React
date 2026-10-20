@@ -98,6 +98,17 @@ describe('Contact Deduplication Suite (Issue #57)', () => {
     expect(duplicate).toBeNull();
   });
 
+  it('does NOT match same name and organization when explicit emails differ', () => {
+    const candidate = {
+      name: 'Alice Johnson',
+      organization: 'Stripe',
+      email: 'alice.different@stripe.com',
+    };
+
+    const duplicate = findDuplicateContact(candidate, existingContacts);
+    expect(duplicate).toBeNull();
+  });
+
   it('excludes self when excludeContactId is provided (edit mode)', () => {
     const candidate = {
       name: 'Alice Johnson',

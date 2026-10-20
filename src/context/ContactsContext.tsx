@@ -78,7 +78,7 @@ export const ContactsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     if (selectedAppId) {
       setReturnToAppId(selectedAppId);
     } else {
-      setReturnToContactId(null);
+      setReturnToAppId(null);
     }
     setSelectedAppId(null);
     setSelectedContactId(contactId);
@@ -116,6 +116,11 @@ export const ContactsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     if (existing) {
       if (!existing.applicationIds?.includes(appId)) {
         await handleLinkContact(existing.id, appId);
+        addToast(
+          'info',
+          'Existing contact linked',
+          `Linked existing contact ${existing.name} instead of creating a new contact.`
+        );
       } else {
         addToast('info', 'Contact already linked', `${existing.name} is already linked to this application.`);
       }

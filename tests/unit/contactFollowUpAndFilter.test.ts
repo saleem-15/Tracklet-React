@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   filterContacts,
   getContactsFollowUpDueSoon,
@@ -141,6 +141,15 @@ describe('Contact Follow-up & Filtering Suite (Issue #59)', () => {
   });
 
   describe('filterContacts', () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+      vi.setSystemTime(baseNow);
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
     it('returns overdue contacts when onlyFollowUpDue is true instead of empty list', () => {
       const filtered = filterContacts(allContacts, '', 'All', true, 48);
 

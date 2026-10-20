@@ -291,9 +291,13 @@ export function findDuplicateContact(
     }
 
     const normExistEmail = existing.email ? existing.email.toLowerCase().trim() : '';
-    // 1. Exact Email Match (strongest identifier)
-    if (normCandEmail && normExistEmail && normCandEmail === normExistEmail) {
-      return existing;
+    // 1. Email check: if both have explicit emails
+    if (normCandEmail && normExistEmail) {
+      if (normCandEmail === normExistEmail) {
+        return existing;
+      }
+      // Differing explicit emails confirm they are distinct contacts
+      continue;
     }
 
     const normExistName = existing.name ? existing.name.toLowerCase().trim().replace(/\s+/g, ' ') : '';

@@ -4,7 +4,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { ContactsProvider, useContactsContext } from '../../src/context/ContactsContext';
 import { NavigationProvider, useNavigation } from '../../src/context/NavigationContext';
 import { ApplicationsProvider } from '../../src/context/ApplicationsContext';
-import { ToastProvider } from '../../src/context/ToastContext';
+import { ToastProvider, useToastContext } from '../../src/context/ToastContext';
 import { AuthProvider } from '../../src/context/AuthContext';
 import { Contact, Application } from '../../src/types';
 
@@ -13,10 +13,12 @@ let root: Root | null = null;
 
 let contactsContextResult: ReturnType<typeof useContactsContext>;
 let navContextResult: ReturnType<typeof useNavigation>;
+let toastContextResult: ReturnType<typeof useToastContext>;
 
 function TestConsumer() {
   contactsContextResult = useContactsContext();
   navContextResult = useNavigation();
+  toastContextResult = useToastContext();
   return null;
 }
 
@@ -131,5 +133,38 @@ describe('Contact Profile to Linked Application Navigation & Return Stack (Issue
 
     expect(navContextResult.selectedAppId).toBeNull();
     expect(contactsContextResult.selectedContactId).toBeNull();
+  });
+  it('links an unlinked existing contact and displays informational toast in handleCreateAndLinkContact', async () => {
+    mount();
+
+    // 1. Add an existing contact
+    let existingContact: Contact | undefined;
+    await act(async () => {
+      existingContact = await contactsContextResult.handleAddContact({
+        name: 'Dana Scully',
+        email: 'scully@fbi.gov',
+        organization: 'FBI',
+      });
+    });
+
+    expect(existingContact).toBeDefined();
+
+    // 2. Call handleCreateAndLinkContact with matching candidate details for an app
+    await act(async () => {
+      await contactsContextResult.handleCreateAndLinkContact(
+        {
+          name: 'Dana Scully',
+          email: 'scully@fbi.gov',
+          organization: 'FBI',
+        },
+        'app-x-files'
+      );
+    });
+
+    // Check that existing contact was linked and informational toast was dispatched
+    const toasts = toastContextResult.toasts;
+    const linkToast = toasts.find((t) => t.title === 'Existing contact linked');
+    expect(linkToast).toBeDefined();
+    expect(linkToast?.description).toContain('Linked existing contact Dana Scully instead of creating a new contact.');
   });
 });
