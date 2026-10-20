@@ -31,12 +31,12 @@ export const AnalyticsHeroKPIs: React.FC<AnalyticsHeroKPIsProps> = ({
     ghostedCount,
   } = kpis;
 
-  // Screening yield dynamic context
+  // Screening yield dynamic context (grounded in pipeline yield with no unsourced benchmark assertions)
   const getScreeningBenchmarkText = () => {
     if (interviewProgressionCount === 0) return 'Awaiting initial screen';
-    if (interviewProgressionPct >= 20) return 'Above avg (10–20%)';
-    if (interviewProgressionPct >= 10) return 'On pace (10–20%)';
-    return 'Below avg (<10%)';
+    if (interviewProgressionPct >= 20) return 'High progression pace';
+    if (interviewProgressionPct >= 10) return 'Steady progression pace';
+    return 'Needs momentum (<10%)';
   };
 
   const getScreeningBenchmarkColor = () => {
@@ -117,7 +117,7 @@ export const AnalyticsHeroKPIs: React.FC<AnalyticsHeroKPIsProps> = ({
         </div>
 
         <div className="flex items-center justify-between text-xs text-slate-500 pt-2 border-t border-slate-100/80">
-          <span>Benchmark</span>
+          <span>Progression pace</span>
           <span className={getScreeningBenchmarkColor()}>{getScreeningBenchmarkText()}</span>
         </div>
       </div>

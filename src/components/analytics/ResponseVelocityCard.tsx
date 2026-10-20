@@ -6,8 +6,6 @@ import {
   CheckCircle, 
   ChevronRight, 
   Mail,
-  ChevronDown,
-  ChevronUp
 } from 'lucide-react';
 import { CompanyLogo } from '../CompanyLogo';
 
@@ -163,7 +161,8 @@ export const ResponseVelocityCard: React.FC<ResponseVelocityCardProps> = ({
         ) : (
           <div className="space-y-1.5 max-h-[290px] overflow-y-auto pr-1">
             {staleApplications.map((app) => {
-              const isGhosted = app.daysInStage > 21;
+              const isOffer = app.status === 'Offer';
+              const isGhosted = !isOffer && app.daysInStage > 21;
               return (
                 <div
                   key={app.id}
@@ -189,11 +188,13 @@ export const ResponseVelocityCard: React.FC<ResponseVelocityCardProps> = ({
 
                   <div className="flex items-center gap-2 shrink-0">
                     <span className={`text-xs font-semibold px-2 py-0.5 rounded-md border ${
-                      isGhosted
+                      isOffer
+                        ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                        : isGhosted
                         ? 'bg-rose-50 text-rose-700 border-rose-200'
                         : 'bg-amber-50 text-amber-700 border-amber-200'
                     }`}>
-                      {app.daysInStage}d • {isGhosted ? 'Ghosted' : 'Stale'}
+                      {app.daysInStage}d • {isOffer ? 'Decision Pending' : isGhosted ? 'Ghosted' : 'Stale'}
                     </span>
 
                     {app.contactEmail ? (

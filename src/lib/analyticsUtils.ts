@@ -52,7 +52,7 @@ export interface GhostingAnalysis {
   freshCount: number; // < 7 days
   awaitingCount: number; // 7 - 14 days
   staleCount: number; // 14 - 21 days
-  ghostedCount: number; // > 21 days in Applied
+  ghostedCount: number; // > 21 days in Applied/Screening/Interview (excluding Offer)
   staleRatePct: number; // percentage of active apps in stale window (14-21d)
   ghostRatePct: number; // percentage of active apps ghosted (>21d)
   ghostingRatePct: number; // combined staleness rate
@@ -84,7 +84,7 @@ export interface ExecutiveKpis {
   activePipelineCount: number;
   activePipelinePct: number;
   interviewProgressionCount: number; // Screening + Interview + Offer
-  interviewProgressionPct: number; // Yield from total
+  interviewProgressionPct: number; // Yield from total applied
   offerCount: number;
   offerRatePct: number; // Offer / Interview loops
   interviewCount: number;
@@ -95,6 +95,79 @@ export interface ExecutiveKpis {
   completedTasks: number;
   taskCompletionRatePct: number;
   totalContacts: number;
+}
+
+/**
+ * Determines whether an application reached a given stage during its lifecycle.
+ * Analyzes current status and historical progression transitions.
+ */
+export function hasReachedStage(app: Application, stage: ApplicationStatus): boolean {
+  // Saved is the baseline entry point for all tracked opportunities
+  if (stage === 'Saved') return true;
+
+  // Direct match on current status
+  if (app.status === stage) return true;
+
+  // Check historical transitions in app.history if available
+  if (Array.isArray(app.history) && app.history.length > 0) {
+    const reachedInHistory = app.history.some(
+      (h) => h.toStatus === stage || h.fromStatus === stage
+    );
+    if (reachedInHistory) return true;
+  }
+
+  // Stage progression hierarchy fallback
+  if (stage === 'Applied') {
+    // Current status is downstream or Rejected (rejections happen after applying)
+    if (
+      app.status === 'Screening' ||
+      app.status === 'Interview' ||
+      app.status === 'Offer' ||
+      app.status === 'Rejected'
+    ) {
+      return true;
+    }
+    // For Archived: if dateApplied is present, the candidate applied before archiving
+    if (app.status === 'Archived' && Boolean(app.dateApplied)) {
+      return true;
+    }
+    return false;
+  }
+
+  if (stage === 'Screening') {
+    // Current status is downstream of Screening
+    if (app.status === 'Interview' || app.status === 'Offer') {
+      return true;
+    }
+    // Check note hints for terminal states (e.g. initial screening note)
+    if (
+      (app.status === 'Rejected' || app.status === 'Archived') &&
+      /screen/i.test(app.notes || '')
+    ) {
+      return true;
+    }
+    return false;
+  }
+
+  if (stage === 'Interview') {
+    // Current status is downstream of Interview
+    if (app.status === 'Offer') {
+      return true;
+    }
+    if (
+      (app.status === 'Rejected' || app.status === 'Archived') &&
+      /interview|panel|round/i.test(app.notes || '')
+    ) {
+      return true;
+    }
+    return false;
+  }
+
+  if (stage === 'Offer') {
+    return app.status === 'Offer';
+  }
+
+  return false;
 }
 
 /**
@@ -157,9 +230,7 @@ export function filterApplicationsForAnalytics(
  * Computes high-level Executive Key Performance Indicators
  */
 export function calculateExecutiveKpis(applications: Application[]): ExecutiveKpis {
-  const nonArchived = applications.filter((a) => a.status !== 'Archived');
   const total = applications.length;
-  const nonArchivedTotal = nonArchived.length;
 
   const activeApps = applications.filter(
     (a) =>
@@ -170,21 +241,16 @@ export function calculateExecutiveKpis(applications: Application[]): ExecutiveKp
       a.status === 'Offer'
   );
 
-  const interviewProgression = applications.filter(
-    (a) =>
-      a.status === 'Screening' ||
-      a.status === 'Interview' ||
-      a.status === 'Offer'
-  );
-
   const interviewCount = applications.filter((a) => a.status === 'Interview').length;
   const offerCount = applications.filter((a) => a.status === 'Offer').length;
 
-  // Interview progression yield rate (apps that progressed beyond applied / total applied)
-  const appliedCount = applications.filter((a) => a.status !== 'Saved').length;
+  // Screening yield: applications that reached Screening / applications that reached Applied
+  const appliedReachedCount = applications.filter((a) => hasReachedStage(a, 'Applied')).length;
+  const screeningReachedCount = applications.filter((a) => hasReachedStage(a, 'Screening')).length;
+  const interviewProgressionCount = screeningReachedCount;
   const interviewProgressionPct =
-    appliedCount > 0
-      ? Math.round((interviewProgression.length / appliedCount) * 100)
+    appliedReachedCount > 0
+      ? Math.round((screeningReachedCount / appliedReachedCount) * 100)
       : 0;
 
   // Offer rate (Offers vs total interviews + offers)
@@ -192,10 +258,10 @@ export function calculateExecutiveKpis(applications: Application[]): ExecutiveKp
   const offerRatePct =
     totalInLoops > 0 ? Math.round((offerCount / totalInLoops) * 100) : 0;
 
-  // Active pipeline percentage
+  // Active pipeline percentage (relative to total applications in scope)
   const activePipelinePct =
-    nonArchivedTotal > 0
-      ? Math.round((activeApps.length / nonArchivedTotal) * 100)
+    total > 0
+      ? Math.round((activeApps.length / total) * 100)
       : 0;
 
   // Days velocity in active stage
@@ -208,13 +274,16 @@ export function calculateExecutiveKpis(applications: Application[]): ExecutiveKp
       ? Number((totalDaysInStage / activeApps.length).toFixed(1))
       : 0;
 
-  // Ghosting / stale applications (>14 days in Applied stage)
+  // Stale / ghosted applications requiring attention (>14 days in Applied, Screening, or Interview)
+  // Offers are excluded from ghostedCount because offers are secured opportunities, not ghosted employers
   const ghostedApps = applications.filter(
-    (a) => a.status === 'Applied' && calculateDaysInStage(a.stageUpdatedAt) > 14
+    (a) =>
+      (a.status === 'Applied' || a.status === 'Screening' || a.status === 'Interview') &&
+      calculateDaysInStage(a.stageUpdatedAt) > 14
   );
   const ghostedCount = ghostedApps.length;
   const ghostingRatePct =
-    appliedCount > 0 ? Math.round((ghostedCount / appliedCount) * 100) : 0;
+    appliedReachedCount > 0 ? Math.round((ghostedCount / appliedReachedCount) * 100) : 0;
 
   // Tasks & Contacts
   let totalTasks = 0;
@@ -238,7 +307,7 @@ export function calculateExecutiveKpis(applications: Application[]): ExecutiveKp
     totalApplications: total,
     activePipelineCount: activeApps.length,
     activePipelinePct,
-    interviewProgressionCount: interviewProgression.length,
+    interviewProgressionCount,
     interviewProgressionPct,
     offerCount,
     offerRatePct,
@@ -263,21 +332,13 @@ export function calculateConversionFunnel(applications: Application[]): {
   funnelHealth: 'optimal' | 'moderate' | 'needs_attention';
   bottleneckAdvice: string;
 } {
-  const savedCount = applications.filter((a) => a.status === 'Saved').length;
-  const appliedCount = applications.filter((a) => a.status === 'Applied').length;
-  const screeningCount = applications.filter((a) => a.status === 'Screening').length;
-  const interviewCount = applications.filter((a) => a.status === 'Interview').length;
-  const offerCount = applications.filter((a) => a.status === 'Offer').length;
+  const milestoneOffer = applications.filter((a) => hasReachedStage(a, 'Offer')).length;
+  const milestoneInterview = applications.filter((a) => hasReachedStage(a, 'Interview')).length;
+  const milestoneScreening = applications.filter((a) => hasReachedStage(a, 'Screening')).length;
+  const milestoneApplied = applications.filter((a) => hasReachedStage(a, 'Applied')).length;
+  const milestoneSaved = applications.length;
 
-  // Cumulative volume reaching each milestone
-  // Every offer went through interview & screening & applied
-  const milestoneOffer = offerCount;
-  const milestoneInterview = interviewCount + milestoneOffer;
-  const milestoneScreening = screeningCount + milestoneInterview;
-  const milestoneApplied = appliedCount + milestoneScreening;
-  const milestoneSaved = savedCount + milestoneApplied;
-
-  const totalBase = milestoneSaved > 0 ? milestoneSaved : (milestoneApplied > 0 ? milestoneApplied : 1);
+  const totalBase = milestoneSaved > 0 ? milestoneSaved : 1;
 
   const stages: FunnelStageMetric[] = [
     {
@@ -303,7 +364,7 @@ export function calculateConversionFunnel(applications: Application[]): {
       conversionFromPrev:
         milestoneSaved > 0
           ? Math.round((milestoneApplied / milestoneSaved) * 100)
-          : 100,
+          : 0,
       dropoffCount: Math.max(0, milestoneApplied - milestoneScreening),
       dropoffRate:
         milestoneApplied > 0
@@ -379,7 +440,21 @@ export function calculateConversionFunnel(applications: Application[]): {
   const screenToInterview = stages[3].conversionFromPrev; // Screen -> Interview
   const interviewToOffer = stages[4].conversionFromPrev; // Interview -> Offer
 
-  if (milestoneApplied >= 5) {
+  // Check staleness of active applications to avoid claiming strong momentum when pipeline is stalled
+  const staleAppsCount = applications.filter(
+    (a) =>
+      (a.status === 'Applied' || a.status === 'Screening' || a.status === 'Interview') &&
+      calculateDaysInStage(a.stageUpdatedAt) > 14
+  ).length;
+  const activeCount = applications.filter(
+    (a) => a.status !== 'Rejected' && a.status !== 'Archived'
+  ).length;
+  const isPipelineStalled = activeCount > 0 && staleAppsCount / activeCount >= 0.5;
+
+  if (isPipelineStalled) {
+    funnelHealth = 'needs_attention';
+    bottleneckAdvice = `${staleAppsCount} applications have had no response for >14 days. Review follow-ups or submit fresh applications to restore momentum.`;
+  } else if (milestoneApplied >= 5) {
     if (appToScreen < 10) {
       funnelHealth = 'needs_attention';
       bottleneckAdvice =
@@ -387,15 +462,19 @@ export function calculateConversionFunnel(applications: Application[]): {
     } else if (screenToInterview < 40 && milestoneScreening >= 2) {
       funnelHealth = 'needs_attention';
       bottleneckAdvice =
-        'Recruiter screen pass-rate is lagging. Polish your 2-minute narrative elevator pitch and salary alignment.';
+        'Recruiter screen pass-rate is lagging. Polish your narrative pitch and salary alignment.';
     } else if (interviewToOffer < 20 && milestoneInterview >= 3) {
       funnelHealth = 'moderate';
       bottleneckAdvice =
         'Reaching advanced rounds! Focus on system design deep-dives and structured behavioral STAR stories.';
-    } else if (overallYieldPct >= 5 || offerCount >= 1) {
+    } else if (milestoneOffer >= 1) {
       funnelHealth = 'optimal';
       bottleneckAdvice =
-        'Strong conversion momentum! Pipeline conversion rates are beating market benchmarks (~2-4%).';
+        'Active offers secured! Prioritize final negotiations and team alignment.';
+    } else if (overallYieldPct >= 5) {
+      funnelHealth = 'optimal';
+      bottleneckAdvice =
+        'Healthy conversion pace across your pipeline stages.';
     }
   }
 
@@ -409,15 +488,14 @@ export function calculateConversionFunnel(applications: Application[]): {
 }
 
 /**
- * Calculates platform/source ROI and yield efficiency
+ * Calculates platform/source ROI and yield efficiency across all applications in scope
  */
 export function calculatePlatformRoi(applications: Application[]): {
   metrics: PlatformRoiMetric[];
   topChannel: PlatformRoiMetric | null;
   insight: string;
 } {
-  const nonArchived = applications.filter((a) => a.status !== 'Archived');
-  const total = nonArchived.length;
+  const total = applications.length;
 
   const platformMap: Record<
     string,
@@ -430,24 +508,24 @@ export function calculatePlatformRoi(applications: Application[]): {
     }
   > = {};
 
-  nonArchived.forEach((app) => {
+  applications.forEach((app) => {
     const p = app.platform || 'Other';
     if (!platformMap[p]) {
       platformMap[p] = { total: 0, screening: 0, interview: 0, offer: 0, rejected: 0 };
     }
     platformMap[p].total++;
-    if (app.status === 'Screening') platformMap[p].screening++;
-    if (app.status === 'Interview') platformMap[p].interview++;
-    if (app.status === 'Offer') platformMap[p].offer++;
+    if (hasReachedStage(app, 'Screening')) platformMap[p].screening++;
+    if (hasReachedStage(app, 'Interview')) platformMap[p].interview++;
+    if (hasReachedStage(app, 'Offer')) platformMap[p].offer++;
     if (app.status === 'Rejected') platformMap[p].rejected++;
   });
 
   const metrics: PlatformRoiMetric[] = Object.entries(platformMap).map(
     ([platform, data]) => {
-      const advancedCount = data.screening + data.interview + data.offer;
+      const advancedCount = data.screening;
       const interviewRatePct =
         data.total > 0 ? Math.round((advancedCount / data.total) * 100) : 0;
-      const totalLoops = data.interview + data.offer;
+      const totalLoops = data.interview;
       const offerRatePct =
         totalLoops > 0 ? Math.round((data.offer / totalLoops) * 100) : 0;
 
@@ -514,7 +592,7 @@ export function calculateGhostingAndVelocity(applications: Application[]): Ghost
   let freshCount = 0; // < 7d
   let awaitingCount = 0; // 7-14d
   let staleCount = 0; // 14-21d
-  let ghostedCount = 0; // > 21d in applied or > 30d in screening
+  let ghostedCount = 0; // > 21d in applied/screening/interview (excluding Offer)
   let totalDaysInStage = 0;
 
   const staleApplications: StaleAppItem[] = [];
@@ -522,6 +600,7 @@ export function calculateGhostingAndVelocity(applications: Application[]): Ghost
   activeAndApplied.forEach((app) => {
     const days = calculateDaysInStage(app.stageUpdatedAt);
     totalDaysInStage += days;
+    const isOffer = app.status === 'Offer';
 
     if (days < 7) {
       freshCount++;
@@ -541,7 +620,12 @@ export function calculateGhostingAndVelocity(applications: Application[]): Ghost
         staleSeverity: 'mild',
       });
     } else {
-      ghostedCount++;
+      // Days > 21: Offers are not ghosted (offer extended, pending candidate decision/negotiation)
+      if (!isOffer) {
+        ghostedCount++;
+      } else {
+        staleCount++;
+      }
       staleApplications.push({
         id: app.id,
         company: app.company,

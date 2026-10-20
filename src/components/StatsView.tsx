@@ -163,7 +163,7 @@ export const StatsView: React.FC<StatsViewProps> = ({
                         High Screening Yield ({kpis.interviewProgressionPct}% progression)
                       </h3>
                       <p className="text-xs text-blue-800 leading-relaxed">
-                        Your response yield is outperforming the 10–20% industry average across {kpis.activePipelineCount} active applications.
+                        Strong screening response rate with {kpis.interviewProgressionCount} of {kpis.activePipelineCount} active applications advancing to interviews.
                       </p>
                     </div>
                   </div>
