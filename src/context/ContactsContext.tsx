@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useCallback, useEffect, useMemo } from 'react';
 import { Contact } from '../types';
 import { ContactRepository } from '../lib/contactRepository';
+import { findDuplicateContact } from '../lib/contactUtils';
 import { useContacts } from '../hooks/useContacts';
 import { useAuth } from './AuthContext';
 import { useNavigation } from './NavigationContext';
@@ -26,6 +27,8 @@ export interface ContactsContextType {
   handleSwitchToContact: (contactId: string) => void;
   handleSwitchToApp: (appId: string) => void;
   handleContactFollowUp: (contact: Contact) => void;
+  handleCloseApp: () => void;
+  handleCloseContact: () => void;
 }
 
 const ContactsContext = createContext<ContactsContextType | null>(null);
@@ -40,7 +43,9 @@ const ContactsContext = createContext<ContactsContextType | null>(null);
  */
 export const ContactsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
-  const { setSelectedAppId } = useNavigation();
+  const { activeTab, selectedAppId, setSelectedAppId } = useNavigation();
+  const [returnToContactId, setReturnToContactId] = React.useState<string | null>(null);
+  const [returnToAppId, setReturnToAppId] = React.useState<string | null>(null);
   const { applications, setApplications, registerContactSeeder } = useApplicationsContext();
   const { addToast } = useToastContext();
 
@@ -64,23 +69,66 @@ export const ContactsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setSelectedAppId,
   });
 
+  useEffect(() => {
+    setReturnToContactId(null);
+    setReturnToAppId(null);
+  }, [activeTab]);
+
   const handleSwitchToContact = useCallback((contactId: string) => {
+    if (selectedAppId) {
+      setReturnToAppId(selectedAppId);
+    } else {
+      setReturnToAppId(null);
+    }
     setSelectedAppId(null);
     setSelectedContactId(contactId);
-  }, [setSelectedAppId, setSelectedContactId]);
+  }, [selectedAppId, setSelectedAppId, setSelectedContactId]);
 
   const handleSwitchToApp = useCallback((appId: string) => {
+    if (selectedContactId) {
+      setReturnToContactId(selectedContactId);
+    }
     setSelectedContactId(null);
     setSelectedAppId(appId);
-  }, [setSelectedAppId, setSelectedContactId]);
+  }, [selectedContactId, setSelectedAppId, setSelectedContactId]);
+
+  const handleCloseApp = useCallback(() => {
+    setSelectedAppId(null);
+    if (returnToContactId) {
+      setSelectedContactId(returnToContactId);
+      setReturnToContactId(null);
+    }
+  }, [returnToContactId, setSelectedAppId, setSelectedContactId]);
+
+  const handleCloseContact = useCallback(() => {
+    setSelectedContactId(null);
+    if (returnToAppId) {
+      setSelectedAppId(returnToAppId);
+      setReturnToAppId(null);
+    }
+  }, [returnToAppId, setSelectedAppId, setSelectedContactId]);
 
   const handleCreateAndLinkContact = useCallback(async (
     contactData: Omit<Contact, 'id' | 'userId' | 'createdAt' | 'updatedAt'>,
     appId: string
   ) => {
+    const existing = findDuplicateContact(contactData, contacts);
+    if (existing) {
+      if (!existing.applicationIds?.includes(appId)) {
+        await handleLinkContact(existing.id, appId);
+        addToast(
+          'info',
+          'Existing contact linked',
+          `Linked existing contact ${existing.name} instead of creating a new contact.`
+        );
+      } else {
+        addToast('info', 'Contact already linked', `${existing.name} is already linked to this application.`);
+      }
+      return;
+    }
     const mergedAppIds = Array.from(new Set([...(contactData.applicationIds || []), appId]));
     await handleAddContact({ ...contactData, applicationIds: mergedAppIds });
-  }, [handleAddContact]);
+  }, [contacts, handleLinkContact, handleAddContact, addToast]);
 
   const handleContactFollowUp = useCallback((contact: Contact) => {
     if (contact.applicationIds && contact.applicationIds.length > 0) {
@@ -123,6 +171,8 @@ export const ContactsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     handleSwitchToContact,
     handleSwitchToApp,
     handleContactFollowUp,
+    handleCloseApp,
+    handleCloseContact,
   }), [
     contacts,
     setContacts,
@@ -139,6 +189,8 @@ export const ContactsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     handleSwitchToContact,
     handleSwitchToApp,
     handleContactFollowUp,
+    handleCloseApp,
+    handleCloseContact,
   ]);
 
   return (

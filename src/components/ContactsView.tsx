@@ -333,11 +333,13 @@ export const ContactsView: React.FC<ContactsViewProps> = ({
       <ContactModal
         isOpen={isModalOpen}
         editingContact={editingContact}
+        contacts={contacts}
         applications={applications}
         onClose={() => {
           setIsModalOpen(false);
           setEditingContact(null);
         }}
+        onSelectContact={onSelectContact}
         onSave={handleSaveModal}
       />
     </div>

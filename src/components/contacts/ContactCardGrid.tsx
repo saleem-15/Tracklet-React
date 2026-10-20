@@ -69,8 +69,6 @@ export const ContactCardGrid: React.FC<ContactCardGridProps> = ({
         const followUpHours = contact.nextFollowUpDate
           ? getContactFollowUpHoursRemaining(contact.nextFollowUpDate)
           : null;
-        const isFollowUpDueSoon = followUpHours !== null && followUpHours <= 48 && followUpHours >= -120;
-        const isFollowUpOverdue = followUpHours !== null && followUpHours < 0;
 
         return (
           <div
