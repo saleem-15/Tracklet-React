@@ -51,8 +51,9 @@ export interface GhostingAnalysis {
   totalAnalyzed: number;
   freshCount: number; // < 7 days
   awaitingCount: number; // 7 - 14 days
-  staleCount: number; // 14 - 21 days
+  staleCount: number; // 14 - 21 days (excluding Offer)
   ghostedCount: number; // > 21 days in Applied/Screening/Interview (excluding Offer)
+  decisionPendingCount: number; // > 14 days in Offer stage awaiting candidate decision
   staleRatePct: number; // percentage of active apps in stale window (14-21d)
   ghostRatePct: number; // percentage of active apps ghosted (>21d)
   ghostingRatePct: number; // combined staleness rate
@@ -83,6 +84,7 @@ export interface ExecutiveKpis {
   totalApplications: number;
   activePipelineCount: number;
   activePipelinePct: number;
+  appliedReachedCount: number; // Applications reaching Applied or beyond
   interviewProgressionCount: number; // Screening + Interview + Offer
   interviewProgressionPct: number; // Yield from total applied
   offerCount: number;
@@ -97,77 +99,51 @@ export interface ExecutiveKpis {
   totalContacts: number;
 }
 
+const STAGE_RANK: Record<ApplicationStatus, number> = {
+  Saved: 1,
+  Applied: 2,
+  Screening: 3,
+  Interview: 4,
+  Offer: 5,
+  Rejected: 0,
+  Archived: 0,
+};
+
 /**
  * Determines whether an application reached a given stage during its lifecycle.
- * Analyzes current status and historical progression transitions.
+ * Uses a monotonic pipeline rank based on current status and historical progression transitions.
  */
 export function hasReachedStage(app: Application, stage: ApplicationStatus): boolean {
   // Saved is the baseline entry point for all tracked opportunities
   if (stage === 'Saved') return true;
+  if (stage === 'Rejected') return app.status === 'Rejected';
+  if (stage === 'Archived') return app.status === 'Archived';
 
-  // Direct match on current status
-  if (app.status === stage) return true;
+  const targetRank = STAGE_RANK[stage];
+  if (!targetRank) return false;
 
-  // Check historical transitions in app.history if available
-  if (Array.isArray(app.history) && app.history.length > 0) {
-    const reachedInHistory = app.history.some(
-      (h) => h.toStatus === stage || h.fromStatus === stage
-    );
-    if (reachedInHistory) return true;
+  let maxRank = STAGE_RANK[app.status] || 0;
+
+  const hasHistory = Array.isArray(app.history) && app.history.length > 0;
+  if (hasHistory) {
+    for (const h of app.history!) {
+      const toRank = STAGE_RANK[h.toStatus] || 0;
+      const fromRank = STAGE_RANK[h.fromStatus] || 0;
+      if (toRank > maxRank) maxRank = toRank;
+      if (fromRank > maxRank) maxRank = fromRank;
+    }
+    return maxRank >= targetRank;
   }
 
-  // Stage progression hierarchy fallback
-  if (stage === 'Applied') {
-    // Current status is downstream or Rejected (rejections happen after applying)
-    if (
-      app.status === 'Screening' ||
-      app.status === 'Interview' ||
-      app.status === 'Offer' ||
-      app.status === 'Rejected'
-    ) {
-      return true;
-    }
-    // For Archived: if dateApplied is present, the candidate applied before archiving
-    if (app.status === 'Archived' && Boolean(app.dateApplied)) {
-      return true;
-    }
-    return false;
+  // Fallback ONLY for legacy or imported records with NO history
+  if (app.status === 'Rejected') {
+    // Rejections happen after an application was submitted
+    maxRank = Math.max(maxRank, STAGE_RANK['Applied']);
+  } else if (app.status === 'Archived' && Boolean(app.dateApplied)) {
+    maxRank = Math.max(maxRank, STAGE_RANK['Applied']);
   }
 
-  if (stage === 'Screening') {
-    // Current status is downstream of Screening
-    if (app.status === 'Interview' || app.status === 'Offer') {
-      return true;
-    }
-    // Check note hints for terminal states (e.g. initial screening note)
-    if (
-      (app.status === 'Rejected' || app.status === 'Archived') &&
-      /screen/i.test(app.notes || '')
-    ) {
-      return true;
-    }
-    return false;
-  }
-
-  if (stage === 'Interview') {
-    // Current status is downstream of Interview
-    if (app.status === 'Offer') {
-      return true;
-    }
-    if (
-      (app.status === 'Rejected' || app.status === 'Archived') &&
-      /interview|panel|round/i.test(app.notes || '')
-    ) {
-      return true;
-    }
-    return false;
-  }
-
-  if (stage === 'Offer') {
-    return app.status === 'Offer';
-  }
-
-  return false;
+  return maxRank >= targetRank;
 }
 
 /**
@@ -307,6 +283,7 @@ export function calculateExecutiveKpis(applications: Application[]): ExecutiveKp
     totalApplications: total,
     activePipelineCount: activeApps.length,
     activePipelinePct,
+    appliedReachedCount,
     interviewProgressionCount,
     interviewProgressionPct,
     offerCount,
@@ -591,8 +568,9 @@ export function calculateGhostingAndVelocity(applications: Application[]): Ghost
 
   let freshCount = 0; // < 7d
   let awaitingCount = 0; // 7-14d
-  let staleCount = 0; // 14-21d
+  let staleCount = 0; // 14-21d (excluding Offer)
   let ghostedCount = 0; // > 21d in applied/screening/interview (excluding Offer)
+  let decisionPendingCount = 0; // > 14d in offer stage awaiting candidate decision
   let totalDaysInStage = 0;
 
   const staleApplications: StaleAppItem[] = [];
@@ -607,7 +585,11 @@ export function calculateGhostingAndVelocity(applications: Application[]): Ghost
     } else if (days <= 14) {
       awaitingCount++;
     } else if (days <= 21) {
-      staleCount++;
+      if (isOffer) {
+        decisionPendingCount++;
+      } else {
+        staleCount++;
+      }
       staleApplications.push({
         id: app.id,
         company: app.company,
@@ -621,10 +603,10 @@ export function calculateGhostingAndVelocity(applications: Application[]): Ghost
       });
     } else {
       // Days > 21: Offers are not ghosted (offer extended, pending candidate decision/negotiation)
-      if (!isOffer) {
-        ghostedCount++;
+      if (isOffer) {
+        decisionPendingCount++;
       } else {
-        staleCount++;
+        ghostedCount++;
       }
       staleApplications.push({
         id: app.id,
@@ -659,6 +641,7 @@ export function calculateGhostingAndVelocity(applications: Application[]): Ghost
     awaitingCount,
     staleCount,
     ghostedCount,
+    decisionPendingCount,
     staleRatePct,
     ghostRatePct,
     ghostingRatePct,

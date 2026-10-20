@@ -28,6 +28,7 @@ export const ResponseVelocityCard: React.FC<ResponseVelocityCardProps> = ({
     awaitingCount,
     staleCount,
     ghostedCount,
+    decisionPendingCount = 0,
     staleRatePct,
     ghostRatePct,
     avgDaysInStage,
@@ -39,6 +40,7 @@ export const ResponseVelocityCard: React.FC<ResponseVelocityCardProps> = ({
   const awaitingPct = Math.round((awaitingCount / total) * 100);
   const stalePct = Math.round((staleCount / total) * 100);
   const ghostedPct = Math.round((ghostedCount / total) * 100);
+  const decisionPendingPct = Math.round((decisionPendingCount / total) * 100);
 
   const handleCopyEmail = (e: React.MouseEvent, app: StaleAppItem) => {
     e.stopPropagation();
@@ -76,6 +78,11 @@ export const ResponseVelocityCard: React.FC<ResponseVelocityCardProps> = ({
               Ghosted (&gt;21d): <strong className="font-bold">{ghostedCount}</strong> ({ghostRatePct}%)
             </span>
           )}
+          {decisionPendingCount > 0 && (
+            <span className="text-xs font-semibold px-2 py-0.5 rounded-lg bg-indigo-50 text-indigo-800 border border-indigo-200/70" title="Applications with active offers awaiting candidate decision or negotiation">
+              Decision Pending: <strong className="font-bold">{decisionPendingCount}</strong> ({decisionPendingPct}%)
+            </span>
+          )}
           <span className="text-xs font-semibold px-2 py-0.5 rounded-lg bg-slate-100 text-slate-700">
             Avg: <strong className="text-slate-900">{avgDaysInStage}d</strong>
           </span>
@@ -87,7 +94,7 @@ export const ResponseVelocityCard: React.FC<ResponseVelocityCardProps> = ({
         <div 
           className="h-2.5 w-full bg-slate-100 rounded-full overflow-hidden flex"
           role="img"
-          aria-label={`Recency breakdown: ${freshCount} fresh, ${awaitingCount} normal, ${staleCount} stale, ${ghostedCount} ghosted applications`}
+          aria-label={`Recency breakdown: ${freshCount} fresh, ${awaitingCount} normal, ${staleCount} stale, ${ghostedCount} ghosted${decisionPendingCount > 0 ? `, ${decisionPendingCount} decision pending` : ''} applications`}
         >
           {freshCount > 0 && (
             <div
@@ -117,10 +124,17 @@ export const ResponseVelocityCard: React.FC<ResponseVelocityCardProps> = ({
               title={`Ghosted (>21d): ${ghostedCount} apps (${ghostRatePct}%)`}
             />
           )}
+          {decisionPendingCount > 0 && (
+            <div
+              className="bg-indigo-500 h-full transition-all duration-500"
+              style={{ width: `${decisionPendingPct}%` }}
+              title={`Decision Pending (>14d): ${decisionPendingCount} apps (${decisionPendingPct}%)`}
+            />
+          )}
         </div>
 
-        {/* 4-Item Granular Legend */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] text-slate-500 pt-0.5">
+        {/* Granular Legend */}
+        <div className={`grid grid-cols-2 ${decisionPendingCount > 0 ? 'sm:grid-cols-5' : 'sm:grid-cols-4'} gap-2 text-[11px] text-slate-500 pt-0.5`}>
           <div className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
             <span>Fresh (&lt;7d): <strong className="text-slate-800 font-semibold">{freshCount}</strong></span>
@@ -137,6 +151,12 @@ export const ResponseVelocityCard: React.FC<ResponseVelocityCardProps> = ({
             <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0" />
             <span>Ghosted (&gt;21d): <strong className="text-rose-800 font-bold">{ghostedCount}</strong></span>
           </div>
+          {decisionPendingCount > 0 && (
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-indigo-500 shrink-0" />
+              <span>Pending (&gt;14d): <strong className="text-indigo-800 font-bold">{decisionPendingCount}</strong></span>
+            </div>
+          )}
         </div>
       </div>
 

@@ -213,9 +213,13 @@ describe('analyticsUtils - Dashboard Metrics & Bug Fixes', () => {
       };
 
       const ghosting = calculateGhostingAndVelocity([oldOfferApp]);
-      // Must not count as ghosted
+      // Must not count as ghosted or stale; instead tracks as decisionPendingCount
       expect(ghosting.ghostedCount).toBe(0);
       expect(ghosting.ghostRatePct).toBe(0);
+      expect(ghosting.staleCount).toBe(0);
+      expect(ghosting.decisionPendingCount).toBe(1);
+      expect(ghosting.staleRatePct).toBe(0);
+      expect(ghosting.ghostingRatePct).toBe(0);
 
       // But should be in staleApplications for decision review
       expect(ghosting.staleApplications.length).toBe(1);
@@ -303,6 +307,106 @@ describe('analyticsUtils - Dashboard Metrics & Bug Fixes', () => {
       expect(hasReachedStage(stripe, 'Screening')).toBe(true);
       expect(hasReachedStage(stripe, 'Interview')).toBe(true);
       expect(hasReachedStage(stripe, 'Offer')).toBe(true);
+    });
+
+    it('calculates conversion funnel with non-increasing counts and conversion rates <= 100 for histories that skip stages', () => {
+      const stageSkippingApps: Application[] = [
+        // Applied -> Interview -> Rejected (skips explicit Screening status)
+        {
+          id: 'skip-app-1',
+          userId: 'user-1',
+          company: 'Company A',
+          role: 'Role A',
+          status: 'Rejected',
+          platform: 'LinkedIn',
+          dateApplied: '2026-06-01',
+          history: [
+            { id: 'h1', toStatus: 'Applied', timestamp: '2026-06-01T10:00:00Z' },
+            { id: 'h2', fromStatus: 'Applied', toStatus: 'Interview', timestamp: '2026-06-10T10:00:00Z' },
+            { id: 'h3', fromStatus: 'Interview', toStatus: 'Rejected', timestamp: '2026-06-20T10:00:00Z' },
+          ],
+          stageUpdatedAt: '2026-06-20T10:00:00Z',
+          createdAt: '2026-06-01T10:00:00Z',
+          updatedAt: '2026-06-20T10:00:00Z',
+        },
+        // Applied -> Offer -> Archived (skips explicit Screening and Interview statuses)
+        {
+          id: 'skip-app-2',
+          userId: 'user-1',
+          company: 'Company B',
+          role: 'Role B',
+          status: 'Archived',
+          platform: 'Referral',
+          dateApplied: '2026-06-05',
+          history: [
+            { id: 'h4', toStatus: 'Applied', timestamp: '2026-06-05T10:00:00Z' },
+            { id: 'h5', fromStatus: 'Applied', toStatus: 'Offer', timestamp: '2026-06-25T10:00:00Z' },
+            { id: 'h6', fromStatus: 'Offer', toStatus: 'Archived', timestamp: '2026-07-01T10:00:00Z' },
+          ],
+          stageUpdatedAt: '2026-07-01T10:00:00Z',
+          createdAt: '2026-06-05T10:00:00Z',
+          updatedAt: '2026-07-01T10:00:00Z',
+        },
+      ];
+
+      const funnel = calculateConversionFunnel(stageSkippingApps);
+
+      // Verify that stage counts are non-increasing: Saved >= Applied >= Screening >= Interview >= Offer
+      for (let i = 1; i < funnel.stages.length; i++) {
+        expect(funnel.stages[i].count).toBeLessThanOrEqual(funnel.stages[i - 1].count);
+        expect(funnel.stages[i].conversionFromPrev).toBeLessThanOrEqual(100);
+        expect(funnel.stages[i].conversionFromPrev).toBeGreaterThanOrEqual(0);
+      }
+
+      // Check specific stage reach counts:
+      const stageMap = Object.fromEntries(funnel.stages.map((s) => [s.status, s.count]));
+      expect(stageMap['Saved']).toBe(2);
+      expect(stageMap['Applied']).toBe(2);
+      expect(stageMap['Screening']).toBe(2);
+      expect(stageMap['Interview']).toBe(2);
+      expect(stageMap['Offer']).toBe(1);
+    });
+
+    it('does not treat Archived applications with contradictory history as Applied even if dateApplied exists', () => {
+      const archivedJob: Application = {
+        id: 'archived-no-apply',
+        userId: 'user-1',
+        company: 'Legacy Co',
+        role: 'Designer',
+        status: 'Archived',
+        platform: 'Company Site',
+        dateApplied: '2026-06-01',
+        history: [
+          { id: 'h1', toStatus: 'Saved', timestamp: '2026-06-01T10:00:00Z' },
+          { id: 'h2', fromStatus: 'Saved', toStatus: 'Archived', timestamp: '2026-06-02T10:00:00Z' },
+        ],
+        stageUpdatedAt: '2026-06-02T10:00:00Z',
+        createdAt: '2026-06-01T10:00:00Z',
+        updatedAt: '2026-06-02T10:00:00Z',
+      };
+
+      expect(hasReachedStage(archivedJob, 'Saved')).toBe(true);
+      expect(hasReachedStage(archivedJob, 'Applied')).toBe(false);
+      expect(hasReachedStage(archivedJob, 'Screening')).toBe(false);
+    });
+
+    it('treats legacy Rejected applications without history as having reached at least Applied', () => {
+      const legacyRejected: Application = {
+        id: 'legacy-rejected',
+        userId: 'user-1',
+        company: 'Old Corp',
+        role: 'Backend Dev',
+        status: 'Rejected',
+        platform: 'Indeed',
+        dateApplied: '2026-06-01',
+        stageUpdatedAt: '2026-06-05T10:00:00Z',
+        createdAt: '2026-06-01T10:00:00Z',
+        updatedAt: '2026-06-05T10:00:00Z',
+      };
+
+      expect(hasReachedStage(legacyRejected, 'Saved')).toBe(true);
+      expect(hasReachedStage(legacyRejected, 'Applied')).toBe(true);
+      expect(hasReachedStage(legacyRejected, 'Screening')).toBe(false);
     });
   });
 });
