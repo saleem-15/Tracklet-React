@@ -4,7 +4,7 @@ import { ChevronDown, Check } from 'lucide-react';
 import { UI_TOKENS } from '../theme/tokens';
 import { STAGE_CONFIG_MAP, APPLICATION_STATUSES } from '../lib/constants';
 
-interface StageSelectorDropdownProps {
+export interface StageSelectorDropdownProps {
   currentStatus: ApplicationStatus;
   onSelectStatus: (newStatus: ApplicationStatus) => void;
   size?: 'sm' | 'md';

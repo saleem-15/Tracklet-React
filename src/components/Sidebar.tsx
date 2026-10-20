@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Table, 
   Kanban, 
-  Users,
+  Users, 
   BarChart3, 
   LogIn, 
   LogOut, 
@@ -21,7 +21,6 @@ import { User } from '../lib/firebase';
 import { getExpiringSoonTasks } from '../lib/expiryUtils';
 import { getContactsFollowUpDueSoon } from '../lib/contactUtils';
 import { useEscapeKey } from '../lib/useEscapeKey';
-import { ACTIVE_STATUSES } from '../lib/constants';
 import { useAuth } from '../context/AuthContext';
 import { useNavigation } from '../context/NavigationContext';
 import { useApplicationsContext } from '../context/ApplicationsContext';
@@ -98,19 +97,13 @@ export const Sidebar: React.FC<SidebarProps> = (props) => {
     }
   };
 
-  const activePipelineCount = applications.filter((a) =>
-    ACTIVE_STATUSES.includes(a.status)
-  ).length;
-
-  const totalCount = applications.filter((a) => a.status !== 'Archived').length;
-
   const expiringTasks = getExpiringSoonTasks(
     applications,
     expirySettings.expiryThresholdHours
   );
   const expiringTasksCount = expiringTasks.length;
 
-  // Calculate follow-up due count for contacts
+  // Calculate follow-up due count for contacts (action-only alert trigger)
   const followUpDueCount = getContactsFollowUpDueSoon(
     contacts,
     expirySettings.expiryThresholdHours
@@ -146,6 +139,7 @@ export const Sidebar: React.FC<SidebarProps> = (props) => {
         </div>
       )}
 
+      {/* All Applications */}
       <button
         type="button"
         onClick={() => handleTabClick('all')}
@@ -166,19 +160,9 @@ export const Sidebar: React.FC<SidebarProps> = (props) => {
           <Table className={`w-4 h-4 shrink-0 transition-colors ${activeTab === 'all' ? 'text-blue-600' : 'text-slate-500 group-hover:text-slate-700'}`} />
           {(!isCollapsed || isMobileView) && <span className="text-xs">All Applications</span>}
         </div>
-        {!isCollapsed || isMobileView ? (
-          <span className={`font-mono text-xs px-1.5 py-0.5 rounded-md border transition-colors ${
-            activeTab === 'all'
-              ? 'text-slate-800 bg-slate-100 border-slate-200 font-semibold'
-              : 'text-slate-500 bg-slate-100/60 border-slate-200/60'
-          }`}>
-            {totalCount}
-          </span>
-        ) : totalCount > 0 ? (
-          <span className="w-1.5 h-1.5 rounded-full bg-blue-600 absolute top-2 right-2" />
-        ) : null}
       </button>
 
+      {/* Active Pipeline (Kanban) */}
       <button
         type="button"
         onClick={() => handleTabClick('pipeline')}
@@ -199,17 +183,9 @@ export const Sidebar: React.FC<SidebarProps> = (props) => {
           <Kanban className={`w-4 h-4 shrink-0 transition-colors ${activeTab === 'pipeline' ? 'text-blue-600' : 'text-slate-500 group-hover:text-slate-700'}`} />
           {(!isCollapsed || isMobileView) && <span className="text-xs">Active Pipeline</span>}
         </div>
-        {!isCollapsed || isMobileView ? (
-          activePipelineCount > 0 && (
-            <span className="font-mono text-xs text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-md border border-blue-200/80 font-bold">
-              {activePipelineCount}
-            </span>
-          )
-        ) : activePipelineCount > 0 ? (
-          <span className="w-2 h-2 rounded-full bg-blue-600" />
-        ) : null}
       </button>
 
+      {/* Contacts & Mentors (Action badge displayed only when followUpDueCount > 0) */}
       <button
         type="button"
         onClick={() => handleTabClick('contacts')}
@@ -231,30 +207,20 @@ export const Sidebar: React.FC<SidebarProps> = (props) => {
           {(!isCollapsed || isMobileView) && <span className="text-xs">Contacts</span>}
         </div>
         {!isCollapsed || isMobileView ? (
-          <div className="flex items-center gap-1.5">
-            {followUpDueCount > 0 && (
-              <span
-                className="font-mono text-xs text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded-md border border-amber-200/80 font-bold animate-pulse motion-reduce:animate-none"
-                title={`${followUpDueCount} follow-up${followUpDueCount === 1 ? '' : 's'} due soon`}
-              >
-                {followUpDueCount}
-              </span>
-            )}
-            <span className={`font-mono text-xs px-1.5 py-0.5 rounded-md border transition-colors ${
-              activeTab === 'contacts'
-                ? 'text-slate-800 bg-slate-100 border-slate-200 font-semibold'
-                : 'text-slate-500 bg-slate-100/60 border-slate-200/60'
-            }`}>
-              {contacts.length}
+          followUpDueCount > 0 && (
+            <span
+              className="font-mono text-xs text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded-md border border-amber-200/80 font-bold animate-pulse motion-reduce:animate-none"
+              title={`${followUpDueCount} follow-up${followUpDueCount === 1 ? '' : 's'} due soon`}
+            >
+              {followUpDueCount}
             </span>
-          </div>
+          )
         ) : followUpDueCount > 0 ? (
           <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse motion-reduce:animate-none" />
-        ) : contacts.length > 0 ? (
-          <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
         ) : null}
       </button>
 
+      {/* Analytics & Stats */}
       <button
         type="button"
         onClick={() => handleTabClick('stats')}
@@ -277,6 +243,7 @@ export const Sidebar: React.FC<SidebarProps> = (props) => {
         </div>
       </button>
 
+      {/* Settings */}
       <button
         type="button"
         onClick={() => handleTabClick('settings')}
