@@ -4,13 +4,9 @@ import {
   ArrowUp,
   ArrowDown,
   ExternalLink,
-  Archive,
-  XCircle,
-  Trash2,
   CheckSquare,
   MinusSquare,
   Square,
-  Download,
   Mail
 } from 'lucide-react';
 import { Application, SortField, SortState, ApplicationStatus } from '../types';
@@ -19,6 +15,8 @@ import { CompanyLogo } from './CompanyLogo';
 import { JobTypeBadges } from './JobTypeBadges';
 import { EmptyState } from './EmptyState';
 import { OnboardingEmptyState } from './OnboardingEmptyState';
+import { BulkActionsBar } from './table/BulkActionsBar';
+import { BulkDeleteConfirmModal } from './table/BulkDeleteConfirmModal';
 import { calculateDaysInStage, formatAppDate } from '../lib/dateUtils';
 import { exportApplicationsToCSV } from '../lib/exportCsv';
 
@@ -75,8 +73,35 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
 }) => {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [focusedIndex, setFocusedIndex] = useState<number>(-1);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const tableContainerRef = useRef<HTMLDivElement>(null);
   const rowRefs = useRef<(HTMLTableRowElement | null)[]>([]);
+
+  // Prune selectedIds when visible applications change (e.g., search/filter updates)
+  // so hidden records are never retained or deleted inadvertently (Issue #52)
+  useEffect(() => {
+    setSelectedIds((prev) => {
+      if (prev.size === 0) return prev;
+      const visibleIds = new Set(applications.map((a) => a.id));
+      const next = new Set<string>();
+      let changed = false;
+      for (const id of prev) {
+        if (visibleIds.has(id)) {
+          next.add(id);
+        } else {
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, [applications]);
+
+  // Close delete confirmation modal if selectedIds becomes empty
+  useEffect(() => {
+    if (selectedIds.size === 0 && isDeleteConfirmOpen) {
+      setIsDeleteConfirmOpen(false);
+    }
+  }, [selectedIds.size, isDeleteConfirmOpen]);
 
   const allSelected =
     applications.length > 0 && selectedIds.size === applications.length;
@@ -119,18 +144,27 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
   };
 
   const handleBulkArchive = () => {
+    if (selectedIds.size === 0) return;
     onBulkUpdateStatus(Array.from(selectedIds), 'Archived');
     clearSelection();
   };
 
   const handleBulkReject = () => {
+    if (selectedIds.size === 0) return;
     onBulkUpdateStatus(Array.from(selectedIds), 'Rejected');
     clearSelection();
   };
 
   const handleBulkDeleteAction = () => {
-    onBulkDelete(Array.from(selectedIds));
+    if (selectedIds.size === 0) return;
+    setIsDeleteConfirmOpen(true);
+  };
+
+  const confirmBulkDelete = () => {
+    const idsToDelete = Array.from(selectedIds);
+    onBulkDelete(idsToDelete);
     clearSelection();
+    setIsDeleteConfirmOpen(false);
   };
 
   // Auto-scroll the table with a 1-item buffer (keeps next/prev item visible before scrolling)
@@ -168,13 +202,14 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
   // Keyboard navigation across table rows (Arrows, Enter, Space/x, PageUp/PageDown, Home/End)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ignore if typing in input or modal
+      // Ignore if typing in input, textarea, select or editable modal
       const activeEl = document.activeElement;
       if (
         activeEl?.tagName === 'INPUT' ||
         activeEl?.tagName === 'TEXTAREA' ||
         activeEl?.tagName === 'SELECT' ||
-        (activeEl as HTMLElement)?.isContentEditable
+        (activeEl as HTMLElement)?.isContentEditable ||
+        isDeleteConfirmOpen
       ) {
         return;
       }
@@ -214,7 +249,7 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
       } else if (e.key === 'Delete' || e.key === 'Backspace') {
         e.preventDefault();
         if (selectedIds.size > 0) {
-          handleBulkDeleteAction();
+          setIsDeleteConfirmOpen(true);
         } else if (focusedIndex >= 0 && focusedIndex < applications.length) {
           const appToDelete = applications[focusedIndex];
           onBulkDelete([appToDelete.id]);
@@ -224,7 +259,7 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [applications, focusedIndex, selectedIds, onSelectApp]);
+  }, [applications, focusedIndex, selectedIds, onSelectApp, isDeleteConfirmOpen, onBulkDelete]);
 
   // Keep focusedIndex within bounds if applications change
   useEffect(() => {
@@ -247,59 +282,22 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
   return (
     <div className="flex-1 flex flex-col min-h-0 bg-white text-slate-900 select-none">
       {/* Floating Bulk Actions Bar */}
-      {selectedIds.size > 0 && (
-        <div className="bg-blue-50/90 border-b border-blue-200/80 px-4 py-2 flex items-center justify-between gap-3 text-xs text-blue-950 animate-in fade-in slide-in-from-top-1 duration-150 backdrop-blur-xs shrink-0 h-10">
-          <div className="flex items-center gap-2.5">
-            <span className="font-mono text-blue-600 bg-white px-2 py-0.5 rounded-md border border-blue-200 font-semibold shadow-2xs">
-              {selectedIds.size} selected
-            </span>
-            <span className="text-slate-600 font-medium">Bulk actions:</span>
-          </div>
+      <BulkActionsBar
+        selectedCount={selectedIds.size}
+        onExportCSV={handleExportSelectedCSV}
+        onArchive={handleBulkArchive}
+        onReject={handleBulkReject}
+        onDelete={handleBulkDeleteAction}
+        onClearSelection={clearSelection}
+      />
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleExportSelectedCSV}
-              className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 transition-all shadow-2xs font-medium cursor-pointer"
-              title="Export selected applications to CSV"
-            >
-              <Download className="w-3.5 h-3.5 text-slate-500" />
-              <span>Export CSV</span>
-            </button>
-
-            <button
-              onClick={handleBulkArchive}
-              className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 transition-all shadow-2xs font-medium cursor-pointer"
-            >
-              <Archive className="w-3.5 h-3.5 text-slate-500" />
-              <span>Archive</span>
-            </button>
-
-            <button
-              onClick={handleBulkReject}
-              className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200/80 transition-all shadow-2xs font-medium cursor-pointer"
-            >
-              <XCircle className="w-3.5 h-3.5 text-rose-600" />
-              <span>Mark Rejected</span>
-            </button>
-
-            <button
-              onClick={handleBulkDeleteAction}
-              className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white hover:bg-rose-50 text-slate-600 hover:text-rose-600 active:bg-rose-100 border border-slate-200 hover:border-rose-200 transition-colors shadow-2xs font-medium cursor-pointer"
-              title="Delete selected applications (Del)"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-              <span>Delete</span>
-            </button>
-
-            <button
-              onClick={clearSelection}
-              className="text-slate-500 hover:text-slate-900 ml-2 font-mono text-[11px] font-medium cursor-pointer"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
+      {/* Bulk Delete Confirmation Modal */}
+      <BulkDeleteConfirmModal
+        isOpen={isDeleteConfirmOpen}
+        selectedCount={selectedIds.size}
+        onConfirm={confirmBulkDelete}
+        onCancel={() => setIsDeleteConfirmOpen(false)}
+      />
 
       {/* Main Table */}
       <div className="flex-1 overflow-auto" ref={tableContainerRef}>
