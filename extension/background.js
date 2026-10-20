@@ -160,6 +160,7 @@ async function pushToFirestoreDirectly(payload, userSession, config, docIdToUpda
       'companyDomain', 'history', 'location', 'workLocation', 'employmentType'
     ];
     updateFields.forEach(f => queryParams.push(`updateMask.fieldPaths=${f}`));
+    queryParams.push('currentDocument.exists=true');
   }
   if (queryParams.length > 0) {
     url += `?${queryParams.join('&')}`;
@@ -226,6 +227,15 @@ async function pushToFirestoreDirectly(payload, userSession, config, docIdToUpda
   );
 
   if (!response.ok) {
+    if (docIdToUpdate && (response.status === 404 || response.status === 400)) {
+      console.warn(`[Tracklet] Target document ${docIdToUpdate} no longer exists in Firestore. Creating new application.`);
+      chrome.storage.local.get(['tracklet_apps_index', 'tracklet_guest_apps_v1'], (st) => {
+        const cleanIdx = (st.tracklet_apps_index || []).filter(a => a.id !== docIdToUpdate);
+        const cleanGuest = (st.tracklet_guest_apps_v1 || []).filter(a => a.id !== docIdToUpdate);
+        chrome.storage.local.set({ tracklet_apps_index: cleanIdx, tracklet_guest_apps_v1: cleanGuest });
+      });
+      return pushToFirestoreDirectly(payload, userSession, config, null);
+    }
     throw new Error(`Firestore REST error: ${response.statusText}`);
   }
 
@@ -765,21 +775,77 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   if (message.action === 'SYNC_APPS_INDEX') {
-    chrome.storage.local.set({
-      tracklet_apps_index: message.payload || []
-    }, () => {
-      sendResponse({ success: true });
+    const syncedApps = message.payload || [];
+    chrome.storage.local.get(['tracklet_guest_apps_v1', 'tracklet_pending_apps'], (res) => {
+      const pendingIds = new Set((res?.tracklet_pending_apps || []).map(a => a?.id).filter(Boolean));
+      const syncedIds = new Set(syncedApps.map(a => a?.id).filter(Boolean));
+      const guestApps = (res?.tracklet_guest_apps_v1 || []).filter(a =>
+        a?.id && (syncedIds.has(a.id) || pendingIds.has(a.id))
+      );
+      chrome.storage.local.set({
+        tracklet_apps_index: syncedApps,
+        tracklet_guest_apps_v1: guestApps
+      }, () => {
+        sendResponse({ success: true });
+      });
     });
     return true;
   }
 
   if (message.action === 'SYNC_CONTACTS_INDEX') {
-    chrome.storage.local.set({
-      tracklet_contacts_index: message.payload || []
-    }, () => {
-      sendResponse({ success: true });
+    const syncedContacts = message.payload || [];
+    chrome.storage.local.get(['tracklet_guest_contacts_v1', 'tracklet_pending_contacts'], (res) => {
+      const pendingIds = new Set((res?.tracklet_pending_contacts || []).map(c => c?.id).filter(Boolean));
+      const syncedIds = new Set(syncedContacts.map(c => c?.id).filter(Boolean));
+      const guestContacts = (res?.tracklet_guest_contacts_v1 || []).filter(c =>
+        c?.id && (syncedIds.has(c.id) || pendingIds.has(c.id))
+      );
+      chrome.storage.local.set({
+        tracklet_contacts_index: syncedContacts,
+        tracklet_guest_contacts_v1: guestContacts
+      }, () => {
+        sendResponse({ success: true });
+      });
     });
     return true;
+  }
+
+  if (message.action === 'DELETE_APPLICATION') {
+    const deletedId = message.payload?.id;
+    if (deletedId) {
+      chrome.storage.local.get(['tracklet_pending_apps', 'tracklet_guest_apps_v1', 'tracklet_apps_index'], (res) => {
+        const pending = (res?.tracklet_pending_apps || []).filter((a) => a?.id !== deletedId);
+        const guestApps = (res?.tracklet_guest_apps_v1 || []).filter((a) => a?.id !== deletedId);
+        const appsIndex = (res?.tracklet_apps_index || []).filter((a) => a?.id !== deletedId);
+        chrome.storage.local.set({
+          tracklet_pending_apps: pending,
+          tracklet_guest_apps_v1: guestApps,
+          tracklet_apps_index: appsIndex,
+        }, () => {
+          sendResponse({ success: true });
+        });
+      });
+      return true;
+    }
+  }
+
+  if (message.action === 'DELETE_CONTACT') {
+    const deletedIds = message.payload?.ids || (message.payload?.id ? [message.payload.id] : []);
+    if (deletedIds.length > 0) {
+      chrome.storage.local.get(['tracklet_pending_contacts', 'tracklet_guest_contacts_v1', 'tracklet_contacts_index'], (res) => {
+        const pending = (res?.tracklet_pending_contacts || []).filter((c) => !deletedIds.includes(c?.id));
+        const guestContacts = (res?.tracklet_guest_contacts_v1 || []).filter((c) => !deletedIds.includes(c?.id));
+        const contactsIndex = (res?.tracklet_contacts_index || []).filter((c) => !deletedIds.includes(c?.id));
+        chrome.storage.local.set({
+          tracklet_pending_contacts: pending,
+          tracklet_guest_contacts_v1: guestContacts,
+          tracklet_contacts_index: contactsIndex,
+        }, () => {
+          sendResponse({ success: true });
+        });
+      });
+      return true;
+    }
   }
 
   if (message.action === 'SAVE_CONTACT') {

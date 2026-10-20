@@ -3,6 +3,7 @@ import type { User } from 'firebase/auth';
 import { Contact, Application } from '../types';
 import { ContactRepository } from '../lib/contactRepository';
 import { ApplicationRepository } from '../lib/applicationRepository';
+import { broadcastDeletedContact } from '../lib/extensionSync';
 import posthog from '../lib/posthog';
 
 export interface UseContactsProps {
@@ -261,6 +262,9 @@ export function useContacts({
     const targetContact = contactsRef.current.find((c) => c.id === id);
     if (!targetContact) return;
 
+    // Notify extension to purge from its pending/sync storage
+    broadcastDeletedContact(id);
+
     const linkedAppIds = targetContact.applicationIds || [];
 
     setContacts((prev) => {
@@ -374,6 +378,9 @@ export function useContacts({
 
   // Batch Delete Contacts
   const handleBatchDeleteContacts = useCallback(async (ids: string[]) => {
+    // Notify extension to purge from its pending/sync storage
+    broadcastDeletedContact(ids);
+
     const currentContacts = contactsRef.current;
     const deleted = currentContacts.filter((c) => ids.includes(c.id));
     const deletedSet = new Set(ids);
