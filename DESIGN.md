@@ -184,14 +184,36 @@ Tracklet uses a flat-by-default surface model with crisp 1px borders and micro-s
 
 ---
 
+## Information Architecture & Navigation Philosophy
+
+### The Calm Command Center Principle
+Tracklet is designed as a focused, high-clarity workspace. Job searches are inherently stressful; the interface must reduce cognitive anxiety rather than compound it.
+
+1. **Persistent Navigation as a Spatial Anchor**:
+   - The left sidebar provides structural orientation and rapid task switching.
+   - It is strictly an orientation control, NOT a real-time analytics dashboard or database tally bar.
+2. **Action-Only Badge Policy**:
+   - A badge in persistent navigation communicates one thing: **"Your attention is required here now"**.
+   - Raw inventory counts (e.g. total applications, active pipeline tally) are stripped from navigation items.
+   - Actionable events (overdue recruiter follow-ups, expiring assignments) appear as high-signal amber alerts (`bg-amber-50 text-amber-700 animate-pulse`).
+   - Clean state = zero badges = peace of mind.
+3. **Contextual Numbers**:
+   - Entity counts live directly inside the active surface: the table toolbar (`25 items`, `2 of 25 items`), Kanban column headers (`Interview · 3`), and the Analytics dashboard.
+
+---
+
 ## Do's and Don'ts
 
 ### Do:
 - **Do** format dates in short human-readable form (`Jul 15`) with a full ISO date hover tooltip.
 - **Do** shade-match text colors on colored background badges (e.g. `text-rose-700` over `bg-rose-50`).
 - **Do** keep table rows at 38px height with 1–3 clear visual signals max.
+- **Do** keep persistent sidebar navigation calm and scannable; reserve navigation badges strictly for actionable/urgent events (e.g. expiring tasks, follow-ups due).
+- **Do** place inventory and collection totals contextually inside the workspace (table filter bar, Kanban column headers).
 
 ### Don't:
 - **Don't** cram mail icons, contact badges, and task indicators into the table row company cell; keep them in the detail panel.
 - **Don't** use generic perpetual `animate-bounce` animations; use subtle `animate-pulse` on numeric counters instead.
 - **Don't** fall back silently to guest mode on cloud errors; always emit a clear user-facing toast.
+- **Don't** render raw database entity counts or inventory tallies on primary navigation tabs; avoid inducing false urgency or badge blindness.
+- **Don't** show notification dots in collapsed icon navigation when records merely exist in the database; show indicator dots only when actionable tasks/follow-ups require attention.

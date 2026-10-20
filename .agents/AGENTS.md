@@ -91,6 +91,7 @@ All components must follow the formalized guidelines in `.agents/rules/ui-ux-sta
 4. **Resilient Form Validation**: Always include `noValidate` on forms, auto-trim strings, and use permissive RFC-compliant regex with inline error messaging.
 5. **Header Hierarchy**: Do not place dynamic record counts as subtitles directly under primary page or modal headings.
 6. **Micro-interaction Stability**: Use `transition-colors duration-150` instead of `transition-all`. Keep font-weights and borders constant across states to prevent layout shifts.
+7. **Action-Only Navigation Badges**: Persistent navigation tabs must remain calm and free of raw database tallies. Badges are strictly reserved for urgent/actionable events (e.g. pending follow-ups or expiring deadlines). Entity inventory counts belong in context within toolbars and column headers.
 
 ### G. Browser Extension Versioning & Distribution
 1. **Synchronized Versioning**: Whenever modifying files inside `extension/`, you MUST bump the `"version"` string in `extension/manifest.json` AND update `LATEST_EXTENSION_VERSION` in `src/lib/constants.ts` in lockstep.

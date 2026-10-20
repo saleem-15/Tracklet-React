@@ -68,3 +68,19 @@ This document establishes the mandatory interaction rules, visual standards, and
 1. **No `transition-all` on Complex Box Models**: Never use `transition-all` on navigation items, sidebar tabs, or cards where borders, rings, or font-weights change. Use `transition-colors duration-150` instead.
 2. **Constant Font-Weights**: Do not transition from `font-normal` to `font-bold` between inactive and active states. Browsers snap font-weight abruptly, altering character widths and causing layout jumps. Keep font-weights constant (e.g. `font-semibold` in both states).
 3. **Zero Layout Shift Borders**: If an active state displays a border (e.g. `border border-slate-200`), ensure the inactive state has an identical width transparent border (`border border-transparent`) so activating the item does not alter its dimensions.
+
+---
+
+## 7. Action-Only Navigation Badges & Contextual Inventory Placement Rule
+**Rule**: Persistent navigation items (sidebar tabs, navigation drawers, segmented tabs) must remain calm and clutter-free. Raw entity tallies must NEVER appear on persistent navigation tabs.
+
+1. **The Action-Only Badge Policy**:
+   - Navigation badges are strictly reserved for **time-sensitive, actionable events** requiring immediate user attention (e.g. overdue recruiter follow-ups or tasks expiring within the configured threshold).
+   - Never show static inventory tallies on navigation items (e.g. do not show total application counts on "All Applications", total active items on "Active Pipeline", or total contacts on "Contacts").
+   - When no urgent action is pending, the navigation tab must render cleanly with zero badges or phantom collapsed notification dots (`no badge = peace of mind`).
+
+2. **Contextual Placement of Entity Counts**:
+   - Entity counts belong **in context**, inside the active view where the user is looking at and interacting with those records.
+   - **Table View**: In the table toolbar / filter bar (`25 items`, or `3 of 25 items` when filtered).
+   - **Kanban Board**: Above each individual column header (`Interview · 3`).
+   - **Analytics**: In dedicated metric cards with historical trends and context.
