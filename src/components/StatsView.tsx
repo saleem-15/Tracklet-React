@@ -3,6 +3,7 @@ import { Application } from '../types';
 import { 
   AnalyticsFilter, 
   filterApplicationsForAnalytics, 
+  filterApplicationsForActivity,
   calculateExecutiveKpis 
 } from '../lib/analyticsUtils';
 import { AnalyticsFilterBar } from './analytics/AnalyticsFilterBar';
@@ -30,9 +31,14 @@ export const StatsView: React.FC<StatsViewProps> = ({
 
   const responseRadarRef = useRef<HTMLDivElement>(null);
 
-  // Filtered applications based on active analytics scope
+  // Filtered applications based on active analytics scope (for cohort funnel, ROI, velocity, and KPIs)
   const filteredApps = useMemo(() => {
     return filterApplicationsForAnalytics(applications, filter);
+  }, [applications, filter]);
+
+  // Applications filtered by platform and status category for activity analysis without pre-clipping creation dates
+  const activityApps = useMemo(() => {
+    return filterApplicationsForActivity(applications, filter);
   }, [applications, filter]);
 
   // Executive KPIs computed on filtered dataset
@@ -118,7 +124,7 @@ export const StatsView: React.FC<StatsViewProps> = ({
                         Offer Stage Unlocked ({kpis.offerCount} {kpis.offerCount === 1 ? 'Offer' : 'Offers'})
                       </h3>
                       <p className="text-xs text-emerald-800 leading-relaxed">
-                        You have active offers secured across {kpis.interviewProgressionCount} interview loops. Prioritize negotiation and team alignment.
+                        You have active offers secured across {kpis.interviewProgressionCount} applications reaching screening. Prioritize negotiation and team alignment.
                       </p>
                     </div>
                   </div>
@@ -163,7 +169,7 @@ export const StatsView: React.FC<StatsViewProps> = ({
                         High Screening Yield ({kpis.interviewProgressionPct}% progression)
                       </h3>
                       <p className="text-xs text-blue-800 leading-relaxed">
-                        Strong screening response rate with {kpis.interviewProgressionCount} of {kpis.activePipelineCount} active applications advancing to interviews.
+                        Strong screening response rate with {kpis.interviewProgressionCount} of {kpis.appliedReachedCount} submitted applications reaching a screening call.
                       </p>
                     </div>
                   </div>
@@ -196,7 +202,7 @@ export const StatsView: React.FC<StatsViewProps> = ({
             <div className="space-y-5">
               <PlatformRoiCard applications={filteredApps} />
               <ActivityMomentumCard
-                applications={filteredApps}
+                applications={activityApps}
                 timeframe={filter.timeframe}
               />
             </div>

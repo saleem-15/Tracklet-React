@@ -32,7 +32,7 @@ export const INITIAL_SAMPLE_APPLICATIONS: Omit<Application, 'id' | 'userId'>[] =
       }
     ],
     tasks: [
-      { id: 't1', title: 'Complete take-home design system assignment', completed: true, dueDate: '2026-07-19' },
+      { id: 't1', title: 'Complete take-home design system assignment', completed: true, dueDate: '2026-07-19', completedAt: '2026-07-19T16:00:00Z' },
       { id: 't2', title: 'Prepare architecture deck for Thursday panel', completed: false, dueDate: '2026-07-28' },
       { id: 't3', title: 'Send follow-up thank you email to Karla', completed: false }
     ],
@@ -97,8 +97,8 @@ export const INITIAL_SAMPLE_APPLICATIONS: Omit<Application, 'id' | 'userId'>[] =
       }
     ],
     tasks: [
-      { id: 't4', title: 'Review offer breakdown (Base + Equity + Signing bonus)', completed: true },
-      { id: 't5', title: 'Schedule call with David Chen regarding team placement', completed: true, dueDate: '2026-07-25' },
+      { id: 't4', title: 'Review offer breakdown (Base + Equity + Signing bonus)', completed: true, completedAt: '2026-07-24T15:30:00Z' },
+      { id: 't5', title: 'Schedule call with David Chen regarding team placement', completed: true, dueDate: '2026-07-25', completedAt: '2026-07-24T15:30:00Z' },
       { id: 't6', title: 'Sign and return official offer agreement', completed: false, dueDate: '2026-07-30' }
     ],
     notes: 'Written offer received! $215k base + equity. Discussing start date and team matching.',
@@ -141,7 +141,7 @@ export const INITIAL_SAMPLE_APPLICATIONS: Omit<Application, 'id' | 'userId'>[] =
       }
     ],
     tasks: [
-      { id: 't7', title: 'Initial recruiter screening call', completed: true, dueDate: '2026-07-21' },
+      { id: 't7', title: 'Initial recruiter screening call', completed: true, dueDate: '2026-07-21', completedAt: '2026-07-21T14:00:00Z' },
       { id: 't8', title: 'Practice live Next.js Server Components coding scenario', completed: false, dueDate: '2026-07-29' }
     ],
     notes: 'Recruiter call with Sarah went great. Next step is 45-min coding screen with team lead.',
@@ -170,7 +170,7 @@ export const INITIAL_SAMPLE_APPLICATIONS: Omit<Application, 'id' | 'userId'>[] =
       }
     ],
     tasks: [
-      { id: 't9', title: 'Review HTML Canvas & WebGL performance fundamentals', completed: true },
+      { id: 't9', title: 'Review HTML Canvas & WebGL performance fundamentals', completed: true, completedAt: '2026-07-20T10:00:00Z' },
       { id: 't10', title: 'Onsite loop preparation with design system mock projects', completed: false, dueDate: '2026-07-28' }
     ],
     notes: 'Onsite loop scheduled for next Tuesday. 4 rounds: Canvas rendering, Component APIs, Architecture, Culture.',

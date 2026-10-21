@@ -62,6 +62,7 @@ export interface ApplicationTask {
   title: string;
   completed: boolean;
   dueDate?: string; // YYYY-MM-DD
+  completedAt?: string; // ISO 8601 string e.g. "2026-07-25T14:35:10.000Z"
 }
 
 export interface EmailLog {

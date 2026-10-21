@@ -26,6 +26,8 @@ export const AnalyticsHeroKPIs: React.FC<AnalyticsHeroKPIsProps> = ({
     interviewProgressionCount,
     interviewProgressionPct,
     offerCount,
+    offerReachedCount,
+    interviewReachedCount,
     offerRatePct,
     interviewCount,
     ghostedCount,
@@ -146,7 +148,10 @@ export const AnalyticsHeroKPIs: React.FC<AnalyticsHeroKPIsProps> = ({
                 {offerCount === 1 ? 'Offer' : 'Offers'}
               </span>
             </div>
-            <span className="text-xs font-medium text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md">
+            <span 
+              className="text-xs font-medium text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md"
+              title={`${interviewReachedCount} evaluated interview loop${interviewReachedCount === 1 ? '' : 's'} (${interviewCount} currently active)`}
+            >
               {interviewCount} {interviewCount === 1 ? 'loop' : 'loops'}
             </span>
           </div>
@@ -160,7 +165,7 @@ export const AnalyticsHeroKPIs: React.FC<AnalyticsHeroKPIsProps> = ({
 
         <div className="flex items-center justify-between text-xs text-slate-500 pt-2 border-t border-slate-100/80">
           <span>Loop win rate</span>
-          <span className={`font-semibold ${offerCount > 0 ? 'text-indigo-600' : 'text-slate-600'}`}>
+          <span className={`font-semibold ${offerCount > 0 || offerReachedCount > 0 ? 'text-indigo-600' : 'text-slate-600'}`}>
             {offerRatePct}%
           </span>
         </div>

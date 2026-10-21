@@ -660,9 +660,9 @@
     "semantic_hash": "b9eac88db47926ab13663d6e6f872925"
   },
   "src/components/AddApplicationModal.tsx": {
-    "mtime": 1792504520.6735845,
-    "ast_hash": "67eb14276ecb8c75b4bcb683dbfd6dac",
-    "semantic_hash": "67eb14276ecb8c75b4bcb683dbfd6dac"
+    "mtime": 1792570452.9776695,
+    "ast_hash": "444fc5975e26d913c2a48b4314352373",
+    "semantic_hash": ""
   },
   "src/components/AllApplicationsTable.tsx": {
     "mtime": 1792504520.6735845,
@@ -670,8 +670,8 @@
     "semantic_hash": ""
   },
   "src/components/ApplicationDetailPanel.tsx": {
-    "mtime": 1792504520.67459,
-    "ast_hash": "19e6b880abb478da1e777780ad220aa1",
+    "mtime": 1792570440.1979022,
+    "ast_hash": "94dc7b80f1df531bdb840eb907ebceef",
     "semantic_hash": ""
   },
   "src/components/ApplicationSearchPicker.tsx": {
@@ -790,8 +790,8 @@
     "semantic_hash": ""
   },
   "src/components/StatsView.tsx": {
-    "mtime": 1792511802.7350159,
-    "ast_hash": "326256b688286d58106911e7ad9c230b",
+    "mtime": 1792570362.250695,
+    "ast_hash": "c6500b0546f84edb51c610f3a8b4a13c",
     "semantic_hash": ""
   },
   "src/components/StatusBadge.tsx": {
@@ -815,9 +815,9 @@
     "semantic_hash": ""
   },
   "src/components/WeeklyActivityWidget.tsx": {
-    "mtime": 1792504520.6916182,
-    "ast_hash": "760ecd56a13e2932fb04f6da1ff19afd",
-    "semantic_hash": "760ecd56a13e2932fb04f6da1ff19afd"
+    "mtime": 1792570499.5326617,
+    "ast_hash": "e6562f029bd35c9f8159cfc870092421",
+    "semantic_hash": ""
   },
   "src/components/add-modal/AddApplicationContactsSection.tsx": {
     "mtime": 1792504520.6928108,
@@ -855,9 +855,9 @@
     "semantic_hash": "3698c9dfd33f28d58d0c2cdba08699c6"
   },
   "src/components/analytics/ActivityMomentumCard.tsx": {
-    "mtime": 1792504520.6969028,
-    "ast_hash": "8467bfe7b85e9b88965166b90e343290",
-    "semantic_hash": "8467bfe7b85e9b88965166b90e343290"
+    "mtime": 1792570393.688048,
+    "ast_hash": "ae408996271b8e95f860717928b39de4",
+    "semantic_hash": ""
   },
   "src/components/analytics/AnalyticsFilterBar.tsx": {
     "mtime": 1792504520.6978638,
@@ -865,8 +865,8 @@
     "semantic_hash": "0bb7a5e7e9569b5f9607c84c82625253"
   },
   "src/components/analytics/AnalyticsHeroKPIs.tsx": {
-    "mtime": 1792511802.7350159,
-    "ast_hash": "f7b4e035392f31b78dfbe12ac6428d9a",
+    "mtime": 1792570424.0255666,
+    "ast_hash": "3ae679f8f33054e9aeabfed99354deed",
     "semantic_hash": ""
   },
   "src/components/analytics/ConversionFunnelCard.tsx": {
@@ -880,8 +880,8 @@
     "semantic_hash": "fbaf3a93c88894108519389dafdbbdbc"
   },
   "src/components/analytics/ResponseVelocityCard.tsx": {
-    "mtime": 1792511802.7387147,
-    "ast_hash": "d7a40207359cae5e33a48ed7485887b8",
+    "mtime": 1792568046.6206942,
+    "ast_hash": "bb1149d1ecba22bc288ad8b4d64011ad",
     "semantic_hash": ""
   },
   "src/components/auth/AuthTextField.tsx": {
@@ -1110,8 +1110,8 @@
     "semantic_hash": ""
   },
   "src/lib/analyticsUtils.ts": {
-    "mtime": 1792511802.7420366,
-    "ast_hash": "84a236be2c7ac55dec1bc44ba1532380",
+    "mtime": 1792582043.2360067,
+    "ast_hash": "0efef991a7c635a8b6624a1efc08fdcf",
     "semantic_hash": ""
   },
   "src/lib/applicationRepository.ts": {
@@ -1130,8 +1130,8 @@
     "semantic_hash": "d3afd45d21cd6ca535f8993cc7213a48"
   },
   "src/lib/backupJson.ts": {
-    "mtime": 1792504520.760739,
-    "ast_hash": "ad98b87a3938b7cb891d8d17ac5c9639",
+    "mtime": 1792570483.3875537,
+    "ast_hash": "c7dcd101e9ec68c68ad6c3fcc18430bb",
     "semantic_hash": ""
   },
   "src/lib/constants.ts": {
@@ -1300,8 +1300,8 @@
     "semantic_hash": "3e2779debc2755b4b2cd933435bc76bc"
   },
   "src/lib/sampleData.ts": {
-    "mtime": 1792511802.7451622,
-    "ast_hash": "6b8444508018663e3ce283bf6a5b23ba",
+    "mtime": 1792570635.7933395,
+    "ast_hash": "84f84d5166c35e0548b17147b5300e86",
     "semantic_hash": ""
   },
   "src/lib/templateRepository.ts": {
@@ -1335,8 +1335,8 @@
     "semantic_hash": "0114a323fb35c559047c44f3b17cd5ba"
   },
   "src/types.ts": {
-    "mtime": 1792504520.7917454,
-    "ast_hash": "9cd56d782d0f78165e68f7f5a9938935",
+    "mtime": 1792570199.2999918,
+    "ast_hash": "19af714f9be9950e56f0c095ca94e13a",
     "semantic_hash": ""
   },
   "src/vite-env.d.ts": {
@@ -3065,8 +3065,8 @@
     "semantic_hash": ""
   },
   "tests/unit/analyticsUtils.test.ts": {
-    "mtime": 1792511802.746584,
-    "ast_hash": "3cb7c1651bbb084de9e12b73ef125e63",
+    "mtime": 1792582079.9661446,
+    "ast_hash": "018e97ba22476d2b515f05f122955daf",
     "semantic_hash": ""
   }
 }
