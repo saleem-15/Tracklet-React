@@ -1110,8 +1110,8 @@
     "semantic_hash": ""
   },
   "src/lib/analyticsUtils.ts": {
-    "mtime": 1792570332.5154521,
-    "ast_hash": "3df6264f7326e996b28f23631f24910d",
+    "mtime": 1792582043.2360067,
+    "ast_hash": "0efef991a7c635a8b6624a1efc08fdcf",
     "semantic_hash": ""
   },
   "src/lib/applicationRepository.ts": {
@@ -3065,8 +3065,8 @@
     "semantic_hash": ""
   },
   "tests/unit/analyticsUtils.test.ts": {
-    "mtime": 1792570776.2632768,
-    "ast_hash": "81a8093f63823f5564b817b4342491a9",
+    "mtime": 1792582079.9661446,
+    "ast_hash": "018e97ba22476d2b515f05f122955daf",
     "semantic_hash": ""
   }
 }
