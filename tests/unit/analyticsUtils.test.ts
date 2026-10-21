@@ -836,4 +836,84 @@ describe('analyticsUtils - Dashboard Metrics & Bug Fixes', () => {
       expect(kpis.offerRatePct).toBe(0);
     });
   });
+
+  describe('History transition filtering & status-difference verification', () => {
+    it('treats imported Rejected record with multiple same-status entries as reaching Applied', () => {
+      const importedMultiRejected: Application = {
+        id: 'multi-rej',
+        userId: 'user-1',
+        company: 'Snapshot Corp',
+        role: 'Dev',
+        status: 'Rejected',
+        platform: 'Indeed',
+        dateApplied: '2026-06-01',
+        history: [
+          { id: 'h1', toStatus: 'Rejected', timestamp: '2026-06-05T10:00:00Z' },
+          { id: 'h2', toStatus: 'Rejected', note: 'Sent follow up', timestamp: '2026-06-06T10:00:00Z' },
+        ],
+        stageUpdatedAt: '2026-06-06T10:00:00Z',
+        createdAt: '2026-06-01T10:00:00Z',
+        updatedAt: '2026-06-06T10:00:00Z',
+      };
+
+      // Since there is no status difference (fromStatus !== toStatus), it lacks transition evidence and falls back to Applied
+      expect(hasReachedStage(importedMultiRejected, 'Applied')).toBe(true);
+    });
+
+    it('chooses earliest valid date where toStatus is Applied and fromStatus differs from Applied', () => {
+      const appWithMultipleAppliedEntries: Application = {
+        id: 'app-applied-entries',
+        userId: 'user-1',
+        company: 'Timing Corp',
+        role: 'Staff Engineer',
+        status: 'Applied',
+        platform: 'LinkedIn',
+        dateApplied: '2026-06-10',
+        history: [
+          // Later same-status note
+          { id: 'h3', fromStatus: 'Applied', toStatus: 'Applied', timestamp: '2026-06-05T12:00:00Z' },
+          // Later actual apply entry
+          { id: 'h2', fromStatus: 'Saved', toStatus: 'Applied', timestamp: '2026-06-03T15:00:00Z' },
+          // Earliest actual apply entry
+          { id: 'h1', fromStatus: 'Saved', toStatus: 'Applied', timestamp: '2026-06-01T09:00:00Z' },
+        ],
+        stageUpdatedAt: '2026-06-05T12:00:00Z',
+        createdAt: '2026-05-25T10:00:00Z',
+        updatedAt: '2026-06-05T12:00:00Z',
+      };
+
+      const subDate = getApplicationSubmissionDate(appWithMultipleAppliedEntries);
+      expect(subDate).toBeDefined();
+      expect(subDate?.toISOString()).toBe('2026-06-01T09:00:00.000Z');
+    });
+
+    it('excludes same-status entries in getApplicationStageMoveDates', () => {
+      const appWithSameStatusMoves: Application = {
+        id: 'app-same-status',
+        userId: 'user-1',
+        company: 'Moves Corp',
+        role: 'Engineer',
+        status: 'Interview',
+        platform: 'LinkedIn',
+        dateApplied: '2026-06-01',
+        history: [
+          { id: 'h1', fromStatus: 'Applied', toStatus: 'Screening', timestamp: '2026-06-05T10:00:00Z' },
+          // Same-status note update
+          { id: 'h2', fromStatus: 'Screening', toStatus: 'Screening', timestamp: '2026-06-08T10:00:00Z' },
+          { id: 'h3', fromStatus: 'Screening', toStatus: 'Interview', timestamp: '2026-06-12T10:00:00Z' },
+          // Another same-status interview log
+          { id: 'h4', fromStatus: 'Interview', toStatus: 'Interview', timestamp: '2026-06-15T10:00:00Z' },
+        ],
+        stageUpdatedAt: '2026-06-15T10:00:00Z',
+        createdAt: '2026-06-01T10:00:00Z',
+        updatedAt: '2026-06-15T10:00:00Z',
+      };
+
+      const moveDates = getApplicationStageMoveDates(appWithSameStatusMoves);
+      // Only 2 actual stage moves: Applied -> Screening (June 5) and Screening -> Interview (June 12)
+      expect(moveDates.length).toBe(2);
+      expect(moveDates[0].toISOString()).toBe('2026-06-05T10:00:00.000Z');
+      expect(moveDates[1].toISOString()).toBe('2026-06-12T10:00:00.000Z');
+    });
+  });
 });

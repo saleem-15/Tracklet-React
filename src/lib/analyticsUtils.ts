@@ -129,11 +129,14 @@ export function hasReachedStage(app: Application, stage: ApplicationStatus): boo
 
   let maxRank = STAGE_RANK[app.status] || 0;
 
-  // Distinguish recorded transitions from synthesized single initial snapshots.
-  // A recorded transition has either multiple history entries or an entry with fromStatus defined.
+  // Distinguish recorded transitions from synthesized single initial snapshots or same-status updates.
+  // A recorded transition has an entry satisfying both fromStatus and a status difference (fromStatus !== toStatus).
   const hasHistory = Array.isArray(app.history) && app.history.length > 0;
   const hasRecordedTransitions =
-    hasHistory && (app.history!.length > 1 || app.history!.some((h) => Boolean(h.fromStatus)));
+    hasHistory &&
+    app.history!.some(
+      (h) => Boolean(h.fromStatus) && Boolean(h.toStatus) && h.fromStatus !== h.toStatus
+    );
 
   if (hasRecordedTransitions) {
     for (const h of app.history!) {
@@ -697,12 +700,20 @@ export function calculateGhostingAndVelocity(applications: Application[]): Ghost
 export function getApplicationSubmissionDate(app: Application): Date | undefined {
   if (!hasReachedStage(app, 'Applied')) return undefined;
 
-  // Check if there is an explicit transition to 'Applied' in history
-  if (Array.isArray(app.history)) {
-    const appliedEntry = app.history.find((h) => h.toStatus === 'Applied');
-    if (appliedEntry && appliedEntry.timestamp) {
-      const d = new Date(appliedEntry.timestamp);
-      if (!isNaN(d.getTime())) return d;
+  // Check for explicit transitions to 'Applied' in history (where fromStatus differs from 'Applied')
+  if (Array.isArray(app.history) && app.history.length > 0) {
+    const validDates: Date[] = [];
+    for (const h of app.history) {
+      if (h.toStatus === 'Applied' && h.fromStatus !== 'Applied' && h.timestamp) {
+        const d = new Date(h.timestamp);
+        if (!isNaN(d.getTime())) {
+          validDates.push(d);
+        }
+      }
+    }
+    if (validDates.length > 0) {
+      validDates.sort((a, b) => a.getTime() - b.getTime());
+      return validDates[0];
     }
   }
 
@@ -725,12 +736,20 @@ export function getApplicationStageMoveDates(app: Application): Date[] {
 
   const hasHistory = Array.isArray(app.history) && app.history.length > 0;
   const hasRecordedTransitions =
-    hasHistory && (app.history!.length > 1 || app.history!.some((h) => Boolean(h.fromStatus)));
+    hasHistory &&
+    app.history!.some(
+      (h) => Boolean(h.fromStatus) && Boolean(h.toStatus) && h.fromStatus !== h.toStatus
+    );
 
   if (hasRecordedTransitions) {
     for (const h of app.history!) {
-      // Only count transitions between statuses (having fromStatus)
-      if (h.fromStatus && h.timestamp) {
+      // Only count transitions where fromStatus differs from toStatus
+      if (
+        h.fromStatus &&
+        h.toStatus &&
+        h.fromStatus !== h.toStatus &&
+        h.timestamp
+      ) {
         const d = new Date(h.timestamp);
         if (!isNaN(d.getTime())) {
           dates.push(d);
