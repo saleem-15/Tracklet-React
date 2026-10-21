@@ -307,12 +307,36 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
 
   // Task handlers
   const handleToggleTask = async (taskId: string) => {
-    const updatedTasks = (app.tasks || []).map((t) => (t.id === taskId ? { ...t, completed: !t.completed } : t));
+    const updatedTasks = (app.tasks || []).map((t) => {
+      if (t.id === taskId) {
+        const nextCompleted = !t.completed;
+        return {
+          ...t,
+          completed: nextCompleted,
+          completedAt: nextCompleted ? new Date().toISOString() : undefined,
+        };
+      }
+      return t;
+    });
     await onUpdateApp(app.id, { tasks: updatedTasks, updatedAt: new Date().toISOString() });
   };
 
   const handleEditTask = async (taskId: string, updatedFields: Partial<ApplicationTask>) => {
-    const updatedTasks = (app.tasks || []).map((t) => (t.id === taskId ? { ...t, ...updatedFields } : t));
+    const updatedTasks = (app.tasks || []).map((t) => {
+      if (t.id === taskId) {
+        const nextCompleted = updatedFields.completed !== undefined ? updatedFields.completed : t.completed;
+        let completedAt = t.completedAt;
+        if (updatedFields.completed !== undefined) {
+          completedAt = updatedFields.completed
+            ? (updatedFields.completedAt || t.completedAt || new Date().toISOString())
+            : undefined;
+        } else if (updatedFields.completedAt !== undefined) {
+          completedAt = updatedFields.completedAt;
+        }
+        return { ...t, ...updatedFields, completed: nextCompleted, completedAt };
+      }
+      return t;
+    });
     await onUpdateApp(app.id, { tasks: updatedTasks, updatedAt: new Date().toISOString() });
   };
 

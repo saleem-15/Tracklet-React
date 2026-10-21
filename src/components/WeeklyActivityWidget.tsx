@@ -199,14 +199,12 @@ export const WeeklyActivityWidget: React.FC<WeeklyActivityWidgetProps> = ({
 
       // 3. Tasks completed
       if (app.tasks && app.tasks.length > 0) {
-        const appIsRecent = 
-          isBetween(app.updatedAt, start, end) || 
-          isBetween(app.stageUpdatedAt, start, end) || 
-          isBetween(app.createdAt, start, end);
-
         app.tasks.forEach((task) => {
-          if (task.completed && appIsRecent) {
-            tasksCompletedCount++;
+          if (task.completed) {
+            const taskTimestamp = task.completedAt || app.updatedAt;
+            if (isBetween(taskTimestamp, start, end)) {
+              tasksCompletedCount++;
+            }
           }
         });
       }

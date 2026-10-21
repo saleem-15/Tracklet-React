@@ -160,6 +160,7 @@ export function validateAndParseJSONBackup(jsonString: string): JSONImportResult
             title: typeof t.title === 'string' ? t.title : 'Task',
             completed: Boolean(t.completed),
             dueDate: typeof t.dueDate === 'string' ? t.dueDate : undefined,
+            completedAt: typeof t.completedAt === 'string' ? t.completedAt : undefined,
           }))
       : undefined;
 

@@ -139,11 +139,39 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
   };
 
   const handleToggleTask = (id: string) => {
-    setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t)));
+    setTasks((prev) =>
+      prev.map((t) => {
+        if (t.id === id) {
+          const nextCompleted = !t.completed;
+          return {
+            ...t,
+            completed: nextCompleted,
+            completedAt: nextCompleted ? new Date().toISOString() : undefined,
+          };
+        }
+        return t;
+      })
+    );
   };
 
   const handleEditTask = (id: string, updatedFields: Partial<ApplicationTask>) => {
-    setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, ...updatedFields } : t)));
+    setTasks((prev) =>
+      prev.map((t) => {
+        if (t.id === id) {
+          const nextCompleted = updatedFields.completed !== undefined ? updatedFields.completed : t.completed;
+          let completedAt = t.completedAt;
+          if (updatedFields.completed !== undefined) {
+            completedAt = updatedFields.completed
+              ? (updatedFields.completedAt || t.completedAt || new Date().toISOString())
+              : undefined;
+          } else if (updatedFields.completedAt !== undefined) {
+            completedAt = updatedFields.completedAt;
+          }
+          return { ...t, ...updatedFields, completed: nextCompleted, completedAt };
+        }
+        return t;
+      })
+    );
   };
 
   const handleRemoveTask = (id: string) => {

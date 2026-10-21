@@ -23,9 +23,9 @@ export const ActivityMomentumCard: React.FC<ActivityMomentumCardProps> = ({
   } = momentum;
 
   // Aggregate totals across all periods in scope
-  const totalApps = weeklyTrend.reduce((sum, w) => sum + w.appsCount, 0);
-  const totalStageMoves = weeklyTrend.reduce((sum, w) => sum + w.statusChangesCount, 0);
-  const totalTasks = weeklyTrend.reduce((sum, w) => sum + w.tasksDoneCount, 0);
+  const totalApps = momentum.totalApps ?? weeklyTrend.reduce((sum, w) => sum + w.appsCount, 0);
+  const totalStageMoves = momentum.totalStageMoves ?? weeklyTrend.reduce((sum, w) => sum + w.statusChangesCount, 0);
+  const totalTasks = momentum.totalTasks ?? weeklyTrend.reduce((sum, w) => sum + w.tasksDoneCount, 0);
 
   const maxActivity = Math.max(1, ...weeklyTrend.map((w) => w.totalActivity));
 
@@ -119,8 +119,11 @@ export const ActivityMomentumCard: React.FC<ActivityMomentumCardProps> = ({
           </span>
         </div>
 
-        {/* Stacked Vertical Bars Grid (always clean single row 8-column layout) */}
-        <div className="grid grid-cols-8 gap-1 sm:gap-2 items-end h-32 pt-2 px-1 relative overflow-visible">
+        {/* Stacked Vertical Bars Grid (clean single row layout dynamically fitted to bucket count) */}
+        <div 
+          className="grid gap-1 sm:gap-2 items-end h-32 pt-2 px-1 relative overflow-visible"
+          style={{ gridTemplateColumns: `repeat(${weeklyTrend.length}, minmax(0, 1fr))` }}
+        >
           {weeklyTrend.map((item, idx) => {
             const isHovered = hoveredIndex === idx;
             const totalH = Math.round((item.totalActivity / maxActivity) * 100);

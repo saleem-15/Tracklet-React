@@ -73,6 +73,9 @@ export interface VelocityTrendPoint {
 export interface MomentumAnalysis {
   timeframeLabel: string;
   totalActions: number;
+  totalApps: number;
+  totalStageMoves: number;
+  totalTasks: number;
   currentPeriodApps: number;
   prevPeriodApps: number;
   paceChangePct: number;
@@ -85,11 +88,13 @@ export interface ExecutiveKpis {
   activePipelineCount: number;
   activePipelinePct: number;
   appliedReachedCount: number; // Applications reaching Applied or beyond
-  interviewProgressionCount: number; // Screening + Interview + Offer
+  interviewProgressionCount: number; // Screening reached count
   interviewProgressionPct: number; // Yield from total applied
-  offerCount: number;
-  offerRatePct: number; // Offer / Interview loops
-  interviewCount: number;
+  offerCount: number; // Active offers in pipeline
+  offerReachedCount: number; // Total applications that reached Offer stage
+  interviewReachedCount: number; // Total applications that reached Interview stage
+  offerRatePct: number; // Historical loop win rate (offers reached / interview loops reached)
+  interviewCount: number; // Active interviews in pipeline
   avgDaysPerStage: number;
   ghostedCount: number;
   ghostingRatePct: number;
@@ -124,8 +129,13 @@ export function hasReachedStage(app: Application, stage: ApplicationStatus): boo
 
   let maxRank = STAGE_RANK[app.status] || 0;
 
+  // Distinguish recorded transitions from synthesized single initial snapshots.
+  // A recorded transition has either multiple history entries or an entry with fromStatus defined.
   const hasHistory = Array.isArray(app.history) && app.history.length > 0;
-  if (hasHistory) {
+  const hasRecordedTransitions =
+    hasHistory && (app.history!.length > 1 || app.history!.some((h) => Boolean(h.fromStatus)));
+
+  if (hasRecordedTransitions) {
     for (const h of app.history!) {
       const toRank = STAGE_RANK[h.toStatus] || 0;
       const fromRank = STAGE_RANK[h.fromStatus] || 0;
@@ -135,7 +145,7 @@ export function hasReachedStage(app: Application, stage: ApplicationStatus): boo
     return maxRank >= targetRank;
   }
 
-  // Fallback ONLY for legacy or imported records with NO history
+  // Fallback for legacy records, records without history, or single synthesized initial snapshot
   if (app.status === 'Rejected') {
     // Rejections happen after an application was submitted
     maxRank = Math.max(maxRank, STAGE_RANK['Applied']);
@@ -203,6 +213,32 @@ export function filterApplicationsForAnalytics(
 }
 
 /**
+ * Filter applications for activity momentum calculation by platform and status category,
+ * deliberately omitting application creation date filtering so that recent stage transitions
+ * and task completions on older applications are included in activity calculations.
+ */
+export function filterApplicationsForActivity(
+  applications: Application[],
+  filter: Pick<AnalyticsFilter, 'platform' | 'statusCategory'>
+): Application[] {
+  return applications.filter((app) => {
+    // 1. Platform filter
+    if (filter.platform !== 'All' && app.platform !== filter.platform) {
+      return false;
+    }
+
+    // 2. Status category filter
+    if (filter.statusCategory === 'Active') {
+      if (app.status === 'Rejected' || app.status === 'Archived') return false;
+    } else if (filter.statusCategory === 'Terminal') {
+      if (app.status !== 'Rejected' && app.status !== 'Archived') return false;
+    }
+
+    return true;
+  });
+}
+
+/**
  * Computes high-level Executive Key Performance Indicators
  */
 export function calculateExecutiveKpis(applications: Application[]): ExecutiveKpis {
@@ -220,19 +256,21 @@ export function calculateExecutiveKpis(applications: Application[]): ExecutiveKp
   const interviewCount = applications.filter((a) => a.status === 'Interview').length;
   const offerCount = applications.filter((a) => a.status === 'Offer').length;
 
-  // Screening yield: applications that reached Screening / applications that reached Applied
+  // Historical stage reaches across entire lifecycle
   const appliedReachedCount = applications.filter((a) => hasReachedStage(a, 'Applied')).length;
   const screeningReachedCount = applications.filter((a) => hasReachedStage(a, 'Screening')).length;
+  const interviewReachedCount = applications.filter((a) => hasReachedStage(a, 'Interview')).length;
+  const offerReachedCount = applications.filter((a) => hasReachedStage(a, 'Offer')).length;
+
   const interviewProgressionCount = screeningReachedCount;
   const interviewProgressionPct =
     appliedReachedCount > 0
       ? Math.round((screeningReachedCount / appliedReachedCount) * 100)
       : 0;
 
-  // Offer rate (Offers vs total interviews + offers)
-  const totalInLoops = interviewCount + offerCount;
+  // Offer rate (Historical Loop Win Rate: offers reached vs interview loops reached)
   const offerRatePct =
-    totalInLoops > 0 ? Math.round((offerCount / totalInLoops) * 100) : 0;
+    interviewReachedCount > 0 ? Math.round((offerReachedCount / interviewReachedCount) * 100) : 0;
 
   // Active pipeline percentage (relative to total applications in scope)
   const activePipelinePct =
@@ -287,6 +325,8 @@ export function calculateExecutiveKpis(applications: Application[]): ExecutiveKp
     interviewProgressionCount,
     interviewProgressionPct,
     offerCount,
+    offerReachedCount,
+    interviewReachedCount,
     offerRatePct,
     interviewCount,
     avgDaysPerStage,
@@ -651,63 +691,280 @@ export function calculateGhostingAndVelocity(applications: Application[]): Ghost
 }
 
 /**
- * Calculates activity momentum and weekly trend velocity
+ * Retrieves the submission timestamp for an application that reached 'Applied'.
+ * Returns undefined if the application never reached Applied (e.g. Saved only, or Saved -> Archived).
+ */
+export function getApplicationSubmissionDate(app: Application): Date | undefined {
+  if (!hasReachedStage(app, 'Applied')) return undefined;
+
+  // Check if there is an explicit transition to 'Applied' in history
+  if (Array.isArray(app.history)) {
+    const appliedEntry = app.history.find((h) => h.toStatus === 'Applied');
+    if (appliedEntry && appliedEntry.timestamp) {
+      const d = new Date(appliedEntry.timestamp);
+      if (!isNaN(d.getTime())) return d;
+    }
+  }
+
+  // Fallback to dateApplied or createdAt
+  const dateStr = app.dateApplied || app.createdAt;
+  if (dateStr) {
+    const d = new Date(dateStr);
+    if (!isNaN(d.getTime())) return d;
+  }
+
+  return undefined;
+}
+
+/**
+ * Collects all timestamps when an application made a stage move / status transition.
+ * Avoids treating initial creation snapshots as stage moves.
+ */
+export function getApplicationStageMoveDates(app: Application): Date[] {
+  const dates: Date[] = [];
+
+  const hasHistory = Array.isArray(app.history) && app.history.length > 0;
+  const hasRecordedTransitions =
+    hasHistory && (app.history!.length > 1 || app.history!.some((h) => Boolean(h.fromStatus)));
+
+  if (hasRecordedTransitions) {
+    for (const h of app.history!) {
+      // Only count transitions between statuses (having fromStatus)
+      if (h.fromStatus && h.timestamp) {
+        const d = new Date(h.timestamp);
+        if (!isNaN(d.getTime())) {
+          dates.push(d);
+        }
+      }
+    }
+    return dates;
+  }
+
+  // Legacy fallback: if stageUpdatedAt exists and differs from createdAt
+  if (app.stageUpdatedAt) {
+    if (!app.createdAt || app.stageUpdatedAt !== app.createdAt) {
+      const d = new Date(app.stageUpdatedAt);
+      if (!isNaN(d.getTime())) {
+        dates.push(d);
+      }
+    }
+  }
+
+  return dates;
+}
+
+/**
+ * Collects all completion timestamps for tasks on an application.
+ * Prefers task.completedAt if present, falling back to app.updatedAt for legacy data.
+ */
+export function getApplicationCompletedTaskDates(app: Application): Date[] {
+  const dates: Date[] = [];
+  if (!app.tasks) return dates;
+
+  for (const t of app.tasks) {
+    if (t.completed) {
+      const dateStr = t.completedAt || app.updatedAt;
+      if (dateStr) {
+        const d = new Date(dateStr);
+        if (!isNaN(d.getTime())) {
+          dates.push(d);
+        }
+      }
+    }
+  }
+
+  return dates;
+}
+
+/**
+ * Calculates activity momentum and weekly trend velocity.
+ * Accepts an optional referenceDate for deterministic testing with fixed clocks.
  */
 export function calculateMomentumAnalysis(
   applications: Application[],
-  timeframe: AnalyticsTimeframe
+  timeframe: AnalyticsTimeframe,
+  referenceDate?: Date
 ): MomentumAnalysis {
-  const now = new Date();
-  const numWeeks = timeframe === '7d' ? 2 : timeframe === '30d' ? 4 : timeframe === '90d' ? 12 : 8;
+  const now = referenceDate ? new Date(referenceDate) : new Date();
+  const end = new Date(now);
 
-  // Build weekly slots
+  let start: Date;
+  let comparisonStart: Date;
+  let comparisonEnd: Date;
+
+  if (timeframe === '7d') {
+    start = new Date(end.getTime() - 7 * 24 * 60 * 60 * 1000);
+    comparisonEnd = new Date(start);
+    comparisonStart = new Date(start.getTime() - 7 * 24 * 60 * 60 * 1000);
+  } else if (timeframe === '30d') {
+    start = new Date(end.getTime() - 30 * 24 * 60 * 60 * 1000);
+    comparisonEnd = new Date(start);
+    comparisonStart = new Date(start.getTime() - 30 * 24 * 60 * 60 * 1000);
+  } else if (timeframe === '90d') {
+    start = new Date(end.getTime() - 90 * 24 * 60 * 60 * 1000);
+    comparisonEnd = new Date(start);
+    comparisonStart = new Date(start.getTime() - 90 * 24 * 60 * 60 * 1000);
+  } else if (timeframe === 'this_month') {
+    start = new Date(end.getFullYear(), end.getMonth(), 1, 0, 0, 0, 0);
+    const durationMs = Math.max(1, end.getTime() - start.getTime());
+    comparisonEnd = new Date(start);
+    comparisonStart = new Date(start.getTime() - durationMs);
+  } else if (timeframe === 'this_year') {
+    start = new Date(end.getFullYear(), 0, 1, 0, 0, 0, 0);
+    const durationMs = Math.max(1, end.getTime() - start.getTime());
+    comparisonEnd = new Date(start);
+    comparisonStart = new Date(start.getTime() - durationMs);
+  } else {
+    // 'all'
+    start = new Date(0);
+    comparisonEnd = new Date(0);
+    comparisonStart = new Date(0);
+  }
+
+  // Pre-extract event timestamps across applications
+  const appEvents: {
+    submissionDates: Date[];
+    stageMoveDates: Date[];
+    taskCompletedDates: Date[];
+  } = {
+    submissionDates: [],
+    stageMoveDates: [],
+    taskCompletedDates: [],
+  };
+
+  applications.forEach((app) => {
+    const subDate = getApplicationSubmissionDate(app);
+    if (subDate) {
+      appEvents.submissionDates.push(subDate);
+    }
+    const moveDates = getApplicationStageMoveDates(app);
+    appEvents.stageMoveDates.push(...moveDates);
+
+    const taskDates = getApplicationCompletedTaskDates(app);
+    appEvents.taskCompletedDates.push(...taskDates);
+  });
+
+  // Calculate explicit timeframe totals strictly within [start, end]
+  let totalApps = 0;
+  let totalStageMoves = 0;
+  let totalTasks = 0;
+  let prevPeriodApps = 0;
+
+  for (const d of appEvents.submissionDates) {
+    if (d >= start && d <= end) totalApps++;
+    if (timeframe !== 'all' && d >= comparisonStart && d < comparisonEnd) prevPeriodApps++;
+  }
+
+  for (const d of appEvents.stageMoveDates) {
+    if (d >= start && d <= end) totalStageMoves++;
+  }
+
+  for (const d of appEvents.taskCompletedDates) {
+    if (d >= start && d <= end) totalTasks++;
+  }
+
+  const totalActions = totalApps + totalStageMoves + totalTasks;
+  const currentPeriodApps = totalApps;
+
+  let paceChangePct = 0;
+  if (prevPeriodApps > 0) {
+    paceChangePct = Math.round(((currentPeriodApps - prevPeriodApps) / prevPeriodApps) * 100);
+  } else if (currentPeriodApps > 0) {
+    paceChangePct = 100;
+  }
+
+  // Build trend buckets partitioning the timeframe window
   const weeklyTrend: VelocityTrendPoint[] = [];
 
-  for (let i = numWeeks - 1; i >= 0; i--) {
-    const weekStart = new Date(now);
-    weekStart.setDate(now.getDate() - i * 7 - 6);
-    weekStart.setHours(0, 0, 0, 0);
+  interface TrendBucketDef {
+    periodLabel: string;
+    fullDate: string;
+    bStart: Date;
+    bEnd: Date;
+  }
 
-    const weekEnd = new Date(weekStart);
-    weekEnd.setDate(weekStart.getDate() + 6);
-    weekEnd.setHours(23, 59, 59, 999);
+  const bucketDefs: TrendBucketDef[] = [];
 
-    const periodLabel = i === 0 ? 'Now' : `W-${i}`;
-    const startStr = weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    const endStr = weekEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    const fullDate = `${startStr} – ${endStr}`;
+  if (timeframe === '7d') {
+    // 7 daily buckets: D-6 to Today
+    for (let i = 6; i >= 0; i--) {
+      const bStart = new Date(end.getTime() - (i + 1) * 24 * 60 * 60 * 1000);
+      const bEnd = i === 0 ? end : new Date(end.getTime() - i * 24 * 60 * 60 * 1000);
+      const periodLabel = i === 0 ? 'Today' : bStart.toLocaleDateString('en-US', { weekday: 'short' });
+      const fullDate = bStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      bucketDefs.push({ periodLabel, fullDate, bStart, bEnd });
+    }
+  } else if (timeframe === '30d') {
+    // 4 buckets of ~7.5 days partitioning the 30 days
+    const bucketMs = (30 * 24 * 60 * 60 * 1000) / 4;
+    for (let i = 3; i >= 0; i--) {
+      const bStart = new Date(end.getTime() - (i + 1) * bucketMs);
+      const bEnd = i === 0 ? end : new Date(end.getTime() - i * bucketMs);
+      const periodLabel = i === 0 ? 'Now' : `W-${i}`;
+      const startStr = bStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const endStr = bEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      bucketDefs.push({ periodLabel, fullDate: `${startStr} – ${endStr}`, bStart, bEnd });
+    }
+  } else if (timeframe === '90d') {
+    // 12 weekly buckets
+    const bucketMs = (90 * 24 * 60 * 60 * 1000) / 12;
+    for (let i = 11; i >= 0; i--) {
+      const bStart = new Date(end.getTime() - (i + 1) * bucketMs);
+      const bEnd = i === 0 ? end : new Date(end.getTime() - i * bucketMs);
+      const periodLabel = i === 0 ? 'Now' : `W-${i}`;
+      const startStr = bStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const endStr = bEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      bucketDefs.push({ periodLabel, fullDate: `${startStr} – ${endStr}`, bStart, bEnd });
+    }
+  } else if (timeframe === 'this_month') {
+    // 4 buckets partitioning [start, end]
+    const totalMs = Math.max(1, end.getTime() - start.getTime());
+    const bucketMs = totalMs / 4;
+    for (let i = 3; i >= 0; i--) {
+      const bStart = new Date(end.getTime() - (i + 1) * bucketMs);
+      const bEnd = i === 0 ? end : new Date(end.getTime() - i * bucketMs);
+      const periodLabel = `W${4 - i}`;
+      const startStr = bStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const endStr = bEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      bucketDefs.push({ periodLabel, fullDate: `${startStr} – ${endStr}`, bStart, bEnd });
+    }
+  } else if (timeframe === 'this_year') {
+    // Up to 12 monthly buckets for elapsed months of the year
+    const currentMonth = end.getMonth();
+    for (let m = 0; m <= currentMonth; m++) {
+      const bStart = new Date(end.getFullYear(), m, 1, 0, 0, 0, 0);
+      const nextMonthStart = new Date(end.getFullYear(), m + 1, 1, 0, 0, 0, 0);
+      const bEnd = m === currentMonth ? end : nextMonthStart;
+      const periodLabel = bStart.toLocaleDateString('en-US', { month: 'short' });
+      const fullDate = bStart.toLocaleDateString('en-US', { month: 'long' });
+      bucketDefs.push({ periodLabel, fullDate, bStart, bEnd });
+    }
+  } else {
+    // 'all' time: 8 weekly buckets leading up to now
+    for (let i = 7; i >= 0; i--) {
+      const bStart = new Date(end.getTime() - (i + 1) * 7 * 24 * 60 * 60 * 1000);
+      const bEnd = i === 0 ? end : new Date(end.getTime() - i * 7 * 24 * 60 * 60 * 1000);
+      const periodLabel = i === 0 ? 'Now' : `W-${i}`;
+      const startStr = bStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const endStr = bEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      bucketDefs.push({ periodLabel, fullDate: `${startStr} – ${endStr}`, bStart, bEnd });
+    }
+  }
 
+  bucketDefs.forEach(({ periodLabel, fullDate, bStart, bEnd }) => {
     let appsCount = 0;
     let statusChangesCount = 0;
     let tasksDoneCount = 0;
 
-    applications.forEach((app) => {
-      const appDateStr = app.dateApplied || app.createdAt;
-      if (appDateStr) {
-        const d = new Date(appDateStr);
-        if (d >= weekStart && d <= weekEnd) {
-          appsCount++;
-        }
-      }
-
-      if (app.stageUpdatedAt) {
-        const d = new Date(app.stageUpdatedAt);
-        if (d >= weekStart && d <= weekEnd) {
-          statusChangesCount++;
-        }
-      }
-
-      if (app.tasks) {
-        app.tasks.forEach((t) => {
-          if (t.completed && app.updatedAt) {
-            const d = new Date(app.updatedAt);
-            if (d >= weekStart && d <= weekEnd) {
-              tasksDoneCount++;
-            }
-          }
-        });
-      }
-    });
+    for (const d of appEvents.submissionDates) {
+      if (d >= bStart && d <= bEnd) appsCount++;
+    }
+    for (const d of appEvents.stageMoveDates) {
+      if (d >= bStart && d <= bEnd) statusChangesCount++;
+    }
+    for (const d of appEvents.taskCompletedDates) {
+      if (d >= bStart && d <= bEnd) tasksDoneCount++;
+    }
 
     weeklyTrend.push({
       periodLabel,
@@ -717,34 +974,44 @@ export function calculateMomentumAnalysis(
       tasksDoneCount,
       totalActivity: appsCount + statusChangesCount + tasksDoneCount,
     });
-  }
+  });
 
-  // Calculate current vs previous period pacing
-  const halfLen = Math.floor(weeklyTrend.length / 2);
-  const recentWeeks = weeklyTrend.slice(halfLen);
-  const prevWeeks = weeklyTrend.slice(0, halfLen);
-
-  const currentPeriodApps = recentWeeks.reduce((sum, w) => sum + w.appsCount, 0);
-  const prevPeriodApps = prevWeeks.reduce((sum, w) => sum + w.appsCount, 0);
-
-  let paceChangePct = 0;
-  if (prevPeriodApps > 0) {
-    paceChangePct = Math.round(((currentPeriodApps - prevPeriodApps) / prevPeriodApps) * 100);
-  } else if (currentPeriodApps > 0) {
-    paceChangePct = 100;
-  }
-
-  // Calculate streak in active weeks (working backwards)
+  // Calculate streak in active weeks (walking back 7-day blocks from end)
   let streakWeeks = 0;
-  for (let i = weeklyTrend.length - 1; i >= 0; i--) {
-    if (weeklyTrend[i].totalActivity > 0) {
+  for (let w = 0; w < 52; w++) {
+    const wEnd = new Date(end.getTime() - w * 7 * 24 * 60 * 60 * 1000);
+    const wStart = new Date(end.getTime() - (w + 1) * 7 * 24 * 60 * 60 * 1000);
+
+    let weekActivity = 0;
+    for (const d of appEvents.submissionDates) {
+      if (d >= wStart && d <= wEnd) {
+        weekActivity++;
+        break;
+      }
+    }
+    if (weekActivity === 0) {
+      for (const d of appEvents.stageMoveDates) {
+        if (d >= wStart && d <= wEnd) {
+          weekActivity++;
+          break;
+        }
+      }
+    }
+    if (weekActivity === 0) {
+      for (const d of appEvents.taskCompletedDates) {
+        if (d >= wStart && d <= wEnd) {
+          weekActivity++;
+          break;
+        }
+      }
+    }
+
+    if (weekActivity > 0) {
       streakWeeks++;
     } else {
       break;
     }
   }
-
-  const totalActions = weeklyTrend.reduce((sum, w) => sum + w.totalActivity, 0);
 
   const timeframeLabelMap: Record<AnalyticsTimeframe, string> = {
     all: 'All Time Activity',
@@ -758,6 +1025,9 @@ export function calculateMomentumAnalysis(
   return {
     timeframeLabel: timeframeLabelMap[timeframe] || 'Activity Momentum',
     totalActions,
+    totalApps,
+    totalStageMoves,
+    totalTasks,
     currentPeriodApps,
     prevPeriodApps,
     paceChangePct,

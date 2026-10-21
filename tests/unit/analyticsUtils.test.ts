@@ -5,6 +5,11 @@ import {
   calculatePlatformRoi,
   calculateGhostingAndVelocity,
   filterApplicationsForAnalytics,
+  filterApplicationsForActivity,
+  calculateMomentumAnalysis,
+  getApplicationSubmissionDate,
+  getApplicationStageMoveDates,
+  getApplicationCompletedTaskDates,
   hasReachedStage,
 } from '../../src/lib/analyticsUtils';
 import { calculateDaysInStage } from '../../src/lib/dateUtils';
@@ -407,6 +412,428 @@ describe('analyticsUtils - Dashboard Metrics & Bug Fixes', () => {
       expect(hasReachedStage(legacyRejected, 'Saved')).toBe(true);
       expect(hasReachedStage(legacyRejected, 'Applied')).toBe(true);
       expect(hasReachedStage(legacyRejected, 'Screening')).toBe(false);
+    });
+
+    it('Finding 1: treats synthesized initial snapshot on imported Rejected as reaching Applied', () => {
+      // batchImport creates a single-entry snapshot without fromStatus
+      const importedRejected: Application = {
+        id: 'imported-rej',
+        userId: 'user-1',
+        company: 'Synthesized Corp',
+        role: 'Frontend Dev',
+        status: 'Rejected',
+        platform: 'Indeed',
+        dateApplied: '2026-06-01',
+        history: [
+          { id: 'h-init', toStatus: 'Rejected', timestamp: '2026-06-05T10:00:00Z' },
+        ],
+        stageUpdatedAt: '2026-06-05T10:00:00Z',
+        createdAt: '2026-06-01T10:00:00Z',
+        updatedAt: '2026-06-05T10:00:00Z',
+      };
+
+      expect(hasReachedStage(importedRejected, 'Saved')).toBe(true);
+      expect(hasReachedStage(importedRejected, 'Applied')).toBe(true);
+      expect(hasReachedStage(importedRejected, 'Screening')).toBe(false);
+    });
+
+    it('Finding 1: distinguishes synthesized initial snapshot from explicit Saved -> Archived transition', () => {
+      const explicitArchived: Application = {
+        id: 'explicit-archived',
+        userId: 'user-1',
+        company: 'Archived Corp',
+        role: 'Dev',
+        status: 'Archived',
+        platform: 'LinkedIn',
+        dateApplied: '2026-06-01',
+        history: [
+          { id: 'h1', toStatus: 'Saved', timestamp: '2026-06-01T10:00:00Z' },
+          { id: 'h2', fromStatus: 'Saved', toStatus: 'Archived', timestamp: '2026-06-02T10:00:00Z' },
+        ],
+        stageUpdatedAt: '2026-06-02T10:00:00Z',
+        createdAt: '2026-06-01T10:00:00Z',
+        updatedAt: '2026-06-02T10:00:00Z',
+      };
+
+      expect(hasReachedStage(explicitArchived, 'Applied')).toBe(false);
+    });
+  });
+
+  describe('Finding 2: Activity scoping preserves older applications with recent activity', () => {
+    it('preserves applications applied 60 days ago in filterApplicationsForActivity for recent event inspection', () => {
+      const oldAppWithRecentActivity: Application = {
+        id: 'old-app-1',
+        userId: 'user-1',
+        company: 'Older Corp',
+        role: 'Staff Engineer',
+        status: 'Interview',
+        platform: 'LinkedIn',
+        dateApplied: '2026-05-01',
+        stageUpdatedAt: '2026-07-28T10:00:00Z',
+        createdAt: '2026-05-01T10:00:00Z',
+        updatedAt: '2026-07-28T10:00:00Z',
+      };
+
+      // Strict 30d cohort filter discards this application
+      const cohortFiltered = filterApplicationsForAnalytics([oldAppWithRecentActivity], {
+        timeframe: '30d',
+        platform: 'All',
+        statusCategory: 'All',
+      });
+      expect(cohortFiltered.length).toBe(0);
+
+      // Activity scope preserves this application so its recent stageUpdatedAt / tasks are counted
+      const activityFiltered = filterApplicationsForActivity([oldAppWithRecentActivity], {
+        platform: 'All',
+        statusCategory: 'All',
+      });
+      expect(activityFiltered.length).toBe(1);
+    });
+
+    it('respects platform and statusCategory filters in filterApplicationsForActivity', () => {
+      const app1: Application = {
+        ...sampleApps[0],
+        platform: 'LinkedIn',
+        status: 'Interview',
+      };
+      const app2: Application = {
+        ...sampleApps[1],
+        platform: 'Referral',
+        status: 'Rejected',
+      };
+
+      const linkedInOnly = filterApplicationsForActivity([app1, app2], {
+        platform: 'LinkedIn',
+        statusCategory: 'All',
+      });
+      expect(linkedInOnly.length).toBe(1);
+      expect(linkedInOnly[0].id).toBe(app1.id);
+
+      const activeOnly = filterApplicationsForActivity([app1, app2], {
+        platform: 'All',
+        statusCategory: 'Active',
+      });
+      expect(activeOnly.length).toBe(1);
+      expect(activeOnly[0].id).toBe(app1.id);
+    });
+  });
+
+  describe('Finding 3: Momentum analysis boundaries and pacing separation', () => {
+    const fixedNow = new Date('2026-08-01T12:00:00Z');
+
+    it('clips 7d totals strictly to the last 7 calendar days and separates previous period data', () => {
+      const appCurrentWeek: Application = {
+        id: 'app-cw',
+        userId: 'user-1',
+        company: 'Current Week Co',
+        role: 'Frontend',
+        status: 'Applied',
+        platform: 'LinkedIn',
+        dateApplied: '2026-07-28',
+        stageUpdatedAt: '2026-07-28T10:00:00Z',
+        createdAt: '2026-07-28T10:00:00Z',
+        updatedAt: '2026-07-28T10:00:00Z',
+      };
+
+      const appPrevWeek: Application = {
+        id: 'app-pw',
+        userId: 'user-1',
+        company: 'Prev Week Co',
+        role: 'Frontend',
+        status: 'Applied',
+        platform: 'LinkedIn',
+        dateApplied: '2026-07-20',
+        stageUpdatedAt: '2026-07-20T10:00:00Z',
+        createdAt: '2026-07-20T10:00:00Z',
+        updatedAt: '2026-07-20T10:00:00Z',
+      };
+
+      const momentum = calculateMomentumAnalysis(
+        [appCurrentWeek, appPrevWeek],
+        '7d',
+        fixedNow
+      );
+
+      // totalApps and totalActions should only include the application submitted in the 7d window
+      expect(momentum.totalApps).toBe(1);
+      expect(momentum.totalActions).toBe(1);
+      expect(momentum.currentPeriodApps).toBe(1);
+      // Previous period includes appPrevWeek (submitted 12 days ago, within [now - 14d, now - 7d))
+      expect(momentum.prevPeriodApps).toBe(1);
+      expect(momentum.paceChangePct).toBe(0); // 1 vs 1 = 0% change
+
+      // Buckets in weeklyTrend partition the 7-day period (7 daily buckets)
+      expect(momentum.weeklyTrend.length).toBe(7);
+      const sumTrendApps = momentum.weeklyTrend.reduce((sum, w) => sum + w.appsCount, 0);
+      expect(sumTrendApps).toBe(1);
+    });
+  });
+
+  describe('Finding 4: Stage-move counts from history transitions', () => {
+    const fixedNow = new Date('2026-08-01T12:00:00Z');
+
+    it('counts multiple stage transitions occurring within the timeframe from history', () => {
+      const multiMoveApp: Application = {
+        id: 'app-multi-move',
+        userId: 'user-1',
+        company: 'Fast Progression Corp',
+        role: 'Tech Lead',
+        status: 'Interview',
+        platform: 'LinkedIn',
+        dateApplied: '2026-07-26',
+        history: [
+          { id: 'h1', toStatus: 'Applied', timestamp: '2026-07-26T10:00:00Z' },
+          { id: 'h2', fromStatus: 'Applied', toStatus: 'Screening', timestamp: '2026-07-28T14:00:00Z' },
+          { id: 'h3', fromStatus: 'Screening', toStatus: 'Interview', timestamp: '2026-07-30T16:00:00Z' },
+        ],
+        stageUpdatedAt: '2026-07-30T16:00:00Z',
+        createdAt: '2026-07-26T10:00:00Z',
+        updatedAt: '2026-07-30T16:00:00Z',
+      };
+
+      const stageMoves = getApplicationStageMoveDates(multiMoveApp);
+      // Initial creation snapshot (h1, no fromStatus) is not a stage move; h2 and h3 are
+      expect(stageMoves.length).toBe(2);
+
+      const momentum = calculateMomentumAnalysis([multiMoveApp], '7d', fixedNow);
+      expect(momentum.totalStageMoves).toBe(2);
+      expect(momentum.totalApps).toBe(1);
+      expect(momentum.totalActions).toBe(3); // 1 app + 2 moves
+    });
+
+    it('does not treat initial creation snapshot as a stage move', () => {
+      const brandNewApp: Application = {
+        id: 'app-new',
+        userId: 'user-1',
+        company: 'New Corp',
+        role: 'Engineer',
+        status: 'Applied',
+        platform: 'Indeed',
+        dateApplied: '2026-07-29',
+        history: [
+          { id: 'h-init', toStatus: 'Applied', timestamp: '2026-07-29T10:00:00Z' },
+        ],
+        stageUpdatedAt: '2026-07-29T10:00:00Z',
+        createdAt: '2026-07-29T10:00:00Z',
+        updatedAt: '2026-07-29T10:00:00Z',
+      };
+
+      const stageMoves = getApplicationStageMoveDates(brandNewApp);
+      expect(stageMoves.length).toBe(0);
+
+      const momentum = calculateMomentumAnalysis([brandNewApp], '7d', fixedNow);
+      expect(momentum.totalStageMoves).toBe(0);
+      expect(momentum.totalApps).toBe(1);
+    });
+  });
+
+  describe('Finding 5: Unrelated edits do not move completed tasks into new activity period', () => {
+    const fixedNow = new Date('2026-08-01T12:00:00Z');
+
+    it('uses task-level completedAt to anchor task completion date', () => {
+      const appWithOldTask: Application = {
+        id: 'app-old-task',
+        userId: 'user-1',
+        company: 'Notes Edited Corp',
+        role: 'Full Stack',
+        status: 'Interview',
+        platform: 'LinkedIn',
+        dateApplied: '2026-06-01',
+        stageUpdatedAt: '2026-06-10T10:00:00Z',
+        createdAt: '2026-06-01T10:00:00Z',
+        updatedAt: '2026-08-01T11:00:00Z', // User updated notes today!
+        tasks: [
+          {
+            id: 'task-done-june',
+            title: 'Technical take-home test',
+            completed: true,
+            completedAt: '2026-06-08T15:00:00Z', // Completed 50+ days ago
+          },
+        ],
+      };
+
+      const taskDates = getApplicationCompletedTaskDates(appWithOldTask);
+      expect(taskDates.length).toBe(1);
+      expect(taskDates[0].toISOString()).toBe('2026-06-08T15:00:00.000Z');
+
+      const momentum7d = calculateMomentumAnalysis([appWithOldTask], '7d', fixedNow);
+      // Task was completed in June, so 7d window should have 0 completed tasks despite updatedAt being today
+      expect(momentum7d.totalTasks).toBe(0);
+    });
+
+    it('falls back to updatedAt for legacy tasks without completedAt', () => {
+      const legacyApp: Application = {
+        id: 'legacy-task-app',
+        userId: 'user-1',
+        company: 'Legacy Task Corp',
+        role: 'Full Stack',
+        status: 'Interview',
+        platform: 'LinkedIn',
+        dateApplied: '2026-07-28',
+        stageUpdatedAt: '2026-07-28T10:00:00Z',
+        createdAt: '2026-07-28T10:00:00Z',
+        updatedAt: '2026-07-29T10:00:00Z',
+        tasks: [
+          {
+            id: 'legacy-task-1',
+            title: 'Legacy completed task',
+            completed: true,
+            // no completedAt property
+          },
+        ],
+      };
+
+      const taskDates = getApplicationCompletedTaskDates(legacyApp);
+      expect(taskDates.length).toBe(1);
+      expect(taskDates[0].toISOString()).toBe('2026-07-29T10:00:00.000Z');
+    });
+  });
+
+  describe('Finding 6: Saved opportunities do not count as submitted applications', () => {
+    const fixedNow = new Date('2026-08-01T12:00:00Z');
+
+    it('does not increment appsCount or totalApps for Saved opportunities', () => {
+      const savedJob: Application = {
+        id: 'saved-app-1',
+        userId: 'user-1',
+        company: 'Bookmark Corp',
+        role: 'Staff Engineer',
+        status: 'Saved',
+        platform: 'LinkedIn',
+        dateApplied: '2026-07-30',
+        stageUpdatedAt: '2026-07-30T10:00:00Z',
+        createdAt: '2026-07-30T10:00:00Z',
+        updatedAt: '2026-07-30T10:00:00Z',
+      };
+
+      const subDate = getApplicationSubmissionDate(savedJob);
+      expect(subDate).toBeUndefined();
+
+      const momentum = calculateMomentumAnalysis([savedJob], '7d', fixedNow);
+      expect(momentum.totalApps).toBe(0);
+      expect(momentum.currentPeriodApps).toBe(0);
+    });
+
+    it('does not increment appsCount for Saved -> Archived opportunities', () => {
+      const savedArchivedJob: Application = {
+        id: 'saved-archived-1',
+        userId: 'user-1',
+        company: 'Archived Before Applying Corp',
+        role: 'Staff Engineer',
+        status: 'Archived',
+        platform: 'LinkedIn',
+        dateApplied: '2026-07-29',
+        history: [
+          { id: 'h1', toStatus: 'Saved', timestamp: '2026-07-28T10:00:00Z' },
+          { id: 'h2', fromStatus: 'Saved', toStatus: 'Archived', timestamp: '2026-07-29T10:00:00Z' },
+        ],
+        stageUpdatedAt: '2026-07-29T10:00:00Z',
+        createdAt: '2026-07-28T10:00:00Z',
+        updatedAt: '2026-07-29T10:00:00Z',
+      };
+
+      const subDate = getApplicationSubmissionDate(savedArchivedJob);
+      expect(subDate).toBeUndefined();
+
+      const momentum = calculateMomentumAnalysis([savedArchivedJob], '7d', fixedNow);
+      expect(momentum.totalApps).toBe(0);
+    });
+
+    it('increments appsCount for opportunities that transitioned from Saved to Applied', () => {
+      const appliedFromSavedJob: Application = {
+        id: 'applied-from-saved',
+        userId: 'user-1',
+        company: 'Eventually Applied Corp',
+        role: 'Staff Engineer',
+        status: 'Applied',
+        platform: 'LinkedIn',
+        dateApplied: '2026-07-29',
+        history: [
+          { id: 'h1', toStatus: 'Saved', timestamp: '2026-07-15T10:00:00Z' },
+          { id: 'h2', fromStatus: 'Saved', toStatus: 'Applied', timestamp: '2026-07-29T14:00:00Z' },
+        ],
+        stageUpdatedAt: '2026-07-29T14:00:00Z',
+        createdAt: '2026-07-15T10:00:00Z',
+        updatedAt: '2026-07-29T14:00:00Z',
+      };
+
+      const subDate = getApplicationSubmissionDate(appliedFromSavedJob);
+      expect(subDate).toBeDefined();
+      expect(subDate?.toISOString()).toBe('2026-07-29T14:00:00.000Z');
+
+      const momentum = calculateMomentumAnalysis([appliedFromSavedJob], '7d', fixedNow);
+      expect(momentum.totalApps).toBe(1);
+    });
+  });
+
+  describe('Finding 7: Loop win rate evaluates historical loop conversion accurately', () => {
+    it('calculates loop win rate across all evaluated loops including rejected candidates', () => {
+      // 1 active offer
+      const offerApp: Application = {
+        id: 'offer-app-1',
+        userId: 'user-1',
+        company: 'Winning Corp',
+        role: 'Staff Engineer',
+        status: 'Offer',
+        platform: 'Referral',
+        dateApplied: '2026-06-01',
+        history: [
+          { id: 'h1', toStatus: 'Applied', timestamp: '2026-06-01T10:00:00Z' },
+          { id: 'h2', fromStatus: 'Applied', toStatus: 'Interview', timestamp: '2026-06-15T10:00:00Z' },
+          { id: 'h3', fromStatus: 'Interview', toStatus: 'Offer', timestamp: '2026-06-25T10:00:00Z' },
+        ],
+        stageUpdatedAt: '2026-06-25T10:00:00Z',
+        createdAt: '2026-06-01T10:00:00Z',
+        updatedAt: '2026-06-25T10:00:00Z',
+      };
+
+      // 9 rejected apps that reached interview loop
+      const rejectedLoops: Application[] = Array.from({ length: 9 }, (_, idx) => ({
+        id: `rej-loop-${idx}`,
+        userId: 'user-1',
+        company: `Rejected Loop Corp ${idx}`,
+        role: 'Senior Engineer',
+        status: 'Rejected',
+        platform: 'LinkedIn',
+        dateApplied: '2026-06-01',
+        history: [
+          { id: `h-${idx}-1`, toStatus: 'Applied', timestamp: '2026-06-01T10:00:00Z' },
+          { id: `h-${idx}-2`, fromStatus: 'Applied', toStatus: 'Interview', timestamp: '2026-06-12T10:00:00Z' },
+          { id: `h-${idx}-3`, fromStatus: 'Interview', toStatus: 'Rejected', timestamp: '2026-06-22T10:00:00Z' },
+        ],
+        stageUpdatedAt: '2026-06-22T10:00:00Z',
+        createdAt: '2026-06-01T10:00:00Z',
+        updatedAt: '2026-06-22T10:00:00Z',
+      }));
+
+      const kpis = calculateExecutiveKpis([offerApp, ...rejectedLoops]);
+
+      expect(kpis.offerCount).toBe(1);
+      expect(kpis.offerReachedCount).toBe(1);
+      expect(kpis.interviewReachedCount).toBe(10);
+      expect(kpis.interviewCount).toBe(0); // 0 active in Interview status
+      // Historical loop win rate: 1 offer out of 10 loops = 10%, NOT 100%!
+      expect(kpis.offerRatePct).toBe(10);
+    });
+
+    it('returns 0% offerRatePct when no applications reached Interview or Offer', () => {
+      const screeningApp: Application = {
+        id: 'screening-app',
+        userId: 'user-1',
+        company: 'Early Stage Corp',
+        role: 'Developer',
+        status: 'Screening',
+        platform: 'Indeed',
+        dateApplied: '2026-06-01',
+        stageUpdatedAt: '2026-06-05T10:00:00Z',
+        createdAt: '2026-06-01T10:00:00Z',
+        updatedAt: '2026-06-05T10:00:00Z',
+      };
+
+      const kpis = calculateExecutiveKpis([screeningApp]);
+      expect(kpis.interviewReachedCount).toBe(0);
+      expect(kpis.offerReachedCount).toBe(0);
+      expect(kpis.offerRatePct).toBe(0);
     });
   });
 });
