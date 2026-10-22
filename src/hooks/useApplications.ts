@@ -225,6 +225,15 @@ export function useApplications({
   const handleBatchImportApplications = useCallback(async (
     newApps: Omit<Application, 'id' | 'userId' | 'createdAt' | 'updatedAt' | 'stageUpdatedAt'>[]
   ) => {
+    if (!user?.emailVerified) {
+      addToast(
+        'warning',
+        'Account Required',
+        'CSV import is available on cloud accounts. Create a free account to unlock batch imports.'
+      );
+      return;
+    }
+
     try {
       const imported = await ApplicationRepository.batchImport(
         newApps,

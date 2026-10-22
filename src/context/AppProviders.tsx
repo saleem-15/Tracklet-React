@@ -6,6 +6,7 @@ import { NavigationProvider } from './NavigationContext';
 import { ApplicationsProvider } from './ApplicationsContext';
 import { ContactsProvider } from './ContactsContext';
 import { ExtensionProvider } from './ExtensionContext';
+import { EntitlementProvider } from './EntitlementContext';
 
 /**
  * AppProviders
@@ -20,6 +21,7 @@ import { ExtensionProvider } from './ExtensionContext';
  * 5. ExtensionProvider (Browser extension handshake & connection status)
  * 6. ApplicationsProvider (Job applications domain, depends on Auth, Navigation, Toast)
  * 7. ContactsProvider (Networking domain, depends on Auth, Applications, Navigation, Toast)
+ * 8. EntitlementProvider (SaaS entitlement tier & limits, depends on Auth, Applications, Toast)
  *
  * Direct React analogue to Flutter's MultiBlocProvider or MultiProvider.
  */
@@ -32,7 +34,9 @@ export const AppProviders: React.FC<{ children: React.ReactNode }> = ({ children
             <ExtensionProvider>
               <ApplicationsProvider>
                 <ContactsProvider>
-                  {children}
+                  <EntitlementProvider>
+                    {children}
+                  </EntitlementProvider>
                 </ContactsProvider>
               </ApplicationsProvider>
             </ExtensionProvider>
@@ -42,4 +46,3 @@ export const AppProviders: React.FC<{ children: React.ReactNode }> = ({ children
     </AuthProvider>
   );
 };
-
