@@ -68,10 +68,9 @@ try {
     const psArgs = [
       '-NoProfile',
       '-Command',
-      '& { param($dest) Compress-Archive -Path * -DestinationPath $dest -Force }',
-      outputZip
+      `Add-Type -AssemblyName System.IO.Compression.FileSystem; [System.IO.Compression.ZipFile]::CreateFromDirectory('${extensionDir.replace(/'/g, "''")}', '${outputZip.replace(/'/g, "''")}')`
     ];
-    const res = spawnSync('powershell.exe', psArgs, { stdio: 'inherit', cwd: extensionDir });
+    const res = spawnSync('powershell.exe', psArgs, { stdio: 'inherit' });
     if (res.error) throw res.error;
     if (res.status !== 0) throw new Error(`PowerShell Compress-Archive exited with status ${res.status}`);
   } else {

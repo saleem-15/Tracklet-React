@@ -1,0 +1,2532 @@
+[
+  {
+    "id": "OZ4RAkDtQ4kdn6k63trm",
+    "userId": "Dx6SXNyYKWgtAoLvUtznMBUqhYG3",
+    "company": "Al-Bireh City Hall",
+    "position": "مساعد مدير البلدية للشؤون المالية والادارية والعلاقات",
+    "status": "Applied",
+    "platform": "Other",
+    "createdAt": "2026-10-19T07:10:56.807Z",
+    "updatedAt": "2026-10-19T07:11:34.652Z"
+  },
+  {
+    "id": "KRHS90HMFk9YX4oYFnsx",
+    "userId": "Q4MqZAyL0gSYqOSx17Axhb4wElZ2",
+    "company": "Sofeyia Home",
+    "position": "Engineering Project Supervisor",
+    "status": "Saved",
+    "platform": "Bayt",
+    "createdAt": "2026-10-03T14:22:51.520Z",
+    "updatedAt": "2026-10-03T14:23:52.748Z"
+  },
+  {
+    "id": "YOGa9HLE4WImcaqBFcjo",
+    "userId": "Q4MqZAyL0gSYqOSx17Axhb4wElZ2",
+    "company": "Cognizant",
+    "position": "Technical Lead",
+    "status": "Saved",
+    "platform": "LinkedIn",
+    "createdAt": "2026-10-03T12:24:43.870Z",
+    "updatedAt": "2026-10-03T12:27:04.105Z"
+  },
+  {
+    "id": "vGnKtN8b3wAggNYgXDh2",
+    "userId": "Q4MqZAyL0gSYqOSx17Axhb4wElZ2",
+    "company": "Wellfound",
+    "position": "Bask Health careers",
+    "status": "Applied",
+    "platform": "Wellfound",
+    "createdAt": "2026-10-03T14:20:06.444Z",
+    "updatedAt": "2026-10-03T14:20:06.444Z"
+  },
+  {
+    "id": "7ExjIR63Badq1oa55kKV",
+    "userId": "glmMEYa2uxR4qqkWLeChIWHEY353",
+    "company": "GitHub",
+    "position": "Senior Frontend Developer - Actions UI",
+    "status": "Offer",
+    "platform": "Referral",
+    "createdAt": "2026-07-14T10:30:00Z",
+    "updatedAt": "2026-09-03T13:18:28.030Z"
+  },
+  {
+    "id": "9tlCR13i8g4VtAjrSvI0",
+    "userId": "glmMEYa2uxR4qqkWLeChIWHEY353",
+    "company": "Slack",
+    "position": "Senior Frontend Engineer - Desktop",
+    "status": "Interview",
+    "platform": "Greenhouse",
+    "createdAt": "2026-07-13T10:00:00Z",
+    "updatedAt": "2026-07-22T09:00:00Z"
+  },
+  {
+    "id": "AxHsiJkC9882HxLCLL0a",
+    "userId": "glmMEYa2uxR4qqkWLeChIWHEY353",
+    "company": "Figma",
+    "position": "Design Systems Engineer",
+    "status": "Interview",
+    "platform": "LinkedIn",
+    "createdAt": "2026-07-12T13:10:00Z",
+    "updatedAt": "2026-09-03T15:09:35.127Z"
+  },
+  {
+    "id": "BLatkLqhGpgddDglohpX",
+    "userId": "glmMEYa2uxR4qqkWLeChIWHEY353",
+    "company": "Cloudflare",
+    "position": "Systems & UI Developer",
+    "status": "Rejected",
+    "platform": "LinkedIn",
+    "createdAt": "2026-07-21T17:00:00Z",
+    "updatedAt": "2026-10-03T08:19:33.673Z"
+  },
+  {
+    "id": "CCwoULBb3dnwEHqbKywi",
+    "userId": "glmMEYa2uxR4qqkWLeChIWHEY353",
+    "company": "Datadog",
+    "position": "Senior Software Engineer - APM Dashboards",
+    "status": "Rejected",
+    "platform": "LinkedIn",
+    "createdAt": "2026-06-28T09:00:00Z",
+    "updatedAt": "2026-07-10T12:00:00Z"
+  },
+  {
+    "id": "DVOGIPIsbO5REjGitF6C",
+    "userId": "glmMEYa2uxR4qqkWLeChIWHEY353",
+    "company": "Zero One Solutions",
+    "position": "Lead Software Engineer",
+    "status": "Saved",
+    "platform": "Bayt",
+    "createdAt": "2026-10-05T07:49:55.039Z",
+    "updatedAt": "2026-10-05T08:56:58.732Z"
+  },
+  {
+    "id": "EPqizmmIjSJhPicYe0j4",
+    "userId": "glmMEYa2uxR4qqkWLeChIWHEY353",
+    "company": "Ramp",
+    "position": "Product Engineer - Expense Controls",
+    "status": "Saved",
+    "platform": "Otta",
+    "createdAt": "2026-07-19T10:00:00Z",
+    "updatedAt": "2026-09-02T15:33:46.428Z"
+  },
+  {
+    "id": "Hy7UpCFyTJ3Jm4PZJEd2",
+    "userId": "glmMEYa2uxR4qqkWLeChIWHEY353",
+    "company": "Shopify",
+    "position": "Senior Developer - Checkout Experience",
+    "status": "Archived",
+    "platform": "Company Site",
+    "createdAt": "2026-06-25T11:00:00Z",
+    "updatedAt": "2026-07-05T09:00:00Z"
+  },
+  {
+    "id": "O375gTxcqPsB3hLIlyGX",
+    "userId": "glmMEYa2uxR4qqkWLeChIWHEY353",
+    "company": "Anthropic",
+    "position": "Frontend Engineer - Claude Web",
+    "status": "Offer",
+    "platform": "Greenhouse",
+    "createdAt": "2026-07-08T12:00:00Z",
+    "updatedAt": "2026-10-13T11:57:44.531Z"
+  },
+  {
+    "id": "OjZ1qtgdMCEdGUpe5Hyv",
+    "userId": "glmMEYa2uxR4qqkWLeChIWHEY353",
+    "company": "Netflix",
+    "position": "UI Engineer - Member Experience",
+    "status": "Rejected",
+    "platform": "Referral",
+    "createdAt": "2026-07-09T14:00:00Z",
+    "updatedAt": "2026-10-03T08:19:28.256Z"
+  },
+  {
+    "id": "U9NUUDgJYCHhW6oNlUxl",
+    "userId": "glmMEYa2uxR4qqkWLeChIWHEY353",
+    "company": "Postman",
+    "position": "Senior UI Architect",
+    "status": "Applied",
+    "platform": "LinkedIn",
+    "createdAt": "2026-07-17T16:00:00Z",
+    "updatedAt": "2026-10-03T08:23:30.852Z"
+  },
+  {
+    "id": "WtPn2FdR1B2Eg0UKV1Yh",
+    "userId": "glmMEYa2uxR4qqkWLeChIWHEY353",
+    "company": "Linear",
+    "position": "Senior Frontend Engineer",
+    "status": "Interview",
+    "platform": "Company Site",
+    "createdAt": "2026-07-15T09:00:00Z",
+    "updatedAt": "2026-10-03T12:54:28.947Z"
+  },
+  {
+    "id": "XDD3EdKXZkHrlbXQGlt0",
+    "userId": "glmMEYa2uxR4qqkWLeChIWHEY353",
+    "company": "Spotify",
+    "position": "Senior Web Engineer - Web Player",
+    "status": "Rejected",
+    "platform": "Greenhouse",
+    "createdAt": "2026-07-24T08:00:00Z",
+    "updatedAt": "2026-10-13T11:52:12.838Z"
+  },
+  {
+    "id": "XGcsumuzaSWU4gTzimV3",
+    "userId": "glmMEYa2uxR4qqkWLeChIWHEY353",
+    "company": "Docker",
+    "position": "Senior Web Engineer",
+    "status": "Rejected",
+    "platform": "Indeed",
+    "createdAt": "2026-06-20T15:00:00Z",
+    "updatedAt": "2026-07-02T10:00:00Z"
+  },
+  {
+    "id": "XhZ64vnQfZ6qOTHpMzrY",
+    "userId": "glmMEYa2uxR4qqkWLeChIWHEY353",
+    "company": "Vercel",
+    "position": "UI Platform Engineer",
+    "status": "Screening",
+    "platform": "Otta",
+    "createdAt": "2026-07-18T16:20:00Z",
+    "updatedAt": "2026-09-03T14:57:08.753Z"
+  },
+  {
+    "id": "YlLF3SLYzgJxAq9DwKHb",
+    "userId": "glmMEYa2uxR4qqkWLeChIWHEY353",
+    "company": "Supabase",
+    "position": "Full Stack Engineer (Realtime)",
+    "status": "Screening",
+    "platform": "Lever",
+    "createdAt": "2026-07-20T08:30:00Z",
+    "updatedAt": "2026-10-03T08:27:26.364Z"
+  },
+  {
+    "id": "ca3X724W6oyt6XA5bdKQ",
+    "userId": "glmMEYa2uxR4qqkWLeChIWHEY353",
+    "company": "Notion",
+    "position": "Product Engineer - Editor Team",
+    "status": "Interview",
+    "platform": "Otta",
+    "createdAt": "2026-07-01T14:00:00Z",
+    "updatedAt": "2026-07-16T15:00:00Z"
+  },
+  {
+    "id": "h0eSiWBJcYvAzYsUAhd0",
+    "userId": "glmMEYa2uxR4qqkWLeChIWHEY353",
+    "company": "Retool",
+    "position": "Frontend Engineer - Core Components",
+    "status": "Applied",
+    "platform": "Lever",
+    "createdAt": "2026-07-16T13:00:00Z",
+    "updatedAt": "2026-10-13T12:57:07.311Z"
+  },
+  {
+    "id": "jrEdFFzSFWXC8c2a0fT0",
+    "userId": "glmMEYa2uxR4qqkWLeChIWHEY353",
+    "company": "OpenAI",
+    "position": "Member of Technical Staff - UI",
+    "status": "Rejected",
+    "platform": "Greenhouse",
+    "createdAt": "2026-07-05T14:45:00Z",
+    "updatedAt": "2026-10-03T08:19:23.012Z"
+  },
+  {
+    "id": "lSrsuTwlhU4zuEYU80FN",
+    "userId": "glmMEYa2uxR4qqkWLeChIWHEY353",
+    "company": "Stripe",
+    "position": "Staff Product Engineer",
+    "status": "Offer",
+    "platform": "Referral",
+    "createdAt": "2026-07-10T11:00:00Z",
+    "updatedAt": "2026-09-02T12:14:10.383Z"
+  },
+  {
+    "id": "nIMAgmBnu0YjtmLwZmOu",
+    "userId": "glmMEYa2uxR4qqkWLeChIWHEY353",
+    "company": "Atlassian",
+    "position": "Senior Frontend Engineer - Jira Service",
+    "status": "Archived",
+    "platform": "Company Site",
+    "createdAt": "2026-07-03T09:00:00Z",
+    "updatedAt": "2026-07-15T12:00:00Z"
+  },
+  {
+    "id": "naGGbmF5ZkM5qzDtZmOb",
+    "userId": "glmMEYa2uxR4qqkWLeChIWHEY353",
+    "company": "Vanta",
+    "position": "Staff Frontend Engineer",
+    "status": "Offer",
+    "platform": "Lever",
+    "createdAt": "2026-07-11T12:00:00Z",
+    "updatedAt": "2026-09-03T14:32:09.961Z"
+  },
+  {
+    "id": "qPtTGTqy5EE6rcWPtyQF",
+    "userId": "glmMEYa2uxR4qqkWLeChIWHEY353",
+    "company": "Cigo",
+    "position": "AI Software Engineer (Remote)",
+    "status": "Rejected",
+    "platform": "Bayt",
+    "createdAt": "2026-10-05T07:52:23.263Z",
+    "updatedAt": "2026-10-13T08:51:41.094Z"
+  },
+  {
+    "id": "sS4Jt8HpKOoFY2puxgwx",
+    "userId": "glmMEYa2uxR4qqkWLeChIWHEY353",
+    "company": "Raycast",
+    "position": "Desktop Application Engineer",
+    "status": "Applied",
+    "platform": "Company Site",
+    "createdAt": "2026-07-22T10:00:00Z",
+    "updatedAt": "2026-09-03T14:43:54.397Z"
+  },
+  {
+    "id": "xKH5JlbEFANzGmR0vau8",
+    "userId": "glmMEYa2uxR4qqkWLeChIWHEY353",
+    "company": "GitLab",
+    "position": "Frontend Engineer - CI/CD UX",
+    "status": "Applied",
+    "platform": "Company Site",
+    "createdAt": "2026-07-23T11:20:00Z",
+    "updatedAt": "2026-09-05T10:39:38.041Z"
+  },
+  {
+    "id": "6AS2uG4yVSdBT2HZMohL",
+    "userId": "iPBHCiaYALfmOmFWPfK7siguCrS2",
+    "company": "Arc",
+    "position": "Mobile developer (Flutter, Supabase) - Fulltime - Worldwide",
+    "status": "Archived",
+    "platform": "Arc",
+    "createdAt": "2026-09-30T14:02:45.628Z",
+    "updatedAt": "2026-10-17T07:31:06.886Z"
+  },
+  {
+    "id": "7NaEPlaCPG52cPWNXy5Y",
+    "userId": "iPBHCiaYALfmOmFWPfK7siguCrS2",
+    "company": "Baristo Technologies",
+    "position": "Flutter Developer",
+    "status": "Applied",
+    "platform": "LinkedIn",
+    "createdAt": "2026-09-10T16:49:35.757Z",
+    "updatedAt": "2026-09-20T13:46:39.422Z"
+  },
+  {
+    "id": "B2PxgidEJx0VrcRs4GGL",
+    "userId": "iPBHCiaYALfmOmFWPfK7siguCrS2",
+    "company": "AssetWatch",
+    "position": "Senior Mobile Engineer",
+    "status": "Applied",
+    "platform": "Greenhouse",
+    "createdAt": "2026-09-29T11:14:04.694Z",
+    "updatedAt": "2026-09-29T11:18:54.795Z"
+  },
+  {
+    "id": "D6Z3ZzhHhc80U8fSyH2U",
+    "userId": "iPBHCiaYALfmOmFWPfK7siguCrS2",
+    "company": "Unique Business Solutions (UBS)",
+    "position": "Junior Flutter Developer",
+    "status": "Archived",
+    "platform": "LinkedIn",
+    "createdAt": "2026-08-23T11:48:35.687Z",
+    "updatedAt": "2026-10-14T07:23:38.319Z"
+  },
+  {
+    "id": "GLEicB7wneymfL9hJWXN",
+    "userId": "iPBHCiaYALfmOmFWPfK7siguCrS2",
+    "company": "Plane",
+    "position": "Software Engineer, Mobile (Flutter)",
+    "status": "Applied",
+    "platform": "Ashpy",
+    "createdAt": "2026-09-20T12:53:11.921Z",
+    "updatedAt": "2026-09-28T08:19:55.801Z"
+  },
+  {
+    "id": "HHns5ckB0vuKcjAGnyM3",
+    "userId": "iPBHCiaYALfmOmFWPfK7siguCrS2",
+    "company": "LABHOUSE",
+    "position": "Flutter Developer",
+    "status": "Rejected",
+    "platform": "Other",
+    "createdAt": "2026-09-24T12:53:41.259Z",
+    "updatedAt": "2026-09-30T08:02:03.562Z"
+  },
+  {
+    "id": "MQFFwYuXzyGrtwudyEDg",
+    "userId": "iPBHCiaYALfmOmFWPfK7siguCrS2",
+    "company": "MVP",
+    "position": "Mobile Developer",
+    "status": "Applied",
+    "platform": "LinkedIn",
+    "createdAt": "2026-09-21T11:56:37.373Z",
+    "updatedAt": "2026-09-22T10:57:49.352Z"
+  },
+  {
+    "id": "PnYWbvwgYnoG2L7G9eCc",
+    "userId": "iPBHCiaYALfmOmFWPfK7siguCrS2",
+    "company": "Kalee",
+    "position": "Product Engineer (Mobile)",
+    "status": "Archived",
+    "platform": "LinkedIn",
+    "createdAt": "2026-08-22T09:34:58.639Z",
+    "updatedAt": "2026-10-13T10:48:07.209Z"
+  },
+  {
+    "id": "Z8HOMeDOmpdEik24jeXk",
+    "userId": "iPBHCiaYALfmOmFWPfK7siguCrS2",
+    "company": "Everis",
+    "position": "Mobile Software Engineer, Growth & Experimentation",
+    "status": "Applied",
+    "platform": "Wellfound",
+    "createdAt": "2026-09-19T14:59:09.048Z",
+    "updatedAt": "2026-09-28T09:21:13.963Z"
+  },
+  {
+    "id": "cq03LddHgEZzM05Lu1Hb",
+    "userId": "iPBHCiaYALfmOmFWPfK7siguCrS2",
+    "company": "Neptune Careers",
+    "position": "Flutter Developer",
+    "status": "Applied",
+    "platform": "Company Site",
+    "createdAt": "2026-09-10T15:51:48.750Z",
+    "updatedAt": "2026-09-21T11:12:15.060Z"
+  },
+  {
+    "id": "dlcipW7cTWZIskL85XUN",
+    "userId": "iPBHCiaYALfmOmFWPfK7siguCrS2",
+    "company": "Prime Tech Solutions",
+    "position": "Mid-Level Flutter Developer",
+    "status": "Saved",
+    "platform": "LinkedIn",
+    "createdAt": "2026-09-21T12:02:48.948Z",
+    "updatedAt": "2026-09-21T12:56:00.540Z"
+  },
+  {
+    "id": "ez2SVPVSHgoQApg1uOfl",
+    "userId": "iPBHCiaYALfmOmFWPfK7siguCrS2",
+    "company": "Remote for Saudi Company",
+    "position": "Flutter Developer",
+    "status": "Applied",
+    "platform": "LinkedIn",
+    "createdAt": "2026-10-15T13:26:01.109Z",
+    "updatedAt": "2026-10-15T14:25:45.657Z"
+  },
+  {
+    "id": "htiPcXx3PaOD9NesTkag",
+    "userId": "iPBHCiaYALfmOmFWPfK7siguCrS2",
+    "company": "Mobile App Developer (React native & Flutter) Hiring... | Facebook",
+    "position": "الإشعارات",
+    "status": "Archived",
+    "platform": "Company Site",
+    "createdAt": "2026-09-10T16:54:58.171Z",
+    "updatedAt": "2026-10-13T08:39:39.029Z"
+  },
+  {
+    "id": "qRM3bbfy9fir9Cw2Grdq",
+    "userId": "iPBHCiaYALfmOmFWPfK7siguCrS2",
+    "company": "Supercode",
+    "position": "flutter developer",
+    "status": "Archived",
+    "platform": "Company Site",
+    "createdAt": "2026-08-22T16:07:19.322Z",
+    "updatedAt": "2026-10-13T08:39:47.040Z"
+  },
+  {
+    "id": "toyIJ9YGJ8HHyv9stM9T",
+    "userId": "iPBHCiaYALfmOmFWPfK7siguCrS2",
+    "company": "Tech Revolution",
+    "position": "Flutter developer",
+    "status": "Archived",
+    "platform": "Other",
+    "createdAt": "2026-08-22T09:39:36.486Z",
+    "updatedAt": "2026-10-11T14:31:41.959Z"
+  },
+  {
+    "id": "yAi1MA9xoCB3dHg3ckyu",
+    "userId": "iPBHCiaYALfmOmFWPfK7siguCrS2",
+    "company": "Canonical",
+    "position": "Junior Ubuntu Software Engineer",
+    "status": "Rejected",
+    "platform": "Greenhouse",
+    "createdAt": "2026-09-10T09:23:29.227Z",
+    "updatedAt": "2026-10-14T07:22:33.166Z"
+  },
+  {
+    "id": "0FZw41fvsYkRyHNp2qCq",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Notion",
+    "position": "Product Engineer - Editor Team",
+    "status": "Interview",
+    "platform": "Otta",
+    "createdAt": "2026-07-01T14:00:00Z",
+    "updatedAt": "2026-07-16T15:00:00Z"
+  },
+  {
+    "id": "0tZV47DRsZIHcpRHQvOH",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Atlassian",
+    "position": "Senior Frontend Engineer - Jira Service",
+    "status": "Archived",
+    "platform": "Company Site",
+    "createdAt": "2026-07-03T09:00:00Z",
+    "updatedAt": "2026-07-15T12:00:00Z"
+  },
+  {
+    "id": "1DFNwcX4Kmn9JmzYwFuW",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Datadog",
+    "position": "Senior Software Engineer - APM Dashboards",
+    "status": "Rejected",
+    "platform": "LinkedIn",
+    "createdAt": "2026-06-28T09:00:00Z",
+    "updatedAt": "2026-07-10T12:00:00Z"
+  },
+  {
+    "id": "1gHmrQ5nVbFD5f8YeFbG",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Postman",
+    "position": "Senior UI Architect",
+    "status": "Applied",
+    "platform": "LinkedIn",
+    "createdAt": "2026-07-17T16:00:00Z",
+    "updatedAt": "2026-07-17T16:00:00Z"
+  },
+  {
+    "id": "1pSKjfWA83rYVTmb3Ie5",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Notion",
+    "position": "Product Engineer - Editor Team",
+    "status": "Interview",
+    "platform": "Otta",
+    "createdAt": "2026-07-01T14:00:00Z",
+    "updatedAt": "2026-07-16T15:00:00Z"
+  },
+  {
+    "id": "1qZvlpOOu62n2dIUxZqv",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Vercel",
+    "position": "UI Platform Engineer",
+    "status": "Screening",
+    "platform": "Otta",
+    "createdAt": "2026-07-18T16:20:00Z",
+    "updatedAt": "2026-07-22T14:00:00Z"
+  },
+  {
+    "id": "297NdFQop5rYEDj87qsR",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Anthropic",
+    "position": "Frontend Engineer - Claude Web",
+    "status": "Screening",
+    "platform": "Greenhouse",
+    "createdAt": "2026-07-08T12:00:00Z",
+    "updatedAt": "2026-07-21T16:00:00Z"
+  },
+  {
+    "id": "2Zmx6NoGbF514HRE8CPR",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Stripe",
+    "position": "Staff Product Engineer",
+    "status": "Offer",
+    "platform": "Referral",
+    "createdAt": "2026-07-10T11:00:00Z",
+    "updatedAt": "2026-07-24T15:30:00Z"
+  },
+  {
+    "id": "2ba0WsKQU3bk60riiEGl",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "GitLab",
+    "position": "Frontend Engineer - CI/CD UX",
+    "status": "Applied",
+    "platform": "Company Site",
+    "createdAt": "2026-07-23T11:20:00Z",
+    "updatedAt": "2026-07-23T11:20:00Z"
+  },
+  {
+    "id": "2sQrBgqa2VHGH6Stcmw6",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Atlassian",
+    "position": "Senior Frontend Engineer - Jira Service",
+    "status": "Archived",
+    "platform": "Company Site",
+    "createdAt": "2026-07-03T09:00:00Z",
+    "updatedAt": "2026-07-15T12:00:00Z"
+  },
+  {
+    "id": "2tNRvSClGVnfJmhspxdj",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Netflix",
+    "position": "UI Engineer - Member Experience",
+    "status": "Screening",
+    "platform": "Referral",
+    "createdAt": "2026-07-09T14:00:00Z",
+    "updatedAt": "2026-07-17T11:00:00Z"
+  },
+  {
+    "id": "3MsV3AGm7r5TIoP6awZK",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Atlassian",
+    "position": "Senior Frontend Engineer - Jira Service",
+    "status": "Archived",
+    "platform": "Company Site",
+    "createdAt": "2026-07-03T09:00:00Z",
+    "updatedAt": "2026-07-15T12:00:00Z"
+  },
+  {
+    "id": "4JwO0LyN4nEOecIiYou1",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Slack",
+    "position": "Senior Frontend Engineer - Desktop",
+    "status": "Interview",
+    "platform": "Greenhouse",
+    "createdAt": "2026-07-13T10:00:00Z",
+    "updatedAt": "2026-07-22T09:00:00Z"
+  },
+  {
+    "id": "4lMEMS4HTJ9nS7NtYpwn",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Spotify",
+    "position": "Senior Web Engineer - Web Player",
+    "status": "Applied",
+    "platform": "Greenhouse",
+    "createdAt": "2026-07-24T08:00:00Z",
+    "updatedAt": "2026-07-24T08:00:00Z"
+  },
+  {
+    "id": "59isw6abdwNqsArQo70h",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Slack",
+    "position": "Senior Frontend Engineer - Desktop",
+    "status": "Interview",
+    "platform": "Greenhouse",
+    "createdAt": "2026-07-13T10:00:00Z",
+    "updatedAt": "2026-07-22T09:00:00Z"
+  },
+  {
+    "id": "5wLyy2A47yLUcq10HVJb",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Supabase",
+    "position": "Full Stack Engineer (Realtime)",
+    "status": "Screening",
+    "platform": "Lever",
+    "createdAt": "2026-07-20T08:30:00Z",
+    "updatedAt": "2026-07-23T11:00:00Z"
+  },
+  {
+    "id": "65gIupY3P2jP5NoSdwkH",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Docker",
+    "position": "Senior Web Engineer",
+    "status": "Rejected",
+    "platform": "Indeed",
+    "createdAt": "2026-06-20T15:00:00Z",
+    "updatedAt": "2026-07-02T10:00:00Z"
+  },
+  {
+    "id": "6W6jt3UlyvPWz3wEmwRp",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Vanta",
+    "position": "Staff Frontend Engineer",
+    "status": "Screening",
+    "platform": "Lever",
+    "createdAt": "2026-07-11T12:00:00Z",
+    "updatedAt": "2026-07-18T14:30:00Z"
+  },
+  {
+    "id": "6Y0gc9pHEA53A8ZWVNAU",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Netflix",
+    "position": "UI Engineer - Member Experience",
+    "status": "Screening",
+    "platform": "Referral",
+    "createdAt": "2026-07-09T14:00:00Z",
+    "updatedAt": "2026-07-17T11:00:00Z"
+  },
+  {
+    "id": "6ZjBi0JnCMtmjyxvu8RZ",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Vercel",
+    "position": "UI Platform Engineer",
+    "status": "Screening",
+    "platform": "Otta",
+    "createdAt": "2026-07-18T16:20:00Z",
+    "updatedAt": "2026-07-22T14:00:00Z"
+  },
+  {
+    "id": "6oLgsvKDWwGiEiuvLdDk",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Vanta",
+    "position": "Staff Frontend Engineer",
+    "status": "Screening",
+    "platform": "Lever",
+    "createdAt": "2026-07-11T12:00:00Z",
+    "updatedAt": "2026-07-18T14:30:00Z"
+  },
+  {
+    "id": "73Ibm5qZaIBGhtl6dLTq",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Atlassian",
+    "position": "Senior Frontend Engineer - Jira Service",
+    "status": "Archived",
+    "platform": "Company Site",
+    "createdAt": "2026-07-03T09:00:00Z",
+    "updatedAt": "2026-07-15T12:00:00Z"
+  },
+  {
+    "id": "7qkYp8f0edfVbxb4GD0i",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Figma",
+    "position": "Design Systems Engineer",
+    "status": "Interview",
+    "platform": "LinkedIn",
+    "createdAt": "2026-07-12T13:10:00Z",
+    "updatedAt": "2026-07-21T09:15:00Z"
+  },
+  {
+    "id": "8AVX6AAuU87nZsqQ7NJT",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Stripe",
+    "position": "Staff Product Engineer",
+    "status": "Offer",
+    "platform": "Referral",
+    "createdAt": "2026-07-10T11:00:00Z",
+    "updatedAt": "2026-07-24T15:30:00Z"
+  },
+  {
+    "id": "8YwMZN71yhajZRF0T4Ij",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "GitLab",
+    "position": "Frontend Engineer - CI/CD UX",
+    "status": "Applied",
+    "platform": "Company Site",
+    "createdAt": "2026-07-23T11:20:00Z",
+    "updatedAt": "2026-07-23T11:20:00Z"
+  },
+  {
+    "id": "9667pXHhYtLboxT1Nmfw",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Retool",
+    "position": "Frontend Engineer - Core Components",
+    "status": "Applied",
+    "platform": "Lever",
+    "createdAt": "2026-07-16T13:00:00Z",
+    "updatedAt": "2026-07-16T13:00:00Z"
+  },
+  {
+    "id": "9JqiRGE58uVmWYler4sX",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Ramp",
+    "position": "Product Engineer - Expense Controls",
+    "status": "Applied",
+    "platform": "Otta",
+    "createdAt": "2026-07-19T10:00:00Z",
+    "updatedAt": "2026-07-19T10:00:00Z"
+  },
+  {
+    "id": "9PGB9gnZUNkRCq6szlZO",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Retool",
+    "position": "Frontend Engineer - Core Components",
+    "status": "Applied",
+    "platform": "Lever",
+    "createdAt": "2026-07-16T13:00:00Z",
+    "updatedAt": "2026-07-16T13:00:00Z"
+  },
+  {
+    "id": "A1JdUV5QZLvryxjG8G5a",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "OpenAI",
+    "position": "Member of Technical Staff - UI",
+    "status": "Interview",
+    "platform": "Greenhouse",
+    "createdAt": "2026-07-05T14:45:00Z",
+    "updatedAt": "2026-07-19T18:00:00Z"
+  },
+  {
+    "id": "A8PC0x30JC0Hl970Av3a",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Notion",
+    "position": "Product Engineer - Editor Team",
+    "status": "Interview",
+    "platform": "Otta",
+    "createdAt": "2026-07-01T14:00:00Z",
+    "updatedAt": "2026-07-16T15:00:00Z"
+  },
+  {
+    "id": "ADFV54gAo60eKFQEsmez",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Anthropic",
+    "position": "Frontend Engineer - Claude Web",
+    "status": "Screening",
+    "platform": "Greenhouse",
+    "createdAt": "2026-07-08T12:00:00Z",
+    "updatedAt": "2026-07-21T16:00:00Z"
+  },
+  {
+    "id": "AT1DEgnqYvO2siXRE6QT",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Vercel",
+    "position": "UI Platform Engineer",
+    "status": "Screening",
+    "platform": "Otta",
+    "createdAt": "2026-07-18T16:20:00Z",
+    "updatedAt": "2026-07-22T14:00:00Z"
+  },
+  {
+    "id": "AT5UjVBt8MmKi896Biot",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Figma",
+    "position": "Design Systems Engineer",
+    "status": "Interview",
+    "platform": "LinkedIn",
+    "createdAt": "2026-07-12T13:10:00Z",
+    "updatedAt": "2026-07-21T09:15:00Z"
+  },
+  {
+    "id": "AhNDATg2qBuLF6hBN4cl",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Docker",
+    "position": "Senior Web Engineer",
+    "status": "Rejected",
+    "platform": "Indeed",
+    "createdAt": "2026-06-20T15:00:00Z",
+    "updatedAt": "2026-07-02T10:00:00Z"
+  },
+  {
+    "id": "Av3EQaXu8nfvw9stawq7",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Ramp",
+    "position": "Product Engineer - Expense Controls",
+    "status": "Applied",
+    "platform": "Otta",
+    "createdAt": "2026-07-19T10:00:00Z",
+    "updatedAt": "2026-07-19T10:00:00Z"
+  },
+  {
+    "id": "BZb7foSeawTk9lNsjNTZ",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Vanta",
+    "position": "Staff Frontend Engineer",
+    "status": "Screening",
+    "platform": "Lever",
+    "createdAt": "2026-07-11T12:00:00Z",
+    "updatedAt": "2026-07-18T14:30:00Z"
+  },
+  {
+    "id": "C4vNicaMutcgZTBJP7aW",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Figma",
+    "position": "Design Systems Engineer",
+    "status": "Interview",
+    "platform": "LinkedIn",
+    "createdAt": "2026-07-12T13:10:00Z",
+    "updatedAt": "2026-07-21T09:15:00Z"
+  },
+  {
+    "id": "Cm0tetVogNfXiImhyfXd",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Supabase",
+    "position": "Full Stack Engineer (Realtime)",
+    "status": "Screening",
+    "platform": "Lever",
+    "createdAt": "2026-07-20T08:30:00Z",
+    "updatedAt": "2026-07-23T11:00:00Z"
+  },
+  {
+    "id": "DCVk4RcUaor3yIjKQ3AL",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Atlassian",
+    "position": "Senior Frontend Engineer - Jira Service",
+    "status": "Archived",
+    "platform": "Company Site",
+    "createdAt": "2026-07-03T09:00:00Z",
+    "updatedAt": "2026-07-15T12:00:00Z"
+  },
+  {
+    "id": "DGAhUnb9pXFDTDa2pH1p",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Postman",
+    "position": "Senior UI Architect",
+    "status": "Applied",
+    "platform": "LinkedIn",
+    "createdAt": "2026-07-17T16:00:00Z",
+    "updatedAt": "2026-07-17T16:00:00Z"
+  },
+  {
+    "id": "DVLbhGsBDwmuV3g0xJUr",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Cloudflare",
+    "position": "Systems & UI Developer",
+    "status": "Applied",
+    "platform": "LinkedIn",
+    "createdAt": "2026-07-21T17:00:00Z",
+    "updatedAt": "2026-07-21T17:00:00Z"
+  },
+  {
+    "id": "DYEniiqBwRxPuaGBUGjW",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "OpenAI",
+    "position": "Member of Technical Staff - UI",
+    "status": "Interview",
+    "platform": "Greenhouse",
+    "createdAt": "2026-07-05T14:45:00Z",
+    "updatedAt": "2026-07-19T18:00:00Z"
+  },
+  {
+    "id": "DgmheWVnsnOfDmuefmnn",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Atlassian",
+    "position": "Senior Frontend Engineer - Jira Service",
+    "status": "Archived",
+    "platform": "Company Site",
+    "createdAt": "2026-07-03T09:00:00Z",
+    "updatedAt": "2026-07-15T12:00:00Z"
+  },
+  {
+    "id": "DoSpeQlVPNNSgwR2Exgi",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Cloudflare",
+    "position": "Systems & UI Developer",
+    "status": "Applied",
+    "platform": "LinkedIn",
+    "createdAt": "2026-07-21T17:00:00Z",
+    "updatedAt": "2026-07-21T17:00:00Z"
+  },
+  {
+    "id": "E3tfIMbgsfcYkO2ZEJkQ",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Supabase",
+    "position": "Full Stack Engineer (Realtime)",
+    "status": "Screening",
+    "platform": "Lever",
+    "createdAt": "2026-07-20T08:30:00Z",
+    "updatedAt": "2026-07-23T11:00:00Z"
+  },
+  {
+    "id": "FSWfdSszZOuvV0Uq5FUO",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Spotify",
+    "position": "Senior Web Engineer - Web Player",
+    "status": "Applied",
+    "platform": "Greenhouse",
+    "createdAt": "2026-07-24T08:00:00Z",
+    "updatedAt": "2026-07-24T08:00:00Z"
+  },
+  {
+    "id": "Fm9lNrHbHU60Vx8o54NC",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Spotify",
+    "position": "Senior Web Engineer - Web Player",
+    "status": "Applied",
+    "platform": "Greenhouse",
+    "createdAt": "2026-07-24T08:00:00Z",
+    "updatedAt": "2026-07-24T08:00:00Z"
+  },
+  {
+    "id": "HGpQgaBukDJ0PHSEZWpN",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Cloudflare",
+    "position": "Systems & UI Developer",
+    "status": "Applied",
+    "platform": "LinkedIn",
+    "createdAt": "2026-07-21T17:00:00Z",
+    "updatedAt": "2026-07-21T17:00:00Z"
+  },
+  {
+    "id": "HN5BTJGUHel9JR3OFJys",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Retool",
+    "position": "Frontend Engineer - Core Components",
+    "status": "Applied",
+    "platform": "Lever",
+    "createdAt": "2026-07-16T13:00:00Z",
+    "updatedAt": "2026-07-16T13:00:00Z"
+  },
+  {
+    "id": "Hfhow32lzmFL86MFU1jW",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Stripe",
+    "position": "Staff Product Engineer",
+    "status": "Offer",
+    "platform": "Referral",
+    "createdAt": "2026-07-10T11:00:00Z",
+    "updatedAt": "2026-07-24T15:30:00Z"
+  },
+  {
+    "id": "Hl0zFbzG7tAhKGgNVTyN",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Shopify",
+    "position": "Senior Developer - Checkout Experience",
+    "status": "Archived",
+    "platform": "Company Site",
+    "createdAt": "2026-06-25T11:00:00Z",
+    "updatedAt": "2026-07-05T09:00:00Z"
+  },
+  {
+    "id": "HrjfuS3l8CNqoUQUq9Eq",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Linear",
+    "position": "Senior Frontend Engineer",
+    "status": "Interview",
+    "platform": "Company Site",
+    "createdAt": "2026-07-15T09:00:00Z",
+    "updatedAt": "2026-07-20T10:00:00Z"
+  },
+  {
+    "id": "IEbrmKBXk4z52ghQcyhY",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Cloudflare",
+    "position": "Systems & UI Developer",
+    "status": "Applied",
+    "platform": "LinkedIn",
+    "createdAt": "2026-07-21T17:00:00Z",
+    "updatedAt": "2026-07-21T17:00:00Z"
+  },
+  {
+    "id": "IKIuD3MHL7O3XTm7KXC7",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Vercel",
+    "position": "UI Platform Engineer",
+    "status": "Screening",
+    "platform": "Otta",
+    "createdAt": "2026-07-18T16:20:00Z",
+    "updatedAt": "2026-07-22T14:00:00Z"
+  },
+  {
+    "id": "ISQ1qWRKEpT8Csca6OGY",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "GitLab",
+    "position": "Frontend Engineer - CI/CD UX",
+    "status": "Applied",
+    "platform": "Company Site",
+    "createdAt": "2026-07-23T11:20:00Z",
+    "updatedAt": "2026-07-23T11:20:00Z"
+  },
+  {
+    "id": "IiRbMNoqVvepQi8Qr3H9",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Retool",
+    "position": "Frontend Engineer - Core Components",
+    "status": "Applied",
+    "platform": "Lever",
+    "createdAt": "2026-07-16T13:00:00Z",
+    "updatedAt": "2026-07-16T13:00:00Z"
+  },
+  {
+    "id": "Ixh9mMhthoN6Vb1fanbM",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Netflix",
+    "position": "UI Engineer - Member Experience",
+    "status": "Screening",
+    "platform": "Referral",
+    "createdAt": "2026-07-09T14:00:00Z",
+    "updatedAt": "2026-07-17T11:00:00Z"
+  },
+  {
+    "id": "JQsr6fQNR96WPQiN9ncy",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Raycast",
+    "position": "Desktop Application Engineer",
+    "status": "Applied",
+    "platform": "Company Site",
+    "createdAt": "2026-07-22T10:00:00Z",
+    "updatedAt": "2026-07-22T10:00:00Z"
+  },
+  {
+    "id": "JR2NK7TXa5OQcQy4hRAd",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Stripe",
+    "position": "Staff Product Engineer",
+    "status": "Offer",
+    "platform": "Referral",
+    "createdAt": "2026-07-10T11:00:00Z",
+    "updatedAt": "2026-07-24T15:30:00Z"
+  },
+  {
+    "id": "JYjjhx9V9aqKiJT0Jrtq",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Shopify",
+    "position": "Senior Developer - Checkout Experience",
+    "status": "Archived",
+    "platform": "Company Site",
+    "createdAt": "2026-06-25T11:00:00Z",
+    "updatedAt": "2026-07-05T09:00:00Z"
+  },
+  {
+    "id": "Jd6aeD6UtT7ovt4Pw9FW",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "OpenAI",
+    "position": "Member of Technical Staff - UI",
+    "status": "Interview",
+    "platform": "Greenhouse",
+    "createdAt": "2026-07-05T14:45:00Z",
+    "updatedAt": "2026-07-19T18:00:00Z"
+  },
+  {
+    "id": "JxkfcPlPrRn5Zp16tijN",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Figma",
+    "position": "Design Systems Engineer",
+    "status": "Interview",
+    "platform": "LinkedIn",
+    "createdAt": "2026-07-12T13:10:00Z",
+    "updatedAt": "2026-07-21T09:15:00Z"
+  },
+  {
+    "id": "KAyyIy6Xe5ZPCZYpLKGh",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Raycast",
+    "position": "Desktop Application Engineer",
+    "status": "Applied",
+    "platform": "Company Site",
+    "createdAt": "2026-07-22T10:00:00Z",
+    "updatedAt": "2026-07-22T10:00:00Z"
+  },
+  {
+    "id": "KJww5ryznVPjZwlgJXUS",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Figma",
+    "position": "Design Systems Engineer",
+    "status": "Interview",
+    "platform": "LinkedIn",
+    "createdAt": "2026-07-12T13:10:00Z",
+    "updatedAt": "2026-07-21T09:15:00Z"
+  },
+  {
+    "id": "Kixg8ikzzR7uxY0mWcbh",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Datadog",
+    "position": "Senior Software Engineer - APM Dashboards",
+    "status": "Rejected",
+    "platform": "LinkedIn",
+    "createdAt": "2026-06-28T09:00:00Z",
+    "updatedAt": "2026-07-10T12:00:00Z"
+  },
+  {
+    "id": "Knk0ueacdHUu8DLX83qb",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Postman",
+    "position": "Senior UI Architect",
+    "status": "Applied",
+    "platform": "LinkedIn",
+    "createdAt": "2026-07-17T16:00:00Z",
+    "updatedAt": "2026-07-17T16:00:00Z"
+  },
+  {
+    "id": "KsuG3cHqjHvRiKCfKzu5",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Linear",
+    "position": "Senior Frontend Engineer",
+    "status": "Interview",
+    "platform": "Company Site",
+    "createdAt": "2026-07-15T09:00:00Z",
+    "updatedAt": "2026-07-20T10:00:00Z"
+  },
+  {
+    "id": "LKxyz2gUUihtoFWWLegf",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "OpenAI",
+    "position": "Member of Technical Staff - UI",
+    "status": "Interview",
+    "platform": "Greenhouse",
+    "createdAt": "2026-07-05T14:45:00Z",
+    "updatedAt": "2026-07-19T18:00:00Z"
+  },
+  {
+    "id": "LOsnkLLGqcPOi4cx7JkL",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Vanta",
+    "position": "Staff Frontend Engineer",
+    "status": "Screening",
+    "platform": "Lever",
+    "createdAt": "2026-07-11T12:00:00Z",
+    "updatedAt": "2026-07-18T14:30:00Z"
+  },
+  {
+    "id": "MLBfXs54MwbGifCZiMT1",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Anthropic",
+    "position": "Frontend Engineer - Claude Web",
+    "status": "Screening",
+    "platform": "Greenhouse",
+    "createdAt": "2026-07-08T12:00:00Z",
+    "updatedAt": "2026-07-21T16:00:00Z"
+  },
+  {
+    "id": "MePYq5YM6uEV5DJy2xKP",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Slack",
+    "position": "Senior Frontend Engineer - Desktop",
+    "status": "Interview",
+    "platform": "Greenhouse",
+    "createdAt": "2026-07-13T10:00:00Z",
+    "updatedAt": "2026-07-22T09:00:00Z"
+  },
+  {
+    "id": "MlLp3Ihwi47ga4dQa0kn",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Spotify",
+    "position": "Senior Web Engineer - Web Player",
+    "status": "Applied",
+    "platform": "Greenhouse",
+    "createdAt": "2026-07-24T08:00:00Z",
+    "updatedAt": "2026-07-24T08:00:00Z"
+  },
+  {
+    "id": "MzqkuRMJj17G5xMGLEvj",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "GitLab",
+    "position": "Frontend Engineer - CI/CD UX",
+    "status": "Applied",
+    "platform": "Company Site",
+    "createdAt": "2026-07-23T11:20:00Z",
+    "updatedAt": "2026-07-23T11:20:00Z"
+  },
+  {
+    "id": "NKPscmWVcINuHWSxN4kt",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "GitLab",
+    "position": "Frontend Engineer - CI/CD UX",
+    "status": "Applied",
+    "platform": "Company Site",
+    "createdAt": "2026-07-23T11:20:00Z",
+    "updatedAt": "2026-07-23T11:20:00Z"
+  },
+  {
+    "id": "OeZ6QRTxWt043GghYzjj",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Ramp",
+    "position": "Product Engineer - Expense Controls",
+    "status": "Applied",
+    "platform": "Otta",
+    "createdAt": "2026-07-19T10:00:00Z",
+    "updatedAt": "2026-07-19T10:00:00Z"
+  },
+  {
+    "id": "P0bWMqw2NVCUi9zhdeOS",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Anthropic",
+    "position": "Frontend Engineer - Claude Web",
+    "status": "Screening",
+    "platform": "Greenhouse",
+    "createdAt": "2026-07-08T12:00:00Z",
+    "updatedAt": "2026-07-21T16:00:00Z"
+  },
+  {
+    "id": "PgPk9u5wkUwrFAeSBaC4",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "GitHub",
+    "position": "Senior Frontend Developer - Actions UI",
+    "status": "Offer",
+    "platform": "Referral",
+    "createdAt": "2026-07-14T10:30:00Z",
+    "updatedAt": "2026-07-25T11:00:00Z"
+  },
+  {
+    "id": "PhGA6kOcdBEJrKxW56Sb",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "GitHub",
+    "position": "Senior Frontend Developer - Actions UI",
+    "status": "Offer",
+    "platform": "Referral",
+    "createdAt": "2026-07-14T10:30:00Z",
+    "updatedAt": "2026-07-25T11:00:00Z"
+  },
+  {
+    "id": "QAZQuR4LGOqlyzd0cLWo",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Anthropic",
+    "position": "Frontend Engineer - Claude Web",
+    "status": "Screening",
+    "platform": "Greenhouse",
+    "createdAt": "2026-07-08T12:00:00Z",
+    "updatedAt": "2026-07-21T16:00:00Z"
+  },
+  {
+    "id": "QKP8ppcb181xuZ58Mnn6",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Stripe",
+    "position": "Staff Product Engineer",
+    "status": "Offer",
+    "platform": "Referral",
+    "createdAt": "2026-07-10T11:00:00Z",
+    "updatedAt": "2026-07-24T15:30:00Z"
+  },
+  {
+    "id": "QdeRpIu49uv4OkrUKClv",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Notion",
+    "position": "Product Engineer - Editor Team",
+    "status": "Interview",
+    "platform": "Otta",
+    "createdAt": "2026-07-01T14:00:00Z",
+    "updatedAt": "2026-07-16T15:00:00Z"
+  },
+  {
+    "id": "ReDhBdzlByXEUitrr2bN",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Datadog",
+    "position": "Senior Software Engineer - APM Dashboards",
+    "status": "Rejected",
+    "platform": "LinkedIn",
+    "createdAt": "2026-06-28T09:00:00Z",
+    "updatedAt": "2026-07-10T12:00:00Z"
+  },
+  {
+    "id": "RfXYDsLHyFPMvo13Ux91",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Figma",
+    "position": "Design Systems Engineer",
+    "status": "Interview",
+    "platform": "LinkedIn",
+    "createdAt": "2026-07-12T13:10:00Z",
+    "updatedAt": "2026-07-21T09:15:00Z"
+  },
+  {
+    "id": "RykRK1x8cRNYjscAzylz",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Notion",
+    "position": "Product Engineer - Editor Team",
+    "status": "Interview",
+    "platform": "Otta",
+    "createdAt": "2026-07-01T14:00:00Z",
+    "updatedAt": "2026-07-16T15:00:00Z"
+  },
+  {
+    "id": "S1m0xosc420Yfg7f0PaZ",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "GitHub",
+    "position": "Senior Frontend Developer - Actions UI",
+    "status": "Offer",
+    "platform": "Referral",
+    "createdAt": "2026-07-14T10:30:00Z",
+    "updatedAt": "2026-07-25T11:00:00Z"
+  },
+  {
+    "id": "SGk5UU82zFSP6tzqte6F",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Ramp",
+    "position": "Product Engineer - Expense Controls",
+    "status": "Applied",
+    "platform": "Otta",
+    "createdAt": "2026-07-19T10:00:00Z",
+    "updatedAt": "2026-07-19T10:00:00Z"
+  },
+  {
+    "id": "SVzqSJZCMkmmGT5oIJUu",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "GitLab",
+    "position": "Frontend Engineer - CI/CD UX",
+    "status": "Applied",
+    "platform": "Company Site",
+    "createdAt": "2026-07-23T11:20:00Z",
+    "updatedAt": "2026-07-23T11:20:00Z"
+  },
+  {
+    "id": "SdaGSfB0mjlSCNZqHlvI",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Raycast",
+    "position": "Desktop Application Engineer",
+    "status": "Applied",
+    "platform": "Company Site",
+    "createdAt": "2026-07-22T10:00:00Z",
+    "updatedAt": "2026-07-22T10:00:00Z"
+  },
+  {
+    "id": "T398XRQcSwfWrA57JGYE",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Vanta",
+    "position": "Staff Frontend Engineer",
+    "status": "Screening",
+    "platform": "Lever",
+    "createdAt": "2026-07-11T12:00:00Z",
+    "updatedAt": "2026-07-18T14:30:00Z"
+  },
+  {
+    "id": "TI4WNAHJoGmyqZXinTnu",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Shopify",
+    "position": "Senior Developer - Checkout Experience",
+    "status": "Archived",
+    "platform": "Company Site",
+    "createdAt": "2026-06-25T11:00:00Z",
+    "updatedAt": "2026-07-05T09:00:00Z"
+  },
+  {
+    "id": "TM25Gvwd7iPP7NTDJdmN",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Vercel",
+    "position": "UI Platform Engineer",
+    "status": "Screening",
+    "platform": "Otta",
+    "createdAt": "2026-07-18T16:20:00Z",
+    "updatedAt": "2026-07-22T14:00:00Z"
+  },
+  {
+    "id": "TjblrjPjnIdhsK2tF3DA",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Netflix",
+    "position": "UI Engineer - Member Experience",
+    "status": "Screening",
+    "platform": "Referral",
+    "createdAt": "2026-07-09T14:00:00Z",
+    "updatedAt": "2026-07-17T11:00:00Z"
+  },
+  {
+    "id": "U6xb1vKSo3FFMCV2THmh",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Vanta",
+    "position": "Staff Frontend Engineer",
+    "status": "Screening",
+    "platform": "Lever",
+    "createdAt": "2026-07-11T12:00:00Z",
+    "updatedAt": "2026-07-18T14:30:00Z"
+  },
+  {
+    "id": "UFkXYi83u4sP7c88daYR",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Netflix",
+    "position": "UI Engineer - Member Experience",
+    "status": "Screening",
+    "platform": "Referral",
+    "createdAt": "2026-07-09T14:00:00Z",
+    "updatedAt": "2026-07-17T11:00:00Z"
+  },
+  {
+    "id": "UOu94jxkEqhbja6rDWoz",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Datadog",
+    "position": "Senior Software Engineer - APM Dashboards",
+    "status": "Rejected",
+    "platform": "LinkedIn",
+    "createdAt": "2026-06-28T09:00:00Z",
+    "updatedAt": "2026-07-10T12:00:00Z"
+  },
+  {
+    "id": "VmNfqEEX66gNyZejem5y",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Stripe",
+    "position": "Staff Product Engineer",
+    "status": "Offer",
+    "platform": "Referral",
+    "createdAt": "2026-07-10T11:00:00Z",
+    "updatedAt": "2026-07-24T15:30:00Z"
+  },
+  {
+    "id": "W2YfRYzg4MHlRPQvvfOd",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Vercel",
+    "position": "UI Platform Engineer",
+    "status": "Screening",
+    "platform": "Otta",
+    "createdAt": "2026-07-18T16:20:00Z",
+    "updatedAt": "2026-07-22T14:00:00Z"
+  },
+  {
+    "id": "WScYRkBm5y5TwiyOGWmu",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Shopify",
+    "position": "Senior Developer - Checkout Experience",
+    "status": "Archived",
+    "platform": "Company Site",
+    "createdAt": "2026-06-25T11:00:00Z",
+    "updatedAt": "2026-07-05T09:00:00Z"
+  },
+  {
+    "id": "WY7lOr7d44R5XpwVqQ7N",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Datadog",
+    "position": "Senior Software Engineer - APM Dashboards",
+    "status": "Rejected",
+    "platform": "LinkedIn",
+    "createdAt": "2026-06-28T09:00:00Z",
+    "updatedAt": "2026-07-10T12:00:00Z"
+  },
+  {
+    "id": "WYk8XnVgk18yaNmR3MpM",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Anthropic",
+    "position": "Frontend Engineer - Claude Web",
+    "status": "Screening",
+    "platform": "Greenhouse",
+    "createdAt": "2026-07-08T12:00:00Z",
+    "updatedAt": "2026-07-21T16:00:00Z"
+  },
+  {
+    "id": "XciFv2dsdx3Hn1nRcZJT",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Postman",
+    "position": "Senior UI Architect",
+    "status": "Applied",
+    "platform": "LinkedIn",
+    "createdAt": "2026-07-17T16:00:00Z",
+    "updatedAt": "2026-07-17T16:00:00Z"
+  },
+  {
+    "id": "Xnip6cjaRk7T9KqUEQnO",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Vanta",
+    "position": "Staff Frontend Engineer",
+    "status": "Screening",
+    "platform": "Lever",
+    "createdAt": "2026-07-11T12:00:00Z",
+    "updatedAt": "2026-07-18T14:30:00Z"
+  },
+  {
+    "id": "YDspK9IIPCcNSuWrsoPR",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Supabase",
+    "position": "Full Stack Engineer (Realtime)",
+    "status": "Screening",
+    "platform": "Lever",
+    "createdAt": "2026-07-20T08:30:00Z",
+    "updatedAt": "2026-07-23T11:00:00Z"
+  },
+  {
+    "id": "YLfwjQMnUhX7XyY0bXZu",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Raycast",
+    "position": "Desktop Application Engineer",
+    "status": "Applied",
+    "platform": "Company Site",
+    "createdAt": "2026-07-22T10:00:00Z",
+    "updatedAt": "2026-07-22T10:00:00Z"
+  },
+  {
+    "id": "YZaV2zRGlV432F8w14Qd",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Postman",
+    "position": "Senior UI Architect",
+    "status": "Applied",
+    "platform": "LinkedIn",
+    "createdAt": "2026-07-17T16:00:00Z",
+    "updatedAt": "2026-07-17T16:00:00Z"
+  },
+  {
+    "id": "YmFsuTi9qE1AouPtGuCq",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "GitLab",
+    "position": "Frontend Engineer - CI/CD UX",
+    "status": "Applied",
+    "platform": "Company Site",
+    "createdAt": "2026-07-23T11:20:00Z",
+    "updatedAt": "2026-07-23T11:20:00Z"
+  },
+  {
+    "id": "ZCk0cJwijO9mlAZuzI1M",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Shopify",
+    "position": "Senior Developer - Checkout Experience",
+    "status": "Archived",
+    "platform": "Company Site",
+    "createdAt": "2026-06-25T11:00:00Z",
+    "updatedAt": "2026-07-05T09:00:00Z"
+  },
+  {
+    "id": "ZRPohvSsNcENhJ9tw7II",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Linear",
+    "position": "Senior Frontend Engineer",
+    "status": "Interview",
+    "platform": "Company Site",
+    "createdAt": "2026-07-15T09:00:00Z",
+    "updatedAt": "2026-07-20T10:00:00Z"
+  },
+  {
+    "id": "ZkGWbUA8P21Cj9ge3z0u",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Ramp",
+    "position": "Product Engineer - Expense Controls",
+    "status": "Applied",
+    "platform": "Otta",
+    "createdAt": "2026-07-19T10:00:00Z",
+    "updatedAt": "2026-07-19T10:00:00Z"
+  },
+  {
+    "id": "ZkeCDRVsMoQmtk180Tfe",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Vanta",
+    "position": "Staff Frontend Engineer",
+    "status": "Screening",
+    "platform": "Lever",
+    "createdAt": "2026-07-11T12:00:00Z",
+    "updatedAt": "2026-07-18T14:30:00Z"
+  },
+  {
+    "id": "a2IS88aiAdV4CIhFYeXX",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Netflix",
+    "position": "UI Engineer - Member Experience",
+    "status": "Screening",
+    "platform": "Referral",
+    "createdAt": "2026-07-09T14:00:00Z",
+    "updatedAt": "2026-07-17T11:00:00Z"
+  },
+  {
+    "id": "a2p21S7FE81GgXrQMyTo",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Cloudflare",
+    "position": "Systems & UI Developer",
+    "status": "Applied",
+    "platform": "LinkedIn",
+    "createdAt": "2026-07-21T17:00:00Z",
+    "updatedAt": "2026-07-21T17:00:00Z"
+  },
+  {
+    "id": "aOgzFoVXXScpwI7SP2nZ",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Ramp",
+    "position": "Product Engineer - Expense Controls",
+    "status": "Applied",
+    "platform": "Otta",
+    "createdAt": "2026-07-19T10:00:00Z",
+    "updatedAt": "2026-07-19T10:00:00Z"
+  },
+  {
+    "id": "arNzdk5JCgOzGSulq04j",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Raycast",
+    "position": "Desktop Application Engineer",
+    "status": "Applied",
+    "platform": "Company Site",
+    "createdAt": "2026-07-22T10:00:00Z",
+    "updatedAt": "2026-07-22T10:00:00Z"
+  },
+  {
+    "id": "axp3g7HYxGyI4NxXvnj8",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Slack",
+    "position": "Senior Frontend Engineer - Desktop",
+    "status": "Interview",
+    "platform": "Greenhouse",
+    "createdAt": "2026-07-13T10:00:00Z",
+    "updatedAt": "2026-07-22T09:00:00Z"
+  },
+  {
+    "id": "b9OYXtyL5M1pNcVHbRid",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Supabase",
+    "position": "Full Stack Engineer (Realtime)",
+    "status": "Screening",
+    "platform": "Lever",
+    "createdAt": "2026-07-20T08:30:00Z",
+    "updatedAt": "2026-07-23T11:00:00Z"
+  },
+  {
+    "id": "bzAYKDoJ4H09PA5Se0zk",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Cloudflare",
+    "position": "Systems & UI Developer",
+    "status": "Applied",
+    "platform": "LinkedIn",
+    "createdAt": "2026-07-21T17:00:00Z",
+    "updatedAt": "2026-07-21T17:00:00Z"
+  },
+  {
+    "id": "cMPpJoHnvC9E8BRZEjHg",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Postman",
+    "position": "Senior UI Architect",
+    "status": "Applied",
+    "platform": "LinkedIn",
+    "createdAt": "2026-07-17T16:00:00Z",
+    "updatedAt": "2026-07-17T16:00:00Z"
+  },
+  {
+    "id": "cR5l2vw6E9Tecz0PKUqg",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Anthropic",
+    "position": "Frontend Engineer - Claude Web",
+    "status": "Screening",
+    "platform": "Greenhouse",
+    "createdAt": "2026-07-08T12:00:00Z",
+    "updatedAt": "2026-07-21T16:00:00Z"
+  },
+  {
+    "id": "cdHEUN1Mo6NtXz2uWozy",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Ramp",
+    "position": "Product Engineer - Expense Controls",
+    "status": "Applied",
+    "platform": "Otta",
+    "createdAt": "2026-07-19T10:00:00Z",
+    "updatedAt": "2026-07-19T10:00:00Z"
+  },
+  {
+    "id": "d6Dx3lKkcBnArO9w2qJs",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Cloudflare",
+    "position": "Systems & UI Developer",
+    "status": "Applied",
+    "platform": "LinkedIn",
+    "createdAt": "2026-07-21T17:00:00Z",
+    "updatedAt": "2026-07-21T17:00:00Z"
+  },
+  {
+    "id": "dBnJ2UT8MBYlFoOd7v46",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Spotify",
+    "position": "Senior Web Engineer - Web Player",
+    "status": "Applied",
+    "platform": "Greenhouse",
+    "createdAt": "2026-07-24T08:00:00Z",
+    "updatedAt": "2026-07-24T08:00:00Z"
+  },
+  {
+    "id": "ddbB2gfnTCg8PGhGvYoe",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Supabase",
+    "position": "Full Stack Engineer (Realtime)",
+    "status": "Screening",
+    "platform": "Lever",
+    "createdAt": "2026-07-20T08:30:00Z",
+    "updatedAt": "2026-07-23T11:00:00Z"
+  },
+  {
+    "id": "did6VWdvYvifjzHzbePw",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Spotify",
+    "position": "Senior Web Engineer - Web Player",
+    "status": "Applied",
+    "platform": "Greenhouse",
+    "createdAt": "2026-07-24T08:00:00Z",
+    "updatedAt": "2026-07-24T08:00:00Z"
+  },
+  {
+    "id": "e7B87x0ELkIxYZkLF6aY",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Slack",
+    "position": "Senior Frontend Engineer - Desktop",
+    "status": "Interview",
+    "platform": "Greenhouse",
+    "createdAt": "2026-07-13T10:00:00Z",
+    "updatedAt": "2026-07-22T09:00:00Z"
+  },
+  {
+    "id": "eCp8XF9BOVGYJjJEv0XZ",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Supabase",
+    "position": "Full Stack Engineer (Realtime)",
+    "status": "Screening",
+    "platform": "Lever",
+    "createdAt": "2026-07-20T08:30:00Z",
+    "updatedAt": "2026-07-23T11:00:00Z"
+  },
+  {
+    "id": "eHibRCpjIG8s8Cj2c2om",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Raycast",
+    "position": "Desktop Application Engineer",
+    "status": "Applied",
+    "platform": "Company Site",
+    "createdAt": "2026-07-22T10:00:00Z",
+    "updatedAt": "2026-07-22T10:00:00Z"
+  },
+  {
+    "id": "eVoqmsOHdBGuCbjXMZu3",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Datadog",
+    "position": "Senior Software Engineer - APM Dashboards",
+    "status": "Rejected",
+    "platform": "LinkedIn",
+    "createdAt": "2026-06-28T09:00:00Z",
+    "updatedAt": "2026-07-10T12:00:00Z"
+  },
+  {
+    "id": "era1dIeL7pOyjvTJYPMb",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Docker",
+    "position": "Senior Web Engineer",
+    "status": "Rejected",
+    "platform": "Indeed",
+    "createdAt": "2026-06-20T15:00:00Z",
+    "updatedAt": "2026-07-02T10:00:00Z"
+  },
+  {
+    "id": "ewC5VD9k4DdIXnOx5B0j",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Atlassian",
+    "position": "Senior Frontend Engineer - Jira Service",
+    "status": "Archived",
+    "platform": "Company Site",
+    "createdAt": "2026-07-03T09:00:00Z",
+    "updatedAt": "2026-07-15T12:00:00Z"
+  },
+  {
+    "id": "fBwFBojHMSDEUXywjoy0",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Vercel",
+    "position": "UI Platform Engineer",
+    "status": "Screening",
+    "platform": "Otta",
+    "createdAt": "2026-07-18T16:20:00Z",
+    "updatedAt": "2026-07-22T14:00:00Z"
+  },
+  {
+    "id": "fh7XfjvJlriQAD0pxXZP",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Linear",
+    "position": "Senior Frontend Engineer",
+    "status": "Interview",
+    "platform": "Company Site",
+    "createdAt": "2026-07-15T09:00:00Z",
+    "updatedAt": "2026-07-20T10:00:00Z"
+  },
+  {
+    "id": "fpb0GjbRM2cB7EhuAlhE",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Spotify",
+    "position": "Senior Web Engineer - Web Player",
+    "status": "Applied",
+    "platform": "Greenhouse",
+    "createdAt": "2026-07-24T08:00:00Z",
+    "updatedAt": "2026-07-24T08:00:00Z"
+  },
+  {
+    "id": "fqbIurMeNINrWqPJtBYc",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Notion",
+    "position": "Product Engineer - Editor Team",
+    "status": "Interview",
+    "platform": "Otta",
+    "createdAt": "2026-07-01T14:00:00Z",
+    "updatedAt": "2026-07-16T15:00:00Z"
+  },
+  {
+    "id": "g8hSan0m0y1Hqgt3NBhu",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Postman",
+    "position": "Senior UI Architect",
+    "status": "Applied",
+    "platform": "LinkedIn",
+    "createdAt": "2026-07-17T16:00:00Z",
+    "updatedAt": "2026-07-17T16:00:00Z"
+  },
+  {
+    "id": "gVzXKsW8IwAHIEbXDaF9",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Slack",
+    "position": "Senior Frontend Engineer - Desktop",
+    "status": "Interview",
+    "platform": "Greenhouse",
+    "createdAt": "2026-07-13T10:00:00Z",
+    "updatedAt": "2026-07-22T09:00:00Z"
+  },
+  {
+    "id": "gWtWkWeEK3gAQyKxs059",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Raycast",
+    "position": "Desktop Application Engineer",
+    "status": "Applied",
+    "platform": "Company Site",
+    "createdAt": "2026-07-22T10:00:00Z",
+    "updatedAt": "2026-07-22T10:00:00Z"
+  },
+  {
+    "id": "gXV8C6N80WCaLWT5S2I4",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Netflix",
+    "position": "UI Engineer - Member Experience",
+    "status": "Screening",
+    "platform": "Referral",
+    "createdAt": "2026-07-09T14:00:00Z",
+    "updatedAt": "2026-07-17T11:00:00Z"
+  },
+  {
+    "id": "ggS9AeCMuiBSNGS3eyFV",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "GitHub",
+    "position": "Senior Frontend Developer - Actions UI",
+    "status": "Offer",
+    "platform": "Referral",
+    "createdAt": "2026-07-14T10:30:00Z",
+    "updatedAt": "2026-07-25T11:00:00Z"
+  },
+  {
+    "id": "gmcoBnrcThYbZM7M5oJr",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Raycast",
+    "position": "Desktop Application Engineer",
+    "status": "Applied",
+    "platform": "Company Site",
+    "createdAt": "2026-07-22T10:00:00Z",
+    "updatedAt": "2026-07-22T10:00:00Z"
+  },
+  {
+    "id": "hK0qkeyBaVyyNmxH4fjl",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Slack",
+    "position": "Senior Frontend Engineer - Desktop",
+    "status": "Interview",
+    "platform": "Greenhouse",
+    "createdAt": "2026-07-13T10:00:00Z",
+    "updatedAt": "2026-07-22T09:00:00Z"
+  },
+  {
+    "id": "hVuqf5fqwBYjUdoWieOy",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Atlassian",
+    "position": "Senior Frontend Engineer - Jira Service",
+    "status": "Archived",
+    "platform": "Company Site",
+    "createdAt": "2026-07-03T09:00:00Z",
+    "updatedAt": "2026-07-15T12:00:00Z"
+  },
+  {
+    "id": "i3VSXqBifZukkAdKT8M9",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "GitLab",
+    "position": "Frontend Engineer - CI/CD UX",
+    "status": "Applied",
+    "platform": "Company Site",
+    "createdAt": "2026-07-23T11:20:00Z",
+    "updatedAt": "2026-07-23T11:20:00Z"
+  },
+  {
+    "id": "i5SvPE9KxO8t26JgYzJm",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Cloudflare",
+    "position": "Systems & UI Developer",
+    "status": "Applied",
+    "platform": "LinkedIn",
+    "createdAt": "2026-07-21T17:00:00Z",
+    "updatedAt": "2026-07-21T17:00:00Z"
+  },
+  {
+    "id": "ifDYzf72sm5cpD4oNxau",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Retool",
+    "position": "Frontend Engineer - Core Components",
+    "status": "Applied",
+    "platform": "Lever",
+    "createdAt": "2026-07-16T13:00:00Z",
+    "updatedAt": "2026-07-16T13:00:00Z"
+  },
+  {
+    "id": "iljZcpKK1DOgPMCcf9QV",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Atlassian",
+    "position": "Senior Frontend Engineer - Jira Service",
+    "status": "Archived",
+    "platform": "Company Site",
+    "createdAt": "2026-07-03T09:00:00Z",
+    "updatedAt": "2026-07-15T12:00:00Z"
+  },
+  {
+    "id": "itIMyIMRAdW1PV2BBFV5",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Slack",
+    "position": "Senior Frontend Engineer - Desktop",
+    "status": "Interview",
+    "platform": "Greenhouse",
+    "createdAt": "2026-07-13T10:00:00Z",
+    "updatedAt": "2026-07-22T09:00:00Z"
+  },
+  {
+    "id": "itJqp7eJwLFajrwyrAq7",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "GitHub",
+    "position": "Senior Frontend Developer - Actions UI",
+    "status": "Offer",
+    "platform": "Referral",
+    "createdAt": "2026-07-14T10:30:00Z",
+    "updatedAt": "2026-07-25T11:00:00Z"
+  },
+  {
+    "id": "j2bgvabdZxwsT894ZqD6",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Notion",
+    "position": "Product Engineer - Editor Team",
+    "status": "Interview",
+    "platform": "Otta",
+    "createdAt": "2026-07-01T14:00:00Z",
+    "updatedAt": "2026-07-16T15:00:00Z"
+  },
+  {
+    "id": "jM07XwD6o9rv0C8L53Gb",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Spotify",
+    "position": "Senior Web Engineer - Web Player",
+    "status": "Applied",
+    "platform": "Greenhouse",
+    "createdAt": "2026-07-24T08:00:00Z",
+    "updatedAt": "2026-07-24T08:00:00Z"
+  },
+  {
+    "id": "jN6pk1diy1yE1AoalqWx",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "GitHub",
+    "position": "Senior Frontend Developer - Actions UI",
+    "status": "Offer",
+    "platform": "Referral",
+    "createdAt": "2026-07-14T10:30:00Z",
+    "updatedAt": "2026-07-25T11:00:00Z"
+  },
+  {
+    "id": "juDO6EC1RzWYmbdBxtwL",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Datadog",
+    "position": "Senior Software Engineer - APM Dashboards",
+    "status": "Rejected",
+    "platform": "LinkedIn",
+    "createdAt": "2026-06-28T09:00:00Z",
+    "updatedAt": "2026-07-10T12:00:00Z"
+  },
+  {
+    "id": "kAOohh7QsqDyiiCawHho",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Ramp",
+    "position": "Product Engineer - Expense Controls",
+    "status": "Applied",
+    "platform": "Otta",
+    "createdAt": "2026-07-19T10:00:00Z",
+    "updatedAt": "2026-07-19T10:00:00Z"
+  },
+  {
+    "id": "kdI5GUcxMOvhkm6VDVwI",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Datadog",
+    "position": "Senior Software Engineer - APM Dashboards",
+    "status": "Rejected",
+    "platform": "LinkedIn",
+    "createdAt": "2026-06-28T09:00:00Z",
+    "updatedAt": "2026-07-10T12:00:00Z"
+  },
+  {
+    "id": "lI310RXIwk3n9RsqRlUi",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Figma",
+    "position": "Design Systems Engineer",
+    "status": "Interview",
+    "platform": "LinkedIn",
+    "createdAt": "2026-07-12T13:10:00Z",
+    "updatedAt": "2026-07-21T09:15:00Z"
+  },
+  {
+    "id": "lJneGAmeyFtRflMk4KzF",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Docker",
+    "position": "Senior Web Engineer",
+    "status": "Rejected",
+    "platform": "Indeed",
+    "createdAt": "2026-06-20T15:00:00Z",
+    "updatedAt": "2026-07-02T10:00:00Z"
+  },
+  {
+    "id": "lKW1aJYbnb2yDH5iDRON",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Retool",
+    "position": "Frontend Engineer - Core Components",
+    "status": "Applied",
+    "platform": "Lever",
+    "createdAt": "2026-07-16T13:00:00Z",
+    "updatedAt": "2026-07-16T13:00:00Z"
+  },
+  {
+    "id": "lPNeWkvRzQFhdXkHIBFg",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "GitLab",
+    "position": "Frontend Engineer - CI/CD UX",
+    "status": "Applied",
+    "platform": "Company Site",
+    "createdAt": "2026-07-23T11:20:00Z",
+    "updatedAt": "2026-07-23T11:20:00Z"
+  },
+  {
+    "id": "lVR1o6XDPtsbNhnYKpkP",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Linear",
+    "position": "Senior Frontend Engineer",
+    "status": "Interview",
+    "platform": "Company Site",
+    "createdAt": "2026-07-15T09:00:00Z",
+    "updatedAt": "2026-07-20T10:00:00Z"
+  },
+  {
+    "id": "leiIqgHR7OMVoaZXlIwK",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "GitHub",
+    "position": "Senior Frontend Developer - Actions UI",
+    "status": "Offer",
+    "platform": "Referral",
+    "createdAt": "2026-07-14T10:30:00Z",
+    "updatedAt": "2026-07-25T11:00:00Z"
+  },
+  {
+    "id": "mwORuW0pAGdHoDaLsk3M",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Shopify",
+    "position": "Senior Developer - Checkout Experience",
+    "status": "Archived",
+    "platform": "Company Site",
+    "createdAt": "2026-06-25T11:00:00Z",
+    "updatedAt": "2026-07-05T09:00:00Z"
+  },
+  {
+    "id": "nWN0NBYiD2U2MeipZomc",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Stripe",
+    "position": "Staff Product Engineer",
+    "status": "Offer",
+    "platform": "Referral",
+    "createdAt": "2026-07-10T11:00:00Z",
+    "updatedAt": "2026-07-24T15:30:00Z"
+  },
+  {
+    "id": "o5Fc8e7VPTJ4LMUxTrqv",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Raycast",
+    "position": "Desktop Application Engineer",
+    "status": "Applied",
+    "platform": "Company Site",
+    "createdAt": "2026-07-22T10:00:00Z",
+    "updatedAt": "2026-07-22T10:00:00Z"
+  },
+  {
+    "id": "oGeTvB5ersfRXX4T00ba",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "GitHub",
+    "position": "Senior Frontend Developer - Actions UI",
+    "status": "Offer",
+    "platform": "Referral",
+    "createdAt": "2026-07-14T10:30:00Z",
+    "updatedAt": "2026-07-25T11:00:00Z"
+  },
+  {
+    "id": "oYFcKbvaUi0r0zUNN7eY",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "OpenAI",
+    "position": "Member of Technical Staff - UI",
+    "status": "Interview",
+    "platform": "Greenhouse",
+    "createdAt": "2026-07-05T14:45:00Z",
+    "updatedAt": "2026-07-19T18:00:00Z"
+  },
+  {
+    "id": "pGkxbLbJkhCRKN6XA3Tk",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Anthropic",
+    "position": "Frontend Engineer - Claude Web",
+    "status": "Screening",
+    "platform": "Greenhouse",
+    "createdAt": "2026-07-08T12:00:00Z",
+    "updatedAt": "2026-07-21T16:00:00Z"
+  },
+  {
+    "id": "pVZgx9B1lDVfx2ctviOl",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Docker",
+    "position": "Senior Web Engineer",
+    "status": "Rejected",
+    "platform": "Indeed",
+    "createdAt": "2026-06-20T15:00:00Z",
+    "updatedAt": "2026-07-02T10:00:00Z"
+  },
+  {
+    "id": "pWt0YdGXWt9sjdt090Xx",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Stripe",
+    "position": "Staff Product Engineer",
+    "status": "Offer",
+    "platform": "Referral",
+    "createdAt": "2026-07-10T11:00:00Z",
+    "updatedAt": "2026-07-24T15:30:00Z"
+  },
+  {
+    "id": "panClxHgRdwBhpvy9Qkc",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Retool",
+    "position": "Frontend Engineer - Core Components",
+    "status": "Applied",
+    "platform": "Lever",
+    "createdAt": "2026-07-16T13:00:00Z",
+    "updatedAt": "2026-07-16T13:00:00Z"
+  },
+  {
+    "id": "pdXgvdHyXgeBQAnfSmGx",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Notion",
+    "position": "Product Engineer - Editor Team",
+    "status": "Interview",
+    "platform": "Otta",
+    "createdAt": "2026-07-01T14:00:00Z",
+    "updatedAt": "2026-07-16T15:00:00Z"
+  },
+  {
+    "id": "pjvWQcl5NPgNpYTAcIfQ",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Figma",
+    "position": "Design Systems Engineer",
+    "status": "Interview",
+    "platform": "LinkedIn",
+    "createdAt": "2026-07-12T13:10:00Z",
+    "updatedAt": "2026-07-21T09:15:00Z"
+  },
+  {
+    "id": "ppoAnsujexe6j20LPH6C",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Anthropic",
+    "position": "Frontend Engineer - Claude Web",
+    "status": "Screening",
+    "platform": "Greenhouse",
+    "createdAt": "2026-07-08T12:00:00Z",
+    "updatedAt": "2026-07-21T16:00:00Z"
+  },
+  {
+    "id": "pvuEIKW6NGlunXdyUNNC",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "OpenAI",
+    "position": "Member of Technical Staff - UI",
+    "status": "Interview",
+    "platform": "Greenhouse",
+    "createdAt": "2026-07-05T14:45:00Z",
+    "updatedAt": "2026-07-19T18:00:00Z"
+  },
+  {
+    "id": "qBxl74LXdzkcZVYKE1bs",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "GitHub",
+    "position": "Senior Frontend Developer - Actions UI",
+    "status": "Offer",
+    "platform": "Referral",
+    "createdAt": "2026-07-14T10:30:00Z",
+    "updatedAt": "2026-07-25T11:00:00Z"
+  },
+  {
+    "id": "qoK3DJ8v6y738jw2sMIM",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Slack",
+    "position": "Senior Frontend Engineer - Desktop",
+    "status": "Interview",
+    "platform": "Greenhouse",
+    "createdAt": "2026-07-13T10:00:00Z",
+    "updatedAt": "2026-07-22T09:00:00Z"
+  },
+  {
+    "id": "qqNcPrkLSBnLLvc3hVct",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "OpenAI",
+    "position": "Member of Technical Staff - UI",
+    "status": "Interview",
+    "platform": "Greenhouse",
+    "createdAt": "2026-07-05T14:45:00Z",
+    "updatedAt": "2026-07-19T18:00:00Z"
+  },
+  {
+    "id": "qro29UBXHRdzTItjkVCZ",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Netflix",
+    "position": "UI Engineer - Member Experience",
+    "status": "Screening",
+    "platform": "Referral",
+    "createdAt": "2026-07-09T14:00:00Z",
+    "updatedAt": "2026-07-17T11:00:00Z"
+  },
+  {
+    "id": "qtAv5A3kyhiYkHicGKc9",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Linear",
+    "position": "Senior Frontend Engineer",
+    "status": "Interview",
+    "platform": "Company Site",
+    "createdAt": "2026-07-15T09:00:00Z",
+    "updatedAt": "2026-07-20T10:00:00Z"
+  },
+  {
+    "id": "r55kJYY9KAjoTKeU3KI8",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Notion",
+    "position": "Product Engineer - Editor Team",
+    "status": "Interview",
+    "platform": "Otta",
+    "createdAt": "2026-07-01T14:00:00Z",
+    "updatedAt": "2026-07-16T15:00:00Z"
+  },
+  {
+    "id": "ren5eq3l4vZXTbsFiant",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Supabase",
+    "position": "Full Stack Engineer (Realtime)",
+    "status": "Screening",
+    "platform": "Lever",
+    "createdAt": "2026-07-20T08:30:00Z",
+    "updatedAt": "2026-07-23T11:00:00Z"
+  },
+  {
+    "id": "rgXszaUTzXzbySEuDq3p",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Supabase",
+    "position": "Full Stack Engineer (Realtime)",
+    "status": "Screening",
+    "platform": "Lever",
+    "createdAt": "2026-07-20T08:30:00Z",
+    "updatedAt": "2026-07-23T11:00:00Z"
+  },
+  {
+    "id": "rkBsUqjfZFLKoKAge0mp",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Shopify",
+    "position": "Senior Developer - Checkout Experience",
+    "status": "Archived",
+    "platform": "Company Site",
+    "createdAt": "2026-06-25T11:00:00Z",
+    "updatedAt": "2026-07-05T09:00:00Z"
+  },
+  {
+    "id": "rzTiL2pGgGT37zGCkINb",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Datadog",
+    "position": "Senior Software Engineer - APM Dashboards",
+    "status": "Rejected",
+    "platform": "LinkedIn",
+    "createdAt": "2026-06-28T09:00:00Z",
+    "updatedAt": "2026-07-10T12:00:00Z"
+  },
+  {
+    "id": "sBYkFt9Xh9irz2hcpb4k",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Retool",
+    "position": "Frontend Engineer - Core Components",
+    "status": "Applied",
+    "platform": "Lever",
+    "createdAt": "2026-07-16T13:00:00Z",
+    "updatedAt": "2026-07-16T13:00:00Z"
+  },
+  {
+    "id": "t7zc6qVnDZFk3kCh5JB0",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "OpenAI",
+    "position": "Member of Technical Staff - UI",
+    "status": "Interview",
+    "platform": "Greenhouse",
+    "createdAt": "2026-07-05T14:45:00Z",
+    "updatedAt": "2026-07-19T18:00:00Z"
+  },
+  {
+    "id": "tEF1HcD4d9IsFCXjGHtX",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Linear",
+    "position": "Senior Frontend Engineer",
+    "status": "Interview",
+    "platform": "Company Site",
+    "createdAt": "2026-07-15T09:00:00Z",
+    "updatedAt": "2026-07-20T10:00:00Z"
+  },
+  {
+    "id": "tHUVGEpgzZLpXqeipimh",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "OpenAI",
+    "position": "Member of Technical Staff - UI",
+    "status": "Interview",
+    "platform": "Greenhouse",
+    "createdAt": "2026-07-05T14:45:00Z",
+    "updatedAt": "2026-07-19T18:00:00Z"
+  },
+  {
+    "id": "ttJSn8IL8tNVMfeyYoBV",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Docker",
+    "position": "Senior Web Engineer",
+    "status": "Rejected",
+    "platform": "Indeed",
+    "createdAt": "2026-06-20T15:00:00Z",
+    "updatedAt": "2026-07-02T10:00:00Z"
+  },
+  {
+    "id": "uHyfgZadVEwmn40GVCQL",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Docker",
+    "position": "Senior Web Engineer",
+    "status": "Rejected",
+    "platform": "Indeed",
+    "createdAt": "2026-06-20T15:00:00Z",
+    "updatedAt": "2026-07-02T10:00:00Z"
+  },
+  {
+    "id": "unAshCqAzRGJlFLo2eHx",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Postman",
+    "position": "Senior UI Architect",
+    "status": "Applied",
+    "platform": "LinkedIn",
+    "createdAt": "2026-07-17T16:00:00Z",
+    "updatedAt": "2026-07-17T16:00:00Z"
+  },
+  {
+    "id": "vFkaOSck1HcgbLoDU9Vi",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Cloudflare",
+    "position": "Systems & UI Developer",
+    "status": "Applied",
+    "platform": "LinkedIn",
+    "createdAt": "2026-07-21T17:00:00Z",
+    "updatedAt": "2026-07-21T17:00:00Z"
+  },
+  {
+    "id": "vJCnHeb3IxFgPRWlYtTk",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Vanta",
+    "position": "Staff Frontend Engineer",
+    "status": "Screening",
+    "platform": "Lever",
+    "createdAt": "2026-07-11T12:00:00Z",
+    "updatedAt": "2026-07-18T14:30:00Z"
+  },
+  {
+    "id": "vW3MWPilH7jZS4LLwgwr",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Postman",
+    "position": "Senior UI Architect",
+    "status": "Applied",
+    "platform": "LinkedIn",
+    "createdAt": "2026-07-17T16:00:00Z",
+    "updatedAt": "2026-07-17T16:00:00Z"
+  },
+  {
+    "id": "vxDrNcMO9wxD5m24gkgC",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Linear",
+    "position": "Senior Frontend Engineer",
+    "status": "Interview",
+    "platform": "Company Site",
+    "createdAt": "2026-07-15T09:00:00Z",
+    "updatedAt": "2026-07-20T10:00:00Z"
+  },
+  {
+    "id": "weV09zmHpLhcZvb71zQl",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Stripe",
+    "position": "Staff Product Engineer",
+    "status": "Offer",
+    "platform": "Referral",
+    "createdAt": "2026-07-10T11:00:00Z",
+    "updatedAt": "2026-07-24T15:30:00Z"
+  },
+  {
+    "id": "weVhB61G7TWMujxAmoBn",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Figma",
+    "position": "Design Systems Engineer",
+    "status": "Interview",
+    "platform": "LinkedIn",
+    "createdAt": "2026-07-12T13:10:00Z",
+    "updatedAt": "2026-07-21T09:15:00Z"
+  },
+  {
+    "id": "wwlzOOlP88W0zZpM1Uad",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Linear",
+    "position": "Senior Frontend Engineer",
+    "status": "Interview",
+    "platform": "Company Site",
+    "createdAt": "2026-07-15T09:00:00Z",
+    "updatedAt": "2026-07-20T10:00:00Z"
+  },
+  {
+    "id": "xIFtU7QRYeaLnw3tupn0",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Spotify",
+    "position": "Senior Web Engineer - Web Player",
+    "status": "Applied",
+    "platform": "Greenhouse",
+    "createdAt": "2026-07-24T08:00:00Z",
+    "updatedAt": "2026-07-24T08:00:00Z"
+  },
+  {
+    "id": "xJ01VUAC0Gl4Tc5qfmt4",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Ramp",
+    "position": "Product Engineer - Expense Controls",
+    "status": "Applied",
+    "platform": "Otta",
+    "createdAt": "2026-07-19T10:00:00Z",
+    "updatedAt": "2026-07-19T10:00:00Z"
+  },
+  {
+    "id": "xM65gFBDmdjZQ1e0SOne",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Docker",
+    "position": "Senior Web Engineer",
+    "status": "Rejected",
+    "platform": "Indeed",
+    "createdAt": "2026-06-20T15:00:00Z",
+    "updatedAt": "2026-07-02T10:00:00Z"
+  },
+  {
+    "id": "yEJXc0DT3iGPH2f1g09D",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Vercel",
+    "position": "UI Platform Engineer",
+    "status": "Screening",
+    "platform": "Otta",
+    "createdAt": "2026-07-18T16:20:00Z",
+    "updatedAt": "2026-07-22T14:00:00Z"
+  },
+  {
+    "id": "yHKz0nub6OFO3BWJgmNf",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Vercel",
+    "position": "UI Platform Engineer",
+    "status": "Screening",
+    "platform": "Otta",
+    "createdAt": "2026-07-18T16:20:00Z",
+    "updatedAt": "2026-07-22T14:00:00Z"
+  },
+  {
+    "id": "yHSU9Cd0pi26KrQhtNiB",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Netflix",
+    "position": "UI Engineer - Member Experience",
+    "status": "Screening",
+    "platform": "Referral",
+    "createdAt": "2026-07-09T14:00:00Z",
+    "updatedAt": "2026-07-17T11:00:00Z"
+  },
+  {
+    "id": "yPZu7rLSvEeUovm5Tr4S",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Docker",
+    "position": "Senior Web Engineer",
+    "status": "Rejected",
+    "platform": "Indeed",
+    "createdAt": "2026-06-20T15:00:00Z",
+    "updatedAt": "2026-07-02T10:00:00Z"
+  },
+  {
+    "id": "zQ8cqFh7wmTtqhDINNgJ",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Shopify",
+    "position": "Senior Developer - Checkout Experience",
+    "status": "Archived",
+    "platform": "Company Site",
+    "createdAt": "2026-06-25T11:00:00Z",
+    "updatedAt": "2026-07-05T09:00:00Z"
+  },
+  {
+    "id": "znYjglHAchcW6dWoes5O",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Retool",
+    "position": "Frontend Engineer - Core Components",
+    "status": "Applied",
+    "platform": "Lever",
+    "createdAt": "2026-07-16T13:00:00Z",
+    "updatedAt": "2026-07-16T13:00:00Z"
+  },
+  {
+    "id": "zrmJmuIK6f8nuKjAd5NG",
+    "userId": "tp6M0Wi20vTPF8XJsLiq0cSaYpy2",
+    "company": "Shopify",
+    "position": "Senior Developer - Checkout Experience",
+    "status": "Archived",
+    "platform": "Company Site",
+    "createdAt": "2026-06-25T11:00:00Z",
+    "updatedAt": "2026-07-05T09:00:00Z"
+  },
+  {
+    "id": "8tfSklIXDx2rWWtPmUXH",
+    "userId": "y6rOviBPuFSnP5PgZVMotbysuVV2",
+    "company": "Upwork",
+    "position": "Web developer",
+    "status": "Applied",
+    "platform": "LinkedIn",
+    "createdAt": "2026-10-18T18:58:08.016Z",
+    "updatedAt": "2026-10-18T18:58:24.482Z"
+  }
+]
