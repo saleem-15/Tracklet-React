@@ -1,13 +1,21 @@
 # ADR 0004: Conditional Sentry Telemetry for Self-Hosting & Production Dual-Mode
 
 ## Status
-Superseded by [ADR 0011](0011-pivot-to-commercial-saas-and-cloud-storage.md)
+Superseded by [ADR 0011](0011-pivot-to-commercial-saas-and-cloud-storage.md) and [ADR 0012](0012-saas-telemetry-privacy-and-data-ownership.md)
 
 ## Date
 2026-08-20
 
-## Context
-Tracklet is designed to support two core deployment modes:
+## Note on Commercial SaaS Pivot (October 2026)
+This ADR originally defined conditional telemetry for an open-source, dual-mode (self-hosted vs. cloud) deployment model. With Tracklet's pivot to a closed-source commercial SaaS:
+- Telemetry (Sentry for crash diagnostics + PostHog for product funnels and scraper health) is **active by default in production SaaS builds**.
+- The code-level conditional guard (`enabled: Boolean(dsn) && isProd`) remains in [`src/instrument.ts`](../../src/instrument.ts) to isolate local development and CI/CD pipelines from dispatching synthetic events.
+- See [ADR 0012](0012-saas-telemetry-privacy-and-data-ownership.md) for the active SaaS telemetry, product observability, and data ownership policy.
+
+---
+
+## Context (Historical)
+Tracklet was originally designed to support two core deployment modes:
 1. **Managed SaaS / Production**: Hosted on public infrastructure, requiring real-time error tracking, performance tracing, and crash diagnostics to maintain high availability and user trust.
 2. **Open-Source / Self-Hosted / Offline Guest Mode**: Cloned and deployed by community developers or private individuals who do not possess a Sentry account and want full data sovereignty without telemetry reporting.
 
@@ -16,7 +24,7 @@ If Sentry is initialized unconditionally without verifying the presence of a Dat
 - In unconfigured environments, unhandled exceptions or SDK attempts to dispatch beacons can produce noisy browser console warnings or failed network calls.
 - AI coding assistants and future contributors reviewing `src/instrument.ts` or `src/main.tsx` might mistakenly assume an unconfigured `VITE_SENTRY_DSN` is an error or attempt to make Sentry credentials mandatory in `.env.example`, breaking the zero-friction onboarding principle for open-source developers.
 
-## Decision
+## Decision (Historical)
 
 1. **Explicit DSN & Production Mode Guard in `src/instrument.ts`**:
    - The Sentry initialization strictly inspects `const dsn = import.meta.env.VITE_SENTRY_DSN;` and `const isProd = import.meta.env.PROD;`.
@@ -40,7 +48,7 @@ If Sentry is initialized unconditionally without verifying the presence of a Dat
 4. **Production Diagnostic Log Suppression**:
    - Set `enableLogs: !import.meta.env.PROD && Boolean(dsn)` to keep end-user browser consoles clean in production while enabling debugging logs in local development only when explicitly testing Sentry integration.
 
-## Consequences
+## Consequences (Historical)
 
 ### Positive
 - **Zero-Friction Self-Hosting**: Open-source contributors and self-hosters can clone, run `npm install`, and launch Tracklet immediately without needing Sentry credentials or seeing console errors.

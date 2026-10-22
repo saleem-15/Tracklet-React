@@ -9,18 +9,21 @@ Welcome to the internal documentation repository for **Tracklet**. This director
 ```
 docs/
 ├── README.md                      # Documentation directory index (this file)
+├── PRIVACY_POLICY.md              # Privacy Policy & Data Ownership positioning
+├── TERMS_OF_SERVICE.md            # Terms of Service & Subscription Agreements
 ├── adr/                           # Architecture Decision Records (immutable architectural history)
 │   ├── 0001-lighthouse-modernization.md
 │   ├── 0002-in-app-password-reset-and-split-auth-views.md
 │   ├── 0003-user-scoped-firestore-schema-and-embedded-history.md
-│   ├── 0004-conditional-sentry-telemetry.md (Superseded by ADR 0011)
+│   ├── 0004-conditional-sentry-telemetry.md (Superseded by ADR 0011 & 0012)
 │   ├── 0005-extension-duplicate-handling-detect-inform-route.md
 │   ├── 0006-notes-always-editable-autosave-and-fenced-code-blocks.md
 │   ├── 0007-notes-editor-shared-surface-slash-menu-drafts.md
 │   ├── 0008-normalized-markdown-email-ingestion-and-rendering.md
 │   ├── 0009-contact-email-log-and-cross-visibility-projection.md
 │   ├── 0010-action-only-navigation-badges-and-inventory-placement.md
-│   └── 0011-pivot-to-commercial-saas-and-cloud-storage.md
+│   ├── 0011-pivot-to-commercial-saas-and-cloud-storage.md
+│   └── 0012-saas-telemetry-privacy-and-data-ownership.md
 ├── architecture-migration/        # Multi-phase domain and hook refactoring roadmap
 │   ├── PHASE_1_DOMAIN_HOOKS.md
 │   ├── PHASE_2_PRESENTATION_LAYOUT.md
@@ -44,7 +47,7 @@ docs/
 | **[0001](adr/0001-lighthouse-modernization.md)** | Lighthouse Modernization & AA Accessibility | Accepted | 2026-08-17 |
 | **[0002](adr/0002-in-app-password-reset-and-split-auth-views.md)** | In-App Password Reset & Split Auth Views | Accepted | 2026-08-17 |
 | **[0003](adr/0003-user-scoped-firestore-schema-and-embedded-history.md)** | User-Scoped Firestore Schema & Embedded History | Accepted | 2026-08-22 |
-| **[0004](adr/0004-conditional-sentry-telemetry.md)** | Conditional Sentry Telemetry for Self-Hosting | **Superseded by 0011** | 2026-08-20 |
+| **[0004](adr/0004-conditional-sentry-telemetry.md)** | Conditional Sentry Telemetry for Self-Hosting | **Superseded by 0011 & 0012** | 2026-08-20 |
 | **[0005](adr/0005-extension-duplicate-handling-detect-inform-route.md)** | Extension Duplicate Handling: Detect, Inform, Route | Accepted | 2026-08-22 |
 | **[0006](adr/0006-notes-always-editable-autosave-and-fenced-code-blocks.md)** | Always-Editable Notes, Debounced Autosave & Fenced Code | Accepted | 2026-08-27 |
 | **[0007](adr/0007-notes-editor-shared-surface-slash-menu-drafts.md)** | Shared Rich Text Editor, Slash Menus & Draft Recovery | Accepted | 2026-08-27 |
@@ -52,6 +55,14 @@ docs/
 | **[0009](adr/0009-contact-email-log-and-cross-visibility-projection.md)** | Contact & Email Log Cross-Visibility Projection | Accepted | 2026-10-14 |
 | **[0010](adr/0010-action-only-navigation-badges-and-inventory-placement.md)** | Action-Only Navigation Badges & Inventory Count Placement | Accepted | 2026-10-20 |
 | **[0011](adr/0011-pivot-to-commercial-saas-and-cloud-storage.md)** | Pivot from Open Source / Local-First to Commercial Cloud SaaS | Accepted | 2026-10-22 |
+| **[0012](adr/0012-saas-telemetry-privacy-and-data-ownership.md)** | SaaS Telemetry, Product Analytics & Strict Data Ownership | Accepted | 2026-10-22 |
+
+---
+
+## 🔒 Legal & Privacy Governance
+
+- **[Privacy Policy](PRIVACY_POLICY.md)**: Details the commercial SaaS privacy pledge ("Never sold to recruiters"), encryption standards (AES-256, TLS 1.3), operational telemetry (Sentry & PostHog), and full data sovereignty (export & erasure).
+- **[Terms of Service](TERMS_OF_SERVICE.md)**: Governs usage of Tracklet Cloud, the Chrome Extension, Free vs. Pro subscription tiers, acceptable use, and data ownership covenants.
 
 ---
 
@@ -59,7 +70,7 @@ docs/
 
 1. **Architecture Decisions (`adr/`)**:
    - ADRs are immutable historical records.
-   - When a design decision changes, do not rewrite an old ADR; write a new ADR that explicitly supersedes the older one (e.g., ADR 0011 superseding ADR 0004).
+   - When a design decision changes, do not rewrite an old ADR; write a new ADR that explicitly supersedes the older one (e.g., ADR 0011 & 0012 superseding ADR 0004).
 
 2. **Temporary / Migration Runbooks**:
    - If a document describes instructions to remove or clean up code, it remains active in `docs/runbooks/` as long as the underlying migration code exists in `src/`.
