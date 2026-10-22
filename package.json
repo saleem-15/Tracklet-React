@@ -11,7 +11,9 @@
     "clean": "rm -rf dist server.js",
     "lint": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "audit": "node --experimental-strip-types scripts/telemetry/runAudit.ts",
+    "audit:firebase": "node --experimental-strip-types scripts/telemetry/extractFirebaseAdmin.ts"
   },
   "dependencies": {
     "@sentry/react": "^10.70.0",

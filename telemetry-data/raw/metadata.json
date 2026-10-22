@@ -1,0 +1,8 @@
+{
+  "capturedAt": "2026-10-19T10:00:00.000Z",
+  "source": "synthetic_fixture",
+  "totalDbUsers": 450,
+  "totalDbApplications": 1970,
+  "totalPostHogEvents": 3540,
+  "totalSentryEvents": 75
+}

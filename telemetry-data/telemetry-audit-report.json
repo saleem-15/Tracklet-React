@@ -1,0 +1,269 @@
+{
+  "meta": {
+    "generatedAt": "2026-10-19T12:44:44.578Z",
+    "timeWindow": "all",
+    "windowStart": "2021-10-19T12:44:44.578Z",
+    "windowEnd": "2026-10-19T12:44:44.578Z",
+    "checksum": "2082b885",
+    "source": "live_apis"
+  },
+  "userDistribution": {
+    "totalRegistered": 9,
+    "activatedUsers": 6,
+    "dormantUsers": 3,
+    "activationRate": 66.7,
+    "activeInWindowUsers": 8,
+    "authenticatedUsers": 9,
+    "guestUsers": 0
+  },
+  "applicationPercentiles": {
+    "sampleSize": 253,
+    "userSampleCount": 6,
+    "arithmeticMean": 42.17,
+    "median": 9.5,
+    "p25": 1.5,
+    "p75": 22.8,
+    "p90": 116,
+    "p99": 197.9,
+    "min": 1,
+    "max": 207,
+    "iqr": 21.3,
+    "skewnessIndex": 0.4,
+    "skewnessCommentary": "Positive Right-Skew (+0.4): Arithmetic mean (42.2) is artificially elevated by power users. The median (9.5) represents typical user volume.",
+    "distributionBuckets": [
+      {
+        "label": "1 - 2 apps",
+        "min": 1,
+        "max": 2,
+        "count": 2,
+        "percentage": 33.3
+      },
+      {
+        "label": "3 - 5 apps",
+        "min": 3,
+        "max": 5,
+        "count": 1,
+        "percentage": 16.7
+      },
+      {
+        "label": "6 - 10 apps",
+        "min": 6,
+        "max": 10,
+        "count": 0,
+        "percentage": 0
+      },
+      {
+        "label": "11 - 25 apps",
+        "min": 11,
+        "max": 25,
+        "count": 2,
+        "percentage": 33.3
+      },
+      {
+        "label": "26 - 50 apps",
+        "min": 26,
+        "max": 50,
+        "count": 0,
+        "percentage": 0
+      },
+      {
+        "label": "50+ apps",
+        "min": 51,
+        "max": null,
+        "count": 1,
+        "percentage": 16.7
+      }
+    ]
+  },
+  "cohortFunnel": {
+    "stages": [
+      {
+        "step": 1,
+        "id": "landing",
+        "label": "1. Landed & Session Started",
+        "count": 89,
+        "dropoffFromPrevious": 0,
+        "conversionRate": 100,
+        "overallConversionRate": 100
+      },
+      {
+        "step": 2,
+        "id": "signup",
+        "label": "2. Account Created / Authenticated",
+        "count": 9,
+        "dropoffFromPrevious": 80,
+        "conversionRate": 10.1,
+        "overallConversionRate": 10.1
+      },
+      {
+        "step": 3,
+        "id": "interaction",
+        "label": "3. Workspace Interacted",
+        "count": 7,
+        "dropoffFromPrevious": 2,
+        "conversionRate": 77.8,
+        "overallConversionRate": 7.9
+      },
+      {
+        "step": 4,
+        "id": "first_app",
+        "label": "4. First Application Logged",
+        "count": 6,
+        "dropoffFromPrevious": 1,
+        "conversionRate": 85.7,
+        "overallConversionRate": 6.7
+      }
+    ],
+    "timeToFirstApplication": {
+      "medianMinutes": 17,
+      "p75Minutes": 37.4,
+      "buckets": [
+        {
+          "label": "< 15 mins (Immediate)",
+          "count": 3,
+          "percentage": 50
+        },
+        {
+          "label": "15m - 2h (Fast)",
+          "count": 2,
+          "percentage": 33.3
+        },
+        {
+          "label": "2h - 24h (Same Day)",
+          "count": 0,
+          "percentage": 0
+        },
+        {
+          "label": "1d - 7d (Week 1)",
+          "count": 1,
+          "percentage": 16.7
+        },
+        {
+          "label": "> 7 days (Delayed)",
+          "count": 0,
+          "percentage": 0
+        }
+      ]
+    }
+  },
+  "reliabilityImpact": {
+    "totalSessions": 3,
+    "crashFreeSessions": 3,
+    "crashFreeSessionRate": 100,
+    "uniqueActiveUsers": 3,
+    "errorImpactedUsers": 0,
+    "errorImpactedUserRate": 0,
+    "topAbandonmentExceptions": [],
+    "routeReliability": []
+  },
+  "reconciliation": {
+    "databaseApplicationCount": 253,
+    "posthogCreatedEventCount": 0,
+    "telemetryCaptureRate": 0,
+    "adBlockerEstimatedDropRate": 100,
+    "orphanedClientEvents": 0,
+    "duplicateClientEvents": 0,
+    "invariants": [
+      {
+        "id": "INV_USER_PARTITION",
+        "name": "User Partition Integrity",
+        "assertionFormula": "N_registered == N_activated + N_dormant",
+        "passed": true,
+        "expected": "9 users",
+        "actual": "9 (6 active + 3 dormant)",
+        "description": "Every registered account must be cleanly partitioned into either activated or dormant with zero overlaps or omissions."
+      },
+      {
+        "id": "INV_APP_SUM",
+        "name": "Transactional Record Consistency",
+        "assertionFormula": "SampleCount == N_database_rows",
+        "passed": true,
+        "expected": "253 rows",
+        "actual": "253 rows",
+        "description": "The sample size analyzed in the distribution percentiles must match the exact row count in the database collection."
+      },
+      {
+        "id": "INV_BLAST_BOUND",
+        "name": "Blast Radius Upper Bound",
+        "assertionFormula": "N_error_impacted <= N_active_users",
+        "passed": true,
+        "expected": "<= 3 users",
+        "actual": "0 users",
+        "description": "The count of users experiencing Sentry exceptions cannot exceed the total pool of active users in the window."
+      },
+      {
+        "id": "INV_PERCENTILE_MONOTONICITY",
+        "name": "Percentile Rank Monotonicity",
+        "assertionFormula": "min <= p25 <= p50 <= p75 <= p90 <= p99 <= max",
+        "passed": true,
+        "expected": "Strict non-decreasing order",
+        "actual": "[1, 1.5, 9.5, 22.8, 116, 197.9, 207]",
+        "description": "Cumulative distribution ranks must be monotonically non-decreasing."
+      },
+      {
+        "id": "INV_FUNNEL_MONOTONICITY",
+        "name": "Cohort Funnel Monotonicity",
+        "assertionFormula": "Step_1 >= Step_2 >= Step_3 >= Step_4",
+        "passed": true,
+        "expected": "Monotonically non-increasing stage volumes",
+        "actual": "[89 -> 9 -> 7 -> 6]",
+        "description": "Standard conversion funnel volume must never increase at downstream stages."
+      },
+      {
+        "id": "INV_TELEMETRY_BOUND",
+        "name": "Telemetry Capture Ceiling",
+        "assertionFormula": "N_posthog_matched <= N_database_applications",
+        "passed": true,
+        "expected": "<= 253 matched events",
+        "actual": "0 matched events",
+        "description": "Client telemetry matches must not exceed the authoritative transactional truth of the database."
+      }
+    ]
+  },
+  "dataLineage": {
+    "userDistribution": {
+      "definition": "Classification of registered users into activated and dormant cohorts.",
+      "sourceTables": [
+        "Firestore: users",
+        "Firestore: applications"
+      ],
+      "formula": "Activated = {u in Users | count(Applications, userId = u.id) >= 1}; Dormant = Total - Activated",
+      "caveat": "Guest sessions without an email or Firebase Auth UID are categorized as guest users and excluded from persistent registration counts."
+    },
+    "applicationPercentiles": {
+      "definition": "Cumulative distribution percentiles of application volume per activated user.",
+      "sourceTables": [
+        "Firestore: applications"
+      ],
+      "formula": "Rank p: R7 method = (N - 1) * p; Skewness = (Mean - Median) / StdDev",
+      "caveat": "Arithmetic mean is distorted upward by high-frequency power users. Median (p50) represents authentic central tendency."
+    },
+    "cohortFunnel": {
+      "definition": "End-to-end journey from initial landing session to first logged job application.",
+      "sourceTables": [
+        "PostHog: $pageview, guest_session_started",
+        "Firestore: users, applications"
+      ],
+      "formula": "Conversion_Stage_K = (Count_K / Count_{K-1}) * 100",
+      "caveat": "Time-to-first-application is measured from the user.createdAt timestamp to the earliest application.createdAt timestamp."
+    },
+    "reliabilityImpact": {
+      "definition": "Impact of unhandled Sentry exceptions on active users and session abandonment.",
+      "sourceTables": [
+        "Sentry: discover/events",
+        "PostHog: events stream via posthog_session_id"
+      ],
+      "formula": "AbandonmentRate = (Sessions hitting error that exited without next action / Total sessions hitting error) * 100",
+      "caveat": "Requires Sentry tags to include posthog_session_id (configured in src/lib/posthog.ts)."
+    },
+    "reconciliationAudit": {
+      "definition": "Reconciliation of client-reported application creations against database records.",
+      "sourceTables": [
+        "PostHog: application_created",
+        "Firestore: applications"
+      ],
+      "formula": "CaptureRate = (Matched PostHog events / Database applications) * 100",
+      "caveat": "Discrepancy is primarily attributed to privacy extensions / ad-blockers (uBlock Origin, Brave Shields) blocking posthog-js."
+    }
+  }
+}
