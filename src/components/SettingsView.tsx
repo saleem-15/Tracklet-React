@@ -24,6 +24,7 @@ import { exportApplicationsToJSON, validateAndParseJSONBackup } from '../lib/bac
 import { exportContactsToCSV } from '../lib/exportCsv';
 import { ImportCSVModal } from './ImportCSVModal';
 import { AccountSettingsCard } from './AccountSettingsCard';
+import { SecurityPrivacyCard } from './SecurityPrivacyCard';
 import { TemplateManagerSection } from './templates/TemplateManagerSection';
 import { FollowUpTemplate } from '../types';
 import { TemplateRepository } from '../lib/templateRepository';
@@ -223,6 +224,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
       {/* Account Profile & Security Section */}
       <AccountSettingsCard onShowToast={onShowToast} onAccountDeleted={onAccountDeleted} />
+
+      {/* Enterprise Security, Privacy & Data Ownership Section */}
+      <SecurityPrivacyCard onShowToast={onShowToast} />
 
       {/* Browser Extension Companion Section */}
       <ExtensionSettingsCard 
