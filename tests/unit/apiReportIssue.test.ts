@@ -50,7 +50,7 @@ describe('api/report-issue handler', () => {
     // Web Standard Request creates a ReadableStream for body
     const req = new Request('https://usetracklet.netlify.app/api/report-issue', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer test-token' },
       body: JSON.stringify(validPayload),
     });
 
@@ -84,6 +84,7 @@ describe('api/report-issue handler', () => {
 
     const req = {
       method: 'POST',
+      headers: { authorization: 'Bearer test-token' },
       body: validPayload,
     };
 
@@ -96,7 +97,7 @@ describe('api/report-issue handler', () => {
   it('rejects with 400 when title or description is missing', async () => {
     const req = new Request('https://usetracklet.netlify.app/api/report-issue', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer test-token' },
       body: JSON.stringify({
         ...validPayload,
         title: '',
@@ -113,7 +114,7 @@ describe('api/report-issue handler', () => {
   it('rejects with 400 when diagnostics is missing', async () => {
     const req = new Request('https://usetracklet.netlify.app/api/report-issue', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer test-token' },
       body: JSON.stringify({
         title: 'Valid title',
         description: 'Valid description text here',
@@ -152,7 +153,7 @@ describe('api/report-issue handler', () => {
 
     const req = new Request('https://usetracklet.netlify.app/api/report-issue', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer test-token' },
       body: JSON.stringify(validPayload),
     });
 
@@ -170,7 +171,7 @@ describe('api/report-issue handler', () => {
 
     const req = new Request('https://usetracklet.netlify.app/api/report-issue', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer test-token' },
       body: JSON.stringify(validPayload),
     });
 
@@ -191,7 +192,7 @@ describe('api/report-issue handler', () => {
 
     const req = new Request('https://usetracklet.netlify.app/api/report-issue', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer test-token' },
       body: JSON.stringify(validPayload),
     });
 
@@ -222,7 +223,7 @@ describe('api/report-issue handler', () => {
 
     const req = new Request('https://usetracklet.netlify.app/api/report-issue', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer test-token' },
       body: JSON.stringify(validPayload),
     });
 
@@ -247,6 +248,7 @@ describe('api/report-issue handler', () => {
 
     const req = {
       method: 'POST',
+      headers: { authorization: 'Bearer test-token' },
       body: Buffer.from(JSON.stringify(validPayload)),
     };
 
@@ -269,6 +271,7 @@ describe('api/report-issue handler', () => {
 
     const lambdaEvent = {
       httpMethod: 'POST',
+      headers: { authorization: 'Bearer test-token' },
       isBase64Encoded: true,
       body: Buffer.from(JSON.stringify(validPayload)).toString('base64'),
     };
@@ -294,7 +297,7 @@ describe('api/report-issue handler', () => {
     const hugeDescription = 'A'.repeat(70000);
     const req = new Request('https://usetracklet.netlify.app/api/report-issue', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer test-token' },
       body: JSON.stringify({
         ...validPayload,
         description: hugeDescription,
@@ -322,7 +325,7 @@ describe('api/report-issue handler', () => {
 
     const req = new Request('https://usetracklet.netlify.app/api/report-issue', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer test-token' },
       body: JSON.stringify({
         ...validPayload,
         screenshotUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
@@ -347,7 +350,7 @@ describe('api/report-issue handler', () => {
 
     const req = new Request('https://usetracklet.netlify.app/api/report-issue', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer test-token' },
       body: JSON.stringify(validPayload),
     });
 
@@ -357,5 +360,35 @@ describe('api/report-issue handler', () => {
     expect(data.error).toBe('Issue Dispatch Failed');
     expect(data.message).toBe('Upstream error: Bad credentials');
     expect(data.message).not.toContain('https://docs.github.com');
+  });
+  it('rejects unauthenticated requests without Bearer token with HTTP 401', async () => {
+    const unauthReq = new Request('https://usetracklet.netlify.app/api/report-issue', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(validPayload),
+    });
+
+    const res = await handler(unauthReq);
+    expect(res.status).toBe(401);
+    const data = await res.json();
+    expect(data.error).toBe('Unauthorized');
+    expect(data.message).toContain('Missing Bearer token');
+  });
+
+  it('rejects invalid or expired token with HTTP 401', async () => {
+    const invalidReq = new Request('https://usetracklet.netlify.app/api/report-issue', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer expired.garbage.token',
+      },
+      body: JSON.stringify(validPayload),
+    });
+
+    const res = await handler(invalidReq);
+    expect(res.status).toBe(401);
+    const data = await res.json();
+    expect(data.error).toBe('Unauthorized');
+    expect(data.message).toContain('Authentication failed');
   });
 });
