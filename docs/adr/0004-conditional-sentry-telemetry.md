@@ -1,7 +1,7 @@
 # ADR 0004: Conditional Sentry Telemetry for Self-Hosting & Production Dual-Mode
 
 ## Status
-Accepted
+Superseded by [ADR 0011](0011-pivot-to-commercial-saas-and-cloud-storage.md)
 
 ## Date
 2026-08-20

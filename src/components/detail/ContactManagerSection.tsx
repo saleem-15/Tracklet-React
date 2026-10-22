@@ -30,7 +30,6 @@ import { FollowUpBadge } from '../contacts/FollowUpBadge';
 export interface ContactManagerSectionProps {
   allContacts?: Contact[];
   linkedContactIds?: string[];
-  legacyContacts?: Contact[];
   onLinkContact: (contactId: string) => Promise<void>;
   onUnlinkContact: (contactId: string) => Promise<void>;
   onCreateAndLinkContact: (contactData: Omit<Contact, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => Promise<void>;
@@ -48,7 +47,6 @@ const categoryOptions: SelectOption<ContactCategory>[] = CONTACT_CATEGORIES.map(
 export const ContactManagerSection: React.FC<ContactManagerSectionProps> = ({
   allContacts = [],
   linkedContactIds = [],
-  legacyContacts = [],
   onLinkContact,
   onUnlinkContact,
   onCreateAndLinkContact,
@@ -78,15 +76,10 @@ export const ContactManagerSection: React.FC<ContactManagerSectionProps> = ({
 
   // Resolve linked contacts (combining contactIds lookup with any un-migrated legacy embedded contacts)
   const linkedContacts = useMemo(() => {
-    const fromIds: Contact[] = linkedContactIds
+    return linkedContactIds
       .map((id) => allContacts.find((c) => c.id === id))
       .filter((c): c is Contact => Boolean(c));
-
-    const existingIds = new Set(fromIds.map((c) => c.id));
-    const extraLegacy = legacyContacts.filter((c) => !existingIds.has(c.id));
-
-    return [...fromIds, ...extraLegacy];
-  }, [allContacts, linkedContactIds, legacyContacts]);
+  }, [allContacts, linkedContactIds]);
 
   const handleCopyPhone = (e: React.MouseEvent, phoneStr: string, contactId: string) => {
     e.stopPropagation();

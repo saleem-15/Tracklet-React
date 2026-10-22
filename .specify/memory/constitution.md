@@ -1,50 +1,32 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+# Tracklet Project Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. Cloud-First, User-Scoped Persistence (No Local-Only Silos)
+All persistent user data—including job applications, status histories, notes, contacts, email logs, autofill profiles, and resumes—MUST be stored in Firebase (Firestore and Firebase Cloud Storage) scoped under `users/{userId}/...` (ADR 0003). 
+- Do NOT introduce new features that rely on `localStorage` or `IndexedDB` as the primary database.
+- `localStorage` may only be used for ephemeral UI preferences (e.g., theme, sidebar collapse state), temporary draft recovery (ADR 0007), or the strictly capped 3-card Sandbox preview prior to sign-up.
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+### II. Entitlement & Tier-First Feature Design
+Tracklet is a commercial SaaS product with **Free** and **Pro** tiers. Every new feature specification (`spec.md`) and implementation plan (`plan.md`) MUST explicitly define:
+1. Whether the feature is available to `free` users, quota-limited, or exclusive to `pro` users.
+2. How the UI gracefully handles the locked/paywalled state (triggering the upgrade flow rather than failing silently).
+3. How the entitlement or quota is enforced on the backend (`firestore.rules` or `/api` routes).
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+### III. Authenticated & Rate-Limited Serverless Endpoints
+Every serverless API route in `/api/*` (including `api/scrape-job.ts` and `api/report-issue.ts`) MUST:
+- Require and verify a valid Firebase Auth ID token (`Authorization: Bearer <token>`).
+- Validate request payloads and enforce per-user rate limits and tier quotas before executing external fetches, scraping, or third-party API calls.
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+### IV. Extension & Web Parity
+The Chrome Extension (`extension/`) and the React Web App (`src/`) are two surfaces of the same cloud workspace.
+- Extension features must authenticate against the user's Firebase session and read/write to the shared Firestore schema and Cloud Storage.
+- Do not build isolated data models in the extension that cannot be viewed or managed in the web dashboard.
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
-
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
-
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
-
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
-
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+### V. High-Craft UI/UX & Performance Standards
+- Follow the design system tokens and standards defined in `DESIGN.md` and `.agents/rules/ui-ux-standards.md`.
+- Maintain high Lighthouse performance and accessibility standards (ADR 0001).
+- Navigation badges must remain action-only (ADR 0010), and status history transitions must remain embedded within the application document to minimize Firestore read costs (ADR 0003).
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
-
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
-
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+This constitution supersedes any legacy open-source or local-first assumptions in older ADRs or specs. All SpecKit artifacts (`spec.md`, `plan.md`, `tasks.md`) and pull requests must verify compliance with these five principles before implementation.

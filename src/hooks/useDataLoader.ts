@@ -3,7 +3,6 @@ import type { User } from 'firebase/auth';
 import { Application, Contact } from '../types';
 import { ApplicationRepository } from '../lib/applicationRepository';
 import { ContactRepository } from '../lib/contactRepository';
-import { migrateLegacyEmbeddedContacts } from '../lib/contactMigration';
 import { posthogLogs } from '../lib/posthogLogs';
 import type { AddToastFn } from './useToast';
 
@@ -72,28 +71,11 @@ export function useDataLoader({
           loadedContacts = ContactRepository.loadGuestContacts();
         }
 
-        // Automatic legacy embedded contact migration
-        const { migratedContacts, updatedApplications, hasChanges } = migrateLegacyEmbeddedContacts(
-          loadedApps,
-          loadedContacts
-        );
-
-        if (hasChanges) {
-          loadedApps = updatedApplications;
-          loadedContacts = migratedContacts;
-          // Asynchronously persist any newly migrated standalone contacts preserving IDs
-          for (const newC of migratedContacts) {
-            ContactRepository.upsertContact(newC, user.uid).catch((err) => {
-              console.warn('Could not save migrated contact to Firestore:', err);
-            });
-          }
-        }
-
         if (requestIdRef.current !== currentRequestId) return;
 
         setApplications(loadedApps);
         setContacts(loadedContacts);
-        posthogLogs.dataHydrationCompleted('firestore', loadedApps.length, loadedContacts.length, hasChanges);
+        posthogLogs.dataHydrationCompleted('firestore', loadedApps.length, loadedContacts.length, false);
 
         // Check for guest data migration
         checkAndPromptGuestMigration();
@@ -101,24 +83,11 @@ export function useDataLoader({
         let guestApps = ApplicationRepository.loadGuestApplications();
         let guestContacts = ContactRepository.loadGuestContacts();
 
-        // Run automatic legacy embedded contact migration on guest data
-        const { migratedContacts, updatedApplications, migratedCount } = migrateLegacyEmbeddedContacts(
-          guestApps,
-          guestContacts
-        );
-
-        if (migratedCount > 0) {
-          guestApps = updatedApplications;
-          guestContacts = migratedContacts;
-          ApplicationRepository.saveGuestApplications(guestApps);
-          ContactRepository.saveGuestContacts(guestContacts);
-        }
-
         if (requestIdRef.current !== currentRequestId) return;
 
         setApplications(guestApps);
         setContacts(guestContacts);
-        posthogLogs.dataHydrationCompleted('guest_storage', guestApps.length, guestContacts.length, migratedCount > 0);
+        posthogLogs.dataHydrationCompleted('guest_storage', guestApps.length, guestContacts.length, false);
       }
     } catch (err) {
       if (requestIdRef.current !== currentRequestId) return;
