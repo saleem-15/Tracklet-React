@@ -3,6 +3,7 @@
 // Compatible with Vercel, Netlify, Cloudflare, and standard Node/Web HTTP runtimes.
 
 import { PostHog } from 'posthog-node';
+import { extractBearerToken, verifyFirebaseIdToken } from './lib/verifyFirebaseToken';
 
 const posthogKey = process.env.VITE_POSTHOG_KEY;
 const posthogHost = process.env.VITE_POSTHOG_HOST;
@@ -22,6 +23,43 @@ if (!posthogHost && process.env.NODE_ENV === 'development') {
 const posthog = posthogKey && posthogHost
   ? new PostHog(posthogKey, { host: posthogHost, privacyMode: false })
   : null;
+
+interface QuotaRecord {
+  month: string;
+  count: number;
+}
+const scrapeUsageMap = new Map<string, QuotaRecord>();
+
+function getCurrentMonthString(): string {
+  const now = new Date();
+  return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
+}
+
+export function checkAndRecordScrapeUsage(userId: string, isPro = false): { allowed: boolean; currentUsage: number; maxQuota: number } {
+  const currentMonth = getCurrentMonthString();
+  const maxQuota = isPro ? 500 : 20;
+
+  let record = scrapeUsageMap.get(userId);
+  if (!record || record.month !== currentMonth) {
+    record = { month: currentMonth, count: 0 };
+    scrapeUsageMap.set(userId, record);
+  }
+
+  if (record.count >= maxQuota) {
+    return { allowed: false, currentUsage: record.count, maxQuota };
+  }
+
+  record.count += 1;
+  return { allowed: true, currentUsage: record.count, maxQuota };
+}
+
+export function resetScrapeUsageForTesting(): void {
+  scrapeUsageMap.clear();
+}
+
+export function setScrapeUsageForTesting(userId: string, count: number): void {
+  scrapeUsageMap.set(userId, { month: getCurrentMonthString(), count });
+}
 
 const MAX_PAGE_TEXT_CHARS = 12000;
 
@@ -206,6 +244,38 @@ export default async function handler(req: any, res?: any) {
     return sendCompatResponse(res, 405, {
       error: 'Method Not Allowed',
       message: 'Only POST requests are supported.',
+    });
+  }
+
+  // ── Authentication Check (Constitution Principle III) ──
+  const token = extractBearerToken(req);
+  if (!token) {
+    return sendCompatResponse(res, 401, {
+      fallbackAvailable: false,
+      error: 'Unauthorized',
+      message: 'Valid Firebase authentication token required.',
+    });
+  }
+
+  const verifiedUser = await verifyFirebaseIdToken(token);
+  if (!verifiedUser) {
+    return sendCompatResponse(res, 401, {
+      fallbackAvailable: false,
+      error: 'Unauthorized',
+      message: 'Authentication failed. Invalid or expired token.',
+    });
+  }
+
+  // ── Monthly AI Scrape Quota Check ──
+  const quotaResult = checkAndRecordScrapeUsage(verifiedUser.uid);
+  if (!quotaResult.allowed) {
+    return sendCompatResponse(res, 429, {
+      fallbackAvailable: false,
+      error: 'Too Many Requests',
+      code: 'QUOTA_EXCEEDED',
+      message: 'Monthly AI scrape quota exceeded. Upgrade to Pro for 500 monthly scrapes.',
+      currentUsage: quotaResult.currentUsage,
+      maxQuota: quotaResult.maxQuota,
     });
   }
 
