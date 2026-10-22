@@ -55,7 +55,7 @@ export const GuestMigrationModal: React.FC<GuestMigrationModalProps> = ({
           </div>
 
           <h2 className="text-xl font-bold tracking-tight text-white flex items-center justify-center gap-2">
-            <span>Import Guest Workspace</span>
+            <span>Migrate to Tracklet Cloud</span>
             <Sparkles className="w-4 h-4 text-amber-300 animate-pulse motion-reduce:animate-none" />
           </h2>
           <p className="text-blue-100 text-xs mt-1.5 max-w-sm mx-auto leading-relaxed">

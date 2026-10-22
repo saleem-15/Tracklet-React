@@ -6,8 +6,6 @@ import { useAuth } from '../../context/AuthContext';
 import { useToastContext } from '../../context/ToastContext';
 
 export interface AuthGateProps {
-  isGuestMode: boolean;
-  onContinueAsGuest: () => void;
   onReloadData: () => Promise<void>;
   children: ReactNode;
 }
@@ -20,20 +18,19 @@ export interface AuthGateProps {
  *
  * 1. Auth loading → branded loading spinner
  * 2. Authenticated but email unverified → EmailVerificationGate
- * 3. No user and no guest mode → AuthScreen wall
+ * 3. No user → AuthScreen wall
  * 4. Otherwise → renders children (the full workspace)
  *
- * In Phase 3, AuthGate consumes user, authLoading, and toast notifications
+ * AuthGate consumes user, authLoading, and toast notifications
  * directly from feature context providers.
  */
 export function AuthGate({
-  isGuestMode,
-  onContinueAsGuest,
   onReloadData,
   children,
 }: AuthGateProps) {
   const { user, loading: authLoading } = useAuth();
   const { toasts, addToast, dismissToast } = useToastContext();
+
   // Auth state is still loading
   if (authLoading) {
     return (
@@ -62,19 +59,18 @@ export function AuthGate({
     );
   }
 
-  // Not authenticated and has not chosen guest mode (Authentication Wall)
-  if (!user && !isGuestMode) {
+  // Not authenticated (Authentication Wall)
+  if (!user) {
     return (
       <div className="min-h-screen w-screen bg-slate-50 font-sans">
         <AuthScreen
           onShowToast={addToast}
-          onContinueAsGuest={onContinueAsGuest}
         />
         <ToastContainer toasts={toasts} onDismiss={dismissToast} />
       </div>
     );
   }
 
-  // Authenticated (or guest mode) — render workspace
+  // Authenticated — render workspace
   return <>{children}</>;
 }

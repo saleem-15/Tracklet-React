@@ -10,12 +10,10 @@ import { ResetPasswordView } from './auth/ResetPasswordView';
 
 interface AuthScreenProps {
   onShowToast?: (type: 'success' | 'error' | 'info' | 'warning', title: string, message?: string) => void;
-  onContinueAsGuest?: () => void;
 }
 
 export const AuthScreen: React.FC<AuthScreenProps> = ({
   onShowToast,
-  onContinueAsGuest,
 }) => {
   const shouldReduceMotion = useReducedMotion();
   const {
@@ -168,7 +166,6 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                 onNavigate={handleNavigate}
                 onSubmit={handleLoginSubmit}
                 onGoogleSignIn={handleGoogleSignIn}
-                onContinueAsGuest={onContinueAsGuest}
                 isSubmitting={isSubmitting}
                 errorMessage={localError}
               />
@@ -188,7 +185,6 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                 onNavigate={handleNavigate}
                 onSubmit={handleSignupSubmit}
                 onGoogleSignIn={handleGoogleSignIn}
-                onContinueAsGuest={onContinueAsGuest}
                 isSubmitting={isSubmitting}
                 errorMessage={localError}
               />

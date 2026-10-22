@@ -1,6 +1,7 @@
 import { AlertTriangle, X } from 'lucide-react';
 import { AllApplicationsTable } from '../AllApplicationsTable';
-import { ActivePipelineBoard } from '../ActivePipelineBoard';
+import { ActivePipelineBoard, ActiveQuotaInfo } from '../ActivePipelineBoard';
+import { ACTIVE_STATUSES, TERMINAL_STATUSES } from '../../lib/constants';
 import { ContactsView } from '../ContactsView';
 import { StatsView } from '../StatsView';
 import { SettingsView } from '../SettingsView';
@@ -13,6 +14,7 @@ import { useToastContext } from '../../context/ToastContext';
 
 export interface WorkspaceContentProps {
   isLoading?: boolean;
+  activeQuota?: ActiveQuotaInfo;
 }
 
 /**
@@ -28,7 +30,7 @@ export interface WorkspaceContentProps {
  * In Phase 3, all domain state (applications, contacts, settings, navigation, toast)
  * is consumed directly from scoped feature context providers, eliminating 29 props.
  */
-export function WorkspaceContent({ isLoading = false }: WorkspaceContentProps) {
+export function WorkspaceContent({ isLoading = false, activeQuota }: WorkspaceContentProps) {
   const { user } = useAuth();
   const { addToast } = useToastContext();
   const {
@@ -71,6 +73,26 @@ export function WorkspaceContent({ isLoading = false }: WorkspaceContentProps) {
     updateExpirySettings,
     expiryThresholdHours,
   } = useSettings();
+
+  const handleGuardedPipelineStatusUpdate = (id: string, newStatus: string) => {
+    const targetApp = applications.find((a) => a.id === id);
+    if (targetApp) {
+      const isReactivating = 
+        TERMINAL_STATUSES.includes(targetApp.status as any) && ACTIVE_STATUSES.includes(newStatus as any);
+      if (isReactivating && activeQuota && activeQuota.current >= activeQuota.max) {
+        addToast(
+          'warning',
+          'Pipeline Capacity Reached',
+          `Free accounts can track up to ${activeQuota.max} active applications. Upgrade to Pro to reactivate this application.`
+        );
+        if (activeQuota.onUpgradeClick) {
+          activeQuota.onUpgradeClick();
+        }
+        return;
+      }
+    }
+    handleUpdatePipelineStatus(id, newStatus);
+  };
 
   if (isLoading) {
     return (
@@ -142,7 +164,8 @@ export function WorkspaceContent({ isLoading = false }: WorkspaceContentProps) {
           onSeedDemoData={handleSeedDemoData}
           selectedAppId={selectedAppId}
           onSelectApp={(app) => setSelectedAppId(app.id)}
-          onUpdateStatus={handleUpdatePipelineStatus}
+          onUpdateStatus={handleGuardedPipelineStatusUpdate}
+          activeQuota={activeQuota}
         />
       )}
 

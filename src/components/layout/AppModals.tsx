@@ -1,4 +1,5 @@
-import { Application, Contact } from '../../types';
+import { Application, Contact, PaywallTriggerContext } from '../../types';
+import { UpgradePaywallModal } from '../paywall/UpgradePaywallModal';
 import { AddApplicationModal } from '../AddApplicationModal';
 import { AuthModal } from '../AuthModal';
 import { GuestMigrationModal } from '../GuestMigrationModal';
@@ -21,6 +22,14 @@ export interface AppModalsProps {
     onDiscard: () => void;
     onClose: () => void;
   };
+  paywall?: {
+    isOpen: boolean;
+    context: PaywallTriggerContext;
+    currentUsage: number;
+    maxQuota: number;
+    onClose: () => void;
+    onUpgradeClick: () => void;
+  };
 }
 
 /**
@@ -29,9 +38,10 @@ export interface AppModalsProps {
  * Renders all top-level modal dialogs: AddApplicationModal (new job entry),
  * AuthModal (multi-provider sign-in/sign-up), GuestMigrationModal
  * (transfer localStorage guest data to authenticated cloud account),
- * TesterReportModal (bug and feedback reporting), and ExtensionModal (Chrome extension companion).
+ * TesterReportModal (bug and feedback reporting), ExtensionModal (Chrome extension companion),
+ * and UpgradePaywallModal (SaaS pipeline & scrape quotas paywall).
  */
-export function AppModals({ migration }: AppModalsProps = {}) {
+export function AppModals({ migration, paywall }: AppModalsProps = {}) {
   const { 
     isAddModalOpen, 
     closeAddModal, 
@@ -76,6 +86,18 @@ export function AppModals({ migration }: AppModalsProps = {}) {
         extensionState={extensionState}
         onShowToast={addToast}
       />
+
+      {/* SaaS Entitlement Upgrade Modal */}
+      {paywall && (
+        <UpgradePaywallModal
+          isOpen={paywall.isOpen}
+          triggerContext={paywall.context}
+          currentUsage={paywall.currentUsage}
+          maxQuota={paywall.maxQuota}
+          onClose={paywall.onClose}
+          onUpgradeClick={paywall.onUpgradeClick}
+        />
+      )}
 
       {/* Guest-to-Account Data Migration Modal */}
       {migration && (
