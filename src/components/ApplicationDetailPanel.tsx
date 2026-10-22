@@ -712,7 +712,6 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
               <ContactManagerSection
                 allContacts={allContacts}
                 linkedContactIds={app.contactIds || []}
-                legacyContacts={app.contacts || []}
                 onLinkContact={async (contactId) => {
                   if (onLinkContact) await onLinkContact(contactId, app.id);
                 }}
