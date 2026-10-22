@@ -1006,25 +1006,30 @@ document.addEventListener('DOMContentLoaded', async () => {
   let currentFirebaseConfig = null;
 
   function updateUserBadge(session) {
-    if (session && session.email) {
+    if (session && session.uid) {
       userAccountDot.classList.add('connected');
-      if (userAccountBadge) userAccountBadge.title = `Connected to Tracklet: ${session.email}`;
-      userAccountEmail.textContent = 'Cloud Sync';
-    } else if (session && session.uid) {
-      userAccountDot.classList.add('connected');
-      if (userAccountBadge) userAccountBadge.title = `Connected Account: ${session.uid}`;
-      userAccountEmail.textContent = 'Cloud Sync';
+      const tierLabel = session.planTier === 'pro' ? 'Pro' : 'Free';
+      if (userAccountBadge) {
+        userAccountBadge.title = `Connected: ${session.email || session.uid} (${tierLabel} Tier)`;
+      }
+      userAccountEmail.textContent = `${tierLabel} Tier`;
     } else {
       userAccountDot.classList.remove('connected');
-      if (userAccountBadge) userAccountBadge.title = 'Guest Mode: Click to open Tracklet workspace';
-      userAccountEmail.textContent = 'Local Mode';
+      if (userAccountBadge) {
+        userAccountBadge.title = 'Not signed in. Click to sign in on Tracklet Web.';
+      }
+      userAccountEmail.textContent = 'Sign In';
     }
   }
 
   if (userAccountBadge) {
     userAccountBadge.style.cursor = 'pointer';
     userAccountBadge.addEventListener('click', () => {
-      focusOrOpenWorkspace();
+      if (!currentUserSession || !currentUserSession.uid) {
+        focusOrOpenWorkspace(null, '/login?source=extension');
+      } else {
+        focusOrOpenWorkspace();
+      }
     });
   }
 
@@ -2052,11 +2057,22 @@ document.addEventListener('DOMContentLoaded', async () => {
           } catch {}
 
           const cleanBase = origin.replace(/\/+$/, '');
+          const headers = { 'Content-Type': 'application/json' };
+          try {
+            const syncStorage = typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local;
+            if (syncStorage) {
+              const sessionRes = await new Promise((resolve) => syncStorage.get(['tracklet_user_session'], resolve));
+              if (sessionRes && sessionRes.tracklet_user_session && sessionRes.tracklet_user_session.idToken) {
+                headers['Authorization'] = `Bearer ${sessionRes.tracklet_user_session.idToken}`;
+              }
+            }
+          } catch {}
+
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), 10000);
           const resp = await fetch(`${cleanBase}/api/scrape-job`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers,
             body: JSON.stringify({
               url: tab.url,
               title: textRes.title || tab.title || '',
@@ -3426,6 +3442,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       return;
     }
 
+    if (!currentUserSession || !currentUserSession.uid) {
+      showToast('Authentication required. Sign in on Tracklet Web to log emails.');
+      focusOrOpenWorkspace(null, '/login?source=extension');
+      return;
+    }
+
     const subject = emailSubjectInput.value.trim();
     const counterparty = emailCounterpartyInput.value.trim();
     if (!subject) {
@@ -3939,6 +3961,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   async function handleSaveContact() {
     if (isSavingContact) return;
+    if (!currentUserSession || !currentUserSession.uid) {
+      showToast('Authentication required. Sign in on Tracklet Web to save contacts.');
+      focusOrOpenWorkspace(null, '/login?source=extension');
+      return;
+    }
 
     const name = contactNameInput ? contactNameInput.value.trim() : '';
     const role = contactRoleInput ? contactRoleInput.value.trim() : '';
@@ -4532,6 +4559,21 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   async function handleSave() {
+    if (!currentUserSession || !currentUserSession.uid) {
+      showToast('Authentication required. Sign in on Tracklet Web to save jobs.');
+      focusOrOpenWorkspace(null, '/login?source=extension');
+      return;
+    }
+
+    const activeStages = ['Saved', 'Applied', 'Screening', 'Interview', 'Offer'];
+    const currentActiveCount = (allKnownAppsList || []).filter(a => activeStages.includes(a.status)).length;
+    const isPro = currentUserSession.planTier === 'pro';
+    if (!isPro && currentActiveCount >= 20 && !matchedApplication) {
+      showToast('Free tier limit reached (20/20 active jobs). Upgrade to Pro or archive an application.');
+      focusOrOpenWorkspace(null, '/settings');
+      return;
+    }
+
     const company = companyInput.value.trim();
     const role = roleInput.value.trim();
     if (!company) {
@@ -5402,6 +5444,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   function triggerAutofill() {
     if (!autofillTriggerBtn || autofillTriggerBtn.disabled) return;
+    if (!currentUserSession || !currentUserSession.uid) {
+      showToast('Authentication required. Sign in on Tracklet Web to autofill forms.');
+      focusOrOpenWorkspace(null, '/login?source=extension');
+      return;
+    }
     if (!currentAtsDetection || !currentAtsDetection.formElementFound) return;
 
     if (!candidateProfile || (!candidateProfile.fullName && !candidateProfile.email)) {
