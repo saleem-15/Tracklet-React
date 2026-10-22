@@ -1,12 +1,35 @@
-# Tracklet Architecture & Development Guidelines
+# Antigravity Agent Instructions — Tracklet SaaS
 
-You are working on **Tracklet**, a high-clarity, modern job application tracking system built with React 19, TypeScript, Vite, TailwindCSS v4, and Firebase.
+## 1. Project Identity & Business Model
+Tracklet is a **commercial, closed-source B2C SaaS web application and Chrome Extension** for job seekers. 
+> **IMPORTANT PIVOT NOTICE:** Tracklet previously operated as an open-source, local-first/privacy-first project. It has pivoted to a **Cloud-Native Freemium/Pro SaaS model**. Never propose or implement local-only storage silos (`IndexedDB` or unauthenticated `localStorage` databases) for new features.
 
-Follow these mandatory architecture rules to keep the codebase clean, modular, and robust.
+## 2. Tech Stack & Key Directories
+- **Frontend (`src/`):** React 19, TypeScript, Vite, Tailwind CSS, Lucide Icons.
+  - Domain hooks & state: `src/hooks/`, `src/context/` (see `docs/architecture-migration/`).
+  - Core views: `ActivePipelineBoard.tsx`, `AllApplicationsTable.tsx`, `ApplicationDetailPanel.tsx`, `StatsView.tsx`.
+- **Backend & Persistence:** Firebase Authentication, Cloud Firestore (`firestore.rules`), Firebase Cloud Storage (for resumes/documents), and Vercel/Node Serverless Functions (`api/`).
+- **Browser Extension (`extension/`):** Manifest V3 Chrome Extension (`popup.js`, `content.js`, `background.js`, `jobBoardRegistry.js`).
+- **Specs & Architecture:**
+  - Product & Business Truth: `PRODUCT.md`, `STRATEGY.md`, `DESIGN.md`.
+  - SpecKit Constitution: `.specify/memory/constitution.md`.
+  - Feature Specs: `specs/` (e.g., `specs/012-contact-email-log`).
+  - Architecture Decision Records: `docs/adr/0001` through `0011`.
+
+## 3. Mandatory Architectural Guardrails
+1. **Auth & Multi-Tenancy:** All Firestore collections and Cloud Storage paths must be strictly scoped to `users/{userId}/...` (ADR 0003).
+2. **SaaS Entitlements:** Always account for `user.planTier` (`'free' | 'pro'`) when modifying application creation, scraping (`api/scrape-job.ts`), ATS autofill, resume uploads, or analytics views (`StatsView.tsx`).
+3. **API Security:** Never expose unauthenticated serverless endpoints in `/api`. Always verify the caller's Firebase Auth ID token.
+4. **Telemetry:** ADR 0004 (conditional/opt-in telemetry) is superseded by ADR 0011. Error tracking (Sentry) and funnel analytics (PostHog) are standard across authenticated views with PII scrubbing.
+5. **UI/UX Craft:** Adhere strictly to `.agents/rules/ui-ux-standards.md` and `DESIGN.md`.
+
+## 4. Workflow & SpecKit Usage
+- When planning or building a new feature, check `.specify/memory/constitution.md` and `PRODUCT.md` first.
+- When modifying data models, use the `modify-data-model` skill and update both TypeScript interfaces and `firestore.rules`.
 
 ---
 
-## 1. Core Principles
+## 5. Core Architectural Principles
 
 - **Zero Spaghetti Code**: Never put data fetching, storage sync, or business logic directly inside UI view components.
 - **Repository Pattern**: All persistence (Firestore & localStorage) MUST go through `ApplicationRepository` (`src/lib/applicationRepository.ts`).
@@ -16,33 +39,7 @@ Follow these mandatory architecture rules to keep the codebase clean, modular, a
 
 ---
 
-## 2. Directory & Layering Structure
-
-```
-src/
-├── components/          # Pure presentation & modular UI components
-│   ├── ErrorBoundary.tsx
-│   ├── AllApplicationsTable.tsx
-│   ├── ActivePipelineBoard.tsx
-│   ├── ApplicationDetailPanel.tsx
-│   └── ...
-├── lib/                 # Logic, services & utility layer
-│   ├── constants.ts              # Shared statuses, platforms, style maps, storage keys
-│   ├── applicationRepository.ts  # Unified persistence layer (Firestore + localStorage)
-│   ├── dateUtils.ts              # Pure date formatting & calculation helpers
-│   ├── filterUtils.ts            # Pure filter & sort logic
-│   ├── firebase.ts               # Firebase initialization & exports
-│   ├── historyService.ts         # Status history sub-collection service
-│   ├── expiryUtils.ts            # Expiry notification calculations
-│   └── ...
-├── types.ts             # TypeScript interfaces and union types
-├── App.tsx              # Root container component (orchestrates layout & state)
-└── main.tsx             # Entry point with ErrorBoundary
-```
-
----
-
-## 3. Mandatory Coding Conventions
+## 6. Mandatory Coding Conventions
 
 ### A. Adding or Modifying Data Attributes (`Application` model)
 1. Update `Application` interface in `src/types.ts`.
@@ -100,7 +97,7 @@ All components must follow the formalized guidelines in `.agents/rules/ui-ux-sta
 
 ---
 
-## 4. Verification Checklist Before Marking Work Complete
+## 7. Verification Checklist Before Marking Work Complete
 Run these commands to verify code integrity before finalizing any task:
 1. `npx tsc --noEmit` — Type checks must pass with zero errors.
 2. `npm run build` — Production build must succeed cleanly.
