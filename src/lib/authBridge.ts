@@ -63,12 +63,17 @@ export async function broadcastAuthToExtension(
 
   // 1. Content Script Bridge (Dispatched to active tab)
   try {
+    const targetOrigin =
+      typeof window !== 'undefined' && window.location?.origin && window.location.origin !== 'null'
+        ? window.location.origin
+        : '*';
+
     window.postMessage(
       {
         type: 'TRACKLET_WEB_AUTH_SYNC',
         payload,
       },
-      '*'
+      targetOrigin
     );
   } catch (err) {
     console.warn('Failed to postMessage to content script:', err);

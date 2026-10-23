@@ -1,4 +1,5 @@
 import { Application, Contact, PaywallTriggerContext } from '../../types';
+import { ACTIVE_STATUSES } from '../../lib/constants';
 import { UpgradePaywallModal } from '../paywall/UpgradePaywallModal';
 import { AddApplicationModal } from '../AddApplicationModal';
 import { AuthModal } from '../AuthModal';
@@ -57,6 +58,26 @@ export function AppModals({ migration, paywall }: AppModalsProps = {}) {
   const { addToast } = useToastContext();
   const extensionState = useExtensionContext();
 
+  const handleGuardedAdd = async (
+    newApp: Parameters<typeof handleAddApplication>[0]
+  ) => {
+    if (
+      paywall &&
+      ACTIVE_STATUSES.includes(newApp.status as any) &&
+      paywall.currentUsage >= paywall.maxQuota
+    ) {
+      addToast(
+        'warning',
+        'Pipeline Capacity Reached',
+        `Free accounts can track up to ${paywall.maxQuota} active applications. Upgrade to Pro to track more applications.`
+      );
+      closeAddModal();
+      paywall.onUpgradeClick();
+      return;
+    }
+    return handleAddApplication(newApp);
+  };
+
   return (
     <>
       {/* Add Application Modal */}
@@ -64,7 +85,7 @@ export function AppModals({ migration, paywall }: AppModalsProps = {}) {
         isOpen={isAddModalOpen}
         allContacts={contacts}
         onClose={closeAddModal}
-        onAdd={handleAddApplication}
+        onAdd={handleGuardedAdd}
         onCreateContact={handleAddContact}
       />
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Trash2, X } from 'lucide-react';
 import { useEscapeKey } from '../../lib/useEscapeKey';
 
@@ -16,6 +16,12 @@ export const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({
   isDeleting,
 }) => {
   const [deleteConfirmationInput, setDeleteConfirmationInput] = useState('');
+
+  useEffect(() => {
+    if (!isOpen) {
+      setDeleteConfirmationInput('');
+    }
+  }, [isOpen]);
 
   useEscapeKey(onClose, isOpen);
 

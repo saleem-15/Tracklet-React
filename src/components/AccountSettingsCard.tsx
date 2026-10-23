@@ -241,7 +241,7 @@ export const AccountSettingsCard: React.FC<AccountSettingsCardProps> = ({
           isGrandfathered={entitlement.isGrandfathered}
           scrapesUsed={scrapesUsed}
           maxScrapes={maxScrapes}
-          onUpgradeClick={() => entitlement.openPaywall('pipeline_cap')}
+          onUpgradeClick={() => entitlement.openPaywall('feature_gate')}
         />
 
         {/* Account Actions */}
