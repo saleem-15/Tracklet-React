@@ -8,7 +8,7 @@
     "package:ext": "node scripts/package-extension.js",
     "build": "node scripts/package-extension.js && vite build",
     "preview": "vite preview",
-    "clean": "rm -rf dist server.js",
+    "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
