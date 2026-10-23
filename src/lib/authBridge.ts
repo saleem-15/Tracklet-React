@@ -1,6 +1,7 @@
 import { User } from 'firebase/auth';
 import { PlanTier } from '../types';
 import { LATEST_EXTENSION_VERSION } from './constants';
+import { FIREBASE_CONFIG } from '../config/firebase.config';
 
 declare const chrome: any;
 
@@ -55,8 +56,8 @@ export async function broadcastAuthToExtension(
   const payload: ExtensionAuthPayload = {
     user: userSession,
     config: {
-      projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || 'demo-tracklet',
-      apiKey: import.meta.env.VITE_FIREBASE_API_KEY || 'demo-api-key',
+      projectId: FIREBASE_CONFIG.projectId,
+      apiKey: FIREBASE_CONFIG.apiKey,
     },
     latestVersion: LATEST_EXTENSION_VERSION,
   };
