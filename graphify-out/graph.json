@@ -5466,7 +5466,7 @@
       "source_location": "L5890",
       "_origin": "ast",
       "id": "agents_skills_impeccable_scripts_detector_detect_antipatterns_browser_metriclengthpx",
-      "community": 370,
+      "community": 366,
       "community_name": "isScreenReaderOnlyTextStyle",
       "norm_label": "metriclengthpx()"
     },
@@ -5477,7 +5477,7 @@
       "source_location": "L5896",
       "_origin": "ast",
       "id": "agents_skills_impeccable_scripts_detector_detect_antipatterns_browser_firstmetriclengthpx",
-      "community": 370,
+      "community": 366,
       "community_name": "isScreenReaderOnlyTextStyle",
       "norm_label": "firstmetriclengthpx()"
     },
@@ -5488,7 +5488,7 @@
       "source_location": "L5904",
       "_origin": "ast",
       "id": "agents_skills_impeccable_scripts_detector_detect_antipatterns_browser_expandboxshorthand",
-      "community": 370,
+      "community": 366,
       "community_name": "isScreenReaderOnlyTextStyle",
       "norm_label": "expandboxshorthand()"
     },
@@ -5499,7 +5499,7 @@
       "source_location": "L5911",
       "_origin": "ast",
       "id": "agents_skills_impeccable_scripts_detector_detect_antipatterns_browser_clippedbyinset",
-      "community": 370,
+      "community": 366,
       "community_name": "isScreenReaderOnlyTextStyle",
       "norm_label": "clippedbyinset()"
     },
@@ -5510,7 +5510,7 @@
       "source_location": "L5923",
       "_origin": "ast",
       "id": "agents_skills_impeccable_scripts_detector_detect_antipatterns_browser_clippedbyrect",
-      "community": 370,
+      "community": 366,
       "community_name": "isScreenReaderOnlyTextStyle",
       "norm_label": "clippedbyrect()"
     },
@@ -5521,7 +5521,7 @@
       "source_location": "L5933",
       "_origin": "ast",
       "id": "agents_skills_impeccable_scripts_detector_detect_antipatterns_browser_isscreenreaderonlytextstyle",
-      "community": 370,
+      "community": 366,
       "community_name": "isScreenReaderOnlyTextStyle",
       "norm_label": "isscreenreaderonlytextstyle()"
     },
@@ -15784,7 +15784,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "agents_skills_impeccable_scripts_lib_surface_briefs",
-      "community": 356,
+      "community": 355,
       "community_name": "surface-briefs.mjs",
       "norm_label": "surface-briefs.mjs"
     },
@@ -15795,7 +15795,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "agents_skills_impeccable_scripts_lib_surface_briefs_getsurfacebriefdir",
-      "community": 356,
+      "community": 355,
       "community_name": "surface-briefs.mjs",
       "norm_label": "getsurfacebriefdir()"
     },
@@ -15806,7 +15806,7 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "agents_skills_impeccable_scripts_lib_surface_briefs_normalizesurfacetarget",
-      "community": 356,
+      "community": 355,
       "community_name": "surface-briefs.mjs",
       "norm_label": "normalizesurfacetarget()"
     },
@@ -15817,7 +15817,7 @@
       "source_location": "L46",
       "_origin": "ast",
       "id": "agents_skills_impeccable_scripts_lib_surface_briefs_surfacebriefpathfortarget",
-      "community": 356,
+      "community": 355,
       "community_name": "surface-briefs.mjs",
       "norm_label": "surfacebriefpathfortarget()"
     },
@@ -15828,7 +15828,7 @@
       "source_location": "L54",
       "_origin": "ast",
       "id": "agents_skills_impeccable_scripts_lib_surface_briefs_parsesurfacebrief",
-      "community": 356,
+      "community": 355,
       "community_name": "surface-briefs.mjs",
       "norm_label": "parsesurfacebrief()"
     },
@@ -15839,7 +15839,7 @@
       "source_location": "L86",
       "_origin": "ast",
       "id": "agents_skills_impeccable_scripts_lib_surface_briefs_listsurfacebriefs",
-      "community": 356,
+      "community": 355,
       "community_name": "surface-briefs.mjs",
       "norm_label": "listsurfacebriefs()"
     },
@@ -15850,7 +15850,7 @@
       "source_location": "L104",
       "_origin": "ast",
       "id": "agents_skills_impeccable_scripts_lib_surface_briefs_resolvesurfacebrief",
-      "community": 356,
+      "community": 355,
       "community_name": "surface-briefs.mjs",
       "norm_label": "resolvesurfacebrief()"
     },
@@ -15861,7 +15861,7 @@
       "source_location": "L127",
       "_origin": "ast",
       "id": "agents_skills_impeccable_scripts_lib_surface_briefs_writesurfacebrief",
-      "community": 356,
+      "community": 355,
       "community_name": "surface-briefs.mjs",
       "norm_label": "writesurfacebrief()"
     },
@@ -31217,7 +31217,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "agents_skills_impeccable_scripts_surface_brief",
-      "community": 356,
+      "community": 355,
       "community_name": "surface-briefs.mjs",
       "norm_label": "surface-brief.mjs"
     },
@@ -31228,7 +31228,7 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "agents_skills_impeccable_scripts_surface_brief_summary",
-      "community": 356,
+      "community": 355,
       "community_name": "surface-briefs.mjs",
       "norm_label": "summary()"
     },
@@ -31239,7 +31239,7 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "agents_skills_impeccable_scripts_surface_brief_main",
-      "community": 356,
+      "community": 355,
       "community_name": "surface-briefs.mjs",
       "norm_label": "main()"
     },
@@ -31250,7 +31250,7 @@
       "source_location": "L58",
       "_origin": "ast",
       "id": "agents_skills_impeccable_scripts_surface_brief_ismainmodule",
-      "community": 356,
+      "community": 355,
       "community_name": "surface-briefs.mjs",
       "norm_label": "ismainmodule()"
     },
@@ -31426,7 +31426,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "agents_skills_ship_scripts_create_pr_ps1_agents_skills_ship_scripts_create_pr",
-      "community": 355,
+      "community": 354,
       "community_name": "create-pr.ps1",
       "norm_label": "create-pr.ps1"
     },
@@ -31690,7 +31690,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "api_lib_verifyfirebasetoken",
-      "community": 361,
+      "community": 360,
       "community_name": "apiAuthHardening.test.ts",
       "norm_label": "verifyfirebasetoken.ts"
     },
@@ -31701,7 +31701,7 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "api_lib_verifyfirebasetoken_verifiedtokenuser",
-      "community": 361,
+      "community": 360,
       "community_name": "apiAuthHardening.test.ts",
       "norm_label": "verifiedtokenuser"
     },
@@ -31712,7 +31712,7 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "api_lib_verifyfirebasetoken_cachedgooglecerts",
-      "community": 361,
+      "community": 360,
       "community_name": "apiAuthHardening.test.ts",
       "norm_label": "cachedgooglecerts"
     },
@@ -31723,7 +31723,7 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "api_lib_verifyfirebasetoken_getgooglepubliccerts",
-      "community": 361,
+      "community": 360,
       "community_name": "apiAuthHardening.test.ts",
       "norm_label": "getgooglepubliccerts()"
     },
@@ -31734,7 +31734,7 @@
       "source_location": "L53",
       "_origin": "ast",
       "id": "api_lib_verifyfirebasetoken_extractbearertoken",
-      "community": 361,
+      "community": 360,
       "community_name": "apiAuthHardening.test.ts",
       "norm_label": "extractbearertoken()"
     },
@@ -31745,7 +31745,7 @@
       "source_location": "L77",
       "_origin": "ast",
       "id": "api_lib_verifyfirebasetoken_verifyfirebaseidtoken",
-      "community": 361,
+      "community": 360,
       "community_name": "apiAuthHardening.test.ts",
       "norm_label": "verifyfirebaseidtoken()"
     },
@@ -31756,7 +31756,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "api_report_issue",
-      "community": 361,
+      "community": 360,
       "community_name": "apiAuthHardening.test.ts",
       "norm_label": "report-issue.ts"
     },
@@ -31767,7 +31767,7 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "api_report_issue_sendcompatresponse",
-      "community": 361,
+      "community": 360,
       "community_name": "apiAuthHardening.test.ts",
       "norm_label": "sendcompatresponse()"
     },
@@ -31778,7 +31778,7 @@
       "source_location": "L43",
       "_origin": "ast",
       "id": "api_report_issue_parserequestbody",
-      "community": 361,
+      "community": 360,
       "community_name": "apiAuthHardening.test.ts",
       "norm_label": "parserequestbody()"
     },
@@ -31789,7 +31789,7 @@
       "source_location": "L114",
       "_origin": "ast",
       "id": "api_report_issue_handler",
-      "community": 361,
+      "community": 360,
       "community_name": "apiAuthHardening.test.ts",
       "norm_label": "handler()"
     },
@@ -31800,7 +31800,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "api_scrape_job",
-      "community": 354,
+      "community": 353,
       "community_name": "scrape-job.ts",
       "norm_label": "scrape-job.ts"
     },
@@ -31811,7 +31811,7 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "api_scrape_job_quotarecord",
-      "community": 354,
+      "community": 353,
       "community_name": "scrape-job.ts",
       "norm_label": "quotarecord"
     },
@@ -31822,7 +31822,7 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "api_scrape_job_scrapeusagemap",
-      "community": 354,
+      "community": 353,
       "community_name": "scrape-job.ts",
       "norm_label": "scrapeusagemap"
     },
@@ -31833,7 +31833,7 @@
       "source_location": "L33",
       "_origin": "ast",
       "id": "api_scrape_job_getcurrentmonthstring",
-      "community": 354,
+      "community": 353,
       "community_name": "scrape-job.ts",
       "norm_label": "getcurrentmonthstring()"
     },
@@ -31844,7 +31844,7 @@
       "source_location": "L42",
       "_origin": "ast",
       "id": "api_scrape_job_resolveuserplantier",
-      "community": 354,
+      "community": 353,
       "community_name": "scrape-job.ts",
       "norm_label": "resolveuserplantier()"
     },
@@ -31855,7 +31855,7 @@
       "source_location": "L77",
       "_origin": "ast",
       "id": "api_scrape_job_checkandrecordscrapeusage",
-      "community": 354,
+      "community": 353,
       "community_name": "scrape-job.ts",
       "norm_label": "checkandrecordscrapeusage()"
     },
@@ -31866,7 +31866,7 @@
       "source_location": "L176",
       "_origin": "ast",
       "id": "api_scrape_job_resetscrapeusagefortesting",
-      "community": 354,
+      "community": 353,
       "community_name": "scrape-job.ts",
       "norm_label": "resetscrapeusagefortesting()"
     },
@@ -31877,7 +31877,7 @@
       "source_location": "L180",
       "_origin": "ast",
       "id": "api_scrape_job_setscrapeusagefortesting",
-      "community": 354,
+      "community": 353,
       "community_name": "scrape-job.ts",
       "norm_label": "setscrapeusagefortesting()"
     },
@@ -31888,7 +31888,7 @@
       "source_location": "L187",
       "_origin": "ast",
       "id": "api_scrape_job_gemini_response_schema",
-      "community": 354,
+      "community": 353,
       "community_name": "scrape-job.ts",
       "norm_label": "gemini_response_schema"
     },
@@ -31899,7 +31899,7 @@
       "source_location": "L232",
       "_origin": "ast",
       "id": "api_scrape_job_sendcompatresponse",
-      "community": 354,
+      "community": 353,
       "community_name": "scrape-job.ts",
       "norm_label": "sendcompatresponse()"
     },
@@ -31910,7 +31910,7 @@
       "source_location": "L257",
       "_origin": "ast",
       "id": "api_scrape_job_iprequesthistory",
-      "community": 354,
+      "community": 353,
       "community_name": "scrape-job.ts",
       "norm_label": "iprequesthistory"
     },
@@ -31921,7 +31921,7 @@
       "source_location": "L259",
       "_origin": "ast",
       "id": "api_scrape_job_checkratelimit",
-      "community": 354,
+      "community": 353,
       "community_name": "scrape-job.ts",
       "norm_label": "checkratelimit()"
     },
@@ -31932,7 +31932,7 @@
       "source_location": "L280",
       "_origin": "ast",
       "id": "api_scrape_job_getclientip",
-      "community": 354,
+      "community": 353,
       "community_name": "scrape-job.ts",
       "norm_label": "getclientip()"
     },
@@ -31943,7 +31943,7 @@
       "source_location": "L288",
       "_origin": "ast",
       "id": "api_scrape_job_capturegeminigeneration",
-      "community": 354,
+      "community": 353,
       "community_name": "scrape-job.ts",
       "norm_label": "capturegeminigeneration()"
     },
@@ -31954,7 +31954,7 @@
       "source_location": "L344",
       "_origin": "ast",
       "id": "api_scrape_job_handler",
-      "community": 354,
+      "community": 353,
       "community_name": "scrape-job.ts",
       "norm_label": "handler()"
     },
@@ -41392,7 +41392,7 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "src_components_layout_appmodals_appmodalsprops",
-      "community": 362,
+      "community": 361,
       "community_name": "src/types.ts",
       "norm_label": "appmodalsprops"
     },
@@ -41513,7 +41513,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_paywall_upgradepaywallmodal",
-      "community": 362,
+      "community": 361,
       "community_name": "src/types.ts",
       "norm_label": "upgradepaywallmodal.tsx"
     },
@@ -41524,7 +41524,7 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "src_components_paywall_upgradepaywallmodal_context_titles",
-      "community": 362,
+      "community": 361,
       "community_name": "src/types.ts",
       "norm_label": "context_titles"
     },
@@ -41535,7 +41535,7 @@
       "source_location": "L35",
       "_origin": "ast",
       "id": "src_components_paywall_upgradepaywallmodal_pro_features",
-      "community": 362,
+      "community": 361,
       "community_name": "src/types.ts",
       "norm_label": "pro_features"
     },
@@ -41546,7 +41546,7 @@
       "source_location": "L43",
       "_origin": "ast",
       "id": "src_components_paywall_upgradepaywallmodal_upgradepaywallmodal",
-      "community": 362,
+      "community": 361,
       "community_name": "src/types.ts",
       "norm_label": "upgradepaywallmodal()"
     },
@@ -42470,7 +42470,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_hooks_useentitlement",
-      "community": 362,
+      "community": 361,
       "community_name": "src/types.ts",
       "norm_label": "useentitlement.ts"
     },
@@ -42481,7 +42481,7 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "src_hooks_useentitlement_useentitlementprops",
-      "community": 362,
+      "community": 361,
       "community_name": "src/types.ts",
       "norm_label": "useentitlementprops"
     },
@@ -42492,7 +42492,7 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "src_hooks_useentitlement_useentitlementreturn",
-      "community": 362,
+      "community": 361,
       "community_name": "src/types.ts",
       "norm_label": "useentitlementreturn"
     },
@@ -43328,7 +43328,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_lib_authbridge",
-      "community": 362,
+      "community": 361,
       "community_name": "src/types.ts",
       "norm_label": "authbridge.ts"
     },
@@ -43339,7 +43339,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "src_lib_authbridge_extensionauthpayload",
-      "community": 362,
+      "community": 361,
       "community_name": "src/types.ts",
       "norm_label": "extensionauthpayload"
     },
@@ -43350,7 +43350,7 @@
       "source_location": "L30",
       "_origin": "ast",
       "id": "src_lib_authbridge_broadcastauthtoextension",
-      "community": 362,
+      "community": 361,
       "community_name": "src/types.ts",
       "norm_label": "broadcastauthtoextension()"
     },
@@ -43779,7 +43779,7 @@
       "source_location": "L167",
       "_origin": "ast",
       "id": "src_lib_constants_saas_limits",
-      "community": 362,
+      "community": 361,
       "community_name": "src/types.ts",
       "norm_label": "saas_limits"
     },
@@ -43790,7 +43790,7 @@
       "source_location": "L173",
       "_origin": "ast",
       "id": "src_lib_constants_default_user_quotas",
-      "community": 362,
+      "community": 361,
       "community_name": "src/types.ts",
       "norm_label": "default_user_quotas"
     },
@@ -45649,7 +45649,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_lib_editor_uselinkpopover",
-      "community": 372,
+      "community": 368,
       "community_name": "useLinkPopover.ts",
       "norm_label": "uselinkpopover.ts"
     },
@@ -45660,7 +45660,7 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "src_lib_editor_uselinkpopover_linkdialogstate",
-      "community": 372,
+      "community": 368,
       "community_name": "useLinkPopover.ts",
       "norm_label": "linkdialogstate"
     },
@@ -45671,7 +45671,7 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "src_lib_editor_uselinkpopover_empty_link",
-      "community": 372,
+      "community": 368,
       "community_name": "useLinkPopover.ts",
       "norm_label": "empty_link"
     },
@@ -45682,7 +45682,7 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "src_lib_editor_uselinkpopover_issafelinkurl",
-      "community": 372,
+      "community": 368,
       "community_name": "useLinkPopover.ts",
       "norm_label": "issafelinkurl()"
     },
@@ -45693,7 +45693,7 @@
       "source_location": "L36",
       "_origin": "ast",
       "id": "src_lib_editor_uselinkpopover_escapehtml",
-      "community": 372,
+      "community": 368,
       "community_name": "useLinkPopover.ts",
       "norm_label": "escapehtml()"
     },
@@ -45704,7 +45704,7 @@
       "source_location": "L40",
       "_origin": "ast",
       "id": "src_lib_editor_uselinkpopover_uselinkpopover",
-      "community": 372,
+      "community": 368,
       "community_name": "useLinkPopover.ts",
       "norm_label": "uselinkpopover()"
     },
@@ -45979,7 +45979,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_lib_entitlementrepository",
-      "community": 362,
+      "community": 361,
       "community_name": "src/types.ts",
       "norm_label": "entitlementrepository.ts"
     },
@@ -45990,7 +45990,7 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "src_lib_entitlementrepository_getnextmonthresetdate",
-      "community": 362,
+      "community": 361,
       "community_name": "src/types.ts",
       "norm_label": "getnextmonthresetdate()"
     },
@@ -46001,7 +46001,7 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "src_lib_entitlementrepository_entitlementrepository",
-      "community": 362,
+      "community": 361,
       "community_name": "src/types.ts",
       "norm_label": "entitlementrepository"
     },
@@ -46012,7 +46012,7 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "src_lib_entitlementrepository_entitlementrepository_getorcreateprofile",
-      "community": 362,
+      "community": 361,
       "community_name": "src/types.ts",
       "norm_label": ".getorcreateprofile()"
     },
@@ -46023,7 +46023,7 @@
       "source_location": "L117",
       "_origin": "ast",
       "id": "src_lib_entitlementrepository_entitlementrepository_getprofile",
-      "community": 362,
+      "community": 361,
       "community_name": "src/types.ts",
       "norm_label": ".getprofile()"
     },
@@ -46034,7 +46034,7 @@
       "source_location": "L148",
       "_origin": "ast",
       "id": "src_lib_entitlementrepository_entitlementrepository_checklimits",
-      "community": 362,
+      "community": 361,
       "community_name": "src/types.ts",
       "norm_label": ".checklimits()"
     },
@@ -46045,7 +46045,7 @@
       "source_location": "L174",
       "_origin": "ast",
       "id": "src_lib_entitlementrepository_entitlementrepository_incrementscrapeusage",
-      "community": 362,
+      "community": 361,
       "community_name": "src/types.ts",
       "norm_label": ".incrementscrapeusage()"
     },
@@ -48311,7 +48311,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_types",
-      "community": 362,
+      "community": 361,
       "community_name": "src/types.ts",
       "norm_label": "src/types.ts"
     },
@@ -48465,7 +48465,7 @@
       "source_location": "L145",
       "_origin": "ast",
       "id": "src_types_sortorder",
-      "community": 362,
+      "community": 361,
       "community_name": "src/types.ts",
       "norm_label": "sortorder"
     },
@@ -48553,7 +48553,7 @@
       "source_location": "L183",
       "_origin": "ast",
       "id": "src_types_guestmigrationpayload",
-      "community": 362,
+      "community": 361,
       "community_name": "src/types.ts",
       "norm_label": "guestmigrationpayload"
     },
@@ -48564,7 +48564,7 @@
       "source_location": "L189",
       "_origin": "ast",
       "id": "src_types_plantier",
-      "community": 362,
+      "community": 361,
       "community_name": "src/types.ts",
       "norm_label": "plantier"
     },
@@ -48575,7 +48575,7 @@
       "source_location": "L191",
       "_origin": "ast",
       "id": "src_types_subscriptionstatus",
-      "community": 362,
+      "community": 361,
       "community_name": "src/types.ts",
       "norm_label": "subscriptionstatus"
     },
@@ -48586,7 +48586,7 @@
       "source_location": "L198",
       "_origin": "ast",
       "id": "src_types_userquotas",
-      "community": 362,
+      "community": 361,
       "community_name": "src/types.ts",
       "norm_label": "userquotas"
     },
@@ -48597,7 +48597,7 @@
       "source_location": "L204",
       "_origin": "ast",
       "id": "src_types_userentitlementprofile",
-      "community": 362,
+      "community": 361,
       "community_name": "src/types.ts",
       "norm_label": "userentitlementprofile"
     },
@@ -48608,7 +48608,7 @@
       "source_location": "L217",
       "_origin": "ast",
       "id": "src_types_paywalltriggercontext",
-      "community": 362,
+      "community": 361,
       "community_name": "src/types.ts",
       "norm_label": "paywalltriggercontext"
     },
@@ -48619,7 +48619,7 @@
       "source_location": "L223",
       "_origin": "ast",
       "id": "src_types_paywallmodalprops",
-      "community": 362,
+      "community": 361,
       "community_name": "src/types.ts",
       "norm_label": "paywallmodalprops"
     },
@@ -48630,7 +48630,7 @@
       "source_location": "L232",
       "_origin": "ast",
       "id": "src_types_extensionusersession",
-      "community": 362,
+      "community": 361,
       "community_name": "src/types.ts",
       "norm_label": "extensionusersession"
     },
@@ -48663,7 +48663,7 @@
       "source_location": "L258",
       "_origin": "ast",
       "id": "src_types_testerreportstatus",
-      "community": 362,
+      "community": 361,
       "community_name": "src/types.ts",
       "norm_label": "testerreportstatus"
     },
@@ -48740,7 +48740,7 @@
       "source_location": "L326",
       "_origin": "ast",
       "id": "src_types_trackletextpingmessage",
-      "community": 362,
+      "community": 361,
       "community_name": "src/types.ts",
       "norm_label": "trackletextpingmessage"
     },
@@ -48751,7 +48751,7 @@
       "source_location": "L331",
       "_origin": "ast",
       "id": "src_types_trackletextpongpayload",
-      "community": 362,
+      "community": 361,
       "community_name": "src/types.ts",
       "norm_label": "trackletextpongpayload"
     },
@@ -48762,7 +48762,7 @@
       "source_location": "L337",
       "_origin": "ast",
       "id": "src_types_trackletextpongmessage",
-      "community": 362,
+      "community": 361,
       "community_name": "src/types.ts",
       "norm_label": "trackletextpongmessage"
     },
@@ -48850,7 +48850,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "tests_unit_apiauthhardening_test",
-      "community": 361,
+      "community": 360,
       "community_name": "apiAuthHardening.test.ts",
       "norm_label": "apiauthhardening.test.ts"
     },
@@ -48861,7 +48861,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "tests_unit_apireportissue_test",
-      "community": 361,
+      "community": 360,
       "community_name": "apiAuthHardening.test.ts",
       "norm_label": "apireportissue.test.ts"
     },
@@ -49004,7 +49004,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "tests_unit_contactclipper_test",
-      "community": 362,
+      "community": 361,
       "community_name": "src/types.ts",
       "norm_label": "contactclipper.test.ts"
     },
@@ -49015,7 +49015,7 @@
       "source_location": "L8",
       "_origin": "ast",
       "id": "tests_unit_contactclipper_test_infercontactcategory",
-      "community": 362,
+      "community": 361,
       "community_name": "src/types.ts",
       "norm_label": "infercontactcategory()"
     },
@@ -49026,7 +49026,7 @@
       "source_location": "L38",
       "_origin": "ast",
       "id": "tests_unit_contactclipper_test_diffcontact",
-      "community": 362,
+      "community": 361,
       "community_name": "src/types.ts",
       "norm_label": "diffcontact()"
     },
@@ -49037,7 +49037,7 @@
       "source_location": "L240",
       "_origin": "ast",
       "id": "tests_unit_contactclipper_test_matchcontactmultiidentifier",
-      "community": 362,
+      "community": 361,
       "community_name": "src/types.ts",
       "norm_label": "matchcontactmultiidentifier()"
     },
@@ -49048,7 +49048,7 @@
       "source_location": "L259",
       "_origin": "ast",
       "id": "tests_unit_contactclipper_test_matchscopedemailduplicate",
-      "community": 362,
+      "community": 361,
       "community_name": "src/types.ts",
       "norm_label": "matchscopedemailduplicate()"
     },
@@ -49444,7 +49444,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "tests_unit_entitlementrepository_test",
-      "community": 362,
+      "community": 361,
       "community_name": "src/types.ts",
       "norm_label": "entitlementrepository.test.ts"
     },
@@ -49455,7 +49455,7 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "tests_unit_entitlementrepository_test_mockgetdoc",
-      "community": 362,
+      "community": 361,
       "community_name": "src/types.ts",
       "norm_label": "mockgetdoc"
     },
@@ -49466,7 +49466,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "tests_unit_entitlementrepository_test_mocksetdoc",
-      "community": 362,
+      "community": 361,
       "community_name": "src/types.ts",
       "norm_label": "mocksetdoc"
     },
@@ -49477,7 +49477,7 @@
       "source_location": "L8",
       "_origin": "ast",
       "id": "tests_unit_entitlementrepository_test_mockupdatedoc",
-      "community": 362,
+      "community": 361,
       "community_name": "src/types.ts",
       "norm_label": "mockupdatedoc"
     },
@@ -49488,7 +49488,7 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "tests_unit_entitlementrepository_test_mockdoc",
-      "community": 362,
+      "community": 361,
       "community_name": "src/types.ts",
       "norm_label": "mockdoc"
     },
@@ -50093,7 +50093,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "tests_unit_sandboxquota_test",
-      "community": 362,
+      "community": 361,
       "community_name": "src/types.ts",
       "norm_label": "sandboxquota.test.tsx"
     },
@@ -50104,7 +50104,7 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "tests_unit_sandboxquota_test_mockaddtoast",
-      "community": 362,
+      "community": 361,
       "community_name": "src/types.ts",
       "norm_label": "mockaddtoast"
     },
@@ -50115,7 +50115,7 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "tests_unit_sandboxquota_test_mocksetselectedappid",
-      "community": 362,
+      "community": 361,
       "community_name": "src/types.ts",
       "norm_label": "mocksetselectedappid"
     },
@@ -50126,7 +50126,7 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "tests_unit_sandboxquota_test_harness",
-      "community": 362,
+      "community": 361,
       "community_name": "src/types.ts",
       "norm_label": "harness()"
     },
@@ -50137,7 +50137,7 @@
       "source_location": "L32",
       "_origin": "ast",
       "id": "tests_unit_sandboxquota_test_mountharness",
-      "community": 362,
+      "community": 361,
       "community_name": "src/types.ts",
       "norm_label": "mountharness()"
     },
@@ -50280,7 +50280,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "tests_unit_upgradepaywallmodal_test",
-      "community": 362,
+      "community": 361,
       "community_name": "src/types.ts",
       "norm_label": "upgradepaywallmodal.test.tsx"
     },
@@ -50291,7 +50291,7 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "tests_unit_upgradepaywallmodal_test_mount",
-      "community": 362,
+      "community": 361,
       "community_name": "src/types.ts",
       "norm_label": "mount()"
     },
@@ -52271,7 +52271,7 @@
       "source_location": "L199",
       "_origin": "ast",
       "id": "agents_skills_impeccable_reference_adapt_responsive_design",
-      "community": 357,
+      "community": 356,
       "community_name": "Responsive Design",
       "norm_label": "responsive design"
     },
@@ -52282,7 +52282,7 @@
       "source_location": "L201",
       "_origin": "ast",
       "id": "agents_skills_impeccable_reference_adapt_mobile_first_write_it_right",
-      "community": 357,
+      "community": 356,
       "community_name": "Responsive Design",
       "norm_label": "mobile-first: write it right"
     },
@@ -52293,7 +52293,7 @@
       "source_location": "L205",
       "_origin": "ast",
       "id": "agents_skills_impeccable_reference_adapt_breakpoints_content_driven",
-      "community": 357,
+      "community": 356,
       "community_name": "Responsive Design",
       "norm_label": "breakpoints: content-driven"
     },
@@ -52304,7 +52304,7 @@
       "source_location": "L209",
       "_origin": "ast",
       "id": "agents_skills_impeccable_reference_adapt_detect_input_method_not_just_screen_size",
-      "community": 357,
+      "community": 356,
       "community_name": "Responsive Design",
       "norm_label": "detect input method, not just screen size"
     },
@@ -52315,7 +52315,7 @@
       "source_location": "L237",
       "_origin": "ast",
       "id": "agents_skills_impeccable_reference_adapt_safe_areas_handle_the_notch",
-      "community": 357,
+      "community": 356,
       "community_name": "Responsive Design",
       "norm_label": "safe areas: handle the notch"
     },
@@ -52326,7 +52326,7 @@
       "source_location": "L260",
       "_origin": "ast",
       "id": "agents_skills_impeccable_reference_adapt_responsive_images_get_it_right",
-      "community": 357,
+      "community": 356,
       "community_name": "Responsive Design",
       "norm_label": "responsive images: get it right"
     },
@@ -52337,7 +52337,7 @@
       "source_location": "L262",
       "_origin": "ast",
       "id": "agents_skills_impeccable_reference_adapt_srcset_with_width_descriptors",
-      "community": 357,
+      "community": 356,
       "community_name": "Responsive Design",
       "norm_label": "srcset with width descriptors"
     },
@@ -52348,7 +52348,7 @@
       "source_location": "L282",
       "_origin": "ast",
       "id": "agents_skills_impeccable_reference_adapt_picture_element_for_art_direction",
-      "community": 357,
+      "community": 356,
       "community_name": "Responsive Design",
       "norm_label": "picture element for art direction"
     },
@@ -52359,7 +52359,7 @@
       "source_location": "L294",
       "_origin": "ast",
       "id": "agents_skills_impeccable_reference_adapt_layout_adaptation_patterns",
-      "community": 357,
+      "community": 356,
       "community_name": "Responsive Design",
       "norm_label": "layout adaptation patterns"
     },
@@ -52370,7 +52370,7 @@
       "source_location": "L298",
       "_origin": "ast",
       "id": "agents_skills_impeccable_reference_adapt_testing_don_t_trust_devtools_alone",
-      "community": 357,
+      "community": 356,
       "community_name": "Responsive Design",
       "norm_label": "testing: don't trust devtools alone"
     },
@@ -56308,7 +56308,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "agents_skills_impeccable_reference_operate_operate_mode_depth_and_read_notes",
-      "community": 359,
+      "community": 358,
       "community_name": "Operate mode depth (and Read notes)",
       "norm_label": "operate mode depth (and read notes)"
     },
@@ -56319,7 +56319,7 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "agents_skills_impeccable_reference_operate_the_product_slop_test",
-      "community": 359,
+      "community": 358,
       "community_name": "Operate mode depth (and Read notes)",
       "norm_label": "the product slop test"
     },
@@ -56330,7 +56330,7 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "agents_skills_impeccable_reference_operate_typography",
-      "community": 359,
+      "community": 358,
       "community_name": "Operate mode depth (and Read notes)",
       "norm_label": "typography"
     },
@@ -56341,7 +56341,7 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "agents_skills_impeccable_reference_operate_color",
-      "community": 359,
+      "community": 358,
       "community_name": "Operate mode depth (and Read notes)",
       "norm_label": "color"
     },
@@ -56352,7 +56352,7 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "agents_skills_impeccable_reference_operate_layout",
-      "community": 359,
+      "community": 358,
       "community_name": "Operate mode depth (and Read notes)",
       "norm_label": "layout"
     },
@@ -56363,7 +56363,7 @@
       "source_location": "L30",
       "_origin": "ast",
       "id": "agents_skills_impeccable_reference_operate_components",
-      "community": 359,
+      "community": 358,
       "community_name": "Operate mode depth (and Read notes)",
       "norm_label": "components"
     },
@@ -56374,7 +56374,7 @@
       "source_location": "L39",
       "_origin": "ast",
       "id": "agents_skills_impeccable_reference_operate_motion",
-      "community": 359,
+      "community": 358,
       "community_name": "Operate mode depth (and Read notes)",
       "norm_label": "motion"
     },
@@ -56385,7 +56385,7 @@
       "source_location": "L45",
       "_origin": "ast",
       "id": "agents_skills_impeccable_reference_operate_product_constraints",
-      "community": 359,
+      "community": 358,
       "community_name": "Operate mode depth (and Read notes)",
       "norm_label": "product constraints"
     },
@@ -56396,7 +56396,7 @@
       "source_location": "L54",
       "_origin": "ast",
       "id": "agents_skills_impeccable_reference_operate_product_permissions",
-      "community": 359,
+      "community": 358,
       "community_name": "Operate mode depth (and Read notes)",
       "norm_label": "product permissions"
     },
@@ -75206,7 +75206,7 @@
       "source_location": "L35",
       "_origin": "ast",
       "id": "specs_010_extension_distribution_hub_research_2_version_detection_handshake_mechanism",
-      "community": 364,
+      "community": 362,
       "community_name": "2. Version Detection & Handshake Mechanism",
       "norm_label": "2. version detection & handshake mechanism"
     },
@@ -75217,7 +75217,7 @@
       "source_location": "L37",
       "_origin": "ast",
       "id": "specs_010_extension_distribution_hub_research_context_problem_37",
-      "community": 364,
+      "community": 362,
       "community_name": "2. Version Detection & Handshake Mechanism",
       "norm_label": "context & problem"
     },
@@ -75228,7 +75228,7 @@
       "source_location": "L40",
       "_origin": "ast",
       "id": "specs_010_extension_distribution_hub_research_evaluation_of_options_40",
-      "community": 364,
+      "community": 362,
       "community_name": "2. Version Detection & Handshake Mechanism",
       "norm_label": "evaluation of options"
     },
@@ -75239,7 +75239,7 @@
       "source_location": "L48",
       "_origin": "ast",
       "id": "specs_010_extension_distribution_hub_research_implementation_decision_48",
-      "community": 364,
+      "community": 362,
       "community_name": "2. Version Detection & Handshake Mechanism",
       "norm_label": "implementation decision"
     },
@@ -76977,7 +76977,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "specs_013_saas_auth_guest_sunset_data_model",
-      "community": 358,
+      "community": 357,
       "community_name": "013-saas-auth-guest-sunset/spec.md",
       "norm_label": "013-saas-auth-guest-sunset/data-model.md"
     },
@@ -76988,7 +76988,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "specs_013_saas_auth_guest_sunset_data_model_phase_1_data_model_interface_contracts_saas_auth_unification_guest_mode_sunset_api_hardening",
-      "community": 358,
+      "community": 357,
       "community_name": "013-saas-auth-guest-sunset/spec.md",
       "norm_label": "phase 1 data model & interface contracts: saas auth unification, guest mode sunset & api hardening"
     },
@@ -76999,7 +76999,7 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "specs_013_saas_auth_guest_sunset_data_model_1_domain_types_schemas_src_types_ts",
-      "community": 358,
+      "community": 357,
       "community_name": "013-saas-auth-guest-sunset/spec.md",
       "norm_label": "1. domain types & schemas (`src/types.ts`)"
     },
@@ -77010,7 +77010,7 @@
       "source_location": "L73",
       "_origin": "ast",
       "id": "specs_013_saas_auth_guest_sunset_data_model_2_canonical_constants_quotas_src_lib_constants_ts",
-      "community": 358,
+      "community": 357,
       "community_name": "013-saas-auth-guest-sunset/spec.md",
       "norm_label": "2. canonical constants & quotas (`src/lib/constants.ts`)"
     },
@@ -77021,7 +77021,7 @@
       "source_location": "L92",
       "_origin": "ast",
       "id": "specs_013_saas_auth_guest_sunset_data_model_3_serverless_api_contracts",
-      "community": 360,
+      "community": 359,
       "community_name": "A. `POST /api/scrape-job`",
       "norm_label": "3. serverless api contracts"
     },
@@ -77032,7 +77032,7 @@
       "source_location": "L94",
       "_origin": "ast",
       "id": "specs_013_saas_auth_guest_sunset_data_model_a_post_api_scrape_job",
-      "community": 360,
+      "community": 359,
       "community_name": "A. `POST /api/scrape-job`",
       "norm_label": "a. `post /api/scrape-job`"
     },
@@ -77043,7 +77043,7 @@
       "source_location": "L96",
       "_origin": "ast",
       "id": "specs_013_saas_auth_guest_sunset_data_model_headers",
-      "community": 360,
+      "community": 359,
       "community_name": "A. `POST /api/scrape-job`",
       "norm_label": "headers"
     },
@@ -77054,7 +77054,7 @@
       "source_location": "L102",
       "_origin": "ast",
       "id": "specs_013_saas_auth_guest_sunset_data_model_request_body",
-      "community": 360,
+      "community": 359,
       "community_name": "A. `POST /api/scrape-job`",
       "norm_label": "request body"
     },
@@ -77065,7 +77065,7 @@
       "source_location": "L111",
       "_origin": "ast",
       "id": "specs_013_saas_auth_guest_sunset_data_model_responses",
-      "community": 360,
+      "community": 359,
       "community_name": "A. `POST /api/scrape-job`",
       "norm_label": "responses"
     },
@@ -77076,7 +77076,7 @@
       "source_location": "L144",
       "_origin": "ast",
       "id": "specs_013_saas_auth_guest_sunset_data_model_b_post_api_report_issue",
-      "community": 360,
+      "community": 359,
       "community_name": "A. `POST /api/scrape-job`",
       "norm_label": "b. `post /api/report-issue`"
     },
@@ -77087,7 +77087,7 @@
       "source_location": "L146",
       "_origin": "ast",
       "id": "specs_013_saas_auth_guest_sunset_data_model_headers_146",
-      "community": 360,
+      "community": 359,
       "community_name": "A. `POST /api/scrape-job`",
       "norm_label": "headers"
     },
@@ -77098,7 +77098,7 @@
       "source_location": "L152",
       "_origin": "ast",
       "id": "specs_013_saas_auth_guest_sunset_data_model_request_body_152",
-      "community": 360,
+      "community": 359,
       "community_name": "A. `POST /api/scrape-job`",
       "norm_label": "request body"
     },
@@ -77109,7 +77109,7 @@
       "source_location": "L175",
       "_origin": "ast",
       "id": "specs_013_saas_auth_guest_sunset_data_model_responses_175",
-      "community": 360,
+      "community": 359,
       "community_name": "A. `POST /api/scrape-job`",
       "norm_label": "responses"
     },
@@ -77120,7 +77120,7 @@
       "source_location": "L194",
       "_origin": "ast",
       "id": "specs_013_saas_auth_guest_sunset_data_model_4_entity_state_lifecycle_sandbox_to_cloud_migration",
-      "community": 358,
+      "community": 357,
       "community_name": "013-saas-auth-guest-sunset/spec.md",
       "norm_label": "4. entity state lifecycle: sandbox to cloud migration"
     },
@@ -77131,7 +77131,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "specs_013_saas_auth_guest_sunset_plan",
-      "community": 358,
+      "community": 357,
       "community_name": "013-saas-auth-guest-sunset/spec.md",
       "norm_label": "013-saas-auth-guest-sunset/plan.md"
     },
@@ -77142,7 +77142,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "specs_013_saas_auth_guest_sunset_plan_implementation_plan_saas_auth_unification_guest_mode_sunset_api_hardening",
-      "community": 367,
+      "community": 363,
       "community_name": "Implementation Plan: SaaS Auth Unification, Guest Mode Sunset & API Hardening",
       "norm_label": "implementation plan: saas auth unification, guest mode sunset & api hardening"
     },
@@ -77153,7 +77153,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "specs_013_saas_auth_guest_sunset_plan_summary",
-      "community": 367,
+      "community": 363,
       "community_name": "Implementation Plan: SaaS Auth Unification, Guest Mode Sunset & API Hardening",
       "norm_label": "summary"
     },
@@ -77164,7 +77164,7 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "specs_013_saas_auth_guest_sunset_plan_technical_context",
-      "community": 367,
+      "community": 363,
       "community_name": "Implementation Plan: SaaS Auth Unification, Guest Mode Sunset & API Hardening",
       "norm_label": "technical context"
     },
@@ -77175,7 +77175,7 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "specs_013_saas_auth_guest_sunset_plan_constitution_core_guidelines_check",
-      "community": 367,
+      "community": 363,
       "community_name": "Implementation Plan: SaaS Auth Unification, Guest Mode Sunset & API Hardening",
       "norm_label": "constitution & core guidelines check"
     },
@@ -77186,7 +77186,7 @@
       "source_location": "L41",
       "_origin": "ast",
       "id": "specs_013_saas_auth_guest_sunset_plan_project_structure_planned_modifications",
-      "community": 367,
+      "community": 363,
       "community_name": "Implementation Plan: SaaS Auth Unification, Guest Mode Sunset & API Hardening",
       "norm_label": "project structure & planned modifications"
     },
@@ -77197,7 +77197,7 @@
       "source_location": "L43",
       "_origin": "ast",
       "id": "specs_013_saas_auth_guest_sunset_plan_documentation",
-      "community": 367,
+      "community": 363,
       "community_name": "Implementation Plan: SaaS Auth Unification, Guest Mode Sunset & API Hardening",
       "norm_label": "documentation"
     },
@@ -77208,7 +77208,7 @@
       "source_location": "L54",
       "_origin": "ast",
       "id": "specs_013_saas_auth_guest_sunset_plan_source_code_modifications",
-      "community": 367,
+      "community": 363,
       "community_name": "Implementation Plan: SaaS Auth Unification, Guest Mode Sunset & API Hardening",
       "norm_label": "source code modifications"
     },
@@ -77219,7 +77219,7 @@
       "source_location": "L98",
       "_origin": "ast",
       "id": "specs_013_saas_auth_guest_sunset_plan_deliverables_status",
-      "community": 367,
+      "community": 363,
       "community_name": "Implementation Plan: SaaS Auth Unification, Guest Mode Sunset & API Hardening",
       "norm_label": "deliverables status"
     },
@@ -77230,7 +77230,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "specs_013_saas_auth_guest_sunset_quickstart",
-      "community": 358,
+      "community": 357,
       "community_name": "013-saas-auth-guest-sunset/spec.md",
       "norm_label": "013-saas-auth-guest-sunset/quickstart.md"
     },
@@ -77241,7 +77241,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "specs_013_saas_auth_guest_sunset_quickstart_quickstart_verification_guide_saas_auth_unification_guest_mode_sunset_api_hardening",
-      "community": 368,
+      "community": 364,
       "community_name": "Quickstart Verification Guide: SaaS Auth Unification, Guest Mode Sunset & API Hardening",
       "norm_label": "quickstart verification guide: saas auth unification, guest mode sunset & api hardening"
     },
@@ -77252,7 +77252,7 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "specs_013_saas_auth_guest_sunset_quickstart_prerequisites",
-      "community": 368,
+      "community": 364,
       "community_name": "Quickstart Verification Guide: SaaS Auth Unification, Guest Mode Sunset & API Hardening",
       "norm_label": "prerequisites"
     },
@@ -77263,7 +77263,7 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "specs_013_saas_auth_guest_sunset_quickstart_test_flow_1_mandatory_authentication_gate_guest_sandbox_sunset",
-      "community": 368,
+      "community": 364,
       "community_name": "Quickstart Verification Guide: SaaS Auth Unification, Guest Mode Sunset & API Hardening",
       "norm_label": "test flow 1: mandatory authentication gate (guest & sandbox sunset)"
     },
@@ -77274,7 +77274,7 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "specs_013_saas_auth_guest_sunset_quickstart_test_flow_2_first_login_cloud_migration_returning_legacy_users",
-      "community": 368,
+      "community": 364,
       "community_name": "Quickstart Verification Guide: SaaS Auth Unification, Guest Mode Sunset & API Hardening",
       "norm_label": "test flow 2: first-login cloud migration (returning legacy users)"
     },
@@ -77285,7 +77285,7 @@
       "source_location": "L47",
       "_origin": "ast",
       "id": "specs_013_saas_auth_guest_sunset_quickstart_test_flow_3_legacy_guest_migration_grandfathered_pipeline",
-      "community": 368,
+      "community": 364,
       "community_name": "Quickstart Verification Guide: SaaS Auth Unification, Guest Mode Sunset & API Hardening",
       "norm_label": "test flow 3: legacy guest migration & grandfathered pipeline"
     },
@@ -77296,7 +77296,7 @@
       "source_location": "L78",
       "_origin": "ast",
       "id": "specs_013_saas_auth_guest_sunset_quickstart_test_flow_4_chrome_extension_auth_synchronization",
-      "community": 368,
+      "community": 364,
       "community_name": "Quickstart Verification Guide: SaaS Auth Unification, Guest Mode Sunset & API Hardening",
       "norm_label": "test flow 4: chrome extension auth synchronization"
     },
@@ -77307,7 +77307,7 @@
       "source_location": "L92",
       "_origin": "ast",
       "id": "specs_013_saas_auth_guest_sunset_quickstart_test_flow_5_serverless_api_hardening_token_verification",
-      "community": 368,
+      "community": 364,
       "community_name": "Quickstart Verification Guide: SaaS Auth Unification, Guest Mode Sunset & API Hardening",
       "norm_label": "test flow 5: serverless api hardening & token verification"
     },
@@ -77318,7 +77318,7 @@
       "source_location": "L113",
       "_origin": "ast",
       "id": "specs_013_saas_auth_guest_sunset_quickstart_test_flow_6_quota_display_adr_0010_compliance",
-      "community": 368,
+      "community": 364,
       "community_name": "Quickstart Verification Guide: SaaS Auth Unification, Guest Mode Sunset & API Hardening",
       "norm_label": "test flow 6: quota display & adr 0010 compliance"
     },
@@ -77329,7 +77329,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "specs_013_saas_auth_guest_sunset_research",
-      "community": 358,
+      "community": 357,
       "community_name": "013-saas-auth-guest-sunset/spec.md",
       "norm_label": "013-saas-auth-guest-sunset/research.md"
     },
@@ -77516,7 +77516,7 @@
       "source_location": "L120",
       "_origin": "ast",
       "id": "specs_013_saas_auth_guest_sunset_research_6_firestore_security_rules_hardening",
-      "community": 375,
+      "community": 369,
       "community_name": "6. Firestore Security Rules Hardening",
       "norm_label": "6. firestore security rules hardening"
     },
@@ -77527,7 +77527,7 @@
       "source_location": "L122",
       "_origin": "ast",
       "id": "specs_013_saas_auth_guest_sunset_research_context_122",
-      "community": 375,
+      "community": 369,
       "community_name": "6. Firestore Security Rules Hardening",
       "norm_label": "context"
     },
@@ -77538,7 +77538,7 @@
       "source_location": "L125",
       "_origin": "ast",
       "id": "specs_013_saas_auth_guest_sunset_research_decision_125",
-      "community": 375,
+      "community": 369,
       "community_name": "6. Firestore Security Rules Hardening",
       "norm_label": "decision"
     },
@@ -77582,7 +77582,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "specs_013_saas_auth_guest_sunset_spec",
-      "community": 358,
+      "community": 357,
       "community_name": "013-saas-auth-guest-sunset/spec.md",
       "norm_label": "013-saas-auth-guest-sunset/spec.md"
     },
@@ -77692,7 +77692,7 @@
       "source_location": "L142",
       "_origin": "ast",
       "id": "specs_013_saas_auth_guest_sunset_spec_requirements_mandatory",
-      "community": 371,
+      "community": 367,
       "community_name": "Key Entities & Data Schemas",
       "norm_label": "requirements *(mandatory)*"
     },
@@ -77703,7 +77703,7 @@
       "source_location": "L144",
       "_origin": "ast",
       "id": "specs_013_saas_auth_guest_sunset_spec_functional_requirements",
-      "community": 371,
+      "community": 367,
       "community_name": "Key Entities & Data Schemas",
       "norm_label": "functional requirements"
     },
@@ -77714,7 +77714,7 @@
       "source_location": "L165",
       "_origin": "ast",
       "id": "specs_013_saas_auth_guest_sunset_spec_key_entities_data_schemas",
-      "community": 371,
+      "community": 367,
       "community_name": "Key Entities & Data Schemas",
       "norm_label": "key entities & data schemas"
     },
@@ -77725,7 +77725,7 @@
       "source_location": "L167",
       "_origin": "ast",
       "id": "specs_013_saas_auth_guest_sunset_spec_1_userentitlementprofile_users_userid",
-      "community": 371,
+      "community": 367,
       "community_name": "Key Entities & Data Schemas",
       "norm_label": "1. userentitlementprofile (`users/{userid}`)"
     },
@@ -77736,7 +77736,7 @@
       "source_location": "L192",
       "_origin": "ast",
       "id": "specs_013_saas_auth_guest_sunset_spec_2_extensionsession_chrome_storage_local_tracklet_user_session",
-      "community": 371,
+      "community": 367,
       "community_name": "Key Entities & Data Schemas",
       "norm_label": "2. extensionsession (`chrome.storage.local: tracklet_user_session`)"
     },
@@ -77747,7 +77747,7 @@
       "source_location": "L206",
       "_origin": "ast",
       "id": "specs_013_saas_auth_guest_sunset_spec_3_canonical_application_status_map",
-      "community": 371,
+      "community": 367,
       "community_name": "Key Entities & Data Schemas",
       "norm_label": "3. canonical application status map"
     },
@@ -77802,7 +77802,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "specs_013_saas_auth_guest_sunset_tasks",
-      "community": 358,
+      "community": 357,
       "community_name": "013-saas-auth-guest-sunset/spec.md",
       "norm_label": "013-saas-auth-guest-sunset/tasks.md"
     },
@@ -77813,7 +77813,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "specs_013_saas_auth_guest_sunset_tasks_implementation_tasks_saas_auth_unification_guest_mode_sunset_api_hardening",
-      "community": 369,
+      "community": 365,
       "community_name": "Implementation Tasks: SaaS Auth Unification, Guest Mode Sunset & API Hardening",
       "norm_label": "implementation tasks: saas auth unification, guest mode sunset & api hardening"
     },
@@ -77824,7 +77824,7 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "specs_013_saas_auth_guest_sunset_tasks_phase_1_setup_foundational_data_models",
-      "community": 369,
+      "community": 365,
       "community_name": "Implementation Tasks: SaaS Auth Unification, Guest Mode Sunset & API Hardening",
       "norm_label": "phase 1: setup & foundational data models"
     },
@@ -77835,7 +77835,7 @@
       "source_location": "L29",
       "_origin": "ast",
       "id": "specs_013_saas_auth_guest_sunset_tasks_phase_2_user_story_1_p1_sandbox_guest_sunset_mandatory_authentication_enforcement",
-      "community": 369,
+      "community": 365,
       "community_name": "Implementation Tasks: SaaS Auth Unification, Guest Mode Sunset & API Hardening",
       "norm_label": "phase 2: user story 1 (p1) - sandbox & guest sunset: mandatory authentication enforcement"
     },
@@ -77846,7 +77846,7 @@
       "source_location": "L48",
       "_origin": "ast",
       "id": "specs_013_saas_auth_guest_sunset_tasks_phase_3_user_story_2_p1_non_destructive_legacy_guest_migration_grandfathered_pipeline",
-      "community": 369,
+      "community": 365,
       "community_name": "Implementation Tasks: SaaS Auth Unification, Guest Mode Sunset & API Hardening",
       "norm_label": "phase 3: user story 2 (p1) - non-destructive legacy guest migration & grandfathered pipeline"
     },
@@ -77857,7 +77857,7 @@
       "source_location": "L63",
       "_origin": "ast",
       "id": "specs_013_saas_auth_guest_sunset_tasks_phase_4_user_story_3_p1_unified_web_chrome_extension_authentication",
-      "community": 369,
+      "community": 365,
       "community_name": "Implementation Tasks: SaaS Auth Unification, Guest Mode Sunset & API Hardening",
       "norm_label": "phase 4: user story 3 (p1) - unified web & chrome extension authentication"
     },
@@ -77868,7 +77868,7 @@
       "source_location": "L79",
       "_origin": "ast",
       "id": "specs_013_saas_auth_guest_sunset_tasks_phase_5_user_story_4_p2_user_entitlement_profile_free_tier_pipeline_cap_upgrade_paywall",
-      "community": 369,
+      "community": 365,
       "community_name": "Implementation Tasks: SaaS Auth Unification, Guest Mode Sunset & API Hardening",
       "norm_label": "phase 5: user story 4 (p2) - user entitlement profile, free tier pipeline cap & upgrade paywall"
     },
@@ -77879,7 +77879,7 @@
       "source_location": "L101",
       "_origin": "ast",
       "id": "specs_013_saas_auth_guest_sunset_tasks_phase_6_user_story_5_p2_authenticated_rate_limited_serverless_api_routes",
-      "community": 369,
+      "community": 365,
       "community_name": "Implementation Tasks: SaaS Auth Unification, Guest Mode Sunset & API Hardening",
       "norm_label": "phase 6: user story 5 (p2) - authenticated & rate-limited serverless api routes"
     },
@@ -77890,7 +77890,7 @@
       "source_location": "L115",
       "_origin": "ast",
       "id": "specs_013_saas_auth_guest_sunset_tasks_phase_7_telemetry_verification_quality_assurance",
-      "community": 369,
+      "community": 365,
       "community_name": "Implementation Tasks: SaaS Auth Unification, Guest Mode Sunset & API Hardening",
       "norm_label": "phase 7: telemetry, verification & quality assurance"
     },

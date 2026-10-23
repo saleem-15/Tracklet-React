@@ -5,7 +5,7 @@
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 7082 nodes · 14857 edges · 370 communities (355 shown, 15 thin omitted)
+- 7082 nodes · 14857 edges · 370 communities (348 shown, 22 thin omitted)
 - Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 134 edges (avg confidence: 0.66)
 - Token cost: 0 input · 0 output
 
@@ -406,7 +406,7 @@
 ## Import Cycles
 - None detected.
 
-## Communities (370 total, 15 thin omitted)
+## Communities (370 total, 22 thin omitted)
 
 ### Community 0 - "live-browser.js"
 Cohesion: 0.03
@@ -1736,74 +1736,74 @@ Nodes (11): applyConfigSource(), applyDetectorConfigSource(), cloneDefaultConfig
 Cohesion: 0.40
 Nodes (4): Prerequisites, Quickstart: Contact Email Log Verification, Scenario A: Standalone Mentor Email Logging, Scenario B: Company-Linked Email Cross-Visibility
 
-### Community 354 - "scrape-job.ts"
+### Community 353 - "scrape-job.ts"
 Cohesion: 0.21
 Nodes (14): captureGeminiGeneration(), checkAndRecordScrapeUsage(), checkRateLimit(), GEMINI_RESPONSE_SCHEMA, getClientIp(), getCurrentMonthString(), handler(), ipRequestHistory (+6 more)
 
-### Community 356 - "surface-briefs.mjs"
+### Community 355 - "surface-briefs.mjs"
 Cohesion: 0.44
 Nodes (9): getSurfaceBriefDir(), listSurfaceBriefs(), normalizeSurfaceTarget(), parseSurfaceBrief(), resolveSurfaceBrief(), surfaceBriefPathForTarget(), writeSurfaceBrief(), main() (+1 more)
 
-### Community 357 - "Responsive Design"
+### Community 356 - "Responsive Design"
 Cohesion: 0.20
 Nodes (10): Breakpoints: Content-Driven, Detect Input Method, Not Just Screen Size, Layout Adaptation Patterns, Mobile-First: Write It Right, Picture Element for Art Direction, Responsive Design, Responsive Images: Get It Right, Safe Areas: Handle the Notch (+2 more)
 
-### Community 358 - "013-saas-auth-guest-sunset/spec.md"
+### Community 357 - "013-saas-auth-guest-sunset/spec.md"
 Cohesion: 0.22
 Nodes (4): 1. Domain Types & Schemas (`src/types.ts`), 2. Canonical Constants & Quotas (`src/lib/constants.ts`), 4. Entity State Lifecycle: Sandbox to Cloud Migration, Phase 1 Data Model & Interface Contracts: SaaS Auth Unification, Guest Mode Sunset & API Hardening
 
-### Community 359 - "Operate mode depth (and Read notes)"
+### Community 358 - "Operate mode depth (and Read notes)"
 Cohesion: 0.22
 Nodes (9): Color, Components, Layout, Motion, Operate mode depth (and Read notes), Product constraints, Product permissions, The product slop test (+1 more)
 
-### Community 360 - "A. `POST /api/scrape-job`"
+### Community 359 - "A. `POST /api/scrape-job`"
 Cohesion: 0.22
 Nodes (9): 3. Serverless API Contracts, A. `POST /api/scrape-job`, B. `POST /api/report-issue`, Headers, Headers, Request Body, Request Body, Responses (+1 more)
 
-### Community 361 - "apiAuthHardening.test.ts"
+### Community 360 - "apiAuthHardening.test.ts"
 Cohesion: 0.35
 Nodes (8): CachedGoogleCerts, extractBearerToken(), getGooglePublicCerts(), VerifiedTokenUser, verifyFirebaseIdToken(), handler(), parseRequestBody(), sendCompatResponse()
 
-### Community 362 - "src/types.ts"
+### Community 361 - "src/types.ts"
 Cohesion: 0.06
 Nodes (32): AppModalsProps, CONTEXT_TITLES, PRO_FEATURES, UpgradePaywallModal(), UseEntitlementProps, UseEntitlementReturn, broadcastAuthToExtension(), ExtensionAuthPayload (+24 more)
 
-### Community 364 - "2. Version Detection & Handshake Mechanism"
+### Community 362 - "2. Version Detection & Handshake Mechanism"
 Cohesion: 0.50
 Nodes (4): 2. Version Detection & Handshake Mechanism, Context & Problem, Evaluation of Options, Implementation Decision
 
-### Community 367 - "Implementation Plan: SaaS Auth Unification, Guest Mode Sunset & API Hardening"
+### Community 363 - "Implementation Plan: SaaS Auth Unification, Guest Mode Sunset & API Hardening"
 Cohesion: 0.25
 Nodes (8): Constitution & Core Guidelines Check, Deliverables Status, Documentation, Implementation Plan: SaaS Auth Unification, Guest Mode Sunset & API Hardening, Project Structure & Planned Modifications, Source Code Modifications, Summary, Technical Context
 
-### Community 368 - "Quickstart Verification Guide: SaaS Auth Unification, Guest Mode Sunset & API Hardening"
+### Community 364 - "Quickstart Verification Guide: SaaS Auth Unification, Guest Mode Sunset & API Hardening"
 Cohesion: 0.25
 Nodes (8): Prerequisites, Quickstart Verification Guide: SaaS Auth Unification, Guest Mode Sunset & API Hardening, Test Flow 1: Mandatory Authentication Gate (Guest & Sandbox Sunset), Test Flow 2: First-Login Cloud Migration (Returning Legacy Users), Test Flow 3: Legacy Guest Migration & Grandfathered Pipeline, Test Flow 4: Chrome Extension Auth Synchronization, Test Flow 5: Serverless API Hardening & Token Verification, Test Flow 6: Quota Display & ADR 0010 Compliance
 
-### Community 369 - "Implementation Tasks: SaaS Auth Unification, Guest Mode Sunset & API Hardening"
+### Community 365 - "Implementation Tasks: SaaS Auth Unification, Guest Mode Sunset & API Hardening"
 Cohesion: 0.25
 Nodes (8): Implementation Tasks: SaaS Auth Unification, Guest Mode Sunset & API Hardening, Phase 1: Setup & Foundational Data Models, Phase 2: User Story 1 (P1) - Sandbox & Guest Sunset: Mandatory Authentication Enforcement, Phase 3: User Story 2 (P1) - Non-Destructive Legacy Guest Migration & Grandfathered Pipeline, Phase 4: User Story 3 (P1) - Unified Web & Chrome Extension Authentication, Phase 5: User Story 4 (P2) - User Entitlement Profile, Free Tier Pipeline Cap & Upgrade Paywall, Phase 6: User Story 5 (P2) - Authenticated & Rate-Limited Serverless API Routes, Phase 7: Telemetry, Verification & Quality Assurance
 
-### Community 370 - "isScreenReaderOnlyTextStyle"
+### Community 366 - "isScreenReaderOnlyTextStyle"
 Cohesion: 0.47
 Nodes (6): clippedByInset(), clippedByRect(), expandBoxShorthand(), firstMetricLengthPx(), isScreenReaderOnlyTextStyle(), metricLengthPx()
 
-### Community 371 - "Key Entities & Data Schemas"
+### Community 367 - "Key Entities & Data Schemas"
 Cohesion: 0.33
 Nodes (6): 1. UserEntitlementProfile (`users/{userId}`), 2. ExtensionSession (`chrome.storage.local: tracklet_user_session`), 3. Canonical Application Status Map, Functional Requirements, Key Entities & Data Schemas, Requirements *(mandatory)*
 
-### Community 372 - "useLinkPopover.ts"
+### Community 368 - "useLinkPopover.ts"
 Cohesion: 0.47
 Nodes (5): EMPTY_LINK, escapeHtml(), isSafeLinkUrl(), LinkDialogState, useLinkPopover()
 
-### Community 375 - "6. Firestore Security Rules Hardening"
+### Community 369 - "6. Firestore Security Rules Hardening"
 Cohesion: 0.67
 Nodes (3): 6. Firestore Security Rules Hardening, Context, Decision
 
 ## Knowledge Gaps
 - **2254 isolated node(s):** `here`, `API_BASE`, `API_TIMEOUT_MS`, `localStates`, `SEED_MODES` (+2249 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **15 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **22 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
