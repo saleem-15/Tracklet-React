@@ -380,34 +380,12 @@ export function syncApplicationsToExtension(applications: Application[], contact
   // 3. Direct chrome.storage if accessible
   if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
     try {
-      chrome.storage.local.get(
-        ['tracklet_guest_apps_v1', 'tracklet_pending_apps', 'tracklet_guest_contacts_v1', 'tracklet_pending_contacts'],
-        (res: any) => {
-          const pendingAppIds = new Set((res?.tracklet_pending_apps || []).map((a: any) => a?.id).filter(Boolean));
-          const syncedAppIds = new Set(index.map((a) => a.id).filter(Boolean));
-          const guestApps = (res?.tracklet_guest_apps_v1 || []).filter(
-            (a: any) => a?.id && (syncedAppIds.has(a.id) || pendingAppIds.has(a.id))
-          );
-
-          const pendingContactIds = new Set((res?.tracklet_pending_contacts || []).map((c: any) => c?.id).filter(Boolean));
-          const syncedContactIds = new Set((contacts || []).map((c) => c.id).filter(Boolean));
-          const guestContacts = (res?.tracklet_guest_contacts_v1 || []).filter(
-            (c: any) => c?.id && (syncedContactIds.has(c.id) || pendingContactIds.has(c.id))
-          );
-
-          chrome.storage.local.set({
-            tracklet_apps_index: index,
-            tracklet_contacts_index: contacts || [],
-            tracklet_guest_apps_v1: guestApps,
-            tracklet_guest_contacts_v1: guestContacts,
-          });
-        }
-      );
-    } catch {
       chrome.storage.local.set({
         tracklet_apps_index: index,
         tracklet_contacts_index: contacts || [],
       });
+    } catch {
+      // ignore
     }
   }
 }
@@ -443,13 +421,11 @@ export function broadcastDeletedApplication(appId: string): void {
   // 3. Direct chrome.storage if accessible
   if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
     try {
-      chrome.storage.local.get(['tracklet_pending_apps', 'tracklet_guest_apps_v1', 'tracklet_apps_index'], (res: any) => {
+      chrome.storage.local.get(['tracklet_pending_apps', 'tracklet_apps_index'], (res: any) => {
         const pending = (res?.tracklet_pending_apps || []).filter((a: any) => a?.id !== appId);
-        const guestApps = (res?.tracklet_guest_apps_v1 || []).filter((a: any) => a?.id !== appId);
         const appsIndex = (res?.tracklet_apps_index || []).filter((a: any) => a?.id !== appId);
         chrome.storage.local.set({
           tracklet_pending_apps: pending,
-          tracklet_guest_apps_v1: guestApps,
           tracklet_apps_index: appsIndex,
         });
       });
@@ -494,13 +470,11 @@ export function broadcastDeletedContact(contactId: string | string[]): void {
   // 3. Direct chrome.storage if accessible
   if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
     try {
-      chrome.storage.local.get(['tracklet_pending_contacts', 'tracklet_guest_contacts_v1', 'tracklet_contacts_index'], (res: any) => {
+      chrome.storage.local.get(['tracklet_pending_contacts', 'tracklet_contacts_index'], (res: any) => {
         const pending = (res?.tracklet_pending_contacts || []).filter((c: any) => !ids.includes(c?.id));
-        const guestContacts = (res?.tracklet_guest_contacts_v1 || []).filter((c: any) => !ids.includes(c?.id));
         const contactsIndex = (res?.tracklet_contacts_index || []).filter((c: any) => !ids.includes(c?.id));
         chrome.storage.local.set({
           tracklet_pending_contacts: pending,
-          tracklet_guest_contacts_v1: guestContacts,
           tracklet_contacts_index: contactsIndex,
         });
       });

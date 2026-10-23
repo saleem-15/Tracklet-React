@@ -12,7 +12,6 @@ export interface UseDataLoaderProps {
   setApplications: React.Dispatch<React.SetStateAction<Application[]>>;
   setContacts: React.Dispatch<React.SetStateAction<Contact[]>>;
   addToast: AddToastFn;
-  checkAndPromptGuestMigration: () => void;
 }
 
 export interface UseDataLoaderReturn {
@@ -23,10 +22,8 @@ export interface UseDataLoaderReturn {
 /**
  * useDataLoader
  *
- * Data hydration hook that orchestrates loading applications and contacts
- * from the correct persistence source (Firestore for authenticated users,
- * localStorage for guests), runs legacy embedded contact auto-migration,
- * and triggers guest-to-cloud migration detection.
+ * Data hydration hook that loads applications and contacts from Firestore
+ * for authenticated cloud users.
  *
  * Automatically re-loads whenever the user's auth state changes
  * (login, logout, email verification).
@@ -37,7 +34,6 @@ export function useDataLoader({
   setApplications,
   setContacts,
   addToast,
-  checkAndPromptGuestMigration,
 }: UseDataLoaderProps): UseDataLoaderReturn {
   const [dataLoading, setDataLoading] = useState(true);
   const requestIdRef = useRef(0);
@@ -67,8 +63,8 @@ export function useDataLoader({
         if (contactsResult.status === 'fulfilled') {
           loadedContacts = contactsResult.value;
         } else {
-          console.warn('Failed to load contacts from Firestore (using local fallback):', contactsResult.reason);
-          loadedContacts = ContactRepository.loadGuestContacts();
+          console.warn('Failed to load contacts from Firestore:', contactsResult.reason);
+          loadedContacts = [];
         }
 
         if (requestIdRef.current !== currentRequestId) return;
@@ -76,22 +72,14 @@ export function useDataLoader({
         setApplications(loadedApps);
         setContacts(loadedContacts);
         posthogLogs.dataHydrationCompleted('firestore', loadedApps.length, loadedContacts.length, false);
-
-        // Check for guest data migration
-        checkAndPromptGuestMigration();
-      } else if (!user) {
-        let guestApps = ApplicationRepository.loadGuestApplications();
-        let guestContacts = ContactRepository.loadGuestContacts();
-
+      } else {
         if (requestIdRef.current !== currentRequestId) return;
-
-        setApplications(guestApps);
-        setContacts(guestContacts);
-        posthogLogs.dataHydrationCompleted('guest_storage', guestApps.length, guestContacts.length, false);
+        setApplications([]);
+        setContacts([]);
       }
     } catch (err) {
       if (requestIdRef.current !== currentRequestId) return;
-      posthogLogs.dataHydrationFailed(user ? 'firestore' : 'guest_storage');
+      posthogLogs.dataHydrationFailed('firestore');
       console.error('Error loading applications and contacts:', err);
       addToast('error', 'Load Error', 'Could not load data from repository.');
     } finally {
@@ -99,7 +87,7 @@ export function useDataLoader({
         setDataLoading(false);
       }
     }
-  }, [user, addToast, checkAndPromptGuestMigration, setApplications, setContacts]);
+  }, [user, addToast, setApplications, setContacts]);
 
   // Trigger data load whenever auth state resolves or user changes
   useEffect(() => {

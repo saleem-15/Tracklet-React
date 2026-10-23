@@ -30,7 +30,6 @@ describe('Extension Synchronization Bug Fixes (#45, #44, #43)', () => {
     it('broadcasts contact deletion and prunes chrome.storage.local', () => {
       const mockStorage: Record<string, any> = {
         tracklet_contacts_index: [{ id: 'c-1', name: 'Alice' }, { id: 'c-2', name: 'Bob' }],
-        tracklet_guest_contacts_v1: [{ id: 'c-1', name: 'Alice' }, { id: 'c-2', name: 'Bob' }],
         tracklet_pending_contacts: [{ id: 'c-1', name: 'Alice' }],
       };
 
@@ -64,7 +63,6 @@ describe('Extension Synchronization Bug Fixes (#45, #44, #43)', () => {
 
       // Verify direct storage prune
       expect(mockStorage.tracklet_contacts_index.map((c: any) => c.id)).toEqual(['c-2']);
-      expect(mockStorage.tracklet_guest_contacts_v1.map((c: any) => c.id)).toEqual(['c-2']);
       expect(mockStorage.tracklet_pending_contacts).toEqual([]);
     });
 
@@ -98,10 +96,8 @@ describe('Extension Synchronization Bug Fixes (#45, #44, #43)', () => {
             contactEmails: ['recruiting@stripe.com'],
           },
         ],
-        tracklet_guest_apps_v1: [],
         tracklet_pending_apps: [],
         tracklet_contacts_index: [],
-        tracklet_guest_contacts_v1: [],
         tracklet_pending_contacts: [],
       };
 
@@ -196,30 +192,18 @@ describe('Extension Synchronization Bug Fixes (#45, #44, #43)', () => {
     });
   });
 
-  describe('Issue #44: Stale tracklet_guest_contacts_v1 entry for deleted contact', () => {
-    it('prunes stale guest contacts missing from tracklet_contacts_index during deduplication', async () => {
+  describe('Issue #44: Deleted contact in Contacts Hub reflected in extension', () => {
+    it('does not display duplicate/update status for deleted contact when tracklet_contacts_index is empty', async () => {
       const popupHtml = fs.readFileSync(path.resolve(__dirname, '../../extension/popup.html'), 'utf-8');
       const popupJs = fs.readFileSync(path.resolve(__dirname, '../../extension/popup.js'), 'utf-8');
 
       const bodyMatch = popupHtml.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
       document.body.innerHTML = (bodyMatch ? bodyMatch[1] : popupHtml).replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '');
 
-      // Simulate state where contact was previously saved as a guest contact in extension,
-      // but was deleted in Contacts Hub so tracklet_contacts_index is empty (or does not contain it).
       const mockStorage: Record<string, any> = {
         tracklet_apps_index: [],
-        tracklet_guest_apps_v1: [],
         tracklet_pending_apps: [],
         tracklet_contacts_index: [], // User deleted the contact from Contacts Hub!
-        tracklet_guest_contacts_v1: [
-          {
-            id: 'contact_deleted_123',
-            name: 'Sarah Connor',
-            role: 'Lead Technical Recruiter',
-            organization: 'Cyberdyne',
-            linkedIn: 'https://linkedin.com/in/sarah-connor',
-          },
-        ],
         tracklet_pending_contacts: [], // Not pending upload
       };
 
@@ -290,9 +274,6 @@ describe('Extension Synchronization Bug Fixes (#45, #44, #43)', () => {
       document.dispatchEvent(new Event('DOMContentLoaded'));
       await new Promise((r) => setTimeout(r, 200));
 
-      // Stale entry should have been pruned from tracklet_guest_contacts_v1
-      expect(mockStorage.tracklet_guest_contacts_v1).toEqual([]);
-
       // Status banner should NOT show "✓ Saved in Contacts Hub"
       const statusBanner = document.getElementById('contact-status-banner');
       const isBannerVisible = statusBanner && statusBanner.style.display !== 'none';
@@ -304,30 +285,18 @@ describe('Extension Synchronization Bug Fixes (#45, #44, #43)', () => {
     });
   });
 
-  describe('Issue #43: Job deleted in web app resurrecting via PATCH', () => {
-    it('does not match a deleted job from stale guest storage when tracklet_apps_index is synced', async () => {
+  describe('Issue #43: Job deleted in web app does not resurrect', () => {
+    it('does not display duplicate/update status when tracklet_apps_index is empty', async () => {
       const popupHtml = fs.readFileSync(path.resolve(__dirname, '../../extension/popup.html'), 'utf-8');
       const popupJs = fs.readFileSync(path.resolve(__dirname, '../../extension/popup.js'), 'utf-8');
 
       const bodyMatch = popupHtml.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
       document.body.innerHTML = (bodyMatch ? bodyMatch[1] : popupHtml).replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '');
 
-      // Simulate deleted app that was left in tracklet_guest_apps_v1,
-      // but tracklet_apps_index is synced without it!
       const mockStorage: Record<string, any> = {
         tracklet_apps_index: [], // Job was deleted in web app!
-        tracklet_guest_apps_v1: [
-          {
-            id: 'job-deleted-456',
-            company: 'Acme Corp',
-            role: 'Staff Engineer',
-            status: 'Interview',
-            jobLink: 'https://acme.com/jobs/staff',
-          },
-        ],
         tracklet_pending_apps: [], // Not pending upload
         tracklet_contacts_index: [],
-        tracklet_guest_contacts_v1: [],
         tracklet_pending_contacts: [],
       };
 
@@ -396,9 +365,6 @@ describe('Extension Synchronization Bug Fixes (#45, #44, #43)', () => {
       document.dispatchEvent(new Event('DOMContentLoaded'));
       await new Promise((r) => setTimeout(r, 60));
 
-      // The stale guest app should have been pruned
-      expect(mockStorage.tracklet_guest_apps_v1).toEqual([]);
-
       // Duplicate banner must NOT display "Already tracked in Tracklet (Interview)"
       const duplicateBanner = document.getElementById('duplicate-banner');
       const isDuplicateVisible = duplicateBanner && duplicateBanner.style.display !== 'none';
@@ -412,7 +378,6 @@ describe('Extension Synchronization Bug Fixes (#45, #44, #43)', () => {
     it('prunes deleted application from storage when broadcastDeletedApplication is invoked', () => {
       const mockStorage: Record<string, any> = {
         tracklet_apps_index: [{ id: 'app-del-1' }, { id: 'app-stay-2' }],
-        tracklet_guest_apps_v1: [{ id: 'app-del-1' }, { id: 'app-stay-2' }],
         tracklet_pending_apps: [{ id: 'app-del-1' }],
       };
 
@@ -445,7 +410,6 @@ describe('Extension Synchronization Bug Fixes (#45, #44, #43)', () => {
       );
 
       expect(mockStorage.tracklet_apps_index).toEqual([{ id: 'app-stay-2' }]);
-      expect(mockStorage.tracklet_guest_apps_v1).toEqual([{ id: 'app-stay-2' }]);
       expect(mockStorage.tracklet_pending_apps).toEqual([]);
     });
   });

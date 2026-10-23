@@ -89,7 +89,6 @@ The companion features a persistent 4-tab segmented navigation bar that automati
 - **Live Web App Sync**: When Tracklet is open in another tab, saved applications, contacts, and emails sync instantly via window postMessage.
 - **Direct Cloud Persistence**: Authenticated users sync directly to Cloud Firestore (`/users/{uid}/applications` and `/users/{uid}/contacts`).
 - **Offline Sync Queue**: If Tracklet is closed or network is offline, items are queued in `tracklet_pending_apps`, `tracklet_pending_contacts`, and `tracklet_pending_emails` and drained automatically when Tracklet is next launched.
-- **Guest / Local Mode**: Operates seamlessly without an account using extension local storage.
 
 ---
 

@@ -83,7 +83,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const expiringTasks = getExpiringSoonTasks(applications, settings.expiryThresholdHours);
 
   // Follow-Up Templates Library state
-  const [templates, setTemplates] = useState<FollowUpTemplate[]>(() => TemplateRepository.loadGuestTemplates());
+  const [templates, setTemplates] = useState<FollowUpTemplate[]>(() => TemplateRepository.generateDefaultTemplates(userId));
 
   useEffect(() => {
     let isMounted = true;
@@ -100,7 +100,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     posthog.capture('template_saved', {
       action: templateToSave.id ? 'updated' : 'created',
       category: saved.category,
-      is_guest: !userId,
     });
     setTemplates((prev) => {
       const idx = prev.findIndex((t) => t.id === saved.id);

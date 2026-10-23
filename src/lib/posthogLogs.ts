@@ -1,6 +1,6 @@
 import posthog from './posthog';
 
-type DataSource = 'firestore' | 'guest_storage';
+type DataSource = 'firestore';
 
 export const posthogLogs = {
   dataHydrationCompleted(source: DataSource, applicationCount: number, contactCount: number, migratedLegacyContacts: boolean) {
@@ -17,12 +17,6 @@ export const posthogLogs = {
     posthog.logger.error('data hydration failed', {
       event: 'data_hydration_failed',
       data_source: source,
-    });
-  },
-
-  guestSessionStarted() {
-    posthog.logger.info('guest session started', {
-      event: 'guest_session_started',
     });
   },
 

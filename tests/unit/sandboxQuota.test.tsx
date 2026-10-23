@@ -48,7 +48,15 @@ describe('Sunset of Sandbox Mode & Free Tier Quotas', () => {
   beforeEach(() => {
     localStorage.clear();
     vi.clearAllMocks();
-    mountHarness(null);
+    vi.spyOn(ApplicationRepository, 'addApplication').mockImplementation(async (data, uid) => ({
+      id: `real-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      userId: uid,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      stageUpdatedAt: new Date().toISOString(),
+      ...data,
+    } as any));
+    mountHarness({ uid: 'user-cloud-123', emailVerified: true } as User);
   });
 
   afterEach(() => {
@@ -107,6 +115,7 @@ describe('Sunset of Sandbox Mode & Free Tier Quotas', () => {
   });
 
   it('blocks CSV batch import for unauthenticated or unverified visitors', async () => {
+    mountHarness(null);
     await act(async () => {
       await hookResult.handleBatchImportApplications([
         { company: 'CSV Corp', role: 'Data Analyst', platform: 'LinkedIn', status: 'Applied' } as any,

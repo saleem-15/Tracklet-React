@@ -161,12 +161,10 @@ export function useExtensionSync({
     setApplications(next);
 
     // Persist update outside setApplications updater
-    if (user?.emailVerified) {
+    if (user?.uid) {
       ApplicationRepository.updateApplication(appId, updatedApp, user.uid, updatedApp).catch((err) => {
         console.error('Failed to update email log in Firestore:', err);
       });
-    } else {
-      ApplicationRepository.saveGuestApplications(next);
     }
 
     // Acknowledge stored email to extension content script
@@ -358,10 +356,6 @@ export function useExtensionSync({
         });
       }
     }
-
-    if (!user?.emailVerified) {
-      ApplicationRepository.saveGuestApplications(next);
-    }
   }, [user, addToast, setApplications, applicationsRef]);
 
   const processIncomingContact = useCallback((contact: Contact, persistedToCloud?: boolean) => {
@@ -381,7 +375,7 @@ export function useExtensionSync({
     contactsRef.current = next;
     if (setContacts) setContacts(next);
 
-    if (user?.emailVerified) {
+    if (user?.uid) {
       if (!persistedToCloud) {
         if (existingIdx >= 0) {
           ContactRepository.updateContact(contact.id, contact, user.uid).catch((err) => {
@@ -393,8 +387,6 @@ export function useExtensionSync({
           });
         }
       }
-    } else {
-      ContactRepository.saveGuestContacts(next);
     }
 
     addToast(

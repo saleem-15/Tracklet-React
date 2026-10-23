@@ -73,7 +73,7 @@ describe('useExtensionSync hook', () => {
   it('ingests incoming email via window message and triggers toast receipt', async () => {
     const existingApp: Application = {
       id: 'app-1',
-      userId: 'guest',
+      userId: 'user-123',
       company: 'Acme Corp',
       role: 'Frontend Engineer',
       status: 'Applied',
@@ -117,7 +117,7 @@ describe('useExtensionSync hook', () => {
   it('buffers incoming email during data loading and drains on load completion', async () => {
     const existingApp: Application = {
       id: 'app-2',
-      userId: 'guest',
+      userId: 'user-123',
       company: 'Tech Corp',
       role: 'Fullstack Dev',
       status: 'Applied',

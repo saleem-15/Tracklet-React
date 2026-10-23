@@ -8,10 +8,10 @@ import {
   AppProviders, useAuth, useNavigation, useToastContext,
   useApplicationsContext, useContactsContext, useEntitlementContext,
 } from './context';
-import { useGuestMigration } from './hooks/useGuestMigration';
 import { useExtensionSync } from './hooks/useExtensionSync';
 import { useDataLoader } from './hooks/useDataLoader';
 import { getPathForTab, isAuthPath, isLegalPath } from './lib/routeUtils';
+import { purgeLegacyGuestStorage } from './lib/constants';
 
 function TrackletAppContent() {
   const { user, loading: authLoading, signOut } = useAuth();
@@ -21,19 +21,19 @@ function TrackletAppContent() {
   const entitlement = useEntitlementContext();
   const { contacts, setContacts, handleAddContact, handleLinkContact, setSelectedContactId } = useContactsContext();
 
-  const {
-    migrationApps, migrationContacts, isMigrationModalOpen, setIsMigrationModalOpen,
-    checkAndPromptGuestMigration, handleImportGuestApps, handleDiscardGuestApps,
-  } = useGuestMigration({ user, setApplications, setContacts, addToast });
-
   const { dataLoading, loadData } = useDataLoader({
-    user, authLoading, setApplications, setContacts, addToast, checkAndPromptGuestMigration,
+    user, authLoading, setApplications, setContacts, addToast,
   });
 
   useExtensionSync({
     user, applications, setApplications, applicationsRef,
     contacts, setContacts, dataLoading, handleAddContact, handleLinkContact, setSelectedAppId, addToast,
   });
+
+  // Purge any stale legacy guest mode storage keys
+  useEffect(() => {
+    purgeLegacyGuestStorage();
+  }, []);
 
   // Global hotkey: press 'Ctrl+Alt+B' or 'Ctrl+Shift+B' to summon tester issue reporter
   useEffect(() => {
@@ -79,7 +79,7 @@ function TrackletAppContent() {
   const handleSignOut = useCallback(async () => {
     try {
       await signOut();
-      try { localStorage.removeItem('tracklet_guest_mode'); } catch { /* Ignore */ }
+      purgeLegacyGuestStorage();
       setSelectedAppId(null);
       setSelectedContactId(null);
       window.history.pushState(null, '', '/login');
@@ -106,11 +106,6 @@ function TrackletAppContent() {
         </div>
         <AppSlideOvers />
         <AppModals
-          migration={{
-            isOpen: isMigrationModalOpen, apps: migrationApps, contacts: migrationContacts,
-            onImport: handleImportGuestApps, onDiscard: handleDiscardGuestApps,
-            onClose: () => setIsMigrationModalOpen(false),
-          }}
           paywall={{
             isOpen: entitlement.isPaywallOpen,
             context: entitlement.paywallContext,

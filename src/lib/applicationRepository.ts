@@ -11,76 +11,35 @@ import {
 } from './firebase';
 import { Application, ApplicationStatus } from '../types';
 import { INITIAL_SAMPLE_APPLICATIONS } from './sampleData';
-import { LOCAL_STORAGE_KEYS, APPLICATION_STATUSES, clearGuestMigrationMarkers } from './constants';
+import { APPLICATION_STATUSES } from './constants';
 import { createStatusHistoryEntry, appendStatusHistory } from './historyService';
 import { sanitizeForFirestore, commitInChunks } from './firestoreUtils';
 
 export class ApplicationRepository {
   /**
-   * Load applications from Firestore if authenticated (/users/{userId}/applications), or localStorage if guest.
+   * Load applications from Firestore for authenticated user (/users/{userId}/applications).
    */
   static async loadApplications(userId?: string): Promise<Application[]> {
-    if (userId) {
-      try {
-        const userAppCol = collection(db, 'users', userId, 'applications');
-        const querySnapshot = await getDocs(userAppCol);
-        const docsData: Application[] = [];
-        querySnapshot.forEach((docSnap) => {
-          const data = docSnap.data() as Omit<Application, 'id'>;
-          docsData.push({
-            ...data,
-            id: docSnap.id, // Firestore document ID is ALWAYS authoritative
-          });
+    if (!userId) {
+      return [];
+    }
+
+    try {
+      const userAppCol = collection(db, 'users', userId, 'applications');
+      const querySnapshot = await getDocs(userAppCol);
+      const docsData: Application[] = [];
+      querySnapshot.forEach((docSnap) => {
+        const data = docSnap.data() as Omit<Application, 'id'>;
+        docsData.push({
+          ...data,
+          id: docSnap.id, // Firestore document ID is ALWAYS authoritative
         });
+      });
 
-        return docsData;
-      } catch (err) {
-        console.error('Error fetching Firestore applications:', err);
-        throw err;
-      }
-    } else {
-      return this.loadGuestApplications();
-    }
-  }
-
-  /**
-   * Load applications from localStorage for guest users.
-   */
-  static loadGuestApplications(): Application[] {
-    try {
-      const stored = localStorage.getItem(LOCAL_STORAGE_KEYS.GUEST_APPS);
-      if (stored !== null) {
-        return JSON.parse(stored);
-      }
-    } catch {
-      // ignore
-    }
-
-    return [];
-  }
-
-  /**
-   * Persist array to localStorage (guest mode).
-   */
-  static saveGuestApplications(apps: Application[]): void {
-    try {
-      localStorage.setItem(LOCAL_STORAGE_KEYS.GUEST_APPS, JSON.stringify(apps));
-      clearGuestMigrationMarkers();
-    } catch (e) {
-      console.error('Failed to save to localStorage:', e);
-    }
-  }
-
-  /**
-   * Purges one or more application IDs from guest localStorage cache.
-   */
-  static purgeGuestApplications(ids: string | string[]): void {
-    const idList = Array.isArray(ids) ? ids : [ids];
-    if (idList.length === 0) return;
-    const idSet = new Set(idList);
-    const guestApps = this.loadGuestApplications();
-    if (guestApps.some((a) => idSet.has(a.id))) {
-      this.saveGuestApplications(guestApps.filter((a) => !idSet.has(a.id)));
+      return docsData;
+    } catch (err) {
+      console.error('Error fetching Firestore applications:', err);
+      throw err;
     }
   }
 
@@ -110,36 +69,29 @@ export class ApplicationRepository {
       resumeUploadedAt: newApp.resumeUploadedAt || undefined,
     };
 
-    let createdApp: Application;
-
-    if (userId) {
-      let createdId = '';
-      try {
-        const { id: _ignoredId, ...restOfAppData } = appData as unknown as Record<string, unknown>;
-        const payload = sanitizeForFirestore({
-          ...restOfAppData,
-          userId,
-        });
-        const docRef = await addDoc(collection(db, 'users', userId, 'applications'), payload);
-        createdId = docRef.id;
-      } catch (err) {
-        console.error('Failed to add document to Firestore:', err);
-        throw err;
-      }
-      createdApp = {
-        ...appData,
-        userId,
-        id: createdId,
-      };
-    } else {
-      createdApp = {
-        ...appData,
-        userId: 'guest',
-        id: `guest-${Date.now()}`,
-      };
+    if (!userId) {
+      throw new Error('User must be authenticated to add applications');
     }
 
-    return createdApp;
+    let createdId = '';
+    try {
+      const { id: _ignoredId, ...restOfAppData } = appData as unknown as Record<string, unknown>;
+      const payload = sanitizeForFirestore({
+        ...restOfAppData,
+        userId,
+      });
+      const docRef = await addDoc(collection(db, 'users', userId, 'applications'), payload);
+      createdId = docRef.id;
+    } catch (err) {
+      console.error('Failed to add document to Firestore:', err);
+      throw err;
+    }
+
+    return {
+      ...appData,
+      userId,
+      id: createdId,
+    };
   }
 
   /**
@@ -314,86 +266,24 @@ export class ApplicationRepository {
   }
 
   /**
-   * Batch import applications (from CSV or guest migration) into /users/{userId}/applications.
+   * Batch import applications (e.g. from CSV) into /users/{userId}/applications.
    */
   static async batchImport(
     newApps: (Partial<Application> | Omit<Application, 'id' | 'userId' | 'createdAt' | 'updatedAt' | 'stageUpdatedAt'>)[],
-    userId?: string
+    userId: string
   ): Promise<Application[]> {
+    if (!userId) {
+      console.warn('Cannot batch import applications without userId');
+      return [];
+    }
+
     const now = new Date().toISOString();
     const createdList: Application[] = [];
 
-    if (userId) {
-      try {
-        const itemsWithRefs = newApps.map((appItem) => {
-          const docRef = doc(collection(db, 'users', userId, 'applications'));
-          
-          const validStatus: ApplicationStatus = 
-            appItem.status && (APPLICATION_STATUSES as string[]).includes(appItem.status)
-              ? (appItem.status as ApplicationStatus)
-              : 'Saved';
-
-          const initialHistory = Array.isArray(appItem.history) && appItem.history.length > 0
-            ? appItem.history.slice(0, 100)
-            : [createStatusHistoryEntry(validStatus, undefined, ((appItem as Record<string, unknown>).stageUpdatedAt as string) || ((appItem as Record<string, unknown>).createdAt as string) || now)];
-
-          // Extract and strip any existing client ID / userId to avoid document payload pollution
-          const { id: _oldId, userId: _oldUserId, ...restFields } = appItem as Record<string, unknown>;
-
-          const sanitizedPayload: Record<string, unknown> = {
-            ...restFields,
-            company: String(appItem.company || 'Untitled Company').trim().slice(0, 200) || 'Untitled Company',
-            role: String(appItem.role || 'Position').trim().slice(0, 200) || 'Position',
-            status: validStatus,
-            platform: String(appItem.platform || 'Other').trim().slice(0, 100) || 'Other',
-            dateApplied: String(appItem.dateApplied || now.slice(0, 10)).trim().slice(0, 40) || now.slice(0, 10),
-            contactIds: Array.isArray(appItem.contactIds) ? appItem.contactIds.slice(0, 100) : [],
-            tasks: Array.isArray(appItem.tasks) ? appItem.tasks.slice(0, 100) : [],
-            emails: Array.isArray(appItem.emails) ? appItem.emails.slice(0, 100) : [],
-            history: initialHistory,
-            userId,
-            stageUpdatedAt: typeof restFields.stageUpdatedAt === 'string' ? restFields.stageUpdatedAt.slice(0, 40) : now,
-            createdAt: typeof restFields.createdAt === 'string' ? restFields.createdAt.slice(0, 40) : now,
-            updatedAt: now,
-          };
-
-          if (appItem.notes) {
-            sanitizedPayload.notes = String(appItem.notes).slice(0, 20000);
-          }
-          if (appItem.jobLink) {
-            sanitizedPayload.jobLink = String(appItem.jobLink).slice(0, 3000);
-          }
-          if (appItem.emailThreadUrl) {
-            sanitizedPayload.emailThreadUrl = String(appItem.emailThreadUrl).slice(0, 3000);
-          }
-          if (appItem.companyDomain) {
-            sanitizedPayload.companyDomain = String(appItem.companyDomain).slice(0, 200);
-          }
-          if (appItem.contactEmail) {
-            sanitizedPayload.contactEmail = String(appItem.contactEmail).slice(0, 200);
-          }
-          if (Array.isArray(appItem.contacts)) {
-            sanitizedPayload.contacts = appItem.contacts.slice(0, 50);
-          }
-
-          const appObj = sanitizeForFirestore(sanitizedPayload);
-
-          return { docRef, appObj };
-        });
-
-        await commitInChunks(itemsWithRefs, (batch, { docRef, appObj }) => {
-          batch.set(docRef, appObj);
-        });
-
-        itemsWithRefs.forEach(({ docRef, appObj }) => {
-          createdList.push({ ...(appObj as unknown as Omit<Application, 'id'>), id: docRef.id });
-        });
-      } catch (err) {
-        console.error('Failed batch import in Firestore:', err);
-        throw err;
-      }
-    } else {
-      newApps.forEach((appItem, index) => {
+    try {
+      const itemsWithRefs = newApps.map((appItem) => {
+        const docRef = doc(collection(db, 'users', userId, 'applications'));
+        
         const validStatus: ApplicationStatus = 
           appItem.status && (APPLICATION_STATUSES as string[]).includes(appItem.status)
             ? (appItem.status as ApplicationStatus)
@@ -403,24 +293,60 @@ export class ApplicationRepository {
           ? appItem.history.slice(0, 100)
           : [createStatusHistoryEntry(validStatus, undefined, ((appItem as Record<string, unknown>).stageUpdatedAt as string) || ((appItem as Record<string, unknown>).createdAt as string) || now)];
 
-        const { id: oldId, userId: _oldUserId, ...restFields } = appItem as Record<string, unknown>;
+        // Extract and strip any existing client ID / userId to avoid document payload pollution
+        const { id: _oldId, userId: _oldUserId, ...restFields } = appItem as Record<string, unknown>;
 
-        createdList.push({
-          ...(restFields as unknown as Omit<Application, 'id' | 'userId'>),
-          id: (typeof oldId === 'string' && oldId) ? oldId : `imported-${Date.now()}-${index}`,
-          userId: 'guest',
-          company: String(appItem.company || 'Untitled Company').trim() || 'Untitled Company',
-          role: String(appItem.role || 'Position').trim() || 'Position',
+        const sanitizedPayload: Record<string, unknown> = {
+          ...restFields,
+          company: String(appItem.company || 'Untitled Company').trim().slice(0, 200) || 'Untitled Company',
+          role: String(appItem.role || 'Position').trim().slice(0, 200) || 'Position',
           status: validStatus,
-          platform: (appItem.platform as any) || 'Other',
-          dateApplied: String(appItem.dateApplied || now.slice(0, 10)).trim() || now.slice(0, 10),
-          contactIds: Array.isArray(appItem.contactIds) ? appItem.contactIds : [],
+          platform: String(appItem.platform || 'Other').trim().slice(0, 100) || 'Other',
+          dateApplied: String(appItem.dateApplied || now.slice(0, 10)).trim().slice(0, 40) || now.slice(0, 10),
+          contactIds: Array.isArray(appItem.contactIds) ? appItem.contactIds.slice(0, 100) : [],
+          tasks: Array.isArray(appItem.tasks) ? appItem.tasks.slice(0, 100) : [],
+          emails: Array.isArray(appItem.emails) ? appItem.emails.slice(0, 100) : [],
           history: initialHistory,
-          stageUpdatedAt: typeof restFields.stageUpdatedAt === 'string' ? restFields.stageUpdatedAt : now,
-          createdAt: typeof restFields.createdAt === 'string' ? restFields.createdAt : now,
+          userId,
+          stageUpdatedAt: typeof restFields.stageUpdatedAt === 'string' ? restFields.stageUpdatedAt.slice(0, 40) : now,
+          createdAt: typeof restFields.createdAt === 'string' ? restFields.createdAt.slice(0, 40) : now,
           updatedAt: now,
-        });
+        };
+
+        if (appItem.notes) {
+          sanitizedPayload.notes = String(appItem.notes).slice(0, 20000);
+        }
+        if (appItem.jobLink) {
+          sanitizedPayload.jobLink = String(appItem.jobLink).slice(0, 3000);
+        }
+        if (appItem.emailThreadUrl) {
+          sanitizedPayload.emailThreadUrl = String(appItem.emailThreadUrl).slice(0, 3000);
+        }
+        if (appItem.companyDomain) {
+          sanitizedPayload.companyDomain = String(appItem.companyDomain).slice(0, 200);
+        }
+        if (appItem.contactEmail) {
+          sanitizedPayload.contactEmail = String(appItem.contactEmail).slice(0, 200);
+        }
+        if (Array.isArray(appItem.contacts)) {
+          sanitizedPayload.contacts = appItem.contacts.slice(0, 50);
+        }
+
+        const appObj = sanitizeForFirestore(sanitizedPayload);
+
+        return { docRef, appObj };
       });
+
+      await commitInChunks(itemsWithRefs, (batch, { docRef, appObj }) => {
+        batch.set(docRef, appObj);
+      });
+
+      itemsWithRefs.forEach(({ docRef, appObj }) => {
+        createdList.push({ ...(appObj as unknown as Omit<Application, 'id'>), id: docRef.id });
+      });
+    } catch (err) {
+      console.error('Failed batch import in Firestore:', err);
+      throw err;
     }
 
     return createdList;
@@ -430,6 +356,10 @@ export class ApplicationRepository {
    * Reset / re-seed demo data under /users/{userId}/applications.
    */
   static async seedDemoData(userId?: string): Promise<Application[]> {
+    if (!userId) {
+      throw new Error('User must be authenticated to seed demo data');
+    }
+
     const now = new Date().toISOString();
     const initialWithHistory = INITIAL_SAMPLE_APPLICATIONS.map((item) => ({
       ...item,
@@ -439,46 +369,36 @@ export class ApplicationRepository {
         : [createStatusHistoryEntry(item.status, undefined, item.stageUpdatedAt || item.createdAt || now)],
     }));
 
-    if (userId) {
-      try {
-        const snap = await getDocs(collection(db, 'users', userId, 'applications'));
-        if (!snap.empty) {
-          await commitInChunks(snap.docs, (batch, d) => {
-            batch.delete(d.ref);
-          });
-        }
-
-        // Seed new batch
-        const itemsWithRefs = initialWithHistory.map((item) => {
-          const docRef = doc(collection(db, 'users', userId, 'applications'));
-          const appObj = sanitizeForFirestore({
-            ...item,
-            userId,
-          });
-          return { docRef, appObj };
+    try {
+      const snap = await getDocs(collection(db, 'users', userId, 'applications'));
+      if (!snap.empty) {
+        await commitInChunks(snap.docs, (batch, d) => {
+          batch.delete(d.ref);
         });
-
-        await commitInChunks(itemsWithRefs, (batch, { docRef, appObj }) => {
-          batch.set(docRef, appObj);
-        });
-
-        return itemsWithRefs.map(({ docRef, appObj }) => ({
-          id: docRef.id,
-          ...(appObj as unknown as Omit<Application, 'id'>),
-        }));
-      } catch (err) {
-        console.error('Failed to reset Firestore demo data:', err);
-        throw err;
       }
-    }
 
-    const initial = initialWithHistory.map((item, idx) => ({
-      ...item,
-      id: `guest-${idx + 1}`,
-      userId: 'guest',
-    }));
-    this.saveGuestApplications(initial);
-    return initial;
+      // Seed new batch
+      const itemsWithRefs = initialWithHistory.map((item) => {
+        const docRef = doc(collection(db, 'users', userId, 'applications'));
+        const appObj = sanitizeForFirestore({
+          ...item,
+          userId,
+        });
+        return { docRef, appObj };
+      });
+
+      await commitInChunks(itemsWithRefs, (batch, { docRef, appObj }) => {
+        batch.set(docRef, appObj);
+      });
+
+      return itemsWithRefs.map(({ docRef, appObj }) => ({
+        id: docRef.id,
+        ...(appObj as unknown as Omit<Application, 'id'>),
+      }));
+    } catch (err) {
+      console.error('Failed to reset Firestore demo data:', err);
+      throw err;
+    }
   }
 
   /**

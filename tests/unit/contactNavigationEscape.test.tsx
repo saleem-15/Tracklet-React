@@ -5,7 +5,9 @@ import { ContactsProvider, useContactsContext } from '../../src/context/Contacts
 import { NavigationProvider, useNavigation } from '../../src/context/NavigationContext';
 import { ApplicationsProvider } from '../../src/context/ApplicationsContext';
 import { ToastProvider, useToastContext } from '../../src/context/ToastContext';
-import { AuthProvider } from '../../src/context/AuthContext';
+import * as AuthContextModule from '../../src/context/AuthContext';
+const { AuthProvider } = AuthContextModule;
+import { ContactRepository } from '../../src/lib/contactRepository';
 import { Contact, Application } from '../../src/types';
 
 let host: HTMLDivElement | null = null;
@@ -42,6 +44,43 @@ describe('Contact Profile to Linked Application Navigation & Return Stack (Issue
   beforeEach(() => {
     localStorage.clear();
     vi.restoreAllMocks();
+    vi.spyOn(AuthContextModule, 'useAuth').mockReturnValue({
+      user: { uid: 'user-test', emailVerified: true } as any,
+      authUser: {
+        uid: 'user-test',
+        email: 'test@example.com',
+        displayName: 'Test User',
+        photoURL: null,
+        providerId: 'password',
+        emailVerified: true,
+      },
+      loading: false,
+      error: null,
+      clearError: vi.fn(),
+      isAuthModalOpen: false,
+      authModalMode: 'signin',
+      openAuthModal: vi.fn(),
+      closeAuthModal: vi.fn(),
+      signInWithGoogle: vi.fn(),
+      signInWithEmail: vi.fn(),
+      signUpWithEmail: vi.fn(),
+      sendEmailVerification: vi.fn(),
+      applyActionCode: vi.fn(),
+      sendPasswordReset: vi.fn(),
+      verifyPasswordResetCode: vi.fn(),
+      confirmPasswordReset: vi.fn(),
+      reloadUserVerification: vi.fn(),
+      signOut: vi.fn(),
+      deleteAccount: vi.fn(),
+    });
+    vi.spyOn(ContactRepository, 'addContact').mockImplementation(async (data, uid) => ({
+      id: `c-persisted-${Date.now()}`,
+      userId: uid,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      ...data,
+    }));
+    vi.spyOn(ContactRepository, 'linkContactToApplication').mockResolvedValue();
   });
 
   afterEach(() => {

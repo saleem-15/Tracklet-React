@@ -300,7 +300,7 @@ ${screenshotSection}${attachmentList}
 | **Browser** | ${diagnostics.browser || 'Unknown'} |
 | **Operating System** | ${diagnostics.os || 'Unknown'} |
 | **Viewport Size** | ${diagnostics.viewport || 'Unknown'} (DPR: ${diagnostics.devicePixelRatio || 1}) |
-| **Auth Mode** | ${diagnostics.authMode || 'guest'} |
+| **Auth Mode** | ${diagnostics.authMode || 'unauthenticated'} |
 | **Timestamp** | ${diagnostics.timestamp || new Date().toISOString()} |
 
 ### Recent Console Errors

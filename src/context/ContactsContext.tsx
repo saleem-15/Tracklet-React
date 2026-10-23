@@ -145,7 +145,8 @@ export const ContactsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   // Register contact seeder callback with ApplicationsProvider for unified demo data loading
   const seedContacts = useCallback(async () => {
-    const freshContacts = await ContactRepository.seedDemoContacts(user?.emailVerified ? user.uid : undefined);
+    if (!user?.uid) return;
+    const freshContacts = await ContactRepository.seedDemoContacts(user.uid);
     setContacts(freshContacts);
     setSelectedContactId(null);
   }, [user, setContacts, setSelectedContactId]);

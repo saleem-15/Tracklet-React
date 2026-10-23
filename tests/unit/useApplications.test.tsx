@@ -47,8 +47,23 @@ describe('useApplications hook', () => {
     localStorage.clear();
     vi.restoreAllMocks();
     testFilter = { ...DEFAULT_FILTER };
-    testUser = null;
+    testUser = { uid: 'user-1', emailVerified: true };
     currentSelectedAppId = null;
+    vi.spyOn(ApplicationRepository, 'addApplication').mockImplementation(async (appData, uid) => {
+      const now = new Date().toISOString();
+      return {
+        id: `real-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+        userId: uid,
+        ...appData,
+        createdAt: now,
+        updatedAt: now,
+        stageUpdatedAt: now,
+        history: [{ id: `hist-${Date.now()}`, toStatus: appData.status, timestamp: now }],
+      } as Application;
+    });
+    vi.spyOn(ApplicationRepository, 'updateApplication').mockResolvedValue({});
+    vi.spyOn(ApplicationRepository, 'deleteApplication').mockResolvedValue();
+    vi.spyOn(ApplicationRepository, 'restoreApplication').mockImplementation(async (app) => app);
   });
 
   afterEach(() => {

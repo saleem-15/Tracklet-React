@@ -2,7 +2,6 @@ import { useState, useCallback, useRef } from 'react';
 import type { User } from 'firebase/auth';
 import { Contact, Application } from '../types';
 import { ContactRepository } from '../lib/contactRepository';
-import { ApplicationRepository } from '../lib/applicationRepository';
 import { broadcastDeletedContact } from '../lib/extensionSync';
 import posthog from '../lib/posthog';
 
@@ -10,15 +9,20 @@ export interface UseContactsProps {
   user: User | null;
   applications: Application[];
   setApplications: React.Dispatch<React.SetStateAction<Application[]>>;
-  addToast: (type: 'success' | 'error' | 'info' | 'warning', title: string, message?: string, action?: { label: string; onClick: () => void }) => void;
-  setSelectedAppId: (id: string | null) => void;
+  addToast: (
+    type: 'success' | 'error' | 'info' | 'warning', 
+    title: string, 
+    message?: string, 
+    action?: { label: string; onClick: () => void }
+  ) => void;
+  setSelectedAppId?: (id: string | null) => void;
 }
 
 export interface UseContactsReturn {
   contacts: Contact[];
   setContacts: React.Dispatch<React.SetStateAction<Contact[]>>;
   selectedContactId: string | null;
-  setSelectedContactId: (id: string | null) => void;
+  setSelectedContactId: React.Dispatch<React.SetStateAction<string | null>>;
   selectedContact: Contact | null;
   handleAddContact: (newContact: Omit<Contact, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => Promise<Contact>;
   handleUpdateContact: (id: string, updates: Partial<Contact>) => Promise<void>;
@@ -31,22 +35,20 @@ export interface UseContactsReturn {
 /**
  * useContacts
  * 
- * Domain hook encapsulating Networking / Contacts Hub state and CRUD actions.
- * - Manages contacts collection state and selectedContactId
- * - Optimistic UI updates with background Firestore synchronization and rollback
- * - Bi-directional linking / unlinking between contacts and applications
- * - Undo snackbars for single contact deletions
+ * Domain hook encapsulating Contacts Hub state and actions.
+ * - Manages contacts collection state and selected contact
+ * - Handles optimistic CRUD operations with background Firestore syncing
+ * - Links and unlinks contacts to job applications with bi-directional synchronization
+ * - Provides undo snackbars for deletions and unlinking
  */
 export function useContacts({
   user,
   applications,
   setApplications,
   addToast,
-  setSelectedAppId,
 }: UseContactsProps): UseContactsReturn {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
-
   const contactsRef = useRef<Contact[]>(contacts);
   contactsRef.current = contacts;
   const applicationsRef = useRef<Application[]>(applications);
@@ -62,115 +64,101 @@ export function useContacts({
     const tempId = `c-opt-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
     const optimisticContact: Contact = {
       id: tempId,
-      userId: user?.uid || 'guest',
+      userId: user?.uid || '',
       createdAt: now,
       updatedAt: now,
       ...newContact,
       applicationIds: newContact.applicationIds || [],
     };
 
+    if (!user?.uid) {
+      addToast('warning', 'Sign In Required', 'Please sign in to add contacts.');
+      return optimisticContact;
+    }
+
     // 1. Synchronously update local contacts state
-    setContacts((prev) => {
-      const next = [optimisticContact, ...prev.filter((c) => c.id !== tempId)];
-      if (!user?.emailVerified) ContactRepository.saveGuestContacts(next);
-      return next;
-    });
+    setContacts((prev) => [optimisticContact, ...prev.filter((c) => c.id !== tempId)]);
 
     // 2. Synchronously link to application(s) in local state if provided
     if (optimisticContact.applicationIds && optimisticContact.applicationIds.length > 0) {
-      setApplications((prev) => {
-        const next = prev.map((app) =>
+      setApplications((prev) =>
+        prev.map((app) =>
           optimisticContact.applicationIds!.includes(app.id)
             ? {
                 ...app,
                 contactIds: Array.from(new Set([...(app.contactIds || []), tempId])),
               }
             : app
-        );
-        if (!user?.emailVerified) ApplicationRepository.saveGuestApplications(next);
-        return next;
-      });
+        )
+      );
     }
 
     // 3. Instant toast feedback
     addToast('success', 'Contact Added', optimisticContact.name);
 
-    // 4. Background Firestore sync if authenticated
-    if (user?.emailVerified) {
-      let persistedContactId: string | null = null;
-      ContactRepository.addContact(newContact, user.uid)
-        .then(async (created) => {
-          persistedContactId = created.id;
-          // Reconcile optimistic ID with the final Firestore document ID
-          setContacts((prev) => prev.map((c) => (c.id === tempId ? created : c)));
+    // 4. Firestore persistence
+    try {
+      const created = await ContactRepository.addContact(newContact, user.uid);
+      // Reconcile optimistic ID with the final Firestore document ID
+      setContacts((prev) => prev.map((c) => (c.id === tempId ? created : c)));
 
-          if (created.applicationIds && created.applicationIds.length > 0) {
-            setApplications((prev) =>
-              prev.map((app) =>
-                created.applicationIds!.includes(app.id)
-                  ? {
-                      ...app,
-                      contactIds: (app.contactIds || []).map((cId) => (cId === tempId ? created.id : cId)),
-                    }
-                  : app
-              )
-            );
+      if (created.applicationIds && created.applicationIds.length > 0) {
+        setApplications((prev) =>
+          prev.map((app) =>
+            created.applicationIds!.includes(app.id)
+              ? {
+                  ...app,
+                  contactIds: (app.contactIds || []).map((cId) => (cId === tempId ? created.id : cId)),
+                }
+              : app
+          )
+        );
 
-            const linkResults = await Promise.allSettled(
-              created.applicationIds.map((appId) =>
-                ContactRepository.linkContactToApplication(created.id, appId, user.uid)
-              )
-            );
+        const linkResults = await Promise.allSettled(
+          created.applicationIds.map((appId) =>
+            ContactRepository.linkContactToApplication(created.id, appId, user.uid)
+          )
+        );
 
-            const failedAppIds = linkResults
-              .map((res, idx) => (res.status === 'rejected' ? created.applicationIds![idx] : null))
-              .filter((id): id is string => id !== null);
+        const failedAppIds = linkResults
+          .map((res, idx) => (res.status === 'rejected' ? created.applicationIds![idx] : null))
+          .filter((id): id is string => id !== null);
 
-            if (failedAppIds.length > 0) {
-              setApplications((prev) =>
-                prev.map((app) =>
-                  failedAppIds.includes(app.id)
-                    ? {
-                        ...app,
-                        contactIds: (app.contactIds || []).filter(
-                          (cId) => cId !== created.id && cId !== tempId
-                        ),
-                      }
-                    : app
-                )
-              );
-              throw new Error(`Failed to link contact to application(s): ${failedAppIds.join(', ')}`);
-            }
-          }
-          posthog.capture('contact_created', {
-            category: created.category,
-            linked_application_count: created.applicationIds?.length || 0,
-            is_guest: false,
-          });
-        })
-        .catch((err) => {
-          console.error('Failed to sync contact to Firestore, rolling back:', err);
-          // Rollback state
-          setContacts((prev) => prev.filter((c) => c.id !== tempId && c.id !== persistedContactId));
+        if (failedAppIds.length > 0) {
           setApplications((prev) =>
-            prev.map((app) => ({
-              ...app,
-              contactIds: (app.contactIds || []).filter(
-                (cId) => cId !== tempId && cId !== persistedContactId
-              ),
-            }))
+            prev.map((app) =>
+              failedAppIds.includes(app.id)
+                ? {
+                    ...app,
+                    contactIds: (app.contactIds || []).filter(
+                      (cId) => cId !== created.id && cId !== tempId
+                    ),
+                  }
+                : app
+            )
           );
-          addToast('error', 'Sync Failed', `Could not save ${optimisticContact.name} to cloud.`);
-        });
-    } else {
+          throw new Error(`Failed to link contact to application(s): ${failedAppIds.join(', ')}`);
+        }
+      }
       posthog.capture('contact_created', {
-        category: optimisticContact.category,
-        linked_application_count: optimisticContact.applicationIds?.length || 0,
-        is_guest: true,
+        category: created.category,
+        linked_application_count: created.applicationIds?.length || 0,
       });
-    }
 
-    return optimisticContact;
+      return created;
+    } catch (err) {
+      console.error('Failed to sync contact to Firestore, rolling back:', err);
+      // Rollback state
+      setContacts((prev) => prev.filter((c) => c.id !== tempId));
+      setApplications((prev) =>
+        prev.map((app) => ({
+          ...app,
+          contactIds: (app.contactIds || []).filter((cId) => cId !== tempId),
+        }))
+      );
+      addToast('error', 'Sync Failed', `Could not save ${optimisticContact.name} to cloud.`);
+      return optimisticContact;
+    }
   }, [user, addToast, setApplications]);
 
   // Update Contact
@@ -185,22 +173,18 @@ export function useContacts({
     const updatedContact: Contact = {
       ...(currentContact || { id, name: 'Contact' }),
       ...updates,
-      userId: user?.uid || currentContact?.userId || 'guest',
+      userId: user?.uid || currentContact?.userId || '',
       updatedAt: now,
     };
 
-    setContacts((prev) => {
-      const next = prev.map((c) => (c.id === id ? updatedContact : c));
-      if (!user?.emailVerified) ContactRepository.saveGuestContacts(next);
-      return next;
-    });
+    setContacts((prev) => prev.map((c) => (c.id === id ? updatedContact : c)));
 
     if (hasAppIdsChanged && newAppIds) {
       const addedAppIds = newAppIds.filter((appId) => !oldAppIds.includes(appId));
       const removedAppIds = oldAppIds.filter((appId) => !newAppIds.includes(appId));
 
-      setApplications((prev) => {
-        const next = prev.map((app) => {
+      setApplications((prev) =>
+        prev.map((app) => {
           if (addedAppIds.includes(app.id)) {
             return {
               ...app,
@@ -214,12 +198,10 @@ export function useContacts({
             };
           }
           return app;
-        });
-        if (!user?.emailVerified) ApplicationRepository.saveGuestApplications(next);
-        return next;
-      });
+        })
+      );
 
-      if (user?.emailVerified) {
+      if (user?.uid) {
         for (const appId of addedAppIds) {
           const targetApp = applicationsRef.current.find((a) => a.id === appId);
           ContactRepository.linkContactToApplication(id, appId, user.uid, updatedContact, targetApp).catch((e) => {
@@ -236,22 +218,17 @@ export function useContacts({
     }
 
     try {
-      if (user?.emailVerified) {
+      if (user?.uid) {
         await ContactRepository.updateContact(id, updates, user.uid, updatedContact);
       }
       posthog.capture('contact_updated', {
         category: updatedContact.category,
         linked_application_count: updatedContact.applicationIds?.length || 0,
-        is_guest: !user?.emailVerified,
       });
     } catch (err) {
       console.error('Failed to update contact:', err);
       if (currentContact) {
-        setContacts((prev) => {
-          const reverted = prev.map((c) => (c.id === id ? currentContact! : c));
-          if (!user?.emailVerified) ContactRepository.saveGuestContacts(reverted);
-          return reverted;
-        });
+        setContacts((prev) => prev.map((c) => (c.id === id ? currentContact! : c)));
       }
       addToast('error', 'Update Failed', 'Could not save contact changes.');
     }
@@ -264,67 +241,56 @@ export function useContacts({
 
     const linkedAppIds = targetContact.applicationIds || [];
 
-    setContacts((prev) => {
-      const next = prev.filter((c) => c.id !== id);
-      if (!user?.emailVerified) ContactRepository.saveGuestContacts(next);
-      return next;
-    });
+    setContacts((prev) => prev.filter((c) => c.id !== id));
 
     const currentApps = applicationsRef.current;
     const affectedApps = currentApps.filter((app) => linkedAppIds.includes(app.id));
 
     if (linkedAppIds.length > 0) {
-      setApplications((prev) => {
-        const next = prev.map((app) =>
+      setApplications((prev) =>
+        prev.map((app) =>
           linkedAppIds.includes(app.id)
             ? { ...app, contactIds: (app.contactIds || []).filter((cId) => cId !== id) }
             : app
-        );
-        if (!user?.emailVerified) ApplicationRepository.saveGuestApplications(next);
-        return next;
-      });
+        )
+      );
     }
 
     setSelectedContactId((current) => (current === id ? null : current));
 
     try {
-      await ContactRepository.deleteContact(
-        id,
-        user?.emailVerified ? user.uid : undefined,
-        linkedAppIds,
-        targetContact
-      );
+      if (user?.uid) {
+        await ContactRepository.deleteContact(
+          id,
+          user.uid,
+          linkedAppIds,
+          targetContact
+        );
+      }
       // Notify extension to purge from its pending/sync storage
       broadcastDeletedContact(id);
       posthog.capture('contact_deleted', {
         category: targetContact.category,
         linked_application_count: linkedAppIds.length,
-        is_guest: !user?.emailVerified,
       });
 
       addToast('info', `Deleted ${targetContact.name}`, undefined, {
         label: 'Undo',
         onClick: async () => {
-          setContacts((prev) => {
-            const next = [targetContact!, ...prev];
-            if (!user?.emailVerified) ContactRepository.saveGuestContacts(next);
-            return next;
-          });
+          setContacts((prev) => [targetContact!, ...prev]);
 
           if (linkedAppIds.length > 0) {
-            setApplications((prev) => {
-              const next = prev.map((app) =>
+            setApplications((prev) =>
+              prev.map((app) =>
                 linkedAppIds.includes(app.id)
                   ? { ...app, contactIds: Array.from(new Set([...(app.contactIds || []), id])) }
                   : app
-              );
-              if (!user?.emailVerified) ApplicationRepository.saveGuestApplications(next);
-              return next;
-            });
+              )
+            );
           }
 
           try {
-            if (user?.emailVerified) {
+            if (user?.uid) {
               await ContactRepository.upsertContact(targetContact!, user.uid);
               await Promise.allSettled(
                 linkedAppIds.map((appId) => {
@@ -336,21 +302,15 @@ export function useContacts({
             addToast('success', `Restored ${targetContact!.name}`);
           } catch (err) {
             console.error('Failed to restore contact:', err);
-            setContacts((prev) => {
-              const next = prev.filter((c) => c.id !== id);
-              if (!user?.emailVerified) ContactRepository.saveGuestContacts(next);
-              return next;
-            });
+            setContacts((prev) => prev.filter((c) => c.id !== id));
             if (linkedAppIds.length > 0) {
-              setApplications((prev) => {
-                const next = prev.map((app) =>
+              setApplications((prev) =>
+                prev.map((app) =>
                   linkedAppIds.includes(app.id)
                     ? { ...app, contactIds: (app.contactIds || []).filter((cId) => cId !== id) }
                     : app
-                );
-                if (!user?.emailVerified) ApplicationRepository.saveGuestApplications(next);
-                return next;
-              });
+                )
+              );
             }
             addToast('error', 'Restore Failed', 'Could not restore contact.');
           }
@@ -358,22 +318,16 @@ export function useContacts({
       });
     } catch (err) {
       console.error('Failed to delete contact:', err);
-      setContacts((prev) => {
-        const reverted = [targetContact!, ...prev];
-        if (!user?.emailVerified) ContactRepository.saveGuestContacts(reverted);
-        return reverted;
-      });
+      setContacts((prev) => [targetContact!, ...prev]);
       if (affectedApps.length > 0) {
         setApplications((prev) => {
           const appMap = new Map(affectedApps.map((a) => [a.id, a]));
-          const next = prev.map((a) => appMap.get(a.id) || a);
-          if (!user?.emailVerified) ApplicationRepository.saveGuestApplications(next);
-          return next;
+          return prev.map((a) => appMap.get(a.id) || a);
         });
       }
       addToast('error', 'Delete Failed', 'Could not delete contact.');
     }
-  }, [user, addToast, setApplications]);
+  }, [user, addToast, setApplications, setSelectedContactId]);
 
   // Batch Delete Contacts
   const handleBatchDeleteContacts = useCallback(async (ids: string[]) => {
@@ -387,11 +341,7 @@ export function useContacts({
     );
 
     // Optimistically remove contacts
-    setContacts((prev) => {
-      const next = prev.filter((c) => !deletedSet.has(c.id));
-      if (!user?.emailVerified) ContactRepository.saveGuestContacts(next);
-      return next;
-    });
+    setContacts((prev) => prev.filter((c) => !deletedSet.has(c.id)));
 
     // Optimistically remove deleted contact IDs from linked applications
     const currentApps = applicationsRef.current;
@@ -408,35 +358,28 @@ export function useContacts({
         }
         return app;
       });
-      if (changed && (!user || !user.emailVerified)) {
-        ApplicationRepository.saveGuestApplications(next);
-      }
       return changed ? next : prev;
     });
 
     try {
-      await ContactRepository.batchDelete(
-        ids,
-        user?.emailVerified ? user.uid : undefined,
-        linkedAppIds,
-        deleted
-      );
+      if (user?.uid) {
+        await ContactRepository.batchDelete(
+          ids,
+          user.uid,
+          linkedAppIds,
+          deleted
+        );
+      }
       // Notify extension to purge from its pending/sync storage
       broadcastDeletedContact(ids);
       addToast('info', `Deleted ${ids.length} contacts`);
     } catch (err) {
       console.error('Bulk delete contacts failed:', err);
-      setContacts((prev) => {
-        const reverted = [...deleted, ...prev];
-        if (!user?.emailVerified) ContactRepository.saveGuestContacts(reverted);
-        return reverted;
-      });
+      setContacts((prev) => [...deleted, ...prev]);
       if (affectedApps.length > 0) {
         setApplications((prev) => {
           const appMap = new Map(affectedApps.map((a) => [a.id, a]));
-          const next = prev.map((a) => appMap.get(a.id) || a);
-          if (!user?.emailVerified) ApplicationRepository.saveGuestApplications(next);
-          return next;
+          return prev.map((a) => appMap.get(a.id) || a);
         });
       }
       addToast('error', 'Delete Failed', 'Could not batch delete contacts.');
@@ -450,28 +393,24 @@ export function useContacts({
     const targetContact = prevContacts.find((c) => c.id === contactId);
     const targetApp = prevApps.find((a) => a.id === appId);
 
-    setContacts((prev) => {
-      const next = prev.map((c) =>
+    setContacts((prev) =>
+      prev.map((c) =>
         c.id === contactId
           ? { ...c, applicationIds: Array.from(new Set([...(c.applicationIds || []), appId])) }
           : c
-      );
-      if (!user?.emailVerified) ContactRepository.saveGuestContacts(next);
-      return next;
-    });
+      )
+    );
 
-    setApplications((prev) => {
-      const next = prev.map((a) =>
+    setApplications((prev) =>
+      prev.map((a) =>
         a.id === appId
           ? { ...a, contactIds: Array.from(new Set([...(a.contactIds || []), contactId])) }
           : a
-      );
-      if (!user?.emailVerified) ApplicationRepository.saveGuestApplications(next);
-      return next;
-    });
+      )
+    );
 
     try {
-      if (user?.emailVerified) {
+      if (user?.uid) {
         await ContactRepository.linkContactToApplication(
           contactId,
           appId,
@@ -486,10 +425,6 @@ export function useContacts({
       console.error('Failed to link contact:', err);
       setContacts(prevContacts);
       setApplications(prevApps);
-      if (!user?.emailVerified) {
-        ContactRepository.saveGuestContacts(prevContacts);
-        ApplicationRepository.saveGuestApplications(prevApps);
-      }
       addToast('error', 'Link Failed', 'Could not link contact.');
     }
   }, [user, addToast, setApplications]);
@@ -501,28 +436,24 @@ export function useContacts({
     const targetContact = prevContacts.find((c) => c.id === contactId);
     const targetApp = prevApps.find((a) => a.id === appId);
 
-    setContacts((prev) => {
-      const next = prev.map((c) =>
+    setContacts((prev) =>
+      prev.map((c) =>
         c.id === contactId
           ? { ...c, applicationIds: (c.applicationIds || []).filter((id) => id !== appId) }
           : c
-      );
-      if (!user?.emailVerified) ContactRepository.saveGuestContacts(next);
-      return next;
-    });
+      )
+    );
 
-    setApplications((prev) => {
-      const next = prev.map((a) =>
+    setApplications((prev) =>
+      prev.map((a) =>
         a.id === appId
           ? { ...a, contactIds: (a.contactIds || []).filter((id) => id !== contactId) }
           : a
-      );
-      if (!user?.emailVerified) ApplicationRepository.saveGuestApplications(next);
-      return next;
-    });
+      )
+    );
 
     try {
-      if (user?.emailVerified) {
+      if (user?.uid) {
         await ContactRepository.unlinkContactFromApplication(
           contactId,
           appId,
@@ -542,10 +473,6 @@ export function useContacts({
       console.error('Failed to unlink contact:', err);
       setContacts(prevContacts);
       setApplications(prevApps);
-      if (!user?.emailVerified) {
-        ContactRepository.saveGuestContacts(prevContacts);
-        ApplicationRepository.saveGuestApplications(prevApps);
-      }
       addToast('error', 'Unlink Failed', 'Could not unlink contact.');
     }
   }, [user, addToast, setApplications, handleLinkContact]);

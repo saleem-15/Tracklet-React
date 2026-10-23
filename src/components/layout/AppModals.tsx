@@ -1,9 +1,8 @@
-import { Application, Contact, PaywallTriggerContext } from '../../types';
+import { PaywallTriggerContext } from '../../types';
 import { ACTIVE_STATUSES } from '../../lib/constants';
 import { UpgradePaywallModal } from '../paywall/UpgradePaywallModal';
 import { AddApplicationModal } from '../AddApplicationModal';
 import { AuthModal } from '../AuthModal';
-import { GuestMigrationModal } from '../GuestMigrationModal';
 import { useNavigation } from '../../context/NavigationContext';
 import { useApplicationsContext } from '../../context/ApplicationsContext';
 import { useContactsContext } from '../../context/ContactsContext';
@@ -15,14 +14,6 @@ import { ExtensionModal } from '../extension/ExtensionModal';
 import { useExtensionContext } from '../../context/ExtensionContext';
 
 export interface AppModalsProps {
-  migration?: {
-    isOpen: boolean;
-    apps: Application[];
-    contacts: Contact[];
-    onImport: () => Promise<void>;
-    onDiscard: () => void;
-    onClose: () => void;
-  };
   paywall?: {
     isOpen: boolean;
     context: PaywallTriggerContext;
@@ -37,19 +28,18 @@ export interface AppModalsProps {
  * AppModals
  *
  * Renders all top-level modal dialogs: AddApplicationModal (new job entry),
- * AuthModal (multi-provider sign-in/sign-up), GuestMigrationModal
- * (transfer localStorage guest data to authenticated cloud account),
+ * AuthModal (multi-provider sign-in/sign-up),
  * TesterReportModal (bug and feedback reporting), ExtensionModal (Chrome extension companion),
  * and UpgradePaywallModal (SaaS pipeline & scrape quotas paywall).
  */
-export function AppModals({ migration, paywall }: AppModalsProps = {}) {
+export function AppModals({ paywall }: AppModalsProps = {}) {
   const { 
     isAddModalOpen, 
     closeAddModal, 
     isFeedbackModalOpen, 
     closeFeedbackModal, 
     isExtensionModalOpen,
-    closeExtensionModal,
+    closeExtensionModal, 
     activeTab 
   } = useNavigation();
   const { user } = useAuth();
@@ -117,18 +107,6 @@ export function AppModals({ migration, paywall }: AppModalsProps = {}) {
           maxQuota={paywall.maxQuota}
           onClose={paywall.onClose}
           onUpgradeClick={paywall.onUpgradeClick}
-        />
-      )}
-
-      {/* Guest-to-Account Data Migration Modal */}
-      {migration && (
-        <GuestMigrationModal
-          isOpen={migration.isOpen}
-          guestApplications={migration.apps}
-          guestContacts={migration.contacts}
-          onImport={migration.onImport}
-          onDiscard={migration.onDiscard}
-          onClose={migration.onClose}
         />
       )}
     </>

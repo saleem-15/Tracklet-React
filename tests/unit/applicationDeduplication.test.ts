@@ -5,8 +5,6 @@ import {
   mergeAllDuplicateGroups,
 } from '../../src/lib/dedupUtils';
 import { broadcastDeletedApplication } from '../../src/lib/extensionSync';
-import { ApplicationRepository } from '../../src/lib/applicationRepository';
-import { LOCAL_STORAGE_KEYS } from '../../src/lib/constants';
 import { Application } from '../../src/types';
 
 describe('Application Deduplication & Safe Deletion Suite', () => {
@@ -125,45 +123,6 @@ describe('Application Deduplication & Safe Deletion Suite', () => {
         },
         window.location.origin
       );
-    });
-  });
-
-  describe('Storage Synchronization on Deletion', () => {
-    it('purges deleted application from guest localStorage using ApplicationRepository.purgeGuestApplications', () => {
-      // Simulate guest cache containing Everis records
-      localStorage.setItem(
-        LOCAL_STORAGE_KEYS.GUEST_APPS,
-        JSON.stringify([everisApplied, everisSaved1, everisSaved2])
-      );
-
-      // Verify initial state
-      const initialGuestApps = ApplicationRepository.loadGuestApplications();
-      expect(initialGuestApps.length).toBe(3);
-
-      // Execute purge logic via helper
-      ApplicationRepository.purgeGuestApplications('everis-saved-id-1');
-
-      // Check updated storage
-      const updatedGuestApps = ApplicationRepository.loadGuestApplications();
-      expect(updatedGuestApps.length).toBe(2);
-      expect(updatedGuestApps.map((a) => a.id)).not.toContain('everis-saved-id-1');
-      expect(updatedGuestApps.map((a) => a.id)).toContain('everis-applied-id');
-      expect(updatedGuestApps.map((a) => a.id)).toContain('everis-saved-id-2');
-    });
-
-    it('batch purges multiple duplicate application IDs from guest localStorage via purgeGuestApplications', () => {
-      localStorage.setItem(
-        LOCAL_STORAGE_KEYS.GUEST_APPS,
-        JSON.stringify([everisApplied, everisSaved1, everisSaved2])
-      );
-
-      ApplicationRepository.purgeGuestApplications(['everis-saved-id-1', 'everis-saved-id-2']);
-
-      const updatedGuestApps = ApplicationRepository.loadGuestApplications();
-      expect(updatedGuestApps.length).toBe(1);
-      expect(updatedGuestApps[0].id).toBe('everis-applied-id');
-      expect(updatedGuestApps[0].status).toBe('Applied');
-      expect(updatedGuestApps[0].notes).toBe('job location - Australia, Poland, and etc.');
     });
   });
 });

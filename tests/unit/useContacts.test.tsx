@@ -3,18 +3,20 @@ import React, { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { useContacts, UseContactsReturn } from '../../src/hooks/useContacts';
 import { Application, Contact } from '../../src/types';
+import { ContactRepository } from '../../src/lib/contactRepository';
 
 let host: HTMLDivElement | null = null;
 let root: Root | null = null;
 let hookResult: UseContactsReturn;
 let testApplications: Application[] = [];
+let testUser: any = { uid: 'user-1', emailVerified: true };
 let mockAddToast = vi.fn();
 let mockSetSelectedAppId = vi.fn();
 
 function Harness() {
   const [apps, setApps] = React.useState<Application[]>(testApplications);
   hookResult = useContacts({
-    user: null,
+    user: testUser,
     applications: apps,
     setApplications: setApps,
     addToast: mockAddToast,
@@ -41,10 +43,22 @@ describe('useContacts hook', () => {
   beforeEach(() => {
     localStorage.clear();
     vi.restoreAllMocks();
+    testUser = { uid: 'user-1', emailVerified: true };
+    vi.spyOn(ContactRepository, 'addContact').mockImplementation(async (data, uid) => ({
+      id: `c-real-${Date.now()}`,
+      userId: uid,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      ...data,
+    }));
+    vi.spyOn(ContactRepository, 'updateContact').mockResolvedValue({});
+    vi.spyOn(ContactRepository, 'deleteContact').mockResolvedValue();
+    vi.spyOn(ContactRepository, 'linkContactToApplication').mockResolvedValue();
+    vi.spyOn(ContactRepository, 'unlinkContactFromApplication').mockResolvedValue();
     testApplications = [
       {
         id: 'app-1',
-        userId: 'guest',
+        userId: 'user-1',
         company: 'Stripe',
         role: 'Frontend Engineer',
         status: 'Applied',
