@@ -1,4 +1,5 @@
 import { 
+  auth,
   db, 
   collection, 
   doc, 
@@ -101,9 +102,19 @@ export class FeedbackRepository {
     _repo = DEFAULT_REPO
   ): Promise<{ success: boolean; issueNumber?: number; issueUrl?: string; error?: string; fallbackUrl?: string }> {
     try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      try {
+        if (auth.currentUser) {
+          const idToken = await auth.currentUser.getIdToken();
+          headers['Authorization'] = `Bearer ${idToken}`;
+        }
+      } catch (tokenErr) {
+        console.warn('[FeedbackRepository] Could not fetch ID token for report:', tokenErr);
+      }
+
       const response = await fetch('/api/report-issue', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           reportId: report.id,
           type: report.type,

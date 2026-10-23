@@ -6,6 +6,7 @@ import posthog from '../lib/posthog';
 import { ApplicationRepository } from '../lib/applicationRepository';
 import { AuthUser, AuthViewMode } from '../types';
 import { getFriendlyAuthErrorMessage } from '../lib/authErrors';
+import { broadcastAuthToExtension } from '../lib/authBridge';
 
 export interface AuthContextType {
   user: FirebaseUser | null;

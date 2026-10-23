@@ -1,19 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  User as UserIcon, 
-  ShieldCheck, 
   Mail, 
   CheckCircle2, 
   AlertTriangle, 
-  Trash2, 
   Key, 
   LogOut,
-  RefreshCw,
-  X,
-  Clock
+  Clock,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { LOCAL_STORAGE_KEYS, EMAIL_VERIFICATION_COOLDOWN_SECONDS } from '../lib/constants';
+import { useEntitlementContext } from '../context/EntitlementContext';
+import { LOCAL_STORAGE_KEYS, EMAIL_VERIFICATION_COOLDOWN_SECONDS, SAAS_LIMITS } from '../lib/constants';
+import { DeleteAccountModal } from './account/DeleteAccountModal';
+import { PlanUsageSection } from './account/PlanUsageSection';
+import { AccountDangerZone } from './account/AccountDangerZone';
 
 interface AccountSettingsCardProps {
   onShowToast?: (type: 'success' | 'error' | 'info' | 'warning', title: string, message?: string) => void;
@@ -32,11 +31,11 @@ export const AccountSettingsCard: React.FC<AccountSettingsCardProps> = ({
     sendEmailVerification, 
     reloadUserVerification,
     deleteAccount,
-    openAuthModal
   } = useAuth();
 
+  const entitlement = useEntitlementContext();
+
   const [isDeleting, setIsDeleting] = useState(false);
-  const [deleteConfirmationInput, setDeleteConfirmationInput] = useState('');
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isCheckingVerif, setIsCheckingVerif] = useState(false);
   const [isSendingVerif, setIsSendingVerif] = useState(false);
@@ -82,30 +81,7 @@ export const AccountSettingsCard: React.FC<AccountSettingsCardProps> = ({
   }, [cooldown > 0]);
 
   if (!user) {
-    return (
-      <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-2xs space-y-4">
-        <div className="flex items-start justify-between">
-          <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-500 flex items-center justify-center shrink-0 border border-slate-200">
-              <UserIcon className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="text-base font-bold text-slate-900">Guest Session</h3>
-              <p className="text-xs text-slate-500 font-sans mt-0.5">
-                You are currently exploring Tracklet in offline guest mode. Data is stored in this browser only.
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={() => openAuthModal('signin')}
-            className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-2xs transition-all cursor-pointer"
-          >
-            Sign In / Register
-          </button>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   const isPasswordProvider = authUser?.providerId === 'password';
@@ -155,7 +131,6 @@ export const AccountSettingsCard: React.FC<AccountSettingsCardProps> = ({
   };
 
   const handleConfirmDelete = async () => {
-    if (deleteConfirmationInput !== 'DELETE') return;
     setIsDeleting(true);
     try {
       if (onAccountDeleted) {
@@ -171,6 +146,10 @@ export const AccountSettingsCard: React.FC<AccountSettingsCardProps> = ({
       setIsDeleting(false);
     }
   };
+
+  const isPro = entitlement.planTier === 'pro';
+  const scrapesUsed = entitlement.profile?.quotas?.scrapesUsedThisMonth ?? 0;
+  const maxScrapes = isPro ? SAAS_LIMITS.PRO_MONTHLY_SCRAPES : SAAS_LIMITS.FREE_MONTHLY_SCRAPES;
 
   return (
     <>
@@ -254,6 +233,17 @@ export const AccountSettingsCard: React.FC<AccountSettingsCardProps> = ({
           </div>
         )}
 
+        {/* ── SaaS Subscription Plan & Capacity Overview ── */}
+        <PlanUsageSection
+          isPro={isPro}
+          activeCount={entitlement.activeCount}
+          maxActiveQuota={entitlement.maxActiveQuota}
+          isGrandfathered={entitlement.isGrandfathered}
+          scrapesUsed={scrapesUsed}
+          maxScrapes={maxScrapes}
+          onUpgradeClick={() => entitlement.openPaywall('feature_gate')}
+        />
+
         {/* Account Actions */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
           {isPasswordProvider && (
@@ -282,84 +272,16 @@ export const AccountSettingsCard: React.FC<AccountSettingsCardProps> = ({
         </div>
 
         {/* Danger Zone: GDPR Account Deletion */}
-        <div className="pt-4 border-t border-slate-100">
-          <div className="p-4 rounded-xl bg-rose-50/60 border border-rose-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="space-y-0.5">
-              <div className="flex items-center gap-1.5 text-rose-900 font-bold text-xs">
-                <AlertTriangle className="w-4 h-4 text-rose-600" />
-                <span>Delete Account & Wipe Cloud Data</span>
-              </div>
-              <p className="text-[11px] text-rose-700/90 font-sans">
-                Permanently purge all job applications, history timeline records, and delete your Firebase account.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setIsDeleteModalOpen(true)}
-              className="px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 active:scale-[0.99] text-white font-bold text-xs shadow-2xs transition-all cursor-pointer shrink-0 self-start sm:self-auto"
-            >
-              Delete Account
-            </button>
-          </div>
-        </div>
+        <AccountDangerZone onOpenDeleteModal={() => setIsDeleteModalOpen(true)} />
       </div>
 
       {/* Destructive Deletion Confirmation Modal */}
-      {isDeleteModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 animate-in fade-in duration-200">
-          <div className="w-full max-w-md bg-white rounded-3xl border border-rose-200 shadow-2xl overflow-hidden p-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-rose-600 font-bold text-base">
-                <Trash2 className="w-5 h-5" />
-                <span>Confirm Permanent Deletion</span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsDeleteModalOpen(false)}
-                aria-label="Close"
-                className="text-slate-500 hover:text-slate-700 p-1 cursor-pointer transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <p className="text-xs text-slate-600 leading-relaxed">
-              This action is <strong>irreversible</strong>. All your tracked job applications, interview history logs, and cloud credentials will be immediately purged.
-            </p>
-
-            <div className="space-y-1.5 pt-1">
-              <label className="block text-xs font-mono text-slate-700 font-semibold">
-                Type <span className="text-rose-600 font-bold">DELETE</span> to confirm:
-              </label>
-              <input
-                type="text"
-                value={deleteConfirmationInput}
-                onChange={(e) => setDeleteConfirmationInput(e.target.value)}
-                placeholder="DELETE"
-                className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-mono font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500"
-              />
-            </div>
-
-            <div className="flex items-center gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => setIsDeleteModalOpen(false)}
-                className="flex-1 py-2.5 px-4 rounded-xl border border-slate-200 text-slate-700 font-semibold text-xs hover:bg-slate-50 cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                disabled={deleteConfirmationInput !== 'DELETE' || isDeleting}
-                onClick={handleConfirmDelete}
-                className="flex-1 py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-md shadow-rose-500/20 cursor-pointer disabled:opacity-50 transition-all"
-              >
-                {isDeleting ? 'Deleting...' : 'Permanently Delete'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <DeleteAccountModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirmDelete={handleConfirmDelete}
+        isDeleting={isDeleting}
+      />
     </>
   );
 };

@@ -1,3 +1,4 @@
+import { extractBearerToken, verifyFirebaseIdToken } from './lib/verifyFirebaseToken';
 // Platform-Agnostic Serverless Function to dispatch bug reports to GitHub Issues
 // Compatible with Netlify Functions (v2 Web API), Vercel, and standard Node/Web HTTP runtimes.
 
@@ -157,6 +158,23 @@ export async function handler(req: any, res?: any) {
     }, req);
   }
 
+  // ── Authentication Check (Constitution Principle III) ──
+  const token = extractBearerToken(req);
+  if (!token) {
+    return sendCompatResponse(res, 401, {
+      error: 'Unauthorized',
+      message: 'Authentication required. Missing Bearer token in Authorization header.',
+    }, req);
+  }
+
+  const verifiedUser = await verifyFirebaseIdToken(token);
+  if (!verifiedUser) {
+    return sendCompatResponse(res, 401, {
+      error: 'Unauthorized',
+      message: 'Authentication failed. Invalid or expired token.',
+    }, req);
+  }
+
   const bodyData = await parseRequestBody(req);
 
   const {
@@ -259,8 +277,9 @@ ${safeDesc}
 ${screenshotSection}${attachmentList}
 ### Reporter
 - **Tracking ID:** \`${reportId || 'N/A'}\`
-- **Name:** ${reporterName || 'Anonymous Tester'}
-- **Email:** ${reporterEmail || 'Not provided'}
+- **User ID:** \`${verifiedUser.uid}\`
+- **Name:** ${reporterName || 'Tracklet User'}
+- **Email:** ${verifiedUser.email || reporterEmail || 'Not provided'}
 - **Severity:** \`${String(severity).toUpperCase()}\`
 - **Category:** \`${type || 'bug'}\`
 

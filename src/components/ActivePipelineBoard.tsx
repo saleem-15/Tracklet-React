@@ -17,7 +17,15 @@ import {
 } from 'lucide-react';
 import { calculateDaysInStage } from '../lib/sampleData';
 
+export interface ActiveQuotaInfo {
+  current: number;
+  max: number;
+  isGrandfathered?: boolean;
+  onUpgradeClick?: () => void;
+}
+
 interface ActivePipelineBoardProps {
+  activeQuota?: ActiveQuotaInfo;
   applications: Application[];
   totalAppCount?: number;
   onOpenAddModal?: () => void;
@@ -70,6 +78,7 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
   onSelectApp,
   selectedAppId,
   onUpdateStatus,
+  activeQuota,
 }) => {
   const [draggedAppId, setDraggedAppId] = useState<string | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<ApplicationStatus | null>(null);
@@ -184,6 +193,32 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
             );
           })}
         </div>
+
+        {/* ── Active Pipeline Quota Banner (ADR 0010 Compliant) ── */}
+        {activeQuota && (
+          <div className="px-4 py-1.5 bg-slate-50 border-b border-slate-200/60 flex items-center justify-between text-xs text-slate-600">
+            <div className="flex items-center gap-2">
+              <span className="font-medium text-slate-700">Active Capacity:</span>
+              <span className="font-mono font-bold text-slate-900">
+                {activeQuota.current} / {activeQuota.max === Infinity ? '∞' : activeQuota.max}
+              </span>
+              {activeQuota.isGrandfathered && (
+                <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded">
+                  Grandfathered Access
+                </span>
+              )}
+            </div>
+            {activeQuota.onUpgradeClick && activeQuota.current >= activeQuota.max && (
+              <button
+                type="button"
+                onClick={activeQuota.onUpgradeClick}
+                className="text-[11px] font-semibold text-blue-600 hover:text-blue-700 hover:underline cursor-pointer"
+              >
+                Upgrade to Pro →
+              </button>
+            )}
+          </div>
+        )}
 
         {/* ── Desktop Column Headers Bar (Visible on md: ≥ 768px) ── */}
         <div className="hidden md:grid md:grid-cols-5 bg-slate-50/80 border-b border-slate-200/80 sticky top-0 z-10 backdrop-blur-xs min-w-[900px]">

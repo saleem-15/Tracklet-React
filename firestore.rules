@@ -58,7 +58,21 @@ service cloud.firestore {
 
     // User document, User Applications & User Contacts Sub-collections
     match /users/{userId} {
-      allow read, write: if isOwner(userId);
+      allow read: if isOwner(userId);
+
+      // Initial user document creation: must default to 'free' tier, 'none' subscription, and zero scrapes
+      allow create: if isOwner(userId)
+        && request.resource.data.planTier == 'free'
+        && request.resource.data.subscriptionStatus == 'none'
+        && (!('quotas' in request.resource.data) || request.resource.data.quotas.scrapesUsedThisMonth == 0);
+
+      // Updates: user cannot elevate their own planTier or alter subscriptionStatus directly
+      allow update: if isOwner(userId)
+        && request.resource.data.get('planTier', 'free') == resource.data.get('planTier', 'free')
+        && request.resource.data.get('subscriptionStatus', 'none') == resource.data.get('subscriptionStatus', 'none');
+
+      // User document deletion permitted by document owner for client account-deletion flow
+      allow delete: if isOwner(userId);
 
       match /applications/{applicationId} {
         allow read, delete: if isOwner(userId);

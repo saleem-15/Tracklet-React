@@ -1,6 +1,7 @@
 import { AlertTriangle, X } from 'lucide-react';
 import { AllApplicationsTable } from '../AllApplicationsTable';
-import { ActivePipelineBoard } from '../ActivePipelineBoard';
+import { ActivePipelineBoard, ActiveQuotaInfo } from '../ActivePipelineBoard';
+import { ACTIVE_STATUSES, TERMINAL_STATUSES } from '../../lib/constants';
 import { ContactsView } from '../ContactsView';
 import { StatsView } from '../StatsView';
 import { SettingsView } from '../SettingsView';
@@ -13,6 +14,7 @@ import { useToastContext } from '../../context/ToastContext';
 
 export interface WorkspaceContentProps {
   isLoading?: boolean;
+  activeQuota?: ActiveQuotaInfo;
 }
 
 /**
@@ -28,7 +30,7 @@ export interface WorkspaceContentProps {
  * In Phase 3, all domain state (applications, contacts, settings, navigation, toast)
  * is consumed directly from scoped feature context providers, eliminating 29 props.
  */
-export function WorkspaceContent({ isLoading = false }: WorkspaceContentProps) {
+export function WorkspaceContent({ isLoading = false, activeQuota }: WorkspaceContentProps) {
   const { user } = useAuth();
   const { addToast } = useToastContext();
   const {
@@ -71,6 +73,73 @@ export function WorkspaceContent({ isLoading = false }: WorkspaceContentProps) {
     updateExpirySettings,
     expiryThresholdHours,
   } = useSettings();
+
+  const handleGuardedPipelineStatusUpdate = (id: string, newStatus: string) => {
+    const targetApp = applications.find((a) => a.id === id);
+    if (targetApp) {
+      const isReactivating =
+        TERMINAL_STATUSES.includes(targetApp.status as any) && ACTIVE_STATUSES.includes(newStatus as any);
+      if (isReactivating && activeQuota && activeQuota.current >= activeQuota.max) {
+        addToast(
+          'warning',
+          'Pipeline Capacity Reached',
+          `Free accounts can track up to ${activeQuota.max} active applications. Upgrade to Pro to reactivate this application.`
+        );
+        activeQuota.onUpgradeClick?.();
+        return;
+      }
+    }
+    handleUpdatePipelineStatus(id, newStatus);
+  };
+
+  const handleGuardedBulkUpdateStatus = (ids: string[], newStatus: any) => {
+    if (activeQuota && ACTIVE_STATUSES.includes(newStatus)) {
+      const reactivatingCount = applications.filter(
+        (a) => ids.includes(a.id) && TERMINAL_STATUSES.includes(a.status as any)
+      ).length;
+      if (reactivatingCount > 0 && activeQuota.current + reactivatingCount > activeQuota.max) {
+        addToast(
+          'warning',
+          'Pipeline Capacity Reached',
+          `Free accounts can track up to ${activeQuota.max} active applications. Reactivating ${reactivatingCount} application${reactivatingCount === 1 ? '' : 's'} would exceed your limit.`
+        );
+        activeQuota.onUpgradeClick?.();
+        return;
+      }
+    }
+    return handleBulkUpdateStatus(ids, newStatus);
+  };
+
+  const handleGuardedBatchImport = (
+    newApps: any[]
+  ) => {
+    if (activeQuota) {
+      const newActiveCount = newApps.filter((a) => ACTIVE_STATUSES.includes(a.status as any)).length;
+      if (newActiveCount > 0 && activeQuota.current + newActiveCount > activeQuota.max) {
+        addToast(
+          'warning',
+          'Pipeline Capacity Reached',
+          `Importing ${newActiveCount} active application${newActiveCount === 1 ? '' : 's'} would exceed your Free tier limit of ${activeQuota.max}. Upgrade to Pro for unlimited applications.`
+        );
+        activeQuota.onUpgradeClick?.();
+        return;
+      }
+    }
+    return handleBatchImportApplications(newApps);
+  };
+
+  const handleGuardedOpenAddModal = () => {
+    if (activeQuota && activeQuota.current >= activeQuota.max) {
+      addToast(
+        'warning',
+        'Pipeline Capacity Reached',
+        `Free accounts can track up to ${activeQuota.max} active applications. Upgrade to Pro to add more active applications.`
+      );
+      activeQuota.onUpgradeClick?.();
+      return;
+    }
+    openAddModal();
+  };
 
   if (isLoading) {
     return (
@@ -120,14 +189,14 @@ export function WorkspaceContent({ isLoading = false }: WorkspaceContentProps) {
         <AllApplicationsTable
           applications={filteredApplications}
           totalAppCount={applications.length}
-          onOpenAddModal={openAddModal}
+          onOpenAddModal={handleGuardedOpenAddModal}
           onResetFilters={resetFilters}
           onSeedDemoData={handleSeedDemoData}
           selectedAppId={selectedAppId}
           onSelectApp={(app) => setSelectedAppId(app.id)}
           sort={sort}
           onSortChange={handleSortChange}
-          onBulkUpdateStatus={handleBulkUpdateStatus}
+          onBulkUpdateStatus={handleGuardedBulkUpdateStatus}
           onBulkDelete={handleBulkDelete}
           onShowToast={addToast}
         />
@@ -137,12 +206,13 @@ export function WorkspaceContent({ isLoading = false }: WorkspaceContentProps) {
         <ActivePipelineBoard
           applications={filteredApplications}
           totalAppCount={applications.length}
-          onOpenAddModal={openAddModal}
+          onOpenAddModal={handleGuardedOpenAddModal}
           onResetFilters={resetFilters}
           onSeedDemoData={handleSeedDemoData}
           selectedAppId={selectedAppId}
           onSelectApp={(app) => setSelectedAppId(app.id)}
-          onUpdateStatus={handleUpdatePipelineStatus}
+          onUpdateStatus={handleGuardedPipelineStatusUpdate}
+          activeQuota={activeQuota}
         />
       )}
 
@@ -176,8 +246,8 @@ export function WorkspaceContent({ isLoading = false }: WorkspaceContentProps) {
             contacts={contacts}
             onSelectApplication={(id) => setSelectedAppId(id)}
             onExportCSV={handleExportCSV}
-            onImportCSV={handleBatchImportApplications}
-            onImportJSON={handleBatchImportApplications}
+            onImportCSV={handleGuardedBatchImport}
+            onImportJSON={handleGuardedBatchImport}
             onSeedDemoData={handleSeedDemoData}
             onShowToast={addToast}
             onAccountDeleted={handleAccountDeleted}

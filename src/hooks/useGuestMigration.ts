@@ -3,7 +3,9 @@ import type { User } from 'firebase/auth';
 import { Application, Contact } from '../types';
 import { ApplicationRepository } from '../lib/applicationRepository';
 import { ContactRepository } from '../lib/contactRepository';
-import { LOCAL_STORAGE_KEYS } from '../lib/constants';
+import { LOCAL_STORAGE_KEYS, SAAS_LIMITS } from '../lib/constants';
+import { EntitlementRepository } from '../lib/entitlementRepository';
+import posthog from '../lib/posthog';
 
 export interface UseGuestMigrationProps {
   user: User | null;

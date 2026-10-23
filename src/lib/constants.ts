@@ -7,7 +7,8 @@ import {
   FollowUpCategory,
   FollowUpTemplate,
   TesterReportCategory,
-  TesterReportSeverity
+  TesterReportSeverity,
+  UserQuotas
 } from '../types';
 
 export const FOLLOWUP_CATEGORIES: FollowUpCategory[] = [
@@ -161,6 +162,18 @@ export const LOCAL_STORAGE_KEYS = {
   AUTH_PENDING_EMAIL: 'tracklet_auth_pending_email',
   EMAIL_RESEND_COOLDOWN: 'tracklet_email_resend_cooldown',
   GUEST_MIGRATED_PREFIX: 'tracklet_guest_migrated_',
+};
+
+export const SAAS_LIMITS = {
+  FREE_MAX_ACTIVE_APPS: 20,
+  FREE_MONTHLY_SCRAPES: 20,
+  PRO_MONTHLY_SCRAPES: 500,
+} as const;
+
+export const DEFAULT_USER_QUOTAS: UserQuotas = {
+  scrapesUsedThisMonth: 0,
+  autofillsUsedThisMonth: 0,
+  quotaResetAt: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1).toISOString(),
 };
 
 /**
@@ -369,7 +382,7 @@ export const TESTER_REPORT_SEVERITIES: { label: string; value: TesterReportSever
 export const STORAGE_KEY_TESTER_DRAFT = 'tracklet_tester_report_draft';
 
 // --- Browser Extension Distribution & Status ---
-export const LATEST_EXTENSION_VERSION = '1.2.7';
+export const LATEST_EXTENSION_VERSION = '1.2.9';
 
 export const EXTENSION_DISTRIBUTION_CONFIG = {
   latestVersion: LATEST_EXTENSION_VERSION,

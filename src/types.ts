@@ -185,6 +185,63 @@ export interface GuestMigrationPayload {
   count: number;
 }
 
+// --- SaaS Entitlements, Plans & Quotas ---
+export type PlanTier = 'free' | 'pro';
+
+export type SubscriptionStatus = 
+  | 'none' 
+  | 'active' 
+  | 'past_due' 
+  | 'canceled' 
+  | 'trialing';
+
+export interface UserQuotas {
+  scrapesUsedThisMonth: number;
+  autofillsUsedThisMonth: number;
+  quotaResetAt: string; // ISO 8601 string e.g. "2026-11-01T00:00:00.000Z"
+}
+
+export interface UserEntitlementProfile {
+  uid: string;
+  email: string | null;
+  displayName: string | null;
+  planTier: PlanTier;
+  subscriptionStatus: SubscriptionStatus;
+  currentPeriodEnd?: string | null;
+  stripeCustomerId?: string | null;
+  quotas: UserQuotas;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type PaywallTriggerContext = 
+  | 'pipeline_cap' 
+  | 'scrape_limit' 
+  | 'autofill_limit' 
+  | 'feature_gate';
+
+export interface PaywallModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  triggerContext: PaywallTriggerContext;
+  currentUsage?: number;
+  maxQuota?: number;
+  onUpgradeClick?: () => void;
+}
+
+export interface ExtensionUserSession {
+  uid: string;
+  email: string | null;
+  idToken: string;
+  refreshToken: string;
+  planTier: PlanTier;
+  activeApplicationsCount?: number;
+  expiresAt: number; // Unix epoch ms
+  syncedAt: number;  // Unix epoch ms
+}
+
+
+
 // --- Tester Feedback & Issue Reporting ---
 export type TesterReportCategory = 
   | 'bug' 

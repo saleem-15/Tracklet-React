@@ -2715,7 +2715,7 @@ DM me if interested!</div>
       };
 
       await scrapeJobHandler(
-        { method: 'POST', body: { url: 'https://cosy.green/karriere/senior-flutter-developer', title: 'Senior Flutter Developer', text: 'Sample job text' } },
+        { method: 'POST', headers: { authorization: 'Bearer test-token' }, body: { url: 'https://cosy.green/karriere/senior-flutter-developer', title: 'Senior Flutter Developer', text: 'Sample job text' } },
         mockRes
       );
       expect(statusCode).toBe(200);
@@ -2751,7 +2751,7 @@ DM me if interested!</div>
       })) as any;
 
       await scrapeJobHandler(
-        { method: 'POST', body: { url: 'https://arc.dev/dashboard/d/verified-jobs/pnbwza8npq', title: 'Arc', text: 'Join Our Team at UNIPREP...' } },
+        { method: 'POST', headers: { authorization: 'Bearer test-token' }, body: { url: 'https://arc.dev/dashboard/d/verified-jobs/pnbwza8npq', title: 'Arc', text: 'Join Our Team at UNIPREP...' } },
         mockRes
       );
       expect(statusCode).toBe(200);

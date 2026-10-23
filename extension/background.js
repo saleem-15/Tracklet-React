@@ -303,6 +303,15 @@ async function saveAndSyncApplication(appData) {
     'tracklet_guest_apps_v1'
   ]);
 
+  if (!tracklet_user_session || !tracklet_user_session.uid) {
+    console.warn('[Tracklet] Save blocked: User is not authenticated.');
+    return {
+      success: false,
+      error: 'AUTH_REQUIRED',
+      message: 'Authentication required. Sign in on Tracklet Web to save applications.'
+    };
+  }
+
   const nowISO = new Date().toISOString();
 
   // Check for existing app match by URL or company+role
@@ -312,6 +321,19 @@ async function saveAndSyncApplication(appData) {
     (a.company && appData.company && a.company.toLowerCase().trim() === appData.company.toLowerCase().trim() && a.role && appData.role && a.role.toLowerCase().trim() === appData.role.toLowerCase().trim())
   );
   const existingAppId = existing ? existing.id : null;
+
+  // Free Tier quota check: max 20 active applications
+  const activeStages = ['Saved', 'Applied', 'Screening', 'Interview', 'Offer'];
+  const currentActive = (tracklet_apps_index || []).filter(a => activeStages.includes(a.status)).length;
+  const isProPlan = tracklet_user_session.planTier === 'pro';
+  if (!isProPlan && currentActive >= 20 && !existing) {
+    console.warn('[Tracklet] Save blocked: Free tier active quota reached (20/20).');
+    return {
+      success: false,
+      error: 'QUOTA_EXCEEDED',
+      message: 'Free tier limit reached (20/20 active applications). Upgrade to Pro or archive an existing application.'
+    };
+  }
 
   if (existing) {
     // Stage & History resolution: never overwrite a later stage (US5 / FR-013, FR-014)
@@ -368,7 +390,7 @@ async function saveAndSyncApplication(appData) {
     finalizedApp = {
       ...appData,
       id: existingAppId || `ext-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-      userId: tracklet_user_session?.uid || 'guest'
+      userId: tracklet_user_session.uid
     };
   }
 
@@ -536,6 +558,15 @@ async function saveAndSyncEmailLog({ appId, emailLog, updatedStatus, newContact 
     'tracklet_firebase_config'
   ]);
 
+  if (!tracklet_user_session || !tracklet_user_session.uid) {
+    console.warn('[Tracklet] Email log blocked: User is not authenticated.');
+    return {
+      success: false,
+      error: 'AUTH_REQUIRED',
+      message: 'Authentication required. Sign in on Tracklet Web to log emails.'
+    };
+  }
+
   let savedToCloud = false;
   if (tracklet_user_session && tracklet_user_session.uid) {
     try {
@@ -696,6 +727,15 @@ async function saveAndSyncContact(contactPayload) {
     'tracklet_user_session',
     'tracklet_firebase_config'
   ]);
+
+  if (!tracklet_user_session || !tracklet_user_session.uid) {
+    console.warn('[Tracklet] Contact save blocked: User is not authenticated.');
+    return {
+      success: false,
+      error: 'AUTH_REQUIRED',
+      message: 'Authentication required. Sign in on Tracklet Web to save contacts.'
+    };
+  }
 
   let savedToCloud = false;
   if (tracklet_user_session && tracklet_user_session.uid) {

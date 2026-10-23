@@ -7,7 +7,6 @@ interface SignupViewProps {
   onNavigate: (mode: AuthRouteMode) => void;
   onSubmit: (email: string, password: string) => Promise<void>;
   onGoogleSignIn: () => Promise<void>;
-  onContinueAsGuest?: () => void;
   isSubmitting: boolean;
   errorMessage: string | null;
 }
@@ -16,7 +15,6 @@ export const SignupView: React.FC<SignupViewProps> = ({
   onNavigate,
   onSubmit,
   onGoogleSignIn,
-  onContinueAsGuest,
   isSubmitting,
   errorMessage,
 }) => {
@@ -186,7 +184,7 @@ export const SignupView: React.FC<SignupViewProps> = ({
         </form>
       </div>
 
-      {/* Footer Navigation Switcher & Guest Option */}
+      {/* Footer Navigation Switcher */}
       <div className="pt-2 text-center space-y-2">
         <p className="text-xs text-slate-600 font-sans">
           Already have an account?{' '}
@@ -198,19 +196,6 @@ export const SignupView: React.FC<SignupViewProps> = ({
             Sign in
           </button>
         </p>
-
-        {onContinueAsGuest && (
-          <p className="text-[11px] text-slate-500 font-sans">
-            Want to explore first?{' '}
-            <button
-              type="button"
-              onClick={onContinueAsGuest}
-              className="font-semibold text-slate-700 hover:text-slate-900 underline underline-offset-2 cursor-pointer transition-colors"
-            >
-              Continue as guest →
-            </button>
-          </p>
-        )}
       </div>
     </div>
   );

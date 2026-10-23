@@ -3,6 +3,7 @@
 // Compatible with Vercel, Netlify, Cloudflare, and standard Node/Web HTTP runtimes.
 
 import { PostHog } from 'posthog-node';
+import { extractBearerToken, verifyFirebaseIdToken } from './lib/verifyFirebaseToken';
 
 const posthogKey = process.env.VITE_POSTHOG_KEY;
 const posthogHost = process.env.VITE_POSTHOG_HOST;
@@ -22,6 +23,214 @@ if (!posthogHost && process.env.NODE_ENV === 'development') {
 const posthog = posthogKey && posthogHost
   ? new PostHog(posthogKey, { host: posthogHost, privacyMode: false })
   : null;
+
+interface QuotaRecord {
+  month: string;
+  count: number;
+}
+const scrapeUsageMap = new Map<string, QuotaRecord>();
+
+function getCurrentMonthString(): string {
+  const now = new Date();
+  return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
+}
+
+/**
+ * Resolves the user's plan tier server-side directly from Firestore at users/{userId}.planTier.
+ * Defaults safely to 'free' (false) if Firestore is unreachable or unconfigured.
+ */
+export async function resolveUserPlanTier(userId: string, idToken?: string): Promise<boolean> {
+  const projectId =
+    process.env.VITE_FIREBASE_PROJECT_ID ||
+    process.env.FIREBASE_PROJECT_ID ||
+    '';
+
+  if (!projectId || !userId) return false;
+
+  try {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (idToken) {
+      headers.Authorization = `Bearer ${idToken}`;
+    }
+
+    const res = await fetch(
+      `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/users/${userId}`,
+      { headers }
+    );
+
+    if (res.ok) {
+      const doc = await res.json();
+      const planTier = doc.fields?.planTier?.stringValue;
+      return planTier === 'pro';
+    }
+  } catch (err) {
+    console.warn('[scrape-job] Error resolving planTier from Firestore:', err);
+  }
+
+  return false;
+}
+
+/**
+ * Checks and atomically records monthly AI scrape usage for a given user.
+ * Interacts with durable Firestore storage when available, with in-memory caching and fallback.
+ */
+export async function checkAndRecordScrapeUsage(
+  userId: string,
+  isPro = false,
+  idToken?: string
+): Promise<{ allowed: boolean; currentUsage: number; maxQuota: number }> {
+  const currentMonth = getCurrentMonthString();
+  const maxQuota = isPro ? 500 : 20;
+  const storeKey = `${userId}:${currentMonth}`;
+
+  const projectId =
+    process.env.VITE_FIREBASE_PROJECT_ID ||
+    process.env.FIREBASE_PROJECT_ID ||
+    '';
+
+  // 1. Check local/test store first (supports setScrapeUsageForTesting)
+  const localRecord = scrapeUsageMap.get(storeKey);
+  if (localRecord && localRecord.month === currentMonth && localRecord.count >= maxQuota) {
+    return { allowed: false, currentUsage: localRecord.count, maxQuota };
+  }
+
+  // 2. If Firestore is configured and an auth token is provided, atomically check and record in Firestore
+  if (projectId && idToken && !idToken.startsWith('test-') && !idToken.startsWith('mock-')) {
+    try {
+      const getRes = await fetch(
+        `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/users/${userId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${idToken}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (!getRes.ok) {
+        console.warn(`[scrape-job] Firestore user lookup failed (${getRes.status}), failing closed.`);
+        return { allowed: false, currentUsage: maxQuota, maxQuota };
+      }
+
+      const doc = await getRes.json();
+      const quotas = doc.fields?.quotas?.mapValue?.fields;
+      const currentCount = parseInt(quotas?.scrapesUsedThisMonth?.integerValue || '0', 10);
+      const resetAt = quotas?.quotaResetAt?.stringValue;
+
+      const isElapsed = resetAt && new Date() >= new Date(resetAt);
+      const effectiveCount = isElapsed ? 0 : currentCount;
+
+      if (effectiveCount >= maxQuota) {
+        scrapeUsageMap.set(storeKey, { month: currentMonth, count: effectiveCount });
+        return { allowed: false, currentUsage: effectiveCount, maxQuota };
+      }
+
+      const commitRes = await fetch(
+        `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents:commit`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${idToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            writes: [
+              {
+                transform: {
+                  document: `projects/${projectId}/databases/(default)/documents/users/${userId}`,
+                  fieldTransforms: [
+                    {
+                      fieldPath: 'quotas.scrapesUsedThisMonth',
+                      increment: { integerValue: '1' },
+                    },
+                  ],
+                },
+              },
+            ],
+          }),
+        }
+      );
+
+      if (!commitRes.ok) {
+        console.warn(`[scrape-job] Firestore quota increment commit failed (${commitRes.status}), failing closed.`);
+        return { allowed: false, currentUsage: maxQuota, maxQuota };
+      }
+
+      const commitData = await commitRes.json().catch(() => null);
+      const transformResult = commitData?.writeResults?.[0]?.transformResults?.[0];
+      const postIncrement =
+        transformResult?.integerValue !== undefined
+          ? parseInt(transformResult.integerValue, 10)
+          : effectiveCount + 1;
+
+      // Atomic verification: check resulting usage against maxQuota
+      if (postIncrement > maxQuota) {
+        // Over limit due to concurrent requests — issue compensation decrement
+        try {
+          await fetch(
+            `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents:commit`,
+            {
+              method: 'POST',
+              headers: {
+                Authorization: `Bearer ${idToken}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                writes: [
+                  {
+                    transform: {
+                      document: `projects/${projectId}/databases/(default)/documents/users/${userId}`,
+                      fieldTransforms: [
+                        {
+                          fieldPath: 'quotas.scrapesUsedThisMonth',
+                          increment: { integerValue: '-1' },
+                        },
+                      ],
+                    },
+                  },
+                ],
+              }),
+            }
+          );
+        } catch (compErr) {
+          console.warn('[scrape-job] Failed to compensate over-limit increment:', compErr);
+        }
+
+        scrapeUsageMap.set(storeKey, { month: currentMonth, count: maxQuota });
+        return { allowed: false, currentUsage: maxQuota, maxQuota };
+      }
+
+      scrapeUsageMap.set(storeKey, { month: currentMonth, count: postIncrement });
+      return { allowed: true, currentUsage: postIncrement, maxQuota };
+    } catch (err) {
+      console.warn('[scrape-job] Firestore quota check error for non-test token, failing closed:', err);
+      return { allowed: false, currentUsage: maxQuota, maxQuota };
+    }
+  }
+
+  // 3. Fallback to durable in-memory store
+  let record = scrapeUsageMap.get(storeKey);
+  if (!record || record.month !== currentMonth) {
+    record = { month: currentMonth, count: 0 };
+    scrapeUsageMap.set(storeKey, record);
+  }
+
+  if (record.count >= maxQuota) {
+    return { allowed: false, currentUsage: record.count, maxQuota };
+  }
+
+  record.count += 1;
+  return { allowed: true, currentUsage: record.count, maxQuota };
+}
+
+export function resetScrapeUsageForTesting(): void {
+  scrapeUsageMap.clear();
+}
+
+export function setScrapeUsageForTesting(userId: string, count: number): void {
+  const currentMonth = getCurrentMonthString();
+  scrapeUsageMap.set(`${userId}:${currentMonth}`, { month: currentMonth, count });
+}
 
 const MAX_PAGE_TEXT_CHARS = 12000;
 
@@ -209,6 +418,25 @@ export default async function handler(req: any, res?: any) {
     });
   }
 
+  // ── Authentication Check (Constitution Principle III) ──
+  const token = extractBearerToken(req);
+  if (!token) {
+    return sendCompatResponse(res, 401, {
+      fallbackAvailable: false,
+      error: 'Unauthorized',
+      message: 'Valid Firebase authentication token required.',
+    });
+  }
+
+  const verifiedUser = await verifyFirebaseIdToken(token);
+  if (!verifiedUser) {
+    return sendCompatResponse(res, 401, {
+      fallbackAvailable: false,
+      error: 'Unauthorized',
+      message: 'Authentication failed. Invalid or expired token.',
+    });
+  }
+
   const clientIp = getClientIp(req);
   if (!checkRateLimit(clientIp)) {
     return sendCompatResponse(res, 429, {
@@ -269,6 +497,20 @@ export default async function handler(req: any, res?: any) {
       fallbackAvailable: false,
       error: 'Bad Request',
       message: 'Page text or title is required.',
+    });
+  }
+
+  // ── Server-Side Plan Tier Resolution & Monthly AI Scrape Quota Check ──
+  const isPro = await resolveUserPlanTier(verifiedUser.uid, token);
+  const quotaResult = await checkAndRecordScrapeUsage(verifiedUser.uid, isPro, token);
+  if (!quotaResult.allowed) {
+    return sendCompatResponse(res, 429, {
+      fallbackAvailable: false,
+      error: 'Too Many Requests',
+      code: 'QUOTA_EXCEEDED',
+      message: 'Monthly AI scrape quota exceeded. Upgrade to Pro for 500 monthly scrapes.',
+      currentUsage: quotaResult.currentUsage,
+      maxQuota: quotaResult.maxQuota,
     });
   }
 
