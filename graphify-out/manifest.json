@@ -620,8 +620,8 @@
     "semantic_hash": ""
   },
   "extension/popup.js": {
-    "mtime": 1792683205.1229868,
-    "ast_hash": "8549bbc9bff3a29e96bc2386e0ac1b16",
+    "mtime": 1792754633.9834716,
+    "ast_hash": "da95f6c02515c257416d45321ac28108",
     "semantic_hash": ""
   },
   "firebase-blueprint.json": {
@@ -650,8 +650,8 @@
     "semantic_hash": ""
   },
   "src/components/AccountSettingsCard.tsx": {
-    "mtime": 1792683205.2676797,
-    "ast_hash": "0f195128774d5013e2418fcc6cd30883",
+    "mtime": 1792754744.6701753,
+    "ast_hash": "5c5cdf6d368c985a7af77ca6b92fb2d7",
     "semantic_hash": ""
   },
   "src/components/ActivePipelineBoard.tsx": {
@@ -2280,8 +2280,8 @@
     "semantic_hash": ""
   },
   "src/components/layout/AppModals.tsx": {
-    "mtime": 1792683205.282833,
-    "ast_hash": "f0933f00d911f008bc86940e6723061e",
+    "mtime": 1792754857.0315113,
+    "ast_hash": "7f6da833ea7f932c5bcc5451d18ccee2",
     "semantic_hash": ""
   },
   "src/components/layout/AppSlideOvers.tsx": {
@@ -2295,8 +2295,8 @@
     "semantic_hash": ""
   },
   "src/components/layout/WorkspaceContent.tsx": {
-    "mtime": 1792683205.2877905,
-    "ast_hash": "dbfb6c1986c5a2f2d2019495675ff144",
+    "mtime": 1792754826.9705317,
+    "ast_hash": "bccb825a15b4e02331c59f9ae125b2ff",
     "semantic_hash": ""
   },
   "src/hooks/useDataLoader.ts": {
@@ -2800,8 +2800,8 @@
     "semantic_hash": ""
   },
   "api/scrape-job.ts": {
-    "mtime": 1792683205.1086051,
-    "ast_hash": "306bc52b411b574b0c7b73706e635887",
+    "mtime": 1792754475.6282265,
+    "ast_hash": "32f70375acddfc3ca2696295a28e1b97",
     "semantic_hash": ""
   },
   "specs/011-hybrid-job-scraping/checklists/requirements.md": {
@@ -3170,8 +3170,8 @@
     "semantic_hash": ""
   },
   "api/lib/verifyFirebaseToken.ts": {
-    "mtime": 1792683205.4325888,
-    "ast_hash": "fd1a356557c2acdea29b800fc666f998",
+    "mtime": 1792754297.5109305,
+    "ast_hash": "74e47d1d278d5b4b028b6bcb98323d38",
     "semantic_hash": ""
   },
   "src/components/account/AccountDangerZone.tsx": {
@@ -3180,8 +3180,8 @@
     "semantic_hash": ""
   },
   "src/components/account/DeleteAccountModal.tsx": {
-    "mtime": 1792683205.4476295,
-    "ast_hash": "e81f556be1086bd4950ae40562bb0d72",
+    "mtime": 1792754716.1626596,
+    "ast_hash": "497ce45c17b5f6c30052eade150eb6f6",
     "semantic_hash": ""
   },
   "src/components/account/PlanUsageSection.tsx": {
@@ -3205,8 +3205,8 @@
     "semantic_hash": ""
   },
   "src/lib/authBridge.ts": {
-    "mtime": 1792683205.4561076,
-    "ast_hash": "7eee26c71740950d5c46f877947ac693",
+    "mtime": 1792754775.1962519,
+    "ast_hash": "8eaceb3e961d0c06bf27925edae6b957",
     "semantic_hash": ""
   },
   "src/lib/entitlementRepository.ts": {
@@ -3215,8 +3215,8 @@
     "semantic_hash": ""
   },
   "tests/unit/apiAuthHardening.test.ts": {
-    "mtime": 1792683205.458636,
-    "ast_hash": "e36f8ce3ca7f1c8f8a3dee2a41fe2c6d",
+    "mtime": 1792754524.9062314,
+    "ast_hash": "4b4f120a8817d892a1d9aeff39bd61b1",
     "semantic_hash": ""
   },
   "tests/unit/entitlementRepository.test.ts": {
@@ -3235,8 +3235,8 @@
     "semantic_hash": ""
   },
   "specs/013-saas-auth-guest-sunset/data-model.md": {
-    "mtime": 1792683205.4364367,
-    "ast_hash": "c75e8019079634b33d0598e2658e5b07",
+    "mtime": 1792755021.6865573,
+    "ast_hash": "ada2e20f3eb35ac53f4152758369d2c2",
     "semantic_hash": ""
   },
   "specs/013-saas-auth-guest-sunset/plan.md": {
@@ -3245,8 +3245,8 @@
     "semantic_hash": ""
   },
   "specs/013-saas-auth-guest-sunset/quickstart.md": {
-    "mtime": 1792683205.4390028,
-    "ast_hash": "4c94e911ac399ba2b3d35ebb7a211883",
+    "mtime": 1792754964.0246217,
+    "ast_hash": "0fcbcd79eeb75253f303e83391d6a2db",
     "semantic_hash": ""
   },
   "specs/013-saas-auth-guest-sunset/research.md": {
@@ -3255,13 +3255,13 @@
     "semantic_hash": ""
   },
   "specs/013-saas-auth-guest-sunset/spec.md": {
-    "mtime": 1792683205.4425535,
-    "ast_hash": "e60bfbaf90359d90f458b49b560066a4",
+    "mtime": 1792754988.5222387,
+    "ast_hash": "420de2f0019b012e213d13c0f620dcee",
     "semantic_hash": ""
   },
   "specs/013-saas-auth-guest-sunset/tasks.md": {
-    "mtime": 1792683205.443865,
-    "ast_hash": "81c46e84aafe24270530e49126e5d5df",
+    "mtime": 1792754940.653551,
+    "ast_hash": "d94ab946be52ca31bc515462ae6cb41c",
     "semantic_hash": ""
   }
 }
