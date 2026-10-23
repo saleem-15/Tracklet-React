@@ -150,7 +150,8 @@ export class TemplateRepository {
         batch.set(docRef, sanitizeForFirestore({ ...item } as Record<string, unknown>));
       });
     } catch (err) {
-      console.warn('Error resetting templates in Firestore:', err);
+      console.error('Error resetting templates in Firestore:', err);
+      throw err;
     }
 
     return [...defaults, ...customTemplates];

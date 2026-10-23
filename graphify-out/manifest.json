@@ -605,8 +605,8 @@
     "semantic_hash": "a036d340e4d1080524a6ff12478938fe"
   },
   "extension/background.js": {
-    "mtime": 1792786843.9426515,
-    "ast_hash": "897a9e9b34938b86ec26483cc4b7cf89",
+    "mtime": 1792788318.9084752,
+    "ast_hash": "35728b7aa6ab516a0f28c0c5475621a8",
     "semantic_hash": ""
   },
   "extension/content.js": {
@@ -615,8 +615,8 @@
     "semantic_hash": ""
   },
   "extension/manifest.json": {
-    "mtime": 1792786890.778228,
-    "ast_hash": "a806ccece2f657c206d448cbb6296ba5",
+    "mtime": 1792788396.2755854,
+    "ast_hash": "46467b8238d62bfde862ef4ca2594ead",
     "semantic_hash": ""
   },
   "extension/popup.js": {
@@ -1105,8 +1105,8 @@
     "semantic_hash": ""
   },
   "src/lib/constants.ts": {
-    "mtime": 1792786914.421289,
-    "ast_hash": "d490315d131bdac530f0a1abb4cdbb08",
+    "mtime": 1792788396.2755854,
+    "ast_hash": "e9411fd4a71419ff52ad23455845f127",
     "semantic_hash": ""
   },
   "src/lib/contactRepository.ts": {
@@ -1265,8 +1265,8 @@
     "semantic_hash": ""
   },
   "src/lib/templateRepository.ts": {
-    "mtime": 1792786844.05812,
-    "ast_hash": "03138b31f54469527412eb472d43a88b",
+    "mtime": 1792788327.9454734,
+    "ast_hash": "2f0766cff670db9f14df142c22056230",
     "semantic_hash": ""
   },
   "src/lib/templateUtils.ts": {
@@ -1420,8 +1420,8 @@
     "semantic_hash": "399859bd59f4cc8be238fe3d95982ae9"
   },
   "tests/unit/templateRepository.test.ts": {
-    "mtime": 1792786844.0673208,
-    "ast_hash": "887b6d3324baf90dbbc22916fc8074f6",
+    "mtime": 1792788341.397884,
+    "ast_hash": "2a285546e9e648d0b1ad24c70a229683",
     "semantic_hash": ""
   },
   "tests/unit/templateUtils.test.ts": {
@@ -1465,8 +1465,8 @@
     "semantic_hash": ""
   },
   "src/hooks/useExtensionSync.ts": {
-    "mtime": 1792786844.0526006,
-    "ast_hash": "e39d895263227f05bb21479647ae8ccd",
+    "mtime": 1792788360.5305715,
+    "ast_hash": "21121d4938410ce01a29e5fb760ef185",
     "semantic_hash": ""
   },
   "src/hooks/useToast.ts": {
@@ -2425,8 +2425,8 @@
     "semantic_hash": ""
   },
   "api/report-issue.ts": {
-    "mtime": 1792786843.940021,
-    "ast_hash": "b56fb6714a726c22bfe59e3e7fc03a9f",
+    "mtime": 1792788239.8086805,
+    "ast_hash": "bfd80241bfe750d954ac6f6c62ff1b33",
     "semantic_hash": ""
   },
   "specs/009-tester-issue-reporting/contracts/api-report-issue.json": {

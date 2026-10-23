@@ -13,8 +13,18 @@ function configureSidePanelBehavior() {
 
 configureSidePanelBehavior();
 
+function cleanupLegacyGuestStorage() {
+  if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+    chrome.storage.local.remove(['tracklet_guest_apps_v1', 'tracklet_guest_contacts_v1'], () => {
+      if (chrome.runtime && chrome.runtime.lastError) {
+        // Ignore error
+      }
+    });
+  }
+}
 // Initialize Context Menu and Side Panel on Install
 chrome.runtime.onInstalled.addListener(() => {
+  cleanupLegacyGuestStorage();
   configureSidePanelBehavior();
   if (typeof chrome !== 'undefined' && chrome.contextMenus && chrome.contextMenus.create) {
     chrome.contextMenus.create({
@@ -24,6 +34,13 @@ chrome.runtime.onInstalled.addListener(() => {
     });
   }
 });
+
+if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onStartup) {
+  chrome.runtime.onStartup.addListener(() => {
+    cleanupLegacyGuestStorage();
+    configureSidePanelBehavior();
+  });
+}
 
 // Handle Context Menu Clicks
 if (typeof chrome !== 'undefined' && chrome.contextMenus && chrome.contextMenus.onClicked) {
@@ -812,7 +829,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     chrome.storage.local.set({
       tracklet_apps_index: syncedApps
     }, () => {
-      sendResponse({ success: true });
+      if (chrome.runtime.lastError) {
+        sendResponse({ success: false, error: chrome.runtime.lastError.message });
+      } else {
+        sendResponse({ success: true });
+      }
     });
     return true;
   }
@@ -822,7 +843,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     chrome.storage.local.set({
       tracklet_contacts_index: syncedContacts
     }, () => {
-      sendResponse({ success: true });
+      if (chrome.runtime.lastError) {
+        sendResponse({ success: false, error: chrome.runtime.lastError.message });
+      } else {
+        sendResponse({ success: true });
+      }
     });
     return true;
   }

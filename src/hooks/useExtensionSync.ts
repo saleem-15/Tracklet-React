@@ -285,7 +285,7 @@ export function useExtensionSync({
 
     // Side effects performed strictly outside setApplications with computed values
     if (isUpdate) {
-      if (user?.emailVerified) {
+      if (user?.uid) {
         ApplicationRepository.updateApplication(finalApp.id, finalApp, user.uid).catch((err) => {
           console.error('Failed to update application in Firestore:', err);
         });
@@ -296,7 +296,7 @@ export function useExtensionSync({
         `Updated "${finalApp.role}" at ${finalApp.company}`
       );
     } else {
-      if (user?.emailVerified && !persistedToCloud) {
+      if (user?.uid && !persistedToCloud) {
         ApplicationRepository.addApplication(finalApp, user.uid).then((created) => {
           applicationsRef.current = applicationsRef.current.map((a) => (a.id === finalApp.id ? { ...a, id: created.id, userId: created.userId } : a));
           setApplications(applicationsRef.current);

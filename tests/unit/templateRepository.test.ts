@@ -190,5 +190,13 @@ describe('TemplateRepository', () => {
       expect(reset.length).toBe(5); // 4 factory defaults + 1 custom
       expect(reset.some((t) => t.title === 'My Custom Template')).toBe(true);
     });
+
+    it('rethrows when Firestore batch operations fail', async () => {
+      mockGetDocs.mockRejectedValueOnce(new Error('Firestore batch failure'));
+
+      await expect(TemplateRepository.resetDefaultTemplates('user-1')).rejects.toThrow(
+        'Firestore batch failure'
+      );
+    });
   });
 });

@@ -282,6 +282,8 @@ export async function handler(
     safeDesc = safeDesc.slice(0, 25000) + '\n\n...[Description truncated for length]';
   }
 
+  const normalizedAuthMode = diagnostics.authMode === 'authenticated' ? 'authenticated' : 'unauthenticated';
+
   let body = `## Description
 ${safeDesc}
 ${screenshotSection}${attachmentList}
@@ -300,7 +302,7 @@ ${screenshotSection}${attachmentList}
 | **Browser** | ${diagnostics.browser || 'Unknown'} |
 | **Operating System** | ${diagnostics.os || 'Unknown'} |
 | **Viewport Size** | ${diagnostics.viewport || 'Unknown'} (DPR: ${diagnostics.devicePixelRatio || 1}) |
-| **Auth Mode** | ${diagnostics.authMode || 'unauthenticated'} |
+| **Auth Mode** | ${normalizedAuthMode} |
 | **Timestamp** | ${diagnostics.timestamp || new Date().toISOString()} |
 
 ### Recent Console Errors
