@@ -5066,7 +5066,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         t.url.includes('.web.app') ||
         t.url.includes('.firebaseapp.com') ||
         t.url.includes('.vercel.app') ||
-        t.url.includes('.netlify.app')
+        t.url.includes('.netlify.app') ||
+        t.url.includes('.pages.dev')
       ));
 
       if (trackletTab && trackletTab.id) {
