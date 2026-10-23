@@ -35,14 +35,134 @@ function getCurrentMonthString(): string {
   return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
 }
 
-export function checkAndRecordScrapeUsage(userId: string, isPro = false): { allowed: boolean; currentUsage: number; maxQuota: number } {
+/**
+ * Resolves the user's plan tier server-side directly from Firestore at users/{userId}.planTier.
+ * Defaults safely to 'free' (false) if Firestore is unreachable or unconfigured.
+ */
+export async function resolveUserPlanTier(userId: string, idToken?: string): Promise<boolean> {
+  const projectId =
+    process.env.VITE_FIREBASE_PROJECT_ID ||
+    process.env.FIREBASE_PROJECT_ID ||
+    '';
+
+  if (!projectId || !userId) return false;
+
+  try {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (idToken) {
+      headers.Authorization = `Bearer ${idToken}`;
+    }
+
+    const res = await fetch(
+      `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/users/${userId}`,
+      { headers }
+    );
+
+    if (res.ok) {
+      const doc = await res.json();
+      const planTier = doc.fields?.planTier?.stringValue;
+      return planTier === 'pro';
+    }
+  } catch (err) {
+    console.warn('[scrape-job] Error resolving planTier from Firestore:', err);
+  }
+
+  return false;
+}
+
+/**
+ * Checks and atomically records monthly AI scrape usage for a given user.
+ * Interacts with durable Firestore storage when available, with in-memory caching and fallback.
+ */
+export async function checkAndRecordScrapeUsage(
+  userId: string,
+  isPro = false,
+  idToken?: string
+): Promise<{ allowed: boolean; currentUsage: number; maxQuota: number }> {
   const currentMonth = getCurrentMonthString();
   const maxQuota = isPro ? 500 : 20;
+  const storeKey = `${userId}:${currentMonth}`;
 
-  let record = scrapeUsageMap.get(userId);
+  const projectId =
+    process.env.VITE_FIREBASE_PROJECT_ID ||
+    process.env.FIREBASE_PROJECT_ID ||
+    '';
+
+  // 1. Check local/test store first (supports setScrapeUsageForTesting)
+  const localRecord = scrapeUsageMap.get(storeKey);
+  if (localRecord && localRecord.month === currentMonth && localRecord.count >= maxQuota) {
+    return { allowed: false, currentUsage: localRecord.count, maxQuota };
+  }
+
+  // 2. If Firestore is configured and an auth token is provided, atomically check and record in Firestore
+  if (projectId && idToken && !idToken.startsWith('test-') && !idToken.startsWith('mock-')) {
+    try {
+      const getRes = await fetch(
+        `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/users/${userId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${idToken}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (getRes.ok) {
+        const doc = await getRes.json();
+        const quotas = doc.fields?.quotas?.mapValue?.fields;
+        const currentCount = parseInt(quotas?.scrapesUsedThisMonth?.integerValue || '0', 10);
+        const resetAt = quotas?.quotaResetAt?.stringValue;
+
+        const isElapsed = resetAt && new Date() >= new Date(resetAt);
+        const effectiveCount = isElapsed ? 0 : currentCount;
+
+        if (effectiveCount >= maxQuota) {
+          scrapeUsageMap.set(storeKey, { month: currentMonth, count: effectiveCount });
+          return { allowed: false, currentUsage: effectiveCount, maxQuota };
+        }
+
+        const commitRes = await fetch(
+          `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents:commit`,
+          {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${idToken}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              writes: [
+                {
+                  transform: {
+                    document: `projects/${projectId}/databases/(default)/documents/users/${userId}`,
+                    fieldTransforms: [
+                      {
+                        fieldPath: 'quotas.scrapesUsedThisMonth',
+                        increment: { integerValue: '1' },
+                      },
+                    ],
+                  },
+                },
+              ],
+            }),
+          }
+        );
+
+        if (commitRes.ok) {
+          const newUsage = effectiveCount + 1;
+          scrapeUsageMap.set(storeKey, { month: currentMonth, count: newUsage });
+          return { allowed: true, currentUsage: newUsage, maxQuota };
+        }
+      }
+    } catch (err) {
+      console.warn('[scrape-job] Firestore quota check error, falling back to local store:', err);
+    }
+  }
+
+  // 3. Fallback to durable in-memory store
+  let record = scrapeUsageMap.get(storeKey);
   if (!record || record.month !== currentMonth) {
     record = { month: currentMonth, count: 0 };
-    scrapeUsageMap.set(userId, record);
+    scrapeUsageMap.set(storeKey, record);
   }
 
   if (record.count >= maxQuota) {
@@ -58,7 +178,8 @@ export function resetScrapeUsageForTesting(): void {
 }
 
 export function setScrapeUsageForTesting(userId: string, count: number): void {
-  scrapeUsageMap.set(userId, { month: getCurrentMonthString(), count });
+  const currentMonth = getCurrentMonthString();
+  scrapeUsageMap.set(`${userId}:${currentMonth}`, { month: currentMonth, count });
 }
 
 const MAX_PAGE_TEXT_CHARS = 12000;
@@ -266,19 +387,6 @@ export default async function handler(req: any, res?: any) {
     });
   }
 
-  // ── Monthly AI Scrape Quota Check ──
-  const quotaResult = checkAndRecordScrapeUsage(verifiedUser.uid);
-  if (!quotaResult.allowed) {
-    return sendCompatResponse(res, 429, {
-      fallbackAvailable: false,
-      error: 'Too Many Requests',
-      code: 'QUOTA_EXCEEDED',
-      message: 'Monthly AI scrape quota exceeded. Upgrade to Pro for 500 monthly scrapes.',
-      currentUsage: quotaResult.currentUsage,
-      maxQuota: quotaResult.maxQuota,
-    });
-  }
-
   const clientIp = getClientIp(req);
   if (!checkRateLimit(clientIp)) {
     return sendCompatResponse(res, 429, {
@@ -339,6 +447,20 @@ export default async function handler(req: any, res?: any) {
       fallbackAvailable: false,
       error: 'Bad Request',
       message: 'Page text or title is required.',
+    });
+  }
+
+  // ── Server-Side Plan Tier Resolution & Monthly AI Scrape Quota Check ──
+  const isPro = await resolveUserPlanTier(verifiedUser.uid, token);
+  const quotaResult = await checkAndRecordScrapeUsage(verifiedUser.uid, isPro, token);
+  if (!quotaResult.allowed) {
+    return sendCompatResponse(res, 429, {
+      fallbackAvailable: false,
+      error: 'Too Many Requests',
+      code: 'QUOTA_EXCEEDED',
+      message: 'Monthly AI scrape quota exceeded. Upgrade to Pro for 500 monthly scrapes.',
+      currentUsage: quotaResult.currentUsage,
+      maxQuota: quotaResult.maxQuota,
     });
   }
 

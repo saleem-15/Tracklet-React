@@ -3,6 +3,7 @@ import { extractBearerToken, verifyFirebaseIdToken } from '../../api/lib/verifyF
 import scrapeJobHandler, {
   resetScrapeUsageForTesting,
   setScrapeUsageForTesting,
+  checkAndRecordScrapeUsage,
 } from '../../api/scrape-job';
 import reportIssueHandler from '../../api/report-issue';
 import { SAAS_LIMITS } from '../../src/lib/constants';
@@ -11,6 +12,7 @@ describe('Serverless API Authentication & Quota Hardening', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     resetScrapeUsageForTesting();
+    delete process.env.GEMINI_API_KEY;
   });
 
   describe('extractBearerToken', () => {
@@ -45,9 +47,40 @@ describe('Serverless API Authentication & Quota Hardening', () => {
       expect(user?.emailVerified).toBe(true);
     });
 
+    it('rejects test tokens in production environment', async () => {
+      const prevEnv = process.env.NODE_ENV;
+      const prevVitest = process.env.VITEST;
+      try {
+        process.env.NODE_ENV = 'production';
+        delete process.env.VITEST;
+        const user = await verifyFirebaseIdToken('test-token-789');
+        expect(user).toBeNull();
+      } finally {
+        process.env.NODE_ENV = prevEnv;
+        if (prevVitest) process.env.VITEST = prevVitest;
+      }
+    });
+
     it('returns null for empty or non-string tokens', async () => {
       expect(await verifyFirebaseIdToken('')).toBeNull();
       expect(await verifyFirebaseIdToken(null as any)).toBeNull();
+    });
+
+    it('returns null when accounts:lookup fails with configured API key', async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 400,
+        json: async () => ({ error: { message: 'INVALID_ID_TOKEN' } }),
+      });
+      global.fetch = mockFetch;
+      process.env.FIREBASE_API_KEY = 'valid_api_key_test';
+
+      try {
+        const user = await verifyFirebaseIdToken('some-invalid-token');
+        expect(user).toBeNull();
+      } finally {
+        delete process.env.FIREBASE_API_KEY;
+      }
     });
   });
 
@@ -82,7 +115,79 @@ describe('Serverless API Authentication & Quota Hardening', () => {
       expect(jsonPayload.message).toContain('Valid Firebase authentication token required');
     });
 
+    it('does not consume quota when GEMINI_API_KEY is missing', async () => {
+      delete process.env.GEMINI_API_KEY;
+      let statusCode = 0;
+      let jsonPayload: any = null;
+      const mockRes = {
+        setHeader: () => {},
+        status: (code: number) => {
+          statusCode = code;
+          return {
+            json: (data: any) => {
+              jsonPayload = data;
+              return data;
+            },
+            end: () => {},
+          };
+        },
+      };
+
+      await scrapeJobHandler(
+        {
+          method: 'POST',
+          headers: { authorization: 'Bearer test-token-123' },
+          body: { url: 'https://company.com/jobs/2', text: 'Job text...' },
+        },
+        mockRes
+      );
+
+      expect(statusCode).toBe(200);
+      expect(jsonPayload.fallbackAvailable).toBe(false);
+
+      // Verify no quota was consumed
+      const result = await checkAndRecordScrapeUsage('test-user-123', false);
+      // First usage recorded now should be 1
+      expect(result.currentUsage).toBe(1);
+    });
+
+    it('does not consume quota when request body is invalid (missing text and title)', async () => {
+      process.env.GEMINI_API_KEY = 'test_gemini_key';
+      let statusCode = 0;
+      let jsonPayload: any = null;
+      const mockRes = {
+        setHeader: () => {},
+        status: (code: number) => {
+          statusCode = code;
+          return {
+            json: (data: any) => {
+              jsonPayload = data;
+              return data;
+            },
+            end: () => {},
+          };
+        },
+      };
+
+      await scrapeJobHandler(
+        {
+          method: 'POST',
+          headers: { authorization: 'Bearer test-token-123' },
+          body: { url: 'https://company.com/jobs/empty' },
+        },
+        mockRes
+      );
+
+      expect(statusCode).toBe(400);
+      expect(jsonPayload.error).toBe('Bad Request');
+
+      // Verify no quota was consumed
+      const result = await checkAndRecordScrapeUsage('test-user-123', false);
+      expect(result.currentUsage).toBe(1);
+    });
+
     it('returns 429 QUOTA_EXCEEDED when Free user has exhausted 20 monthly scrapes', async () => {
+      process.env.GEMINI_API_KEY = 'test_gemini_key';
       // Simulate user having already used 20 scrapes
       setScrapeUsageForTesting('test-user-123', SAAS_LIMITS.FREE_MONTHLY_SCRAPES);
 
