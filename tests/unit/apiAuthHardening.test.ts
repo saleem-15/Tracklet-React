@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { extractBearerToken, verifyFirebaseIdToken } from '../../api/lib/verifyFirebaseToken';
 import scrapeJobHandler, {
   resetScrapeUsageForTesting,
@@ -279,6 +279,132 @@ describe('Serverless API Authentication & Quota Hardening', () => {
       const callBody = JSON.parse(mockGhFetch.mock.calls[0][1].body);
       expect(callBody.body).toContain('**User ID:** `test-user-123`');
       expect(callBody.body).toContain('**Email:** tester@tracklet.app');
+    });
+  });
+
+  describe('Firestore Quota Check & Compensation (checkAndRecordScrapeUsage)', () => {
+    const originalProjectId = process.env.VITE_FIREBASE_PROJECT_ID;
+
+    beforeEach(() => {
+      process.env.VITE_FIREBASE_PROJECT_ID = 'test-firebase-project';
+    });
+
+    afterEach(() => {
+      process.env.VITE_FIREBASE_PROJECT_ID = originalProjectId;
+    });
+
+    it('fails closed when Firestore read returns an error response for a non-test token', async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 500,
+        text: async () => 'Internal Server Error',
+      });
+
+      const res = await checkAndRecordScrapeUsage('real-user-1', false, 'real-id-token-abc');
+      expect(res.allowed).toBe(false);
+      expect(res.currentUsage).toBe(20);
+      expect(res.maxQuota).toBe(20);
+    });
+
+    it('fails closed when Firestore fetch throws a network exception for a non-test token', async () => {
+      global.fetch = vi.fn().mockRejectedValue(new Error('Network connection timeout'));
+
+      const res = await checkAndRecordScrapeUsage('real-user-2', false, 'real-id-token-abc');
+      expect(res.allowed).toBe(false);
+      expect(res.currentUsage).toBe(20);
+      expect(res.maxQuota).toBe(20);
+    });
+
+    it('compensates and rejects when concurrent increments exceed maxQuota', async () => {
+      const mockFetch = vi
+        .fn()
+        // 1. Initial GET succeeds showing 19 used
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            fields: {
+              quotas: {
+                mapValue: {
+                  fields: {
+                    scrapesUsedThisMonth: { integerValue: '19' },
+                  },
+                },
+              },
+            },
+          }),
+        })
+        // 2. Commit transform returns 21 (due to concurrent race condition)
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            writeResults: [
+              {
+                transformResults: [{ integerValue: '21' }],
+              },
+            ],
+          }),
+        })
+        // 3. Compensation rollback commit succeeds
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            writeResults: [{ transformResults: [{ integerValue: '20' }] }],
+          }),
+        });
+
+      global.fetch = mockFetch;
+
+      const res = await checkAndRecordScrapeUsage('real-user-3', false, 'real-id-token-abc');
+      expect(res.allowed).toBe(false);
+      expect(res.currentUsage).toBe(20);
+
+      // Verify that compensation commit with increment -1 was sent
+      expect(mockFetch).toHaveBeenCalledTimes(3);
+      const compensationBody = JSON.parse(mockFetch.mock.calls[2][1].body);
+      expect(compensationBody.writes[0].transform.fieldTransforms[0].increment.integerValue).toBe('-1');
+    });
+
+    it('allows scrape and updates usage when increment is within quota', async () => {
+      const mockFetch = vi
+        .fn()
+        // 1. Initial GET succeeds showing 5 used
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            fields: {
+              quotas: {
+                mapValue: {
+                  fields: {
+                    scrapesUsedThisMonth: { integerValue: '5' },
+                  },
+                },
+              },
+            },
+          }),
+        })
+        // 2. Commit transform returns 6
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            writeResults: [
+              {
+                transformResults: [{ integerValue: '6' }],
+              },
+            ],
+          }),
+        });
+
+      global.fetch = mockFetch;
+
+      const res = await checkAndRecordScrapeUsage('real-user-4', false, 'real-id-token-abc');
+      expect(res.allowed).toBe(true);
+      expect(res.currentUsage).toBe(6);
+      expect(mockFetch).toHaveBeenCalledTimes(2);
     });
   });
 });

@@ -107,54 +107,104 @@ export async function checkAndRecordScrapeUsage(
         }
       );
 
-      if (getRes.ok) {
-        const doc = await getRes.json();
-        const quotas = doc.fields?.quotas?.mapValue?.fields;
-        const currentCount = parseInt(quotas?.scrapesUsedThisMonth?.integerValue || '0', 10);
-        const resetAt = quotas?.quotaResetAt?.stringValue;
-
-        const isElapsed = resetAt && new Date() >= new Date(resetAt);
-        const effectiveCount = isElapsed ? 0 : currentCount;
-
-        if (effectiveCount >= maxQuota) {
-          scrapeUsageMap.set(storeKey, { month: currentMonth, count: effectiveCount });
-          return { allowed: false, currentUsage: effectiveCount, maxQuota };
-        }
-
-        const commitRes = await fetch(
-          `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents:commit`,
-          {
-            method: 'POST',
-            headers: {
-              Authorization: `Bearer ${idToken}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              writes: [
-                {
-                  transform: {
-                    document: `projects/${projectId}/databases/(default)/documents/users/${userId}`,
-                    fieldTransforms: [
-                      {
-                        fieldPath: 'quotas.scrapesUsedThisMonth',
-                        increment: { integerValue: '1' },
-                      },
-                    ],
-                  },
-                },
-              ],
-            }),
-          }
-        );
-
-        if (commitRes.ok) {
-          const newUsage = effectiveCount + 1;
-          scrapeUsageMap.set(storeKey, { month: currentMonth, count: newUsage });
-          return { allowed: true, currentUsage: newUsage, maxQuota };
-        }
+      if (!getRes.ok) {
+        console.warn(`[scrape-job] Firestore user lookup failed (${getRes.status}), failing closed.`);
+        return { allowed: false, currentUsage: maxQuota, maxQuota };
       }
+
+      const doc = await getRes.json();
+      const quotas = doc.fields?.quotas?.mapValue?.fields;
+      const currentCount = parseInt(quotas?.scrapesUsedThisMonth?.integerValue || '0', 10);
+      const resetAt = quotas?.quotaResetAt?.stringValue;
+
+      const isElapsed = resetAt && new Date() >= new Date(resetAt);
+      const effectiveCount = isElapsed ? 0 : currentCount;
+
+      if (effectiveCount >= maxQuota) {
+        scrapeUsageMap.set(storeKey, { month: currentMonth, count: effectiveCount });
+        return { allowed: false, currentUsage: effectiveCount, maxQuota };
+      }
+
+      const commitRes = await fetch(
+        `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents:commit`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${idToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            writes: [
+              {
+                transform: {
+                  document: `projects/${projectId}/databases/(default)/documents/users/${userId}`,
+                  fieldTransforms: [
+                    {
+                      fieldPath: 'quotas.scrapesUsedThisMonth',
+                      increment: { integerValue: '1' },
+                    },
+                  ],
+                },
+              },
+            ],
+          }),
+        }
+      );
+
+      if (!commitRes.ok) {
+        console.warn(`[scrape-job] Firestore quota increment commit failed (${commitRes.status}), failing closed.`);
+        return { allowed: false, currentUsage: maxQuota, maxQuota };
+      }
+
+      const commitData = await commitRes.json().catch(() => null);
+      const transformResult = commitData?.writeResults?.[0]?.transformResults?.[0];
+      const postIncrement =
+        transformResult?.integerValue !== undefined
+          ? parseInt(transformResult.integerValue, 10)
+          : effectiveCount + 1;
+
+      // Atomic verification: check resulting usage against maxQuota
+      if (postIncrement > maxQuota) {
+        // Over limit due to concurrent requests — issue compensation decrement
+        try {
+          await fetch(
+            `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents:commit`,
+            {
+              method: 'POST',
+              headers: {
+                Authorization: `Bearer ${idToken}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                writes: [
+                  {
+                    transform: {
+                      document: `projects/${projectId}/databases/(default)/documents/users/${userId}`,
+                      fieldTransforms: [
+                        {
+                          fieldPath: 'quotas.scrapesUsedThisMonth',
+                          increment: { integerValue: '-1' },
+                        },
+                      ],
+                    },
+                  },
+                ],
+              }),
+            }
+          );
+        } catch (compErr) {
+          console.warn('[scrape-job] Failed to compensate over-limit increment:', compErr);
+        }
+
+        scrapeUsageMap.set(storeKey, { month: currentMonth, count: maxQuota });
+        return { allowed: false, currentUsage: maxQuota, maxQuota };
+      }
+
+      scrapeUsageMap.set(storeKey, { month: currentMonth, count: postIncrement });
+      return { allowed: true, currentUsage: postIncrement, maxQuota };
     } catch (err) {
-      console.warn('[scrape-job] Firestore quota check error, falling back to local store:', err);
+      console.warn('[scrape-job] Firestore quota check error for non-test token, failing closed:', err);
+      return { allowed: false, currentUsage: maxQuota, maxQuota };
     }
   }
 
