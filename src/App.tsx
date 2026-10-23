@@ -11,7 +11,7 @@ import {
 import { useGuestMigration } from './hooks/useGuestMigration';
 import { useExtensionSync } from './hooks/useExtensionSync';
 import { useDataLoader } from './hooks/useDataLoader';
-import { getPathForTab, isAuthPath } from './lib/routeUtils';
+import { getPathForTab, isAuthPath, isLegalPath } from './lib/routeUtils';
 
 function TrackletAppContent() {
   const { user, loading: authLoading, signOut } = useAuth();
@@ -62,6 +62,9 @@ function TrackletAppContent() {
   useEffect(() => {
     if (authLoading) return;
     const path = window.location.pathname;
+    // Exempt public legal & trust pages from authentication redirect
+    if (isLegalPath(path)) return;
+
     if (!user) {
       if (!isAuthPath(path)) window.history.replaceState(null, '', '/login');
     } else {

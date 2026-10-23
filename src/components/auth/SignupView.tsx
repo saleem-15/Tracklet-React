@@ -182,6 +182,29 @@ export const SignupView: React.FC<SignupViewProps> = ({
             )}
           </button>
         </form>
+
+        {/* Terms of Service & Privacy Policy Consent Notice */}
+        <p className="text-[11px] text-slate-500 text-center leading-relaxed font-sans px-1">
+          By signing up, you agree to our{' '}
+          <a
+            href="/terms"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-slate-700 hover:text-slate-900 font-semibold underline underline-offset-2"
+          >
+            Terms of Service
+          </a>{' '}
+          and{' '}
+          <a
+            href="/privacy"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-slate-700 hover:text-slate-900 font-semibold underline underline-offset-2"
+          >
+            Privacy Policy
+          </a>
+          .
+        </p>
       </div>
 
       {/* Footer Navigation Switcher */}

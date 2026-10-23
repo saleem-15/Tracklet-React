@@ -101,7 +101,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
     setIsSubmitting(true);
     try {
       await signInWithEmail(email, pass);
-      onShowToast?.('success', 'Signed In', 'Welcome back!');
+      onShowToast?.('success', 'Welcome Back', 'Successfully signed in to Tracklet.');
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : getFriendlyAuthErrorMessage(err);
       setLocalError(msg);
@@ -116,7 +116,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
     try {
       await signUpWithEmail(email, pass);
       onShowToast?.(
-        'success',
+        'info',
         'Account Created',
         'A verification link has been sent to your email. Please verify to access your workspace.'
       );
@@ -229,6 +229,36 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Global Legal & Trust Footer Links */}
+        <div className="pt-8 text-center text-[11px] text-slate-500 flex items-center justify-center gap-3">
+          <a
+            href="/privacy"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-slate-800 transition-colors"
+          >
+            Privacy Policy
+          </a>
+          <span>•</span>
+          <a
+            href="/terms"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-slate-800 transition-colors"
+          >
+            Terms of Service
+          </a>
+          <span>•</span>
+          <a
+            href="mailto:support@tracklet.app"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-slate-800 transition-colors"
+          >
+            Support
+          </a>
+        </div>
       </div>
     </div>
   );
