@@ -2,6 +2,7 @@ import { useEffect, useCallback } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { TopBar } from './components/TopBar';
 import { ToastContainer } from './components/Toast';
+import { DomainMigrationBanner } from './components/DomainMigrationBanner';
 import { AuthGate, WorkspaceContent, AppSlideOvers, AppModals } from './components/layout';
 import {
   AppProviders, useAuth, useNavigation, useToastContext,
@@ -88,6 +89,7 @@ function TrackletAppContent() {
       <div className="flex h-screen w-screen bg-slate-50 text-slate-900 font-sans overflow-hidden antialiased select-none">
         <Sidebar onSignOut={handleSignOut} />
         <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+          <DomainMigrationBanner />
           {(activeTab === 'all' || activeTab === 'pipeline') && <TopBar />}
           <WorkspaceContent 
             isLoading={authLoading || dataLoading}

@@ -10,6 +10,8 @@
     "preview": "vite preview",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
+    "pages:dev": "wrangler pages dev dist",
+    "pages:preview": "npm run build && wrangler pages dev dist",
     "test": "vitest run",
     "test:watch": "vitest",
     "audit": "node --experimental-strip-types scripts/telemetry/runAudit.ts",
