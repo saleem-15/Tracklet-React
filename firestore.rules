@@ -60,10 +60,11 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if isOwner(userId);
 
-      // Initial user document creation: must default to 'free' tier and 'none' subscription
+      // Initial user document creation: must default to 'free' tier, 'none' subscription, and zero scrapes
       allow create: if isOwner(userId)
         && request.resource.data.planTier == 'free'
-        && request.resource.data.subscriptionStatus == 'none';
+        && request.resource.data.subscriptionStatus == 'none'
+        && (!('quotas' in request.resource.data) || request.resource.data.quotas.scrapesUsedThisMonth == 0);
 
       // Updates: user cannot elevate their own planTier or alter subscriptionStatus directly
       allow update: if isOwner(userId)
