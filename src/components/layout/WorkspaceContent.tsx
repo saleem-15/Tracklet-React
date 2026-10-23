@@ -79,7 +79,7 @@ export function WorkspaceContent({ isLoading = false, activeQuota }: WorkspaceCo
     if (targetApp) {
       const isReactivating =
         TERMINAL_STATUSES.includes(targetApp.status as any) && ACTIVE_STATUSES.includes(newStatus as any);
-      if (isReactivating && activeQuota && !activeQuota.isGrandfathered && activeQuota.current >= activeQuota.max) {
+      if (isReactivating && activeQuota && activeQuota.current >= activeQuota.max) {
         addToast(
           'warning',
           'Pipeline Capacity Reached',
@@ -93,7 +93,7 @@ export function WorkspaceContent({ isLoading = false, activeQuota }: WorkspaceCo
   };
 
   const handleGuardedBulkUpdateStatus = (ids: string[], newStatus: any) => {
-    if (activeQuota && !activeQuota.isGrandfathered && ACTIVE_STATUSES.includes(newStatus)) {
+    if (activeQuota && ACTIVE_STATUSES.includes(newStatus)) {
       const reactivatingCount = applications.filter(
         (a) => ids.includes(a.id) && TERMINAL_STATUSES.includes(a.status as any)
       ).length;
@@ -113,7 +113,7 @@ export function WorkspaceContent({ isLoading = false, activeQuota }: WorkspaceCo
   const handleGuardedBatchImport = (
     newApps: any[]
   ) => {
-    if (activeQuota && !activeQuota.isGrandfathered) {
+    if (activeQuota) {
       const newActiveCount = newApps.filter((a) => ACTIVE_STATUSES.includes(a.status as any)).length;
       if (newActiveCount > 0 && activeQuota.current + newActiveCount > activeQuota.max) {
         addToast(
@@ -129,7 +129,7 @@ export function WorkspaceContent({ isLoading = false, activeQuota }: WorkspaceCo
   };
 
   const handleGuardedOpenAddModal = () => {
-    if (activeQuota && !activeQuota.isGrandfathered && activeQuota.current >= activeQuota.max) {
+    if (activeQuota && activeQuota.current >= activeQuota.max) {
       addToast(
         'warning',
         'Pipeline Capacity Reached',
