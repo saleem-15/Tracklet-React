@@ -130,7 +130,7 @@ export function collectDiagnosticContext(params: CollectDiagnosticsParams = {}):
     os,
     viewport: `${width}x${height}`,
     devicePixelRatio: dpr,
-    authMode: params.user?.uid ? 'authenticated' : 'guest',
+    authMode: params.user?.uid ? 'authenticated' : 'unauthenticated',
     userId: params.user?.uid,
     timestamp: new Date().toISOString(),
     recentErrors: [...recentErrorsBuffer],

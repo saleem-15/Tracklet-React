@@ -84,9 +84,9 @@ describe('diagnosticUtils', () => {
       expect(diag.recentErrors[2]).toContain('Fourth overflow error');
     });
 
-    it('defaults to guest mode when no user is passed', () => {
+    it('defaults to unauthenticated mode when no user is passed', () => {
       const diag = collectDiagnosticContext();
-      expect(diag.authMode).toBe('guest');
+      expect(diag.authMode).toBe('unauthenticated');
       expect(diag.userId).toBeUndefined();
     });
   });

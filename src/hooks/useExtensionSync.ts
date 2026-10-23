@@ -161,12 +161,10 @@ export function useExtensionSync({
     setApplications(next);
 
     // Persist update outside setApplications updater
-    if (user?.emailVerified) {
+    if (user?.uid) {
       ApplicationRepository.updateApplication(appId, updatedApp, user.uid, updatedApp).catch((err) => {
         console.error('Failed to update email log in Firestore:', err);
       });
-    } else {
-      ApplicationRepository.saveGuestApplications(next);
     }
 
     // Acknowledge stored email to extension content script
@@ -287,7 +285,7 @@ export function useExtensionSync({
 
     // Side effects performed strictly outside setApplications with computed values
     if (isUpdate) {
-      if (user?.emailVerified) {
+      if (user?.uid) {
         ApplicationRepository.updateApplication(finalApp.id, finalApp, user.uid).catch((err) => {
           console.error('Failed to update application in Firestore:', err);
         });
@@ -298,7 +296,7 @@ export function useExtensionSync({
         `Updated "${finalApp.role}" at ${finalApp.company}`
       );
     } else {
-      if (user?.emailVerified && !persistedToCloud) {
+      if (user?.uid && !persistedToCloud) {
         ApplicationRepository.addApplication(finalApp, user.uid).then((created) => {
           applicationsRef.current = applicationsRef.current.map((a) => (a.id === finalApp.id ? { ...a, id: created.id, userId: created.userId } : a));
           setApplications(applicationsRef.current);
@@ -358,10 +356,6 @@ export function useExtensionSync({
         });
       }
     }
-
-    if (!user?.emailVerified) {
-      ApplicationRepository.saveGuestApplications(next);
-    }
   }, [user, addToast, setApplications, applicationsRef]);
 
   const processIncomingContact = useCallback((contact: Contact, persistedToCloud?: boolean) => {
@@ -381,7 +375,7 @@ export function useExtensionSync({
     contactsRef.current = next;
     if (setContacts) setContacts(next);
 
-    if (user?.emailVerified) {
+    if (user?.uid) {
       if (!persistedToCloud) {
         if (existingIdx >= 0) {
           ContactRepository.updateContact(contact.id, contact, user.uid).catch((err) => {
@@ -393,8 +387,6 @@ export function useExtensionSync({
           });
         }
       }
-    } else {
-      ContactRepository.saveGuestContacts(next);
     }
 
     addToast(

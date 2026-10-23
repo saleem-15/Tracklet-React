@@ -13,8 +13,18 @@ function configureSidePanelBehavior() {
 
 configureSidePanelBehavior();
 
+function cleanupLegacyGuestStorage() {
+  if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+    chrome.storage.local.remove(['tracklet_guest_apps_v1', 'tracklet_guest_contacts_v1'], () => {
+      if (chrome.runtime && chrome.runtime.lastError) {
+        // Ignore error
+      }
+    });
+  }
+}
 // Initialize Context Menu and Side Panel on Install
 chrome.runtime.onInstalled.addListener(() => {
+  cleanupLegacyGuestStorage();
   configureSidePanelBehavior();
   if (typeof chrome !== 'undefined' && chrome.contextMenus && chrome.contextMenus.create) {
     chrome.contextMenus.create({
@@ -24,6 +34,13 @@ chrome.runtime.onInstalled.addListener(() => {
     });
   }
 });
+
+if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onStartup) {
+  chrome.runtime.onStartup.addListener(() => {
+    cleanupLegacyGuestStorage();
+    configureSidePanelBehavior();
+  });
+}
 
 // Handle Context Menu Clicks
 if (typeof chrome !== 'undefined' && chrome.contextMenus && chrome.contextMenus.onClicked) {
@@ -300,11 +317,10 @@ async function pushContactToFirestoreDirectly(contact, appId, userSession, confi
 
 // Save application and broadcast to open tabs
 async function saveAndSyncApplication(appData) {
-  const { tracklet_user_session, tracklet_firebase_config, tracklet_apps_index, tracklet_guest_apps_v1 } = await chrome.storage.local.get([
+  const { tracklet_user_session, tracklet_firebase_config, tracklet_apps_index } = await chrome.storage.local.get([
     'tracklet_user_session',
     'tracklet_firebase_config',
-    'tracklet_apps_index',
-    'tracklet_guest_apps_v1'
+    'tracklet_apps_index'
   ]);
 
   if (!tracklet_user_session || !tracklet_user_session.uid) {
@@ -319,7 +335,7 @@ async function saveAndSyncApplication(appData) {
   const nowISO = new Date().toISOString();
 
   // Check for existing app match by URL or company+role
-  const allKnown = [...(tracklet_apps_index || []), ...(tracklet_guest_apps_v1 || [])];
+  const allKnown = tracklet_apps_index || [];
   const existing = allKnown.find(a => 
     (a.jobLink && appData.jobLink && a.jobLink.toLowerCase().trim() === appData.jobLink.toLowerCase().trim()) ||
     (a.company && appData.company && a.company.toLowerCase().trim() === appData.company.toLowerCase().trim() && a.role && appData.role && a.role.toLowerCase().trim() === appData.role.toLowerCase().trim())
@@ -412,24 +428,20 @@ async function saveAndSyncApplication(appData) {
   });
 
   // 2. Persist in chrome.storage.local
-  chrome.storage.local.get(['tracklet_pending_apps', 'tracklet_guest_apps_v1', 'tracklet_apps_index'], (result) => {
+  chrome.storage.local.get(['tracklet_pending_apps', 'tracklet_apps_index'], (result) => {
     let pending = result.tracklet_pending_apps || [];
-    let guestApps = result.tracklet_guest_apps_v1 || [];
     let appsIndex = result.tracklet_apps_index || [];
 
     if (finalizedApp.replacedId) {
-      guestApps = [finalizedApp, ...guestApps.filter(app => app.id !== finalizedApp.replacedId)];
       appsIndex = [finalizedApp, ...appsIndex.filter(app => app.id !== finalizedApp.replacedId)];
       pending = pending.filter(app => app.id !== finalizedApp.replacedId);
       if (!savedToCloud) {
         pending = [finalizedApp, ...pending];
       }
     } else if (existingAppId) {
-      guestApps = guestApps.map(app => app.id === existingAppId ? finalizedApp : app);
       appsIndex = appsIndex.map(app => app.id === existingAppId ? finalizedApp : app);
       pending = pending.map(app => app.id === existingAppId ? finalizedApp : app);
     } else {
-      guestApps = [finalizedApp, ...guestApps];
       appsIndex = [finalizedApp, ...appsIndex];
       if (!savedToCloud) {
         pending = [finalizedApp, ...pending];
@@ -438,7 +450,6 @@ async function saveAndSyncApplication(appData) {
 
     chrome.storage.local.set({
       tracklet_pending_apps: pending,
-      tracklet_guest_apps_v1: guestApps,
       tracklet_apps_index: appsIndex
     }, () => {
       // Flash badge
@@ -594,8 +605,7 @@ async function saveAndSyncEmailLog({ appId, emailLog, updatedStatus, newContact 
   });
 
   // 2. Persist in chrome.storage.local
-  chrome.storage.local.get(['tracklet_guest_apps_v1', 'tracklet_apps_index', 'tracklet_pending_emails'], (result) => {
-    let guestApps = result.tracklet_guest_apps_v1 || [];
+  chrome.storage.local.get(['tracklet_apps_index', 'tracklet_pending_emails'], (result) => {
     let appsIndex = result.tracklet_apps_index || [];
     let pendingEmails = result.tracklet_pending_emails || [];
 
@@ -614,8 +624,6 @@ async function saveAndSyncEmailLog({ appId, emailLog, updatedStatus, newContact 
       };
     });
 
-
-    guestApps = updateAppInList(guestApps);
     appsIndex = updateAppInList(appsIndex);
 
     if (!savedToCloud) {
@@ -623,7 +631,6 @@ async function saveAndSyncEmailLog({ appId, emailLog, updatedStatus, newContact 
     }
 
     chrome.storage.local.set({
-      tracklet_guest_apps_v1: guestApps,
       tracklet_apps_index: appsIndex,
       tracklet_pending_emails: pendingEmails
     }, () => {
@@ -765,18 +772,15 @@ async function saveAndSyncContact(contactPayload) {
   });
 
   // 2. Persist in chrome.storage.local
-  chrome.storage.local.get(['tracklet_guest_contacts_v1', 'tracklet_contacts_index', 'tracklet_pending_contacts'], (result) => {
-    let guestContacts = result.tracklet_guest_contacts_v1 || [];
+  chrome.storage.local.get(['tracklet_contacts_index', 'tracklet_pending_contacts'], (result) => {
     let contactsIndex = result.tracklet_contacts_index || [];
     let pendingContacts = result.tracklet_pending_contacts || [];
 
     const existingIdx = contactsIndex.findIndex(c => c.id === contactPayload.id);
     if (existingIdx >= 0) {
       contactsIndex[existingIdx] = contactPayload;
-      guestContacts = guestContacts.map(c => c.id === contactPayload.id ? contactPayload : c);
       pendingContacts = pendingContacts.map(c => c.id === contactPayload.id ? contactPayload : c);
     } else {
-      guestContacts = [contactPayload, ...guestContacts];
       contactsIndex = [contactPayload, ...contactsIndex];
       if (!savedToCloud) {
         pendingContacts = [contactPayload, ...pendingContacts];
@@ -784,7 +788,6 @@ async function saveAndSyncContact(contactPayload) {
     }
 
     chrome.storage.local.set({
-      tracklet_guest_contacts_v1: guestContacts,
       tracklet_contacts_index: contactsIndex,
       tracklet_pending_contacts: pendingContacts
     }, () => {
@@ -823,36 +826,28 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   if (message.action === 'SYNC_APPS_INDEX') {
     const syncedApps = message.payload || [];
-    chrome.storage.local.get(['tracklet_guest_apps_v1', 'tracklet_pending_apps'], (res) => {
-      const pendingIds = new Set((res?.tracklet_pending_apps || []).map(a => a?.id).filter(Boolean));
-      const syncedIds = new Set(syncedApps.map(a => a?.id).filter(Boolean));
-      const guestApps = (res?.tracklet_guest_apps_v1 || []).filter(a =>
-        a?.id && (syncedIds.has(a.id) || pendingIds.has(a.id))
-      );
-      chrome.storage.local.set({
-        tracklet_apps_index: syncedApps,
-        tracklet_guest_apps_v1: guestApps
-      }, () => {
+    chrome.storage.local.set({
+      tracklet_apps_index: syncedApps
+    }, () => {
+      if (chrome.runtime.lastError) {
+        sendResponse({ success: false, error: chrome.runtime.lastError.message });
+      } else {
         sendResponse({ success: true });
-      });
+      }
     });
     return true;
   }
 
   if (message.action === 'SYNC_CONTACTS_INDEX') {
     const syncedContacts = message.payload || [];
-    chrome.storage.local.get(['tracklet_guest_contacts_v1', 'tracklet_pending_contacts'], (res) => {
-      const pendingIds = new Set((res?.tracklet_pending_contacts || []).map(c => c?.id).filter(Boolean));
-      const syncedIds = new Set(syncedContacts.map(c => c?.id).filter(Boolean));
-      const guestContacts = (res?.tracklet_guest_contacts_v1 || []).filter(c =>
-        c?.id && (syncedIds.has(c.id) || pendingIds.has(c.id))
-      );
-      chrome.storage.local.set({
-        tracklet_contacts_index: syncedContacts,
-        tracklet_guest_contacts_v1: guestContacts
-      }, () => {
+    chrome.storage.local.set({
+      tracklet_contacts_index: syncedContacts
+    }, () => {
+      if (chrome.runtime.lastError) {
+        sendResponse({ success: false, error: chrome.runtime.lastError.message });
+      } else {
         sendResponse({ success: true });
-      });
+      }
     });
     return true;
   }
@@ -860,13 +855,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'DELETE_APPLICATION') {
     const deletedId = message.payload?.id;
     if (deletedId) {
-      chrome.storage.local.get(['tracklet_pending_apps', 'tracklet_guest_apps_v1', 'tracklet_apps_index'], (res) => {
+      chrome.storage.local.get(['tracklet_pending_apps', 'tracklet_apps_index'], (res) => {
         const pending = (res?.tracklet_pending_apps || []).filter((a) => a?.id !== deletedId);
-        const guestApps = (res?.tracklet_guest_apps_v1 || []).filter((a) => a?.id !== deletedId);
         const appsIndex = (res?.tracklet_apps_index || []).filter((a) => a?.id !== deletedId);
         chrome.storage.local.set({
           tracklet_pending_apps: pending,
-          tracklet_guest_apps_v1: guestApps,
           tracklet_apps_index: appsIndex,
         }, () => {
           sendResponse({ success: true });
@@ -879,13 +872,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'DELETE_CONTACT') {
     const deletedIds = message.payload?.ids || (message.payload?.id ? [message.payload.id] : []);
     if (deletedIds.length > 0) {
-      chrome.storage.local.get(['tracklet_pending_contacts', 'tracklet_guest_contacts_v1', 'tracklet_contacts_index'], (res) => {
+      chrome.storage.local.get(['tracklet_pending_contacts', 'tracklet_contacts_index'], (res) => {
         const pending = (res?.tracklet_pending_contacts || []).filter((c) => !deletedIds.includes(c?.id));
-        const guestContacts = (res?.tracklet_guest_contacts_v1 || []).filter((c) => !deletedIds.includes(c?.id));
         const contactsIndex = (res?.tracklet_contacts_index || []).filter((c) => !deletedIds.includes(c?.id));
         chrome.storage.local.set({
           tracklet_pending_contacts: pending,
-          tracklet_guest_contacts_v1: guestContacts,
           tracklet_contacts_index: contactsIndex,
         }, () => {
           sendResponse({ success: true });

@@ -151,9 +151,6 @@ export const STATUS_ACTIVE_STYLES: Record<ApplicationStatus, string> = {
 };
 
 export const LOCAL_STORAGE_KEYS = {
-  GUEST_APPS: 'tracklet_guest_apps_v1',
-  GUEST_CONTACTS: 'tracklet_guest_contacts_v1',
-  GUEST_TEMPLATES: 'tracklet_guest_templates_v1',
   CONTACTS_LAYOUT: 'tracklet_contacts_layout_v1',
   CONTACTS_MIGRATED: 'tracklet_contacts_migrated',
   EXPIRY_SETTINGS: 'tracklet_expiry_settings_v1',
@@ -161,7 +158,6 @@ export const LOCAL_STORAGE_KEYS = {
   HISTORY_PREFIX: 'tracklet_history_',
   AUTH_PENDING_EMAIL: 'tracklet_auth_pending_email',
   EMAIL_RESEND_COOLDOWN: 'tracklet_email_resend_cooldown',
-  GUEST_MIGRATED_PREFIX: 'tracklet_guest_migrated_',
 };
 
 export const SAAS_LIMITS = {
@@ -177,19 +173,24 @@ export const DEFAULT_USER_QUOTAS: UserQuotas = {
 };
 
 /**
- * Clears any stored guest migration completed markers across all users in localStorage.
- * Called whenever new guest records are saved while signed out so newly added records are offered on sign-in.
+ * Permanently removes any legacy guest keys and migration markers from localStorage.
  */
-export function clearGuestMigrationMarkers(): void {
+export function purgeLegacyGuestStorage(): void {
   try {
-    const keysToRemove: string[] = [];
+    const keysToRemove = [
+      'tracklet_guest_apps_v1',
+      'tracklet_guest_contacts_v1',
+      'tracklet_guest_templates_v1',
+      'tracklet_guest_mode',
+    ];
+    const dynamicKeys: string[] = [];
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
-      if (key && key.startsWith(LOCAL_STORAGE_KEYS.GUEST_MIGRATED_PREFIX)) {
-        keysToRemove.push(key);
+      if (key && (key.startsWith('tracklet_guest_migrated_') || keysToRemove.includes(key))) {
+        dynamicKeys.push(key);
       }
     }
-    keysToRemove.forEach((k) => localStorage.removeItem(k));
+    dynamicKeys.forEach((k) => localStorage.removeItem(k));
   } catch {
     // Ignore storage access error
   }
@@ -382,7 +383,7 @@ export const TESTER_REPORT_SEVERITIES: { label: string; value: TesterReportSever
 export const STORAGE_KEY_TESTER_DRAFT = 'tracklet_tester_report_draft';
 
 // --- Browser Extension Distribution & Status ---
-export const LATEST_EXTENSION_VERSION = '1.3.0';
+export const LATEST_EXTENSION_VERSION = '1.3.2';
 
 export const EXTENSION_DISTRIBUTION_CONFIG = {
   latestVersion: LATEST_EXTENSION_VERSION,

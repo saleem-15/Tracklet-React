@@ -180,11 +180,6 @@ export interface AuthUser {
 
 export type AuthViewMode = 'signin' | 'signup' | 'forgot-password';
 
-export interface GuestMigrationPayload {
-  guestApplications: Application[];
-  count: number;
-}
-
 // --- SaaS Entitlements, Plans & Quotas ---
 export type PlanTier = 'free' | 'pro';
 
@@ -269,7 +264,7 @@ export interface DiagnosticContext {
   os: string;
   viewport: string;
   devicePixelRatio: number;
-  authMode: 'authenticated' | 'guest';
+  authMode: 'authenticated' | 'unauthenticated';
   userId?: string;
   timestamp: string;
   recentErrors: string[];

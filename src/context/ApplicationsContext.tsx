@@ -108,8 +108,12 @@ export const ApplicationsProvider: React.FC<{ children: React.ReactNode }> = ({ 
   }, []);
 
   const handleSeedDemoData = useCallback(async () => {
+    if (!user?.uid) {
+      addToast('warning', 'Sign In Required', 'Please sign in to seed sample data.');
+      return;
+    }
     try {
-      const freshDocs = await ApplicationRepository.seedDemoData(user?.emailVerified ? user.uid : undefined);
+      const freshDocs = await ApplicationRepository.seedDemoData(user.uid);
       setApplications(freshDocs);
       setSelectedAppId(null);
       if (seedContactCallbackRef.current) {

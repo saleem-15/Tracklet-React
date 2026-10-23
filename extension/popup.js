@@ -356,27 +356,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
       const storage = await chrome.storage.local.get([
         'tracklet_apps_index',
-        'tracklet_guest_apps_v1',
         'tracklet_pending_apps'
       ]);
-      const indexApps = storage.tracklet_apps_index;
+      const indexApps = storage.tracklet_apps_index || [];
       const pendingApps = storage.tracklet_pending_apps || [];
-      const pendingIds = new Set(pendingApps.map(a => a?.id).filter(Boolean));
-      let guestApps = storage.tracklet_guest_apps_v1 || [];
-
-      if (Array.isArray(indexApps)) {
-        const indexIds = new Set(indexApps.map(a => a?.id).filter(Boolean));
-        const prunedGuestApps = guestApps.filter(a => a?.id && (indexIds.has(a.id) || pendingIds.has(a.id)));
-        if (prunedGuestApps.length !== guestApps.length) {
-          guestApps = prunedGuestApps;
-          chrome.storage.local.set({ tracklet_guest_apps_v1: guestApps }).catch(() => {});
-        }
-      }
 
       const appMap = new Map();
       [
-        ...(indexApps || guestApps),
-        ...guestApps,
+        ...indexApps,
         ...pendingApps
       ].forEach(a => {
         if (a && a.id && !appMap.has(a.id)) {
@@ -1895,18 +1882,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         // Check if contact already exists in Contacts Hub
-        chrome.storage.local.get(['tracklet_contacts_index', 'tracklet_guest_contacts_v1', 'tracklet_pending_contacts'], (res) => {
-          const indexContacts = res?.tracklet_contacts_index;
+        chrome.storage.local.get(['tracklet_contacts_index', 'tracklet_pending_contacts'], (res) => {
+          const indexContacts = res?.tracklet_contacts_index || [];
           const pendingContacts = res?.tracklet_pending_contacts || [];
-          const pendingIds = new Set(pendingContacts.map(c => c?.id).filter(Boolean));
-          let guestContacts = res?.tracklet_guest_contacts_v1 || [];
-          if (Array.isArray(indexContacts)) {
-            const indexIds = new Set(indexContacts.map(c => c?.id).filter(Boolean));
-            guestContacts = guestContacts.filter(c => c?.id && (indexIds.has(c.id) || pendingIds.has(c.id)));
-          }
           const allContacts = [
-            ...(indexContacts || guestContacts),
-            ...guestContacts,
+            ...indexContacts,
             ...pendingContacts
           ];
           const normLinkedIn = (data.contact.linkedIn || '').toLowerCase().trim();
@@ -2716,7 +2696,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  // Check if job is already saved in Tracklet (across synced index, guest storage, and pending queue)
+  // Check if job is already saved in Tracklet (across synced index and pending queue)
   function checkForDuplicates(url) {
     if (isExplicitNewEntry) return;
 
@@ -2725,25 +2705,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     const targetComp = companyInput.value.trim().toLowerCase();
     const targetRole = roleInput.value.trim().toLowerCase();
 
-    chrome.storage.local.get(['tracklet_apps_index', 'tracklet_guest_apps_v1', 'tracklet_pending_apps'], (result) => {
+    chrome.storage.local.get(['tracklet_apps_index', 'tracklet_pending_apps'], (result) => {
       if (isExplicitNewEntry) return;
 
-      const indexApps = result.tracklet_apps_index;
+      const indexApps = result.tracklet_apps_index || [];
       const pendingApps = result.tracklet_pending_apps || [];
-      const pendingIds = new Set(pendingApps.map(a => a?.id).filter(Boolean));
-      let guestApps = result.tracklet_guest_apps_v1 || [];
-
-      if (Array.isArray(indexApps)) {
-        const indexIds = new Set(indexApps.map(a => a?.id).filter(Boolean));
-        const prunedGuestApps = guestApps.filter(a => a?.id && (indexIds.has(a.id) || pendingIds.has(a.id)));
-        if (prunedGuestApps.length !== guestApps.length) {
-          guestApps = prunedGuestApps;
-          chrome.storage.local.set({ tracklet_guest_apps_v1: guestApps }).catch(() => {});
-        }
-      }
 
       const allKnown = [
-        ...(indexApps || guestApps),
+        ...indexApps,
         ...pendingApps
       ];
 
@@ -2914,18 +2883,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   function updateContactDiscoveryUI() {
-    chrome.storage.local.get(['tracklet_contacts_index', 'tracklet_guest_contacts_v1', 'tracklet_pending_contacts'], (res) => {
-      const indexContacts = res?.tracklet_contacts_index;
+    chrome.storage.local.get(['tracklet_contacts_index', 'tracklet_pending_contacts'], (res) => {
+      const indexContacts = res?.tracklet_contacts_index || [];
       const pendingContacts = res?.tracklet_pending_contacts || [];
-      const pendingIds = new Set(pendingContacts.map(c => c?.id).filter(Boolean));
-      let guestContacts = res?.tracklet_guest_contacts_v1 || [];
-      if (Array.isArray(indexContacts)) {
-        const indexIds = new Set(indexContacts.map(c => c?.id).filter(Boolean));
-        guestContacts = guestContacts.filter(c => c?.id && (indexIds.has(c.id) || pendingIds.has(c.id)));
-      }
       const allContacts = [
-        ...(indexContacts || guestContacts),
-        ...guestContacts,
+        ...indexContacts,
         ...pendingContacts
       ];
       const normEmail = (discoveredRecruiterEmail || '').toLowerCase().trim();
@@ -3670,26 +3632,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
       const storage = await chrome.storage.local.get([
         'tracklet_contacts_index',
-        'tracklet_guest_contacts_v1',
         'tracklet_pending_contacts'
       ]);
-      const indexContacts = storage.tracklet_contacts_index;
+      const indexContacts = storage.tracklet_contacts_index || [];
       const pendingContacts = storage.tracklet_pending_contacts || [];
-      const pendingIds = new Set(pendingContacts.map(c => c?.id).filter(Boolean));
-      let guestContacts = storage.tracklet_guest_contacts_v1 || [];
-
-      if (Array.isArray(indexContacts)) {
-        const indexIds = new Set(indexContacts.map(c => c?.id).filter(Boolean));
-        const prunedGuestContacts = guestContacts.filter(c => c?.id && (indexIds.has(c.id) || pendingIds.has(c.id)));
-        if (prunedGuestContacts.length !== guestContacts.length) {
-          guestContacts = prunedGuestContacts;
-          chrome.storage.local.set({ tracklet_guest_contacts_v1: guestContacts }).catch(() => {});
-        }
-      }
 
       const map = new Map();
       [
-        ...(indexContacts || guestContacts),
+        ...indexContacts,
         ...pendingContacts
       ].forEach(c => {
         if (c && (c.id || c.name)) {
@@ -4019,7 +3969,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const nowISO = new Date().toISOString();
     const contactPayload = {
       id: matchedExistingContact ? matchedExistingContact.id : `c-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-      userId: currentUserSession?.uid || 'guest',
+      userId: currentUserSession?.uid || '',
       name,
       role,
       organization: contactOrgInput ? contactOrgInput.value.trim() : '',
@@ -4073,28 +4023,23 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 3. Persist in chrome.storage.local
     chrome.storage.local.get([
-      'tracklet_guest_contacts_v1',
       'tracklet_contacts_index',
       'tracklet_pending_contacts'
     ], (result) => {
-      let guestContacts = result.tracklet_guest_contacts_v1 || [];
       let contactsIndex = result.tracklet_contacts_index || [];
       let pendingContacts = result.tracklet_pending_contacts || [];
 
       const replacedId = contactPayload.replacedId;
       if (replacedId) {
-        guestContacts = [contactPayload, ...guestContacts.filter(c => c.id !== replacedId && c.id !== contactPayload.id)];
         contactsIndex = [contactPayload, ...contactsIndex.filter(c => c.id !== replacedId && c.id !== contactPayload.id)];
         pendingContacts = pendingContacts.filter(c => c.id !== replacedId && c.id !== contactPayload.id);
         if (!savedToCloud) {
           pendingContacts = [contactPayload, ...pendingContacts];
         }
       } else if (matchedExistingContact) {
-        guestContacts = guestContacts.map(c => c.id === matchedExistingContact.id ? contactPayload : c);
         contactsIndex = contactsIndex.map(c => c.id === matchedExistingContact.id ? contactPayload : c);
         pendingContacts = pendingContacts.map(c => c.id === matchedExistingContact.id ? contactPayload : c);
       } else {
-        guestContacts = [contactPayload, ...guestContacts];
         contactsIndex = [contactPayload, ...contactsIndex];
         if (!savedToCloud) {
           pendingContacts = [contactPayload, ...pendingContacts];
@@ -4102,7 +4047,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
 
       chrome.storage.local.set({
-        tracklet_guest_contacts_v1: guestContacts,
         tracklet_contacts_index: contactsIndex,
         tracklet_pending_contacts: pendingContacts
       }, () => {
@@ -4739,7 +4683,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const newContactId = `contact_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
         bundledContactPayload = {
           id: newContactId,
-          userId: currentUserSession?.uid || 'guest',
+          userId: currentUserSession?.uid || '',
           name: detectedRecruiterContact.name,
           role: recRole,
           organization: company,
@@ -4823,12 +4767,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     }
 
-    // 2. Local fallback if guest or cloud write unavailable
+    // 2. Local fallback if cloud write unavailable
     if (!finalizedApp) {
       finalizedApp = {
         ...basePayload,
         id: matchedApplication?.id || `ext-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-        userId: currentUserSession?.uid || 'guest'
+        userId: currentUserSession?.uid || ''
       };
       if (bundledContactPayload) {
         bundledContactPayload.applicationIds = Array.from(new Set([
@@ -4861,15 +4805,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 4. Update extension local storage for Contact if bundled
     if (bundledContactPayload) {
-      chrome.storage.local.get(['tracklet_contacts_index', 'tracklet_guest_contacts_v1', 'tracklet_pending_contacts'], (res) => {
+      chrome.storage.local.get(['tracklet_contacts_index', 'tracklet_pending_contacts'], (res) => {
         let contactsIndex = res?.tracklet_contacts_index || [];
-        let guestContacts = res?.tracklet_guest_contacts_v1 || [];
         let pendingContacts = res?.tracklet_pending_contacts || [];
 
         const replacedContactId = bundledContactPayload.replacedId;
         if (replacedContactId) {
           contactsIndex = [bundledContactPayload, ...contactsIndex.filter(c => c.id !== replacedContactId && c.id !== bundledContactPayload.id)];
-          guestContacts = [bundledContactPayload, ...guestContacts.filter(c => c.id !== replacedContactId && c.id !== bundledContactPayload.id)];
           pendingContacts = pendingContacts.filter(c => c.id !== replacedContactId && c.id !== bundledContactPayload.id);
           if (!contactSavedToCloud) {
             pendingContacts = [bundledContactPayload, ...pendingContacts];
@@ -4878,11 +4820,9 @@ document.addEventListener('DOMContentLoaded', async () => {
           const existingIdx = contactsIndex.findIndex(c => c.id === bundledContactPayload.id);
           if (existingIdx >= 0) {
             contactsIndex[existingIdx] = bundledContactPayload;
-            guestContacts = guestContacts.map(c => c.id === bundledContactPayload.id ? bundledContactPayload : c);
             pendingContacts = pendingContacts.map(c => c.id === bundledContactPayload.id ? bundledContactPayload : c);
           } else {
             contactsIndex = [bundledContactPayload, ...contactsIndex];
-            guestContacts = [bundledContactPayload, ...guestContacts];
             if (!contactSavedToCloud) {
               pendingContacts = [bundledContactPayload, ...pendingContacts];
             }
@@ -4891,31 +4831,26 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         chrome.storage.local.set({
           tracklet_contacts_index: contactsIndex,
-          tracklet_guest_contacts_v1: guestContacts,
           tracklet_pending_contacts: pendingContacts
         });
       });
     }
 
     // 5. Update extension local storage & pending queue for Application
-    chrome.storage.local.get(['tracklet_pending_apps', 'tracklet_guest_apps_v1', 'tracklet_apps_index'], (result) => {
+    chrome.storage.local.get(['tracklet_pending_apps', 'tracklet_apps_index'], (result) => {
       let pending = result.tracklet_pending_apps || [];
-      let guestApps = result.tracklet_guest_apps_v1 || [];
       let appsIndex = result.tracklet_apps_index || [];
 
       if (finalizedApp?.replacedId) {
-        guestApps = [finalizedApp, ...guestApps.filter(a => a.id !== finalizedApp.replacedId)];
         appsIndex = [finalizedApp, ...appsIndex.filter(a => a.id !== finalizedApp.replacedId)];
         pending = pending.filter(a => a.id !== finalizedApp.replacedId);
         if (!savedToCloud) {
           pending = [finalizedApp, ...pending];
         }
       } else if (matchedApplication?.id) {
-        guestApps = guestApps.map(a => a.id === matchedApplication.id ? finalizedApp : a);
         appsIndex = appsIndex.map(a => a.id === matchedApplication.id ? finalizedApp : a);
         pending = pending.map(a => a.id === matchedApplication.id ? finalizedApp : a);
       } else {
-        guestApps = [finalizedApp, ...guestApps];
         appsIndex = [finalizedApp, ...appsIndex];
         if (!savedToCloud) {
           pending = [finalizedApp, ...pending];
@@ -4924,7 +4859,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       chrome.storage.local.set({
         tracklet_pending_apps: pending,
-        tracklet_guest_apps_v1: guestApps,
         tracklet_apps_index: appsIndex
       }, () => {
         saveBtn.disabled = false;

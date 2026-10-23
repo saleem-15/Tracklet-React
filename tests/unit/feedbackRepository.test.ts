@@ -23,7 +23,7 @@ describe('feedbackRepository', () => {
       os: 'Windows 10/11',
       viewport: '1920x1080',
       devicePixelRatio: 1,
-      authMode: 'guest',
+      authMode: 'unauthenticated',
       timestamp: '2026-10-07T12:00:00.000Z',
       recentErrors: [],
     },

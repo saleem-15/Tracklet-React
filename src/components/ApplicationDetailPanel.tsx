@@ -67,7 +67,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
   const [draftNoticeVisible, setDraftNoticeVisible] = useState(false);
 
   // Follow-up engine state
-  const [templates, setTemplates] = useState<FollowUpTemplate[]>(() => TemplateRepository.loadGuestTemplates());
+  const [templates, setTemplates] = useState<FollowUpTemplate[]>(() => TemplateRepository.generateDefaultTemplates(app?.userId));
   const [isFollowUpModalOpen, setIsFollowUpModalOpen] = useState(false);
   const [followUpContact, setFollowUpContact] = useState<Contact | null>(null);
 

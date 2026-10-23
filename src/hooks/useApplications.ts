@@ -197,23 +197,20 @@ export function useApplications({
   const handleAddApplication = useCallback(async (
     newApp: Omit<Application, 'id' | 'userId' | 'createdAt' | 'updatedAt' | 'stageUpdatedAt'>
   ) => {
+    if (!user?.uid) {
+      addToast('warning', 'Sign In Required', 'Please sign in to save applications.');
+      return;
+    }
+
     try {
-      const created = await ApplicationRepository.addApplication(
-        newApp,
-        user?.emailVerified ? user.uid : undefined
-      );
-      setApplications((prev) => {
-        const next = [created, ...prev];
-        if (!user?.emailVerified) ApplicationRepository.saveGuestApplications(next);
-        return next;
-      });
+      const created = await ApplicationRepository.addApplication(newApp, user.uid);
+      setApplications((prev) => [created, ...prev]);
       addToast('success', 'Application Added', `Logged ${newApp.company} (${newApp.role})`);
       posthog.capture('application_created', {
         platform: newApp.platform,
         status: newApp.status,
         has_linked_contacts: (newApp.contactIds?.length || 0) > 0,
         task_count: newApp.tasks?.length || 0,
-        is_guest: !user?.emailVerified,
       });
     } catch (err) {
       console.error('Failed to add application:', err);
@@ -225,29 +222,21 @@ export function useApplications({
   const handleBatchImportApplications = useCallback(async (
     newApps: Omit<Application, 'id' | 'userId' | 'createdAt' | 'updatedAt' | 'stageUpdatedAt'>[]
   ) => {
-    if (!user?.emailVerified) {
+    if (!user?.uid) {
       addToast(
         'warning',
         'Account Required',
-        'CSV import is available on cloud accounts. Create a free account to unlock batch imports.'
+        'CSV import is available on cloud accounts. Please sign in to unlock batch imports.'
       );
       return;
     }
 
     try {
-      const imported = await ApplicationRepository.batchImport(
-        newApps,
-        user?.emailVerified ? user.uid : undefined
-      );
-      setApplications((prev) => {
-        const next = [...imported, ...prev];
-        if (!user?.emailVerified) ApplicationRepository.saveGuestApplications(next);
-        return next;
-      });
+      const imported = await ApplicationRepository.batchImport(newApps, user.uid);
+      setApplications((prev) => [...imported, ...prev]);
       addToast('success', 'Batch Import Complete', `Successfully imported ${newApps.length} applications.`);
       posthog.capture('applications_imported', {
         application_count: imported.length,
-        is_guest: !user?.emailVerified,
       });
     } catch (err) {
       console.error('Batch import failed:', err);
@@ -272,14 +261,10 @@ export function useApplications({
       }
     }
 
-    setApplications((prev) => {
-      const next = prev.map((a) => (a.id === id ? { ...a, ...mergedUpdates, updatedAt: now } : a));
-      if (!user?.emailVerified) ApplicationRepository.saveGuestApplications(next);
-      return next;
-    });
+    setApplications((prev) => prev.map((a) => (a.id === id ? { ...a, ...mergedUpdates, updatedAt: now } : a)));
 
     try {
-      if (user?.emailVerified) {
+      if (user?.uid) {
         const fullApp = currentApp ? { ...currentApp, ...mergedUpdates, updatedAt: now } : undefined;
         await ApplicationRepository.updateApplication(
           id,
@@ -293,7 +278,6 @@ export function useApplications({
         posthog.capture('application_stage_changed', {
           previous_status: currentApp.status,
           status: updates.status,
-          is_guest: !user?.emailVerified,
         });
         const prevStatus = currentApp.status;
         const targetStatus = updates.status;
@@ -314,11 +298,7 @@ export function useApplications({
     } catch (err) {
       console.error('Failed to update application:', err);
       if (currentApp) {
-        setApplications((prev) => {
-          const reverted = prev.map((a) => (a.id === id ? currentApp : a));
-          if (!user?.emailVerified) ApplicationRepository.saveGuestApplications(reverted);
-          return reverted;
-        });
+        setApplications((prev) => prev.map((a) => (a.id === id ? currentApp : a)));
       }
       addToast('error', 'Update Failed', 'Could not save changes to cloud.');
     }
@@ -334,22 +314,16 @@ export function useApplications({
     // Notify extension to purge from its pending/sync storage
     broadcastDeletedApplication(id);
 
-    // Purge from guest storage cache regardless of auth mode to prevent resurrection
-    ApplicationRepository.purgeGuestApplications(id);
-
-    setApplications((prev) => {
-      const next = prev.filter((a) => a.id !== id);
-      if (!user?.emailVerified) ApplicationRepository.saveGuestApplications(next);
-      return next;
-    });
+    setApplications((prev) => prev.filter((a) => a.id !== id));
     if (selectedAppIdRef.current === id) setSelectedAppId(null);
 
     try {
-      await ApplicationRepository.deleteApplication(id, user?.emailVerified ? user.uid : undefined);
+      if (user?.uid) {
+        await ApplicationRepository.deleteApplication(id, user.uid);
+      }
       if (targetApp) {
         posthog.capture('application_deleted', {
           status: targetApp.status,
-          is_guest: !user?.emailVerified,
         });
         addToast(
           'info',
@@ -359,7 +333,7 @@ export function useApplications({
             label: 'Undo',
             onClick: async () => {
               let restored = targetApp;
-              if (user?.emailVerified) {
+              if (user?.uid) {
                 try {
                   restored = await ApplicationRepository.restoreApplication(targetApp, user.uid);
                 } catch (restoreErr) {
@@ -368,11 +342,7 @@ export function useApplications({
                   return;
                 }
               }
-              setApplications((prev) => {
-                const next = [restored, ...prev];
-                if (!user?.emailVerified) ApplicationRepository.saveGuestApplications(next);
-                return next;
-              });
+              setApplications((prev) => [restored, ...prev]);
               addToast('success', `Restored ${restored.company}`);
             },
           }
@@ -381,11 +351,7 @@ export function useApplications({
     } catch (err) {
       console.error('Failed to delete application:', err);
       if (targetApp) {
-        setApplications((prev) => {
-          const next = [targetApp, ...prev];
-          if (!user?.emailVerified) ApplicationRepository.saveGuestApplications(next);
-          return next;
-        });
+        setApplications((prev) => [targetApp, ...prev]);
       }
       addToast('error', 'Delete Failed', 'Could not delete application record.');
     }
@@ -400,18 +366,14 @@ export function useApplications({
       previousSnapshot.map((a) => [a.id, { status: a.status, stageUpdatedAt: a.stageUpdatedAt, history: a.history }])
     );
 
-    setApplications((prev) => {
-      const next = prev.map((a) => {
-        if (!ids.includes(a.id)) return a;
-        const updatedHist = appendStatusHistory(a.history, newStatus, a.status, now);
-        return { ...a, status: newStatus, history: updatedHist, stageUpdatedAt: now, updatedAt: now };
-      });
-      if (!user?.emailVerified) ApplicationRepository.saveGuestApplications(next);
-      return next;
-    });
+    setApplications((prev) => prev.map((a) => {
+      if (!ids.includes(a.id)) return a;
+      const updatedHist = appendStatusHistory(a.history, newStatus, a.status, now);
+      return { ...a, status: newStatus, history: updatedHist, stageUpdatedAt: now, updatedAt: now };
+    }));
 
     try {
-      if (user?.emailVerified) {
+      if (user?.uid) {
         await ApplicationRepository.batchUpdateStatus(
           ids,
           newStatus,
@@ -423,7 +385,6 @@ export function useApplications({
       posthog.capture('applications_stage_bulk_updated', {
         application_count: ids.length,
         status: newStatus,
-        is_guest: !user?.emailVerified,
       });
       addToast(
         'success',
@@ -432,15 +393,11 @@ export function useApplications({
         {
           label: 'Undo',
           onClick: async () => {
-            setApplications((prev) => {
-              const reverted = prev.map((a) => {
-                const old = previousStatusMap.get(a.id);
-                return old ? { ...a, status: old.status, stageUpdatedAt: old.stageUpdatedAt, history: old.history } : a;
-              });
-              if (!user?.emailVerified) ApplicationRepository.saveGuestApplications(reverted);
-              return reverted;
-            });
-            if (user?.emailVerified) {
+            setApplications((prev) => prev.map((a) => {
+              const old = previousStatusMap.get(a.id);
+              return old ? { ...a, status: old.status, stageUpdatedAt: old.stageUpdatedAt, history: old.history } : a;
+            }));
+            if (user?.uid) {
               const entries = Array.from(previousStatusMap.entries());
               const results = await Promise.allSettled(
                 entries.map(([appId, oldData]) =>
@@ -483,14 +440,10 @@ export function useApplications({
       );
     } catch (err) {
       console.error('Bulk update failed:', err);
-      setApplications((prev) => {
-        const reverted = prev.map((a) => {
-          const old = previousStatusMap.get(a.id);
-          return old ? { ...a, status: old.status, stageUpdatedAt: old.stageUpdatedAt, history: old.history } : a;
-        });
-        if (!user?.emailVerified) ApplicationRepository.saveGuestApplications(reverted);
-        return reverted;
-      });
+      setApplications((prev) => prev.map((a) => {
+        const old = previousStatusMap.get(a.id);
+        return old ? { ...a, status: old.status, stageUpdatedAt: old.stageUpdatedAt, history: old.history } : a;
+      }));
       addToast('error', 'Bulk Update Failed', 'Could not apply bulk status changes.');
     }
   }, [user, addToast]);
@@ -507,18 +460,13 @@ export function useApplications({
       broadcastDeletedApplication(id);
     });
 
-    // Purge from guest storage cache regardless of auth mode to prevent resurrection
-    ApplicationRepository.purgeGuestApplications(ids);
-
-    setApplications((prev) => {
-      const next = prev.filter((a) => !ids.includes(a.id));
-      if (!user?.emailVerified) ApplicationRepository.saveGuestApplications(next);
-      return next;
-    });
+    setApplications((prev) => prev.filter((a) => !ids.includes(a.id)));
     if (selectedAppIdRef.current && ids.includes(selectedAppIdRef.current)) setSelectedAppId(null);
 
     try {
-      await ApplicationRepository.batchDelete(ids, user?.emailVerified ? user.uid : undefined);
+      if (user?.uid) {
+        await ApplicationRepository.batchDelete(ids, user.uid);
+      }
 
       addToast(
         'info',
@@ -528,7 +476,7 @@ export function useApplications({
           label: 'Undo',
           onClick: async () => {
             let restoredApps = deletedApps;
-            if (user?.emailVerified) {
+            if (user?.uid) {
               try {
                 restoredApps = await ApplicationRepository.batchRestoreApplications(deletedApps, user.uid);
               } catch (restoreErr: unknown) {
@@ -552,22 +500,14 @@ export function useApplications({
                 return;
               }
             }
-            setApplications((prev) => {
-              const next = [...restoredApps, ...prev];
-              if (!user?.emailVerified) ApplicationRepository.saveGuestApplications(next);
-              return next;
-            });
+            setApplications((prev) => [...restoredApps, ...prev]);
             addToast('success', 'Restored', `Recovered ${restoredApps.length} application${restoredApps.length === 1 ? '' : 's'}.`);
           },
         }
       );
     } catch (err) {
       console.error('Bulk delete failed:', err);
-      setApplications((prev) => {
-        const next = [...deletedApps, ...prev];
-        if (!user?.emailVerified) ApplicationRepository.saveGuestApplications(next);
-        return next;
-      });
+      setApplications((prev) => [...deletedApps, ...prev]);
       addToast('error', 'Delete Failed', 'Could not delete applications.');
     }
   }, [user, addToast, setSelectedAppId]);
@@ -604,16 +544,8 @@ export function useApplications({
     applicationsRef.current = mergedApplications;
     setApplications(mergedApplications);
 
-    // Purge from guest storage cache regardless of auth mode
-    ApplicationRepository.purgeGuestApplications(purgedAppIds);
-
-    // In guest mode, save merged result so guest storage includes updated survivor fields
-    if (!user?.emailVerified) {
-      ApplicationRepository.saveGuestApplications(mergedApplications);
-    }
-
     // Persist to Firestore if user is authenticated
-    if (user?.emailVerified) {
+    if (user?.uid) {
       try {
         for (const survivor of updatedApplications) {
           await ApplicationRepository.updateApplication(survivor.id, survivor, user.uid);
@@ -635,7 +567,6 @@ export function useApplications({
 
     posthog.capture('duplicate_applications_merged', {
       duplicate_count: purgedAppIds.length,
-      is_guest: !user?.emailVerified,
     });
     addToast(
       'success',
@@ -651,13 +582,12 @@ export function useApplications({
       posthog.capture('applications_exported', {
         application_count: filteredAndSortedApplications.length,
         format: 'csv',
-        is_guest: !user?.emailVerified,
       });
       addToast('success', 'Export Complete', `Exported ${filteredAndSortedApplications.length} applications to CSV.`);
     } else {
       addToast('warning', 'Export Empty', 'No applications available to export.');
     }
-  }, [filteredAndSortedApplications, user, addToast]);
+  }, [filteredAndSortedApplications, addToast]);
 
   return {
     applications,

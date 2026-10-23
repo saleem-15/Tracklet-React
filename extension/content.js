@@ -5561,13 +5561,11 @@ window.addEventListener('message', (event) => {
   } else if (event.data.type === 'TRACKLET_EXT_DELETE_APPLICATION') {
     const deletedId = event.data.payload?.id;
     if (deletedId && typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-      chrome.storage.local.get(['tracklet_pending_apps', 'tracklet_guest_apps_v1', 'tracklet_apps_index'], (res) => {
+      chrome.storage.local.get(['tracklet_pending_apps', 'tracklet_apps_index'], (res) => {
         const pending = (res?.tracklet_pending_apps || []).filter((a) => a?.id !== deletedId);
-        const guestApps = (res?.tracklet_guest_apps_v1 || []).filter((a) => a?.id !== deletedId);
         const appsIndex = (res?.tracklet_apps_index || []).filter((a) => a?.id !== deletedId);
         chrome.storage.local.set({
           tracklet_pending_apps: pending,
-          tracklet_guest_apps_v1: guestApps,
           tracklet_apps_index: appsIndex,
         });
       });
@@ -5583,13 +5581,11 @@ window.addEventListener('message', (event) => {
   } else if (event.data.type === 'TRACKLET_EXT_DELETE_CONTACT') {
     const deletedIds = event.data.payload?.ids || (event.data.payload?.id ? [event.data.payload.id] : []);
     if (deletedIds.length > 0 && typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-      chrome.storage.local.get(['tracklet_pending_contacts', 'tracklet_guest_contacts_v1', 'tracklet_contacts_index'], (res) => {
+      chrome.storage.local.get(['tracklet_pending_contacts', 'tracklet_contacts_index'], (res) => {
         const pending = (res?.tracklet_pending_contacts || []).filter((c) => !deletedIds.includes(c?.id));
-        const guestContacts = (res?.tracklet_guest_contacts_v1 || []).filter((c) => !deletedIds.includes(c?.id));
         const contactsIndex = (res?.tracklet_contacts_index || []).filter((c) => !deletedIds.includes(c?.id));
         chrome.storage.local.set({
           tracklet_pending_contacts: pending,
-          tracklet_guest_contacts_v1: guestContacts,
           tracklet_contacts_index: contactsIndex,
         });
       });

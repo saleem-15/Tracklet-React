@@ -16,62 +16,33 @@ import {
 } from './firebase';
 import { Contact, Application } from '../types';
 import { INITIAL_SAMPLE_CONTACTS } from './sampleData';
-import { LOCAL_STORAGE_KEYS, clearGuestMigrationMarkers } from './constants';
 import { sanitizeForFirestore, commitInChunks } from './firestoreUtils';
 
 export class ContactRepository {
   /**
-   * Load contacts from Firestore if authenticated (/users/{userId}/contacts), or localStorage if guest.
+   * Load contacts from Firestore for authenticated user (/users/{userId}/contacts).
    */
   static async loadContacts(userId?: string): Promise<Contact[]> {
-    if (userId) {
-      try {
-        const userContactCol = collection(db, 'users', userId, 'contacts');
-        const querySnapshot = await getDocs(userContactCol);
-        const docsData: Contact[] = [];
-        querySnapshot.forEach((docSnap) => {
-          const data = docSnap.data() as Omit<Contact, 'id'>;
-          docsData.push({
-            ...data,
-            id: docSnap.id,
-          });
+    if (!userId) {
+      return [];
+    }
+
+    try {
+      const userContactCol = collection(db, 'users', userId, 'contacts');
+      const querySnapshot = await getDocs(userContactCol);
+      const docsData: Contact[] = [];
+      querySnapshot.forEach((docSnap) => {
+        const data = docSnap.data() as Omit<Contact, 'id'>;
+        docsData.push({
+          ...data,
+          id: docSnap.id,
         });
+      });
 
-        return docsData;
-      } catch (err) {
-        console.warn('Could not fetch Firestore contacts (falling back to local cache):', err);
-        return this.loadGuestContacts();
-      }
-    } else {
-      return this.loadGuestContacts();
-    }
-  }
-
-  /**
-   * Load contacts from localStorage for guest users.
-   */
-  static loadGuestContacts(): Contact[] {
-    try {
-      const stored = localStorage.getItem(LOCAL_STORAGE_KEYS.GUEST_CONTACTS);
-      if (stored !== null) {
-        return JSON.parse(stored);
-      }
-    } catch {
-      // ignore
-    }
-
-    return [];
-  }
-
-  /**
-   * Persist array to localStorage (guest mode).
-   */
-  static saveGuestContacts(contacts: Contact[]): void {
-    try {
-      localStorage.setItem(LOCAL_STORAGE_KEYS.GUEST_CONTACTS, JSON.stringify(contacts));
-      clearGuestMigrationMarkers();
-    } catch (e) {
-      console.error('Failed to save contacts to localStorage:', e);
+      return docsData;
+    } catch (err) {
+      console.warn('Could not fetch Firestore contacts:', err);
+      return [];
     }
   }
 
@@ -92,44 +63,40 @@ export class ContactRepository {
       updatedAt: now,
     };
 
-    let createdContact: Contact;
-
-    if (userId) {
-      let createdId = `c-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
-      try {
-        const payload = sanitizeForFirestore({
-          ...contactData,
-          userId,
-        });
-        const docRef = await addDoc(collection(db, 'users', userId, 'contacts'), payload);
-        createdId = docRef.id;
-      } catch (err) {
-        console.error('Failed to add contact to Firestore:', err);
-        throw err;
-      }
-      createdContact = {
-        id: createdId,
-        userId,
-        ...contactData,
-      };
-    } else {
-      createdContact = {
-        id: `guest-contact-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-        userId: 'guest',
-        ...contactData,
-      };
+    if (!userId) {
+      throw new Error('User must be authenticated to add contacts');
     }
 
-    return createdContact;
+    let createdId = `c-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+    try {
+      const payload = sanitizeForFirestore({
+        ...contactData,
+        userId,
+      });
+      const docRef = await addDoc(collection(db, 'users', userId, 'contacts'), payload);
+      createdId = docRef.id;
+    } catch (err) {
+      console.error('Failed to add contact to Firestore:', err);
+      throw err;
+    }
+    return {
+      id: createdId,
+      userId,
+      ...contactData,
+    };
   }
 
   /**
-   * Safely upserts a contact preserving its existing ID (for undo/restore or legacy migration).
+   * Safely upserts a contact preserving its existing ID (for undo/restore).
    */
   static async upsertContact(
     contact: Contact,
-    userId?: string
+    userId: string
   ): Promise<Contact> {
+    if (!userId) {
+      throw new Error('User must be authenticated to upsert contacts');
+    }
+
     const now = new Date().toISOString();
     const contactData: Contact = {
       ...contact,
@@ -139,26 +106,27 @@ export class ContactRepository {
       updatedAt: now,
     };
 
-    if (userId) {
-      try {
-        const docRef = doc(db, 'users', userId, 'contacts', contact.id);
-        const payload = sanitizeForFirestore({
-          ...contactData,
-          userId,
-        });
-        await setDoc(docRef, payload, { merge: true });
-      } catch (err) {
-        console.error('Failed to upsert contact in Firestore:', err);
-        throw err;
-      }
+    try {
+      const docRef = doc(db, 'users', userId, 'contacts', contact.id);
+      const payload = sanitizeForFirestore({
+        ...contactData,
+        userId,
+      });
+      await setDoc(docRef, payload, { merge: true });
+    } catch (err) {
+      console.error('Failed to upsert contact in Firestore:', err);
+      throw err;
     }
 
-    return contactData;
+    return {
+      ...contactData,
+      userId,
+    };
   }
 
   /**
    * Update an existing contact record at /users/{userId}/contacts/{id}.
-   * Safely upserts using setDoc with merge: true so that un-persisted or guest-migrated
+   * Safely upserts using setDoc with merge: true so that un-persisted
    * contacts are seamlessly written to Firestore without throwing 'No document to update'.
    */
   static async updateContact(
@@ -639,6 +607,10 @@ export class ContactRepository {
    * Reset / re-seed demo contacts under /users/{userId}/contacts.
    */
   static async seedDemoContacts(userId?: string): Promise<Contact[]> {
+    if (!userId) {
+      throw new Error('User must be authenticated to seed demo contacts');
+    }
+
     const now = new Date().toISOString();
     const demoItems = INITIAL_SAMPLE_CONTACTS.map((item) => ({
       ...item,
@@ -648,102 +620,33 @@ export class ContactRepository {
       updatedAt: item.updatedAt || now,
     }));
 
-    if (userId) {
-      try {
-        const snap = await getDocs(collection(db, 'users', userId, 'contacts'));
-        if (!snap.empty) {
-          await commitInChunks(snap.docs, (batch, d) => {
-            batch.delete(d.ref);
-          });
-        }
-
-        const itemsWithRefs = demoItems.map((item) => {
-          const docRef = doc(collection(db, 'users', userId, 'contacts'));
-          const contactObj = sanitizeForFirestore({
-            ...item,
-            userId,
-          });
-          return { docRef, contactObj };
+    try {
+      const snap = await getDocs(collection(db, 'users', userId, 'contacts'));
+      if (!snap.empty) {
+        await commitInChunks(snap.docs, (batch, d) => {
+          batch.delete(d.ref);
         });
-
-        await commitInChunks(itemsWithRefs, (batch, { docRef, contactObj }) => {
-          batch.set(docRef, contactObj);
-        });
-
-        return itemsWithRefs.map(({ docRef, contactObj }) => ({
-          id: docRef.id,
-          ...(contactObj as unknown as Omit<Contact, 'id'>),
-        }));
-      } catch (err) {
-        console.error('Failed to reset Firestore demo contacts:', err);
-        throw err;
-      }
-    }
-
-    const initial = demoItems.map((item, idx) => ({
-      ...item,
-      id: `guest-contact-${idx + 1}`,
-      userId: 'guest',
-    }));
-    this.saveGuestContacts(initial);
-    return initial;
-  }
-
-  /**
-   * Migrate guest contacts to Firestore on account sign-in.
-   */
-  static async migrateGuestContacts(
-    userId: string,
-    guestContacts: Contact[]
-  ): Promise<{ migratedContacts: Contact[]; idMap: Map<string, string> }> {
-    if (!userId || guestContacts.length === 0) {
-      return { migratedContacts: [], idMap: new Map() };
-    }
-
-    const now = new Date().toISOString();
-    const idMap = new Map<string, string>();
-
-    const itemsWithRefs = guestContacts.map((contact) => {
-      const docRef = doc(collection(db, 'users', userId, 'contacts'));
-      if (contact.id) {
-        idMap.set(contact.id, docRef.id);
       }
 
-      const cleanName = String(contact.name || 'Contact').trim().slice(0, 200) || 'Contact';
-      const cleanCategory = contact.category || 'Other';
-
-      const contactObj = sanitizeForFirestore({
-        name: cleanName,
-        role: contact.role ? String(contact.role).slice(0, 200) : undefined,
-        organization: contact.organization ? String(contact.organization).slice(0, 200) : undefined,
-        category: cleanCategory,
-        email: contact.email ? String(contact.email).slice(0, 200) : undefined,
-        phone: contact.phone ? String(contact.phone).slice(0, 50) : undefined,
-        linkedIn: contact.linkedIn ? String(contact.linkedIn).slice(0, 1000) : undefined,
-        notes: contact.notes ? String(contact.notes).slice(0, 20000) : undefined,
-        nextFollowUpDate: contact.nextFollowUpDate ? String(contact.nextFollowUpDate).slice(0, 40) : undefined,
-        applicationIds: Array.isArray(contact.applicationIds) ? contact.applicationIds.slice(0, 100) : [],
-        userId,
-        createdAt: contact.createdAt ? String(contact.createdAt).slice(0, 40) : now,
-        updatedAt: now,
+      const itemsWithRefs = demoItems.map((item) => {
+        const docRef = doc(collection(db, 'users', userId, 'contacts'));
+        const contactObj = sanitizeForFirestore({
+          ...item,
+          userId,
+        });
+        return { docRef, contactObj };
       });
 
-      return { docRef, contactObj, originalGuestId: contact.id };
-    });
-
-    try {
       await commitInChunks(itemsWithRefs, (batch, { docRef, contactObj }) => {
         batch.set(docRef, contactObj);
       });
 
-      const migratedContacts: Contact[] = itemsWithRefs.map(({ docRef, contactObj }) => ({
-        ...(contactObj as unknown as Omit<Contact, 'id'>),
+      return itemsWithRefs.map(({ docRef, contactObj }) => ({
         id: docRef.id,
+        ...(contactObj as unknown as Omit<Contact, 'id'>),
       }));
-
-      return { migratedContacts, idMap };
     } catch (err) {
-      console.error('Failed to migrate guest contacts to Firestore:', err);
+      console.error('Failed to reset Firestore demo contacts:', err);
       throw err;
     }
   }
