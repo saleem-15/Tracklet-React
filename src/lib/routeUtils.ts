@@ -50,6 +50,40 @@ export function getPathForAuthMode(mode: AuthRouteMode): string {
   return '/login';
 }
 
+// ─── Legal & Trust Pages ──────────────────────────────────────────────────────
+
+export type LegalDocType = 'privacy' | 'terms';
+
+export const LEGAL_PATH_TO_DOC: Record<string, LegalDocType> = {
+  '/privacy': 'privacy',
+  '/privacy-policy': 'privacy',
+  '/terms': 'terms',
+  '/terms-of-service': 'terms',
+  '/tos': 'terms',
+  '/legal': 'privacy',
+};
+
+export const DOC_TO_LEGAL_PATH: Record<LegalDocType, string> = {
+  privacy: '/privacy',
+  terms: '/terms',
+};
+
+export function isLegalPath(pathname: string): boolean {
+  const normalized =
+    pathname.length > 1 && pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
+  return Boolean(LEGAL_PATH_TO_DOC[normalized]);
+}
+
+export function getLegalDocFromPath(pathname: string): LegalDocType {
+  const normalized =
+    pathname.length > 1 && pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
+  return LEGAL_PATH_TO_DOC[normalized] || 'privacy';
+}
+
+export function getPathForLegalDoc(doc: LegalDocType): string {
+  return DOC_TO_LEGAL_PATH[doc] || '/privacy';
+}
+
 export function getTabFromPath(pathname: string): ActiveTab {
   const normalized =
     pathname.length > 1 && pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;

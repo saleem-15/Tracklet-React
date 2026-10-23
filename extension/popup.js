@@ -5556,3 +5556,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   updateStageUI('Saved');
   setPlatform('Company Site');
 }, { once: true });
+
+  // Legal & Privacy Policy Link Handlers
+  const extensionPrivacyLink = document.getElementById('extension-privacy-link');
+  if (extensionPrivacyLink) {
+    extensionPrivacyLink.addEventListener('click', () => {
+      focusOrOpenWorkspace(null, '/privacy');
+    });
+  }
+
+  const extensionTermsLink = document.getElementById('extension-terms-link');
+  if (extensionTermsLink) {
+    extensionTermsLink.addEventListener('click', () => {
+      focusOrOpenWorkspace(null, '/terms');
+    });
+  }

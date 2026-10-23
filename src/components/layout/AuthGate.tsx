@@ -1,9 +1,11 @@
-import { type ReactNode } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import { EmailVerificationGate } from '../EmailVerificationGate';
 import { AuthScreen } from '../AuthScreen';
 import { ToastContainer } from '../Toast';
+import { LegalView } from '../legal/LegalView';
 import { useAuth } from '../../context/AuthContext';
 import { useToastContext } from '../../context/ToastContext';
+import { isLegalPath, getLegalDocFromPath } from '../../lib/routeUtils';
 
 export interface AuthGateProps {
   onReloadData: () => Promise<void>;
@@ -16,10 +18,11 @@ export interface AuthGateProps {
  * Authentication gating wrapper that intercepts rendering when the user
  * is in an unauthenticated or unverified state:
  *
- * 1. Auth loading → branded loading spinner
- * 2. Authenticated but email unverified → EmailVerificationGate
- * 3. No user → AuthScreen wall
- * 4. Otherwise → renders children (the full workspace)
+ * 1. Public Legal & Trust Pages (/privacy, /terms, /legal) → LegalView reader (unconditionally accessible)
+ * 2. Auth loading → branded loading spinner
+ * 3. Authenticated but email unverified → EmailVerificationGate
+ * 4. No user → AuthScreen wall
+ * 5. Otherwise → renders children (the full workspace)
  *
  * AuthGate consumes user, authLoading, and toast notifications
  * directly from feature context providers.
@@ -30,8 +33,34 @@ export function AuthGate({
 }: AuthGateProps) {
   const { user, loading: authLoading } = useAuth();
   const { toasts, addToast, dismissToast } = useToastContext();
+  const [currentPath, setCurrentPath] = useState(() => window.location.pathname);
 
-  // Auth state is still loading
+  // Synchronize route changes on popstate
+  useEffect(() => {
+    const handlePopState = () => {
+      setCurrentPath(window.location.pathname);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  // 1. Public Legal & Trust Pages (bypasses auth loading, unverified, and login wall)
+  if (isLegalPath(currentPath)) {
+    return (
+      <LegalView
+        initialDoc={getLegalDocFromPath(currentPath)}
+        onNavigateHome={() => {
+          const destination = user ? '/applications' : '/login';
+          window.history.pushState(null, '', destination);
+          setCurrentPath(destination);
+          window.dispatchEvent(new PopStateEvent('popstate'));
+        }}
+      />
+    );
+  }
+
+  // 2. Auth state is still loading
   if (authLoading) {
     return (
       <div className="flex h-screen w-screen items-center justify-center bg-slate-50 font-sans text-xs text-slate-500 select-none">
@@ -46,7 +75,7 @@ export function AuthGate({
     );
   }
 
-  // Authenticated with email but unverified
+  // 3. Authenticated with email but unverified
   if (user && !user.emailVerified) {
     return (
       <div className="min-h-screen w-screen bg-slate-50 font-sans">
@@ -59,7 +88,7 @@ export function AuthGate({
     );
   }
 
-  // Not authenticated (Authentication Wall)
+  // 4. Not authenticated (Authentication Wall)
   if (!user) {
     return (
       <div className="min-h-screen w-screen bg-slate-50 font-sans">
@@ -71,6 +100,6 @@ export function AuthGate({
     );
   }
 
-  // Authenticated — render workspace
+  // 5. Authenticated — render workspace
   return <>{children}</>;
 }

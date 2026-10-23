@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ShieldCheck, Lock, EyeOff, FileText, X, CheckCircle2 } from 'lucide-react';
+import { ShieldCheck, Lock, EyeOff, FileText, X, CheckCircle2, ExternalLink } from 'lucide-react';
 
 interface SecurityPrivacyCardProps {
   onShowToast?: (type: 'success' | 'error' | 'info' | 'warning', title: string, message?: string) => void;
@@ -129,30 +129,42 @@ export const SecurityPrivacyCard: React.FC<SecurityPrivacyCardProps> = () => {
               </button>
             </div>
 
-            {/* Tab Selector */}
-            <div className="px-5 pt-3 pb-2 border-b border-slate-200 flex gap-2 shrink-0 bg-white">
-              <button
-                type="button"
-                onClick={() => setActiveTab('privacy')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
-                  activeTab === 'privacy'
-                    ? 'bg-slate-900 text-white'
-                    : 'text-slate-600 hover:bg-slate-100'
-                }`}
+            {/* Tab Selector & External Link */}
+            <div className="px-5 pt-3 pb-2 border-b border-slate-200 flex items-center justify-between gap-2 shrink-0 bg-white">
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('privacy')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+                    activeTab === 'privacy'
+                      ? 'bg-slate-900 text-white'
+                      : 'text-slate-600 hover:bg-slate-100'
+                  }`}
+                >
+                  Privacy Policy
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('terms')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+                    activeTab === 'terms'
+                      ? 'bg-slate-900 text-white'
+                      : 'text-slate-600 hover:bg-slate-100'
+                  }`}
+                >
+                  Terms of Service
+                </button>
+              </div>
+
+              <a
+                href={activeTab === 'privacy' ? '/privacy' : '/terms'}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-800 transition-colors"
               >
-                Privacy Policy
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('terms')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
-                  activeTab === 'terms'
-                    ? 'bg-slate-900 text-white'
-                    : 'text-slate-600 hover:bg-slate-100'
-                }`}
-              >
-                Terms of Service
-              </button>
+                <span>Open Full Page</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
             </div>
 
             {/* Modal Scrollable Body */}
@@ -233,7 +245,17 @@ export const SecurityPrivacyCard: React.FC<SecurityPrivacyCardProps> = () => {
             </div>
 
             {/* Modal Footer */}
-            <div className="p-4 border-t border-slate-200 flex justify-end shrink-0 bg-slate-50">
+            <div className="p-4 border-t border-slate-200 flex items-center justify-between gap-3 shrink-0 bg-slate-50">
+              <a
+                href={activeTab === 'privacy' ? '/privacy' : '/terms'}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-800 transition-colors"
+              >
+                <span>View Full Document</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
