@@ -74,11 +74,17 @@ export function extractBearerToken(req: any): string | null {
  * Verifies a Firebase Auth ID Token using Google's accounts:lookup REST endpoint or
  * cryptographic signature & claim validation against Google's public certificates.
  */
-export async function verifyFirebaseIdToken(token: string): Promise<VerifiedTokenUser | null> {
+export async function verifyFirebaseIdToken(
+  token: string,
+  env?: Record<string, string>
+): Promise<VerifiedTokenUser | null> {
   if (!token || typeof token !== 'string') return null;
 
   // Test / mock token bypass strictly restricted to test environments
-  const isTestEnv = process.env.NODE_ENV === 'test' || process.env.VITEST === 'true';
+  const isTestEnv =
+    process.env.NODE_ENV === 'test' ||
+    process.env.VITEST === 'true' ||
+    env?.NODE_ENV === 'test';
   if (isTestEnv && (token.startsWith('test-') || token.startsWith('mock-'))) {
     return {
       uid: 'test-user-123',
@@ -88,10 +94,14 @@ export async function verifyFirebaseIdToken(token: string): Promise<VerifiedToke
   }
 
   const apiKey =
+    env?.VITE_FIREBASE_API_KEY ||
+    env?.FIREBASE_API_KEY ||
     process.env.VITE_FIREBASE_API_KEY ||
     process.env.FIREBASE_API_KEY ||
     '';
   const projectId =
+    env?.VITE_FIREBASE_PROJECT_ID ||
+    env?.FIREBASE_PROJECT_ID ||
     process.env.VITE_FIREBASE_PROJECT_ID ||
     process.env.FIREBASE_PROJECT_ID ||
     '';

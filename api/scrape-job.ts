@@ -39,8 +39,14 @@ function getCurrentMonthString(): string {
  * Resolves the user's plan tier server-side directly from Firestore at users/{userId}.planTier.
  * Defaults safely to 'free' (false) if Firestore is unreachable or unconfigured.
  */
-export async function resolveUserPlanTier(userId: string, idToken?: string): Promise<boolean> {
+export async function resolveUserPlanTier(
+  userId: string,
+  idToken?: string,
+  env?: Record<string, string>
+): Promise<boolean> {
   const projectId =
+    env?.VITE_FIREBASE_PROJECT_ID ||
+    env?.FIREBASE_PROJECT_ID ||
     process.env.VITE_FIREBASE_PROJECT_ID ||
     process.env.FIREBASE_PROJECT_ID ||
     '';
@@ -77,13 +83,16 @@ export async function resolveUserPlanTier(userId: string, idToken?: string): Pro
 export async function checkAndRecordScrapeUsage(
   userId: string,
   isPro = false,
-  idToken?: string
+  idToken?: string,
+  env?: Record<string, string>
 ): Promise<{ allowed: boolean; currentUsage: number; maxQuota: number }> {
   const currentMonth = getCurrentMonthString();
   const maxQuota = isPro ? 500 : 20;
   const storeKey = `${userId}:${currentMonth}`;
 
   const projectId =
+    env?.VITE_FIREBASE_PROJECT_ID ||
+    env?.FIREBASE_PROJECT_ID ||
     process.env.VITE_FIREBASE_PROJECT_ID ||
     process.env.FIREBASE_PROJECT_ID ||
     '';
@@ -328,7 +337,13 @@ function checkRateLimit(clientIp: string): boolean {
 }
 
 function getClientIp(req: any): string {
-  const forwarded = req?.headers?.['x-forwarded-for'] || (typeof req?.headers?.get === 'function' ? req.headers.get('x-forwarded-for') : '');
+  if (typeof req?.headers?.get === 'function') {
+    const cfIp = req.headers.get('cf-connecting-ip');
+    if (cfIp) return cfIp.trim();
+    const forwarded = req.headers.get('x-forwarded-for');
+    if (forwarded) return forwarded.split(',')[0].trim();
+  }
+  const forwarded = req?.headers?.['x-forwarded-for'];
   if (typeof forwarded === 'string' && forwarded) {
     return forwarded.split(',')[0].trim();
   }
@@ -345,6 +360,8 @@ async function captureGeminiGeneration({
   candidateText,
   usageMetadata,
   error,
+  env,
+  waitUntil,
 }: {
   traceId: string;
   distinctId: string;
@@ -355,7 +372,59 @@ async function captureGeminiGeneration({
   candidateText?: string;
   usageMetadata?: any;
   error?: string;
+  env?: Record<string, string>;
+  waitUntil?: (promise: Promise<any>) => void;
 }) {
+  const posthogApiKey = env?.VITE_POSTHOG_KEY || process.env.VITE_POSTHOG_KEY;
+  const posthogEndpointHost = (
+    env?.VITE_POSTHOG_HOST ||
+    process.env.VITE_POSTHOG_HOST ||
+    'https://us.i.posthog.com'
+  ).replace(/\/+$/, '');
+
+  // 1. Edge-native PostHog capture via fetch and context.waitUntil (Cloudflare Pages/Workers)
+  if (posthogApiKey && waitUntil) {
+    const payload = {
+      api_key: posthogApiKey,
+      event: '$ai_generation',
+      distinct_id: distinctId,
+      properties: {
+        $ai_trace_id: traceId,
+        $ai_session_id: null,
+        $ai_span_id: `${traceId}-${model}`,
+        $ai_span_name: 'job_page_extraction',
+        $ai_parent_id: traceId,
+        $ai_provider: 'google',
+        $ai_model: model,
+        $ai_model_parameters: { temperature: 0.1, response_mime_type: 'application/json' },
+        $ai_input: [{ role: 'user', content: prompt.slice(0, 4000) }],
+        $ai_output_choices: candidateText ? [{ role: 'assistant', content: candidateText.slice(0, 4000) }] : [],
+        $ai_input_tokens: usageMetadata?.promptTokenCount,
+        $ai_output_tokens: usageMetadata?.candidatesTokenCount,
+        $ai_total_tokens: usageMetadata?.totalTokenCount,
+        $ai_latency: (Date.now() - startedAt) / 1000,
+        $ai_http_status: response?.status,
+        $ai_base_url: 'https://generativelanguage.googleapis.com',
+        $ai_temperature: 0.1,
+        $ai_stream: false,
+        $ai_is_error: Boolean(error),
+        $ai_error: error,
+        $lib: 'tracklet-cloudflare-edge',
+      },
+      timestamp: new Date().toISOString(),
+    };
+
+    waitUntil(
+      fetch(`${posthogEndpointHost}/capture/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      }).catch(err => console.warn('[scrape-job] Cloudflare edge telemetry capture failed:', err))
+    );
+    return;
+  }
+
+  // 2. Node.js environment fallback using posthog-node
   if (!posthog) return;
 
   try {
@@ -391,7 +460,12 @@ async function captureGeminiGeneration({
   }
 }
 
-export default async function handler(req: any, res?: any) {
+export default async function handler(
+  req: any,
+  res?: any,
+  env?: Record<string, string>,
+  waitUntil?: (promise: Promise<any>) => void
+) {
   const method = req?.method || 'GET';
 
   if (method === 'OPTIONS') {
@@ -428,7 +502,7 @@ export default async function handler(req: any, res?: any) {
     });
   }
 
-  const verifiedUser = await verifyFirebaseIdToken(token);
+  const verifiedUser = await verifyFirebaseIdToken(token, env);
   if (!verifiedUser) {
     return sendCompatResponse(res, 401, {
       fallbackAvailable: false,
@@ -446,7 +520,7 @@ export default async function handler(req: any, res?: any) {
     });
   }
 
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = env?.GEMINI_API_KEY || process.env.GEMINI_API_KEY;
   if (!apiKey) {
     return sendCompatResponse(res, 200, {
       fallbackAvailable: false,
@@ -501,8 +575,8 @@ export default async function handler(req: any, res?: any) {
   }
 
   // ── Server-Side Plan Tier Resolution & Monthly AI Scrape Quota Check ──
-  const isPro = await resolveUserPlanTier(verifiedUser.uid, token);
-  const quotaResult = await checkAndRecordScrapeUsage(verifiedUser.uid, isPro, token);
+  const isPro = await resolveUserPlanTier(verifiedUser.uid, token, env);
+  const quotaResult = await checkAndRecordScrapeUsage(verifiedUser.uid, isPro, token, env);
   if (!quotaResult.allowed) {
     return sendCompatResponse(res, 429, {
       fallbackAvailable: false,
@@ -521,7 +595,7 @@ Page Title: ${rawTitle}
 Webpage Visible Text:
 ${rawText}`;
 
-  const modelName = process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite';
+  const modelName = env?.GEMINI_MODEL || process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite';
   const fallbackModelName = 'gemini-2.5-flash-lite';
   const UPSTREAM_TIMEOUT_MS = 4500;
 
@@ -578,6 +652,8 @@ ${rawText}`;
         response: geminiRes,
         startedAt: generationStartedAt,
         error: 'Gemini returned HTTP 404.',
+        env,
+        waitUntil,
       });
       generationCaptured = true;
       activeModel = fallbackModelName;
@@ -596,6 +672,8 @@ ${rawText}`;
         response: geminiRes,
         startedAt: generationStartedAt,
         error: `Gemini returned HTTP ${geminiRes.status}.`,
+        env,
+        waitUntil,
       });
       generationCaptured = true;
       const errText = await geminiRes.text().catch(() => '');
@@ -619,6 +697,8 @@ ${rawText}`;
       candidateText,
       usageMetadata: geminiJson?.usageMetadata,
       error: candidateText ? undefined : 'Gemini returned an empty candidate response.',
+      env,
+      waitUntil,
     });
     generationCaptured = true;
     if (!candidateText) {
@@ -653,6 +733,8 @@ ${rawText}`;
         prompt,
         startedAt: generationStartedAt,
         error: 'Gemini request failed before a response was received.',
+        env,
+        waitUntil,
       });
     }
     console.error('[scrape-job] Internal error:', err);

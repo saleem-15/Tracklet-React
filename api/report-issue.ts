@@ -111,7 +111,12 @@ async function parseRequestBody(req: any): Promise<any> {
   return {};
 }
 
-export async function handler(req: any, res?: any) {
+export async function handler(
+  req: any,
+  res?: any,
+  env?: Record<string, string>,
+  _waitUntil?: (promise: Promise<any>) => void
+) {
   const method = req?.method || req?.httpMethod || 'GET';
 
   if (method === 'OPTIONS') {
@@ -167,7 +172,7 @@ export async function handler(req: any, res?: any) {
     }, req);
   }
 
-  const verifiedUser = await verifyFirebaseIdToken(token);
+  const verifiedUser = await verifyFirebaseIdToken(token, env);
   if (!verifiedUser) {
     return sendCompatResponse(res, 401, {
       error: 'Unauthorized',
@@ -201,12 +206,16 @@ export async function handler(req: any, res?: any) {
   }
 
   const githubToken = (
+    env?.GITHUB_TOKEN ||
+    env?.GH_TOKEN ||
+    env?.GITHUB_PAT ||
     process.env.GITHUB_TOKEN ||
     process.env.GH_TOKEN ||
     process.env.GITHUB_PAT ||
     ''
   ).trim();
   const githubRepo = (
+    env?.GITHUB_REPO ||
     process.env.GITHUB_REPO ||
     'saleem-15/Tracklet-React'
   ).trim();
@@ -216,7 +225,8 @@ export async function handler(req: any, res?: any) {
       process.env.NETLIFY_DEV === 'true' ||
       process.env.NETLIFY_LOCAL === 'true' ||
       process.env.CONTEXT === 'dev' ||
-      process.env.NODE_ENV === 'development';
+      process.env.NODE_ENV === 'development' ||
+      env?.NODE_ENV === 'development';
 
     if (isDev) {
       console.log(`[report-issue] Local dev: GITHUB_TOKEN not configured. Simulating successful issue creation for "${trimmedTitle}" (${reportId || 'N/A'}).`);

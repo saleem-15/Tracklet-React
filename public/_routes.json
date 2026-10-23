@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "include": [
+    "/api/*"
+  ],
+  "exclude": [
+    "/assets/*",
+    "/tracklet-extension.zip",
+    "/favicon.svg",
+    "/logo.svg",
+    "/robots.txt",
+    "/llms.txt",
+    "/version.json",
+    "/index.html"
+  ]
+}

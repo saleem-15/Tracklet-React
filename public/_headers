@@ -1,0 +1,20 @@
+# Cloudflare Pages Universal Security & Caching Headers
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+  Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
+
+# Immutable Long-Term Caching for Vite Bundles
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Chrome Extension Distribution Zip (Freshness Guaranteed)
+/tracklet-extension.zip
+  Content-Type: application/zip
+  Cache-Control: public, max-age=0, must-revalidate
+
+# Single Page App Shell (Always revalidate HTML)
+/index.html
+  Cache-Control: public, max-age=0, must-revalidate
