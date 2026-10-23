@@ -3426,6 +3426,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   let isLoggingEmail = false;
 
+  /**
+   * Helper to display non-blocking companion toast notification.
+   */
+  function showToast(message, sub = '') {
+    showToastReceipt(message, sub);
+  }
+
   async function handleLogEmail() {
     if (isLoggingEmail) return;
 
