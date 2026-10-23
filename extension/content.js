@@ -5458,6 +5458,8 @@ function isTrackletOrigin() {
     if (/^(use)?tracklet(-[a-z0-9-]+)?\.firebaseapp\.com$/.test(hostname)) return true;
     if (/^(use)?tracklet(-[a-z0-9-]+)?\.vercel\.app$/.test(hostname)) return true;
     if (/^(use)?tracklet(-[a-z0-9-]+)?\.netlify\.app$/.test(hostname)) return true;
+    if (/^(use)?tracklet(-[a-z0-9-]+)?\.pages\.dev$/.test(hostname)) return true;
+    if (hostname.endsWith('.pages.dev') && hostname.includes('tracklet')) return true;
     if (hostname.endsWith('.netlify.app') && hostname.includes('tracklet')) return true;
     if (hostname.endsWith('.vercel.app') && hostname.includes('tracklet')) return true;
     return false;
