@@ -13,8 +13,10 @@ service-account*.json
 .firebase/
 promo.png
 graphify-out/cache/
+graphify-out/20*/
 
 # Generated extension artifacts
 public/tracklet-extension.zip
 public/version.json
+lighthouse-report*.html
 .claude/
