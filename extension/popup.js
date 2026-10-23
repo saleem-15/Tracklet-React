@@ -2058,29 +2058,44 @@ document.addEventListener('DOMContentLoaded', async () => {
 
           const cleanBase = origin.replace(/\/+$/, '');
           const headers = { 'Content-Type': 'application/json' };
+          let userSession = currentUserSession;
+          let apiKey = currentFirebaseConfig?.apiKey;
           try {
             const syncStorage = typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local;
             if (syncStorage) {
-              const sessionRes = await new Promise((resolve) => syncStorage.get(['tracklet_user_session'], resolve));
-              if (sessionRes && sessionRes.tracklet_user_session && sessionRes.tracklet_user_session.idToken) {
-                headers['Authorization'] = `Bearer ${sessionRes.tracklet_user_session.idToken}`;
+              const sessionRes = await new Promise((resolve) => syncStorage.get(['tracklet_user_session', 'tracklet_firebase_config'], resolve));
+              if (sessionRes && sessionRes.tracklet_user_session) {
+                userSession = sessionRes.tracklet_user_session;
+              }
+              if (sessionRes && sessionRes.tracklet_firebase_config && sessionRes.tracklet_firebase_config.apiKey) {
+                apiKey = sessionRes.tracklet_firebase_config.apiKey;
               }
             }
           } catch {}
 
+          if (userSession && userSession.idToken) {
+            headers['Authorization'] = `Bearer ${userSession.idToken}`;
+          }
+
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), 10000);
-          const resp = await fetch(`${cleanBase}/api/scrape-job`, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify({
-              url: tab.url,
-              title: textRes.title || tab.title || '',
-              text: textRes.text,
-            }),
-            signal: controller.signal,
-          }).catch(() => null);
+          const resp = await fetchWithTokenRefresh(
+            `${cleanBase}/api/scrape-job`,
+            {
+              method: 'POST',
+              headers,
+              body: JSON.stringify({
+                url: tab.url,
+                title: textRes.title || tab.title || '',
+                text: textRes.text,
+              }),
+              signal: controller.signal,
+            },
+            userSession,
+            apiKey
+          ).catch(() => null);
           clearTimeout(timeoutId);
+          if (userSession) currentUserSession = userSession;
 
           if (!resp || !resp.ok) return;
           const json = await resp.json().catch(() => null);
