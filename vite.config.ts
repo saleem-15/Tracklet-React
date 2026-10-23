@@ -1,3 +1,4 @@
+import fs from 'fs';
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
@@ -247,6 +248,29 @@ export function createDevApiReportIssueMiddleware(env: Record<string, string>) {
   };
 }
 
+/**
+ * Resolves the primary git repository root if running inside a git worktree.
+ */
+function resolveGitMainRepoRoot(cwd = process.cwd()): string | null {
+  try {
+    const gitPath = path.join(cwd, '.git');
+    if (fs.existsSync(gitPath) && fs.statSync(gitPath).isFile()) {
+      const text = fs.readFileSync(gitPath, 'utf8').trim();
+      const match = text.match(/^gitdir:\s*(.+)$/im);
+      if (match) {
+        const gitDir = path.resolve(cwd, match[1]);
+        const mainRoot = path.resolve(gitDir, '../../..');
+        if (fs.existsSync(path.join(mainRoot, 'package.json'))) {
+          return mainRoot;
+        }
+      }
+    }
+  } catch {
+    // Ignore resolution errors in non-git or sandboxed environments
+  }
+  return null;
+}
+
 export function devApiReportIssuePlugin(env: Record<string, string>): Plugin {
   const middleware = createDevApiReportIssueMiddleware(env);
   return {
@@ -261,9 +285,24 @@ export function devApiReportIssuePlugin(env: Record<string, string>): Plugin {
 }
 
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), '');
+  const cwd = process.cwd();
+  const mainRoot = resolveGitMainRepoRoot(cwd);
+
+  // Load environment variables from main repo (if in a worktree), then overlay local worktree env
+  const parentEnv = mainRoot ? loadEnv(mode, mainRoot, '') : {};
+  const localEnv = loadEnv(mode, cwd, '');
+  const env = { ...parentEnv, ...localEnv };
+
+  // Expose VITE_* variables so client code receives them across all worktrees
+  const defineViteEnv: Record<string, string> = {};
+  for (const [key, value] of Object.entries(env)) {
+    if (key.startsWith('VITE_')) {
+      defineViteEnv[`import.meta.env.${key}`] = JSON.stringify(value);
+    }
+  }
 
   return {
+    define: defineViteEnv,
     plugins: [react(), tailwindcss(), devApiReportIssuePlugin(env)],
     resolve: {
       alias: {
