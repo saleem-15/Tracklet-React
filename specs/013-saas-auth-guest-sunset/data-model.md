@@ -73,10 +73,8 @@ export interface ExtensionUserSession {
 ## 2. Canonical Constants & Quotas (`src/lib/constants.ts`)
 
 ```typescript
-// SaaS Tier Limits
+// SaaS Tier Limits (Guest Mode and Sandbox Sunset)
 export const SAAS_LIMITS = {
-  SANDBOX_MAX_APPS: 3,
-  SANDBOX_MAX_CONTACTS: 3,
   FREE_MAX_ACTIVE_APPS: 20,
   FREE_MONTHLY_SCRAPES: 20,
   PRO_MONTHLY_SCRAPES: 500,
@@ -86,13 +84,6 @@ export const DEFAULT_USER_QUOTAS: UserQuotas = {
   scrapesUsedThisMonth: 0,
   autofillsUsedThisMonth: 0,
   quotaResetAt: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1).toISOString(),
-};
-
-// Storage Keys
-export const LOCAL_STORAGE_KEYS = {
-  // ... existing keys
-  SANDBOX_MODE: 'tracklet_sandbox_mode',
-  SANDBOX_CONVERSION_SHOWN: 'tracklet_sandbox_conversion_shown',
 };
 ```
 

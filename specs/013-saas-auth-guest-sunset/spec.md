@@ -24,26 +24,23 @@ This feature executes the foundational SaaS pivot across five interconnected dom
 
 ## User Scenarios & Testing *(mandatory)*
 
-### User Story 1 - Capped Sandbox Preview & Seamless Cloud Migration (Priority: P1)
+### User Story 1 - Mandatory Cloud Authentication & Guest/Sandbox Sunset (Priority: P1)
 
-As an unauthenticated visitor evaluating Tracklet, I can immediately test the pipeline by creating up to 3 demo application cards and linked contacts in a temporary local Sandbox session, and seamlessly migrate all sandbox records into my cloud account when I sign up, so that I experience immediate product value before committing to account registration.
+As an unauthenticated visitor arriving at Tracklet, I am prompted to create a free account or sign in to access the job tracker, so that all job applications, contacts, and AI features are securely managed in my cloud account with zero monetization leakage from unauthenticated usage.
 
-**Why this priority**: Immediate top-of-funnel evaluation without mandatory registration preserves low bounce rates, while the 3-card limit prevents SaaS revenue leakage and drives conversion.
+**Why this priority**: Eliminating unrestricted guest mode and local sandbox silos ensures all users are registered cloud tenants, protecting unit economics and enabling SaaS monetization.
 
 **Independent Test**:
-1. Open Tracklet in a clean browser profile without an active session.
-2. Verify the persistent Sandbox Preview banner appears at the top of the workspace.
-3. Add 3 application cards with notes and stages.
-4. Attempt to add a 4th card via "Add Application" or quick actions.
-5. Verify the action is blocked and the Account Conversion / Sign-Up modal appears with contextual copy.
-6. Complete registration via email/password or Google Sign-In.
-7. Verify all 3 applications are batch-persisted to Firestore at `users/{userId}/applications`, the Sandbox banner disappears, and local sandbox storage is purged.
+1. Open Tracklet in a clean browser session without an active session.
+2. Verify you are immediately redirected to the authentication gate (/login).
+3. Verify no guest bypass or sandbox preview links exist.
+4. Complete registration via email/password or Google Sign-In.
+5. Verify you are admitted to the workspace with your cloud account initialized at `users/{userId}` with `planTier: 'free'`.
 
 **Acceptance Scenarios**:
-1. **Given** an unauthenticated visitor arrives at Tracklet, **When** they view the pipeline, **Then** a persistent, non-intrusive Sandbox banner displays: *"Sandbox Preview: Tracking locally (up to 3 applications). Create a free account to unlock cloud sync, Chrome Extension capture, and 20 active applications."*
-2. **Given** an unauthenticated sandbox user with 3 active cards, **When** they click "Add Application" or attempt CSV import, **Then** creation is intercepted and the Sign-Up modal is presented stating the 3-card preview limit has been reached.
-3. **Given** a sandbox user with 1 to 3 applications and optional linked contacts, **When** they authenticate via split auth views (`/signup` or `/signin`), **Then** the system automatically executes a batch write migrating those cards into `users/{userId}/applications` and contacts into `users/{userId}/contacts`, initializes their entitlement record, and clears `localStorage` sandbox keys.
-4. **Given** an unauthenticated user in Sandbox mode, **When** they attempt to upload a tailored CV attachment or trigger Chrome Extension cloud sync, **Then** the system presents an informational gate requiring a free cloud account.
+1. **Given** an unauthenticated visitor arrives at Tracklet, **When** the page loads, **Then** AuthGate intercepts access and displays the Login/Signup screen.
+2. **Given** an unauthenticated visitor, **When** they attempt to bypass the auth screen or access `/pipeline`, **Then** the system keeps them on `/login` until authenticated.
+3. **Given** a returning visitor with legacy local storage applications from prior versions, **When** they register or sign in, **Then** the system displays the Guest Migration modal and transfers their local applications into Firestore at `users/{userId}/applications`.
 
 ---
 

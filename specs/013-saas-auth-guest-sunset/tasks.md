@@ -26,24 +26,22 @@
 
 ---
 
-## Phase 2: User Story 1 (P1) - Capped 3-Card Sandbox Preview & Seamless Cloud Migration
+## Phase 2: User Story 1 (P1) - Sandbox & Guest Sunset: Mandatory Authentication Enforcement
 
-- [x] **T005** [P]: Create `src/components/layout/SandboxBanner.tsx`
-  - Implement a persistent, calm banner (< 120 lines) shown when unauthenticated and in sandbox mode.
-  - Display card count (`X / 3`), benefits of creating a free account, and a "Create Free Account" CTA button.
-  - Ensure full WCAG AA contrast compliance (avoid `text-slate-400`).
-- [x] **T006**: Update `src/hooks/useApplications.ts` and `src/components/AddApplicationModal.tsx`
-  - In Sandbox mode, verify current count `< SAAS_LIMITS.SANDBOX_MAX_APPS` before opening `AddApplicationModal` or creating a card.
-  - When reaching 3 cards, trigger the Account Conversion modal (`mode: 'signup'`) with contextual copy.
-  - Gate CSV bulk import in Sandbox mode with conversion prompt.
-- [x] **T007**: Update `src/components/auth/LoginView.tsx` and `src/components/auth/SignupView.tsx`
-  - Replace legacy "Continue as guest" link with "Explore sandbox preview →".
-  - Add contextual conversion headers when opened from the sandbox limit or paywall.
-- [x] **T008**: Update `src/hooks/useGuestMigration.ts` for Sandbox Conversion
-  - When user signs in or registers, detect 1–3 sandbox applications + contacts.
-  - Batch-import cards to Firestore at `/users/{userId}/applications` and contacts at `/users/{userId}/contacts`.
-  - Initialize the `UserEntitlementProfile` in Firestore.
-  - Purge sandbox `localStorage` keys and dispatch a success toast receipt.
+- [x] **T005** [P]: Sunset SandboxBanner and unauthenticated guest mode bypasses [SUPERSEDED]
+  - Decision: Removed Sandbox Mode entirely per product requirement. Users must authenticate to experience the workspace; no guest or sandbox mode.
+  - Purged SandboxBanner.tsx and removed its export from src/components/layout/index.ts.
+- [x] **T006**: Sunset sandbox limits in src/hooks/useApplications.ts and enforce Free tier active limit (20 cards) [UPDATED]
+  - Removed sandbox mode limit check (SAAS_LIMITS.SANDBOX_MAX_APPS).
+  - Enforced 20 active applications ceiling on non-terminal stages for authenticated Free tier users.
+- [x] **T007**: Clean auth views in src/components/auth/LoginView.tsx and SignupView.tsx [UPDATED]
+  - Removed "Continue as guest" and sandbox preview links.
+  - Cleaned auth forms to strictly focus on account registration and login.
+- [x] **T008**: Update src/hooks/useGuestMigration.ts for First-Login Cloud Migration [UPDATED]
+  - When returning legacy users register or sign in, detect existing localStorage applications + contacts.
+  - Batch-import legacy cards to Firestore at /users/{userId}/applications and contacts at /users/{userId}/contacts.
+  - Initialize the UserEntitlementProfile in Firestore.
+  - Purge legacy guest localStorage keys and dispatch a success migration toast receipt.
 
 ---
 

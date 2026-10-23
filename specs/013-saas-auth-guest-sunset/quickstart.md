@@ -14,32 +14,33 @@
 
 ---
 
-## Test Flow 1: Capped Sandbox Preview & Conversion Wall
+## Test Flow 1: Mandatory Authentication Gate (Guest & Sandbox Sunset)
 
 1. Open `http://localhost:3000` in a new Chrome Incognito window.
-2. Verify you enter the app in **Sandbox Mode**:
-   - The top workspace banner states: *"Sandbox Preview: Tracking locally (up to 3 applications). Create a free account to unlock cloud sync, Chrome Extension capture, and 20 active applications."*
-3. Click "Add Application" and add:
-   - Card 1: `Acme Corp` · `Frontend Engineer` · `Applied`
-   - Card 2: `Beta Labs` · `Fullstack Developer` · `Interview`
-   - Card 3: `Gamma Tech` · `UI Engineer` · `Saved`
-4. Attempt to add a 4th card (e.g. click "Add Application" or quick-add):
-   - **Expected Result**: The action is blocked. The Account Conversion / Sign-Up modal appears stating: *"You've reached the 3-application sandbox preview limit. Create a free account to keep tracking."*
-5. Attempt to use CSV Import:
-   - **Expected Result**: Blocked with an informational upgrade gate.
+2. Verify you are automatically routed to the authentication screen (`/login`):
+   - Unauthenticated access to pipeline workspace, contacts, or settings is strictly blocked.
+   - The auth view displays a clean login/signup interface with no "Continue as guest" or sandbox bypass options.
+3. Attempt to navigate directly to `/pipeline` or `/contacts`:
+   - **Expected Result**: AuthGate redirects back to `/login` until authenticated.
 
 ---
 
-## Test Flow 2: Seamless Cloud Migration
+## Test Flow 2: First-Login Cloud Migration (Returning Legacy Users)
 
-1. From the conversion modal, complete registration (or click "Sign In" and enter valid test credentials).
-2. Once authenticated:
+1. In DevTools console before logging in, seed legacy local storage applications:
+   ```javascript
+   localStorage.setItem('tracklet_guest_apps_v1', JSON.stringify([
+     { id: 'legacy-1', company: 'Acme Corp', role: 'Frontend Engineer', status: 'Applied', platform: 'LinkedIn', dateApplied: new Date().toISOString() },
+     { id: 'legacy-2', company: 'Beta Labs', role: 'Fullstack Dev', status: 'Interview', platform: 'Direct', dateApplied: new Date().toISOString() }
+   ]));
+   ```
+2. Complete registration or sign in with an account.
+3. Once authenticated:
    - **Expected Result**:
-     - The Sandbox Banner disappears.
-     - All 3 applications (`Acme Corp`, `Beta Labs`, `Gamma Tech`) are automatically batch-persisted to Firestore at `/users/{userId}/applications`.
-     - `localStorage.getItem('tracklet_guest_apps_v1')` is cleared.
-     - A success toast appears: *"Workspace Migrated: 3 applications synced to your cloud account."*
-     - The user entitlement document is created at `/users/{userId}` with `planTier: 'free'`.
+     - The Guest Migration modal appears, or applications are automatically imported to Firestore at `/users/{userId}/applications`.
+     - Legacy `tracklet_guest_apps_v1` local storage is cleared.
+     - A success toast appears confirming migration.
+     - Entitlement profile document is initialized at `/users/{userId}` with `planTier: 'free'`.
 
 ---
 
