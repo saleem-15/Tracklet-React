@@ -16,15 +16,18 @@ configureSidePanelBehavior();
 // Initialize Context Menu and Side Panel on Install
 chrome.runtime.onInstalled.addListener(() => {
   configureSidePanelBehavior();
-  chrome.contextMenus.create({
-    id: 'tracklet-save-page',
-    title: 'Save Job to Tracklet',
-    contexts: ['page', 'selection', 'link']
-  });
+  if (typeof chrome !== 'undefined' && chrome.contextMenus && chrome.contextMenus.create) {
+    chrome.contextMenus.create({
+      id: 'tracklet-save-page',
+      title: 'Save Job to Tracklet',
+      contexts: ['page', 'selection', 'link']
+    });
+  }
 });
 
 // Handle Context Menu Clicks
-chrome.contextMenus.onClicked.addListener(async (info, tab) => {
+if (typeof chrome !== 'undefined' && chrome.contextMenus && chrome.contextMenus.onClicked) {
+  chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   if (info.menuItemId === 'tracklet-save-page' && tab && tab.id) {
     chrome.tabs.sendMessage(tab.id, { action: 'EXTRACT_PAGE_DATA' }, async (response) => {
       const nowISO = new Date().toISOString();
@@ -73,6 +76,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
     });
   }
 });
+}
 
 // Extract domain fallback
 function getDomainName(urlStr) {
