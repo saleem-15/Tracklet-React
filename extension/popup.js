@@ -5043,6 +5043,25 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (progressFill) progressFill.style.animationPlayState = 'running';
   });
 
+  // Helper: checks whether a URL belongs to an authorized Tracklet origin
+  function isTrackletUrl(urlStr) {
+    if (!urlStr) return false;
+    try {
+      const parsed = new URL(urlStr);
+      const hostname = parsed.hostname.toLowerCase();
+      if (hostname === 'localhost' || hostname === '127.0.0.1') return true;
+      if (hostname === 'tracklet.app' || hostname.endsWith('.tracklet.app')) return true;
+      if (hostname === 'usetracklet.com' || hostname.endsWith('.usetracklet.com')) return true;
+      if (hostname === 'tracklet.pages.dev' || hostname.endsWith('.tracklet.pages.dev')) return true;
+      if (/^([a-z0-9-]+--)?(use)?tracklet\.netlify\.app$/.test(hostname)) return true;
+      if (/^(use)?tracklet(-[a-z0-9-]+)?\.web\.app$/.test(hostname)) return true;
+      if (/^(use)?tracklet(-[a-z0-9-]+)?\.firebaseapp\.com$/.test(hostname)) return true;
+      return false;
+    } catch {
+      return false;
+    }
+  }
+
   // Focuses existing Tracklet tab if open or opens new tab
   async function focusOrOpenWorkspace(appId = null, subpath = '') {
     let resolvedBaseUrl = TRACKLET_APP_URL;
@@ -5053,21 +5072,23 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (storageResult && storageResult.tracklet_web_origin) {
         const storedOrigin = String(storageResult.tracklet_web_origin).trim();
         // Ignore localhost origins so the user is always directed to the real web app
-        if (!storedOrigin.includes('localhost') && !storedOrigin.includes('127.0.0.1')) {
+        if (isTrackletUrl(storedOrigin) && !storedOrigin.includes('localhost') && !storedOrigin.includes('127.0.0.1')) {
           resolvedBaseUrl = storedOrigin;
         }
       }
 
       // 2. Search for any existing open Tracklet tab (prefer production/remote domains)
       const tabs = await chrome.tabs.query({});
-      const trackletTab = tabs.find(t => t.url && (
-        t.url.includes('tracklet.pages.dev') ||
-        t.url.includes('tracklet.app') ||
-        t.url.includes('.web.app') ||
-        t.url.includes('.firebaseapp.com') ||
-        t.url.includes('.netlify.app') ||
-        t.url.includes('.pages.dev')
-      ));
+      const isRemoteTracklet = (url) => {
+        try {
+          const h = new URL(url).hostname.toLowerCase();
+          return isTrackletUrl(url) && h !== 'localhost' && h !== '127.0.0.1';
+        } catch {
+          return false;
+        }
+      };
+      const trackletTab = tabs.find(t => t.url && isRemoteTracklet(t.url)) ||
+                          tabs.find(t => t.url && isTrackletUrl(t.url));
 
       if (trackletTab && trackletTab.id) {
         if (appId) {

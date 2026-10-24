@@ -5453,13 +5453,10 @@ function isTrackletOrigin() {
     if (hostname === 'localhost' || hostname === '127.0.0.1') return true;
     if (hostname === 'tracklet.app' || hostname.endsWith('.tracklet.app')) return true;
     if (hostname === 'usetracklet.com' || hostname.endsWith('.usetracklet.com')) return true;
-    if (hostname === 'usetracklet.netlify.app') return true;
+    if (hostname === 'tracklet.pages.dev' || hostname.endsWith('.tracklet.pages.dev')) return true;
+    if (/^([a-z0-9-]+--)?(use)?tracklet\.netlify\.app$/.test(hostname)) return true;
     if (/^(use)?tracklet(-[a-z0-9-]+)?\.web\.app$/.test(hostname)) return true;
     if (/^(use)?tracklet(-[a-z0-9-]+)?\.firebaseapp\.com$/.test(hostname)) return true;
-    if (/^(use)?tracklet(-[a-z0-9-]+)?\.netlify\.app$/.test(hostname)) return true;
-    if (/^(use)?tracklet(-[a-z0-9-]+)?\.pages\.dev$/.test(hostname)) return true;
-    if (hostname.endsWith('.pages.dev') && hostname.includes('tracklet')) return true;
-    if (hostname.endsWith('.netlify.app') && hostname.includes('tracklet')) return true;
     return false;
   } catch {
     return false;
@@ -5472,8 +5469,8 @@ function announceTrackletPresence() {
   try {
     const manifest = (typeof chrome !== 'undefined' && chrome.runtime?.getManifest)
       ? chrome.runtime.getManifest()
-      : { version: '1.3.4', name: 'Tracklet' };
-    const version = manifest.version || '1.3.4';
+      : { version: '1.3.5', name: 'Tracklet' };
+    const version = manifest.version || '1.3.5';
 
     // 1. Direct DOM markers on documentElement for instant zero-latency detection
     if (document.documentElement) {
