@@ -26,7 +26,7 @@
   to = "/index.html"
   status = 200
 
-# 3. Universal Security Headers (matches and extends prior vercel.json headers)
+# 3. Universal Security Headers
 [[headers]]
   for = "/*"
   [headers.values]
