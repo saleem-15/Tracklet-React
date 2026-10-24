@@ -5061,11 +5061,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       // 2. Search for any existing open Tracklet tab (prefer production/remote domains)
       const tabs = await chrome.tabs.query({});
       const trackletTab = tabs.find(t => t.url && (
-        t.url.includes('tracklet-eight.vercel.app') ||
+        t.url.includes('tracklet.pages.dev') ||
         t.url.includes('tracklet.app') ||
         t.url.includes('.web.app') ||
         t.url.includes('.firebaseapp.com') ||
-        t.url.includes('.vercel.app') ||
         t.url.includes('.netlify.app') ||
         t.url.includes('.pages.dev')
       ));
