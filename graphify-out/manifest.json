@@ -610,18 +610,18 @@
     "semantic_hash": ""
   },
   "extension/content.js": {
-    "mtime": 1792843779.299636,
-    "ast_hash": "927ed34fcbbb2b60194b1894e48acfb9",
+    "mtime": 1792846950.7076776,
+    "ast_hash": "8cdf579a2edeede3f8f0e30ebd2b509e",
     "semantic_hash": ""
   },
   "extension/manifest.json": {
-    "mtime": 1792843744.2044885,
-    "ast_hash": "b2deea4c206ca55e659402cb7f63e806",
+    "mtime": 1792846984.5470731,
+    "ast_hash": "2c2636fade3ebed7aaabd02ddd230883",
     "semantic_hash": ""
   },
   "extension/popup.js": {
-    "mtime": 1792843788.2601228,
-    "ast_hash": "29761b6da25bb439c3155ab4f9e36762",
+    "mtime": 1792846970.354182,
+    "ast_hash": "b461d6df2dff526ca4aa4ccfc54086c4",
     "semantic_hash": ""
   },
   "firebase.json": {
@@ -1105,8 +1105,8 @@
     "semantic_hash": ""
   },
   "src/lib/constants.ts": {
-    "mtime": 1792843761.8565898,
-    "ast_hash": "2b7f4cbab410a4577932b829cf54ab0c",
+    "mtime": 1792846993.162855,
+    "ast_hash": "6df59ff4593923360ba323504371d704",
     "semantic_hash": ""
   },
   "src/lib/contactRepository.ts": {
@@ -2370,18 +2370,18 @@
     "semantic_hash": ""
   },
   "specs/006-extension-auth-sync/quickstart.md": {
-    "mtime": 1792844023.8947225,
-    "ast_hash": "d020f561f9ed1e81feafc1f6cd6757d8",
+    "mtime": 1792847038.6890347,
+    "ast_hash": "08e3eab97a33a48d9de5a0b38e355944",
     "semantic_hash": ""
   },
   "specs/006-extension-auth-sync/research.md": {
-    "mtime": 1792844058.2604804,
-    "ast_hash": "2329693df36b5b6e7338ecb1299169bf",
+    "mtime": 1792847022.225209,
+    "ast_hash": "c3daec30f7c8e8211c8215b8e58724e4",
     "semantic_hash": ""
   },
   "specs/006-extension-auth-sync/spec.md": {
-    "mtime": 1792844069.0709476,
-    "ast_hash": "a517c876a22c6f8ee69534bd5b4a86a7",
+    "mtime": 1792847030.0334294,
+    "ast_hash": "117f0ccce9d60d36545148378e576111",
     "semantic_hash": ""
   },
   "specs/007-extension-capture-quality/checklists/requirements.md": {
@@ -2720,8 +2720,8 @@
     "semantic_hash": ""
   },
   "tests/unit/versionSync.test.ts": {
-    "mtime": 1792779263.299057,
-    "ast_hash": "d1b0e452ba40b5b87493241fc09a51d8",
+    "mtime": 1792847072.2301216,
+    "ast_hash": "df7bba2c920bbedd09b54eada5a10f64",
     "semantic_hash": ""
   },
   "tests/unit/extensionAutoScrape.test.ts": {
