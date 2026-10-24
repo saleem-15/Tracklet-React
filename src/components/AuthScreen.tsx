@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { useAuth } from '../context/AuthContext';
 import { getFriendlyAuthErrorMessage } from '../lib/authErrors';
-import { getAuthModeFromPath, getPathForAuthMode, AuthRouteMode } from '../lib/routeUtils';
+import { getAuthModeFromPath, getPathForAuthMode, AuthRouteMode, navigateToRoute } from '../lib/routeUtils';
+import { LEGAL_CONFIG } from '../lib/constants';
 import { LoginView } from './auth/LoginView';
 import { SignupView } from './auth/SignupView';
 import { ForgotPasswordView } from './auth/ForgotPasswordView';
@@ -234,6 +235,12 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
         <div className="pt-8 text-center text-[11px] text-slate-500 flex items-center justify-center gap-3">
           <a
             href="/privacy"
+            onClick={(e) => {
+              if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                e.preventDefault();
+                navigateToRoute('/privacy');
+              }
+            }}
             target="_blank"
             rel="noopener noreferrer"
             className="hover:text-slate-800 transition-colors"
@@ -243,6 +250,12 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
           <span>•</span>
           <a
             href="/terms"
+            onClick={(e) => {
+              if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                e.preventDefault();
+                navigateToRoute('/terms');
+              }
+            }}
             target="_blank"
             rel="noopener noreferrer"
             className="hover:text-slate-800 transition-colors"
@@ -251,7 +264,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
           </a>
           <span>•</span>
           <a
-            href="mailto:support@tracklet.app"
+            href={`mailto:${LEGAL_CONFIG.SUPPORT_EMAIL}`}
             target="_blank"
             rel="noopener noreferrer"
             className="hover:text-slate-800 transition-colors"

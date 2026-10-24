@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Mail, Lock, AlertCircle, Loader2 } from 'lucide-react';
-import { AuthRouteMode } from '../../lib/routeUtils';
+import { AuthRouteMode, navigateToRoute } from '../../lib/routeUtils';
 import { AuthTextField } from './AuthTextField';
 
 interface SignupViewProps {
@@ -188,6 +188,12 @@ export const SignupView: React.FC<SignupViewProps> = ({
           By signing up, you agree to our{' '}
           <a
             href="/terms"
+            onClick={(e) => {
+              if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                e.preventDefault();
+                navigateToRoute('/terms');
+              }
+            }}
             target="_blank"
             rel="noopener noreferrer"
             className="text-slate-700 hover:text-slate-900 font-semibold underline underline-offset-2"
@@ -197,6 +203,12 @@ export const SignupView: React.FC<SignupViewProps> = ({
           and{' '}
           <a
             href="/privacy"
+            onClick={(e) => {
+              if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                e.preventDefault();
+                navigateToRoute('/privacy');
+              }
+            }}
             target="_blank"
             rel="noopener noreferrer"
             className="text-slate-700 hover:text-slate-900 font-semibold underline underline-offset-2"

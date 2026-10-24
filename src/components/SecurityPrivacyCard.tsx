@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ShieldCheck, Lock, EyeOff, FileText, X, CheckCircle2, ExternalLink } from 'lucide-react';
+import { navigateToRoute } from '../lib/routeUtils';
 
 interface SecurityPrivacyCardProps {
   onShowToast?: (type: 'success' | 'error' | 'info' | 'warning', title: string, message?: string) => void;
@@ -38,7 +39,7 @@ export const SecurityPrivacyCard: React.FC<SecurityPrivacyCardProps> = () => {
                   <h3 className="text-sm sm:text-base font-bold text-slate-900 font-heading">
                     Enterprise Security & Data Ownership
                   </h3>
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100/80 text-emerald-800">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100/80 text-emerald-800">
                     <CheckCircle2 className="w-3 h-3" />
                     Zero Recruiter Monetization
                   </span>
@@ -158,9 +159,16 @@ export const SecurityPrivacyCard: React.FC<SecurityPrivacyCardProps> = () => {
 
               <a
                 href={activeTab === 'privacy' ? '/privacy' : '/terms'}
+                onClick={(e) => {
+                  if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                    e.preventDefault();
+                    setIsModalOpen(false);
+                    navigateToRoute(activeTab === 'privacy' ? '/privacy' : '/terms');
+                  }
+                }}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-800 transition-colors"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-800 transition-colors cursor-pointer"
               >
                 <span>Open Full Page</span>
                 <ExternalLink className="w-3.5 h-3.5" />

@@ -74,6 +74,18 @@ export function isLegalPath(pathname: string): boolean {
   return Boolean(LEGAL_PATH_TO_DOC[normalized]);
 }
 
+export function isPrivacyPath(pathname: string): boolean {
+  const normalized =
+    pathname.length > 1 && pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
+  return LEGAL_PATH_TO_DOC[normalized] === 'privacy';
+}
+
+export function isTermsPath(pathname: string): boolean {
+  const normalized =
+    pathname.length > 1 && pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
+  return LEGAL_PATH_TO_DOC[normalized] === 'terms';
+}
+
 export function getLegalDocFromPath(pathname: string): LegalDocType {
   const normalized =
     pathname.length > 1 && pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
@@ -82,6 +94,22 @@ export function getLegalDocFromPath(pathname: string): LegalDocType {
 
 export function getPathForLegalDoc(doc: LegalDocType): string {
   return DOC_TO_LEGAL_PATH[doc] || '/privacy';
+}
+
+/**
+ * Centrally triggers an in-app client-side navigation update.
+ * Synchronizes history via pushState/replaceState and dispatches
+ * a 'popstate' event so that listening gate and navigation components
+ * (such as AuthGate, NavigationContext, and LegalView) re-evaluate and render.
+ */
+export function navigateToRoute(targetPath: string, replace = false): void {
+  if (typeof window === 'undefined') return;
+  if (replace) {
+    window.history.replaceState(null, '', targetPath);
+  } else {
+    window.history.pushState(null, '', targetPath);
+  }
+  window.dispatchEvent(new PopStateEvent('popstate'));
 }
 
 export function getTabFromPath(pathname: string): ActiveTab {
