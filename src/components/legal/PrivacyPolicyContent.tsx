@@ -220,8 +220,8 @@ export const PrivacyPolicyContent: React.FC = () => {
             <span className="text-slate-500">Authentication, Cloud Database, Document Storage, Hosting</span>
           </div>
           <div className="p-3.5 rounded-xl border border-slate-200 bg-white">
-            <span className="font-bold text-slate-900 block">Vercel Inc.</span>
-            <span className="text-slate-500">Serverless API execution & edge frontend distribution</span>
+            <span className="font-bold text-slate-900 block">Cloudflare, Inc.</span>
+            <span className="text-slate-500">Cloudflare Pages Functions API execution & global edge distribution</span>
           </div>
           <div className="p-3.5 rounded-xl border border-slate-200 bg-white">
             <span className="font-bold text-slate-900 block">Functional Software, Inc. (Sentry)</span>

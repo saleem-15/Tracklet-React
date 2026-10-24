@@ -9,7 +9,7 @@
 ## Prerequisites
 - Modern browser (Chrome / Edge / Firefox)
 - Node.js 20+
-- Web app running locally (`npm run dev`) or deployed on Vercel
+- Web app running locally (`npm run dev`) or deployed on Cloudflare Pages
 - Extension loaded unpacked in Chrome (`chrome://extensions`) pointing to `/extension`
 
 ---

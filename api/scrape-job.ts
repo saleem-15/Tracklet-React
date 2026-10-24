@@ -1,6 +1,6 @@
 // Platform-Agnostic Serverless Function for Hybrid Job Scraping Fallback
 // Uses Gemini 2.5 Flash-Lite REST API with strict JSON Schema output.
-// Compatible with Vercel, Netlify, Cloudflare, and standard Node/Web HTTP runtimes.
+// Compatible with Cloudflare Pages, Netlify Functions, and standard Node/Web HTTP runtimes.
 
 import { PostHog } from 'posthog-node';
 import { extractBearerToken, verifyFirebaseIdToken } from './lib/verifyFirebaseToken';

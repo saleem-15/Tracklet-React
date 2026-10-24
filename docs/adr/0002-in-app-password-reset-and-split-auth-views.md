@@ -42,4 +42,4 @@ Key issues identified:
 - **Maintainable Architecture**: View components adhere to the `<300 lines` guideline and isolate form state from business logic.
 
 ### Negative / Trade-offs
-- Custom password reset requires ensuring authorized domains are kept up to date in Firebase Console settings (`tracklet-eight.vercel.app`, `localhost`).
+- Custom password reset requires ensuring authorized domains are kept up to date in Firebase Console settings (`tracklet.pages.dev`, `localhost`).

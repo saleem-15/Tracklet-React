@@ -4,7 +4,7 @@
 Accepted
 
 ## Context
-Tracklet is a modern, high-clarity job application tracking system deployed on Vercel (`https://tracklet-eight.vercel.app/`). An initial Lighthouse audit revealed several issues impacting all 4 core metrics:
+Tracklet is a modern, high-clarity job application tracking system deployed on Cloudflare Pages (`https://tracklet.pages.dev/`). An initial Lighthouse audit revealed several issues impacting all 4 core metrics:
 - **SEO (Score: 83)**: Missing `<meta name="description">`, lack of canonical link tag, missing static `robots.txt` causing SPA HTML fallback to crawler requests, and missing agentic browsing metadata (`llms.txt`).
 - **Accessibility (Score: 96)**: WCAG AA contrast failures across secondary and muted text elements where `text-slate-400` (~3.0:1 contrast on white) was used instead of the minimum required 4.5:1 ratio.
 - **Performance (Score: 92)**: Render-blocking Google Fonts `<link>` stylesheet on the critical rendering path, causing FCP/LCP delays.
@@ -34,7 +34,7 @@ We instituted the following architectural and code modernization changes across 
 - Added `<meta name="theme-color" content="#2563eb">` for browser chrome color integration.
 
 ### 4. Search Engine & Agentic Crawling Metadata (SEO)
-- Added `<meta name="description">` and `<link rel="canonical" href="https://tracklet-eight.vercel.app/" />` in [`index.html`](file:///d:/Programming/Tracklet/index.html).
+- Added `<meta name="description">` and `<link rel="canonical" href="https://tracklet.pages.dev/" />` in [`index.html`](file:///d:/Programming/Tracklet/index.html).
 - Added static [`public/robots.txt`](file:///d:/Programming/Tracklet/public/robots.txt) to explicitly allow crawlers and link to the sitemap, preventing single-page application router fallback.
 - Added [`public/llms.txt`](file:///d:/Programming/Tracklet/public/llms.txt) complying with the Agentic/LLM web discovery standard with clear H1 headers, feature summaries, and navigation links.
 

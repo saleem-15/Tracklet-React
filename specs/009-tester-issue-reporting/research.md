@@ -4,20 +4,20 @@
 
 ## Overview & Architecture Decisions
 
-This research resolves all technical unknowns for building a zero-cost, credit-card-free tester bug and feedback reporting engine for Tracklet across React 19, TypeScript, Firebase (Spark Free Tier), and Vercel (Hobby Free Tier).
+This research resolves all technical unknowns for building a zero-cost, credit-card-free tester bug and feedback reporting engine for Tracklet across React 19, TypeScript, Firebase (Spark Free Tier), and Cloudflare Pages / Serverless.
 
 ---
 
-### Decision 1: Zero-Cost GitHub Issue Creation (Vercel Serverless vs Client-Side)
+### Decision 1: Zero-Cost GitHub Issue Creation (Cloudflare Pages / Serverless vs Client-Side)
 
-- **Selected Approach**: Vercel Serverless Function (`api/report-issue.ts`) with Graceful Fallbacks.
+- **Selected Approach**: Cloudflare Pages / Serverless Function (`api/report-issue.ts`) with Graceful Fallbacks.
 - **Rationale**:
   - Google Firebase Cloud Functions strictly requires upgrading to the Blaze pay-as-you-go plan (which requires a credit card). On the free Spark tier, outbound network requests to external APIs (like `api.github.com`) are blocked.
-  - Vercel's Hobby plan is **100% free with no credit card required**, offering 100,000 free serverless function invocations per month.
-  - Putting the GitHub REST call inside `/api/report-issue.ts` keeps the GitHub Personal Access Token (PAT) secure inside Vercel environment variables (`GITHUB_TOKEN`), completely inaccessible to client-side code.
+  - Cloudflare Pages is **100% free with no credit card required**, offering generous free requests per month.
+  - Putting the GitHub REST call inside `/api/report-issue.ts` keeps the GitHub Personal Access Token (PAT) secure inside server environment variables (`GITHUB_TOKEN`), completely inaccessible to client-side code.
   - Testers do NOT need a GitHub account; the issue is created on their behalf under a repository label (`tester-feedback`, `bug`).
 - **Local Dev / Offline Fallback**:
-  - When running `npm run dev` locally (where Vercel serverless routes aren't running unless using `vercel dev`), the reporter client detects the absence of the API route or API errors and gracefully writes directly to Firestore `tester_feedback` collection and offers a 1-click pre-filled GitHub Issue URL (`https://github.com/{owner}/{repo}/issues/new?...`).
+  - When running `npm run dev` locally (where serverless routes aren't running unless using `wrangler pages dev`), the reporter client detects the absence of the API route or API errors and gracefully writes directly to Firestore `tester_feedback` collection and offers a 1-click pre-filled GitHub Issue URL (`https://github.com/{owner}/{repo}/issues/new?...`).
 - **Alternatives Considered**:
   - *Direct client-side GitHub API call*: Rejected because embedding a personal access token in client bundle is a critical security vulnerability.
   - *Pure mailto / email link*: Rejected because it requires testers to have a desktop email client configured and doesn't capture formatted diagnostics.

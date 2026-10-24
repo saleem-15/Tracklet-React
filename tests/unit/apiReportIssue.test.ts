@@ -71,7 +71,7 @@ describe('api/report-issue handler', () => {
     expect(ghBody.body).toContain(validPayload.description);
   });
 
-  it('handles Express/Vercel-style parsed req.body objects', async () => {
+  it('handles Express/Node-style parsed req.body objects', async () => {
     const mockGhFetch = vi.fn().mockResolvedValue({
       ok: true,
       status: 201,

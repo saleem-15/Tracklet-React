@@ -1,6 +1,6 @@
 import { extractBearerToken, verifyFirebaseIdToken } from './lib/verifyFirebaseToken';
 // Platform-Agnostic Serverless Function to dispatch bug reports to GitHub Issues
-// Compatible with Netlify Functions (v2 Web API), Vercel, and standard Node/Web HTTP runtimes.
+// Compatible with Cloudflare Pages Functions, Netlify Functions (v2 Web API), and standard Node/Web HTTP runtimes.
 
 function sendCompatResponse(
   res: any,
@@ -50,7 +50,7 @@ async function parseRequestBody(req: any): Promise<any> {
     }
   }
 
-  // 2. If body is already a parsed JS object with properties (e.g. Express, Vercel legacy, or middleware)
+  // 2. If body is already a parsed JS object with properties (e.g. Express, Node legacy, or middleware)
   if (
     req?.body &&
     typeof req.body === 'object' &&

@@ -170,4 +170,4 @@ As a user browsing LinkedIn or a job board with the Tracklet Side Panel open, I 
 
 - Users install the extension in desktop Chromium-based browsers (Google Chrome, Microsoft Edge, Brave, Opera, Arc) supporting Manifest V3 and Developer Mode.
 - Direct Chromium API constraints (inability to programmatically install unpacked extensions without Developer Mode) remain as established by Google Chrome security policy.
-- The web app is deployed on standard static web hosts (Vercel, Firebase Hosting) where files in `public/` are served with proper `application/zip` MIME types.
+- The web app is deployed on standard static web hosts (Cloudflare Pages, Netlify, Firebase Hosting) where files in `public/` are served with proper `application/zip` MIME types.

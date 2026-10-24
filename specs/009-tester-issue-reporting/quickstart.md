@@ -14,7 +14,7 @@ Walkthrough guide to validate the tester issue reporting feature end-to-end acro
 2. **Dependencies**: Run `npm install` to ensure all dependencies are resolved.
 3. **GitHub Issue Creation Options**:
    - **Local Dev Server (`npm run dev`)**: Add `GITHUB_TOKEN="ghp_..."` (or fine-grained PAT) to `.env.local`. The Vite dev server will intercept `/api/report-issue` and automatically create the issue in `saleem-15/Tracklet-React`.
-   - **Vercel Production Deployment**: Add `GITHUB_TOKEN` and `GITHUB_REPO` to Vercel Environment Variables. The serverless function `/api/report-issue` will handle creation.
+   - **Production Deployment**: Add `GITHUB_TOKEN` and `GITHUB_REPO` to Cloudflare Pages Environment Variables. The serverless function `/api/report-issue` will handle creation.
    - **No Token (Fallback Mode)**: If no token is provided, the report is saved to Firestore/local cache, and a 1-click pre-filled GitHub Issue link is displayed on the receipt.
 
 ---

@@ -45,8 +45,8 @@
 
 ## Phase 4: User Story 3 — Hybrid AI Fallback Endpoint & Extension Integration (Priority: P2)
 
-**Goal**: Reach 95–99% open-web accuracy using a zero-infrastructure-cost Vercel Serverless Function (`api/scrape-job.ts`) backed by `Gemini 2.5 Flash-Lite`.
+**Goal**: Reach 95–99% open-web accuracy using a zero-infrastructure-cost Serverless Function (`api/scrape-job.ts`) backed by `Gemini 2.5 Flash-Lite`.
 
-- [x] **T010** [P] [US3] Create `api/scrape-job.ts` Vercel Serverless Function calling Gemini REST API (`gemini-2.5-flash-lite`) with `responseMimeType: "application/json"` and strict JSON `responseSchema`, enforcing a `12,000`-character input text cap and graceful fallback if `GEMINI_API_KEY` is unset.
+- [x] **T010** [P] [US3] Create `api/scrape-job.ts` Serverless Function calling Gemini REST API (`gemini-2.5-flash-lite`) with `responseMimeType: "application/json"` and strict JSON `responseSchema`, enforcing a `12,000`-character input text cap and graceful fallback if `GEMINI_API_KEY` is unset.
 - [x] **T011** [US3] Add non-destructive AI fallback trigger in `extension/popup.js` (and `GET_CLEAN_PAGE_TEXT` handler in `extension/content.js`) that invokes `POST /api/scrape-job` only when deterministic scraping on a job page leaves `role`, `company`, or `notes` incomplete, merging results strictly into fields not in `userEditedFields`.
 - [x] **T012** Bump `extension/manifest.json` `"version"` and `LATEST_EXTENSION_VERSION` in `src/lib/constants.ts` in lockstep, and verify `npx tsc --noEmit`, `npx vitest run`, and `npm run build`.

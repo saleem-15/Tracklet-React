@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "ReportIssueApiContract",
-  "description": "API Contract for POST /api/report-issue (Vercel Serverless Function to GitHub Issues)",
+  "description": "API Contract for POST /api/report-issue (Cloudflare Pages / Serverless Function to GitHub Issues)",
   "type": "object",
   "required": ["type", "title", "description", "diagnostics"],
   "properties": {

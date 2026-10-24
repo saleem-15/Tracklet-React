@@ -72,7 +72,7 @@ As an authenticated Tracklet user, my active session on the web app automaticall
 **Why this priority**: The Chrome Extension is Tracklet's primary PLG acquisition and daily engagement tool. Maintaining Web and Extension parity without fragmented storage is essential.
 
 **Independent Test**:
-1. Sign in to the Tracklet web application (`https://tracklet-eight.vercel.app` or `http://localhost:3000`).
+1. Sign in to the Tracklet web application (`https://tracklet.pages.dev` or `http://localhost:3000`).
 2. Open the Chrome Extension popup (`extension/popup.html`).
 3. Verify the popup displays the user's authenticated email and plan tier (`Free` or `Pro`).
 4. Capture a job from an ATS board (e.g. Greenhouse or Lever).
@@ -295,5 +295,5 @@ service cloud.firestore {
 ## Assumptions & Dependencies
 
 - **Billing Integration Deferred to Spec 014**: Stripe/LemonSqueezy checkout webhooks and customer portal links are scheduled for feature `014-saas-billing-checkout`. In feature `013`, the `<UpgradePaywallModal />` CTA triggers an "Early Access Pro Waitlist" confirmation toast, logs PostHog telemetry, and provides a development-mode entitlement toggle for QA verification.
-- **Serverless Token Verification Implementation**: In Vercel serverless functions, Firebase Auth Bearer tokens are verified using Firebase Auth REST token lookup or public JWKS verification using `FIREBASE_PROJECT_ID` / `VITE_FIREBASE_PROJECT_ID`, avoiding heavy private key bundle dependencies.
+- **Serverless Token Verification Implementation**: In serverless functions (Cloudflare Pages / Node), Firebase Auth Bearer tokens are verified using Firebase Auth REST token lookup or public JWKS verification using `FIREBASE_PROJECT_ID` / `VITE_FIREBASE_PROJECT_ID`, avoiding heavy private key bundle dependencies.
 - **Self-Hosting Preservation**: Open-source self-hosters configuring their own Firebase instances can set default tier or quotas via environment configuration, preserving Tracklet's open-core commitment without breaking local builds.

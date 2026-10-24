@@ -48,13 +48,13 @@
 
 ## R6. Trusted origins (FR-009, US4)
 
-- **Decision**: `content.js` accepts a message only if `event.source === window` **and** `event.origin === window.location.origin` **and** the hostname matches the allowlist: `localhost`, `127.0.0.1`, `tracklet-eight.vercel.app`, `/^tracklet(-[a-z0-9-]+)?\.vercel\.app$/`, existing `web.app`/`firebaseapp.com` patterns. The web app replies with `postMessage(..., window.location.origin)` instead of `'*'`.
-- **Narrow `externally_connectable`**: change `https://*.vercel.app/*` (any Vercel site!) to tracklet-specific hosts.
-- **Pitfall**: A wildcard `*.vercel.app` lets *any* Vercel-hosted site message the extension. That's a real spoofing vector.
+- **Decision**: `content.js` accepts a message only if `event.source === window` **and** `event.origin === window.location.origin` **and** the hostname matches the allowlist: `localhost`, `127.0.0.1`, `tracklet.pages.dev`, `*.tracklet.pages.dev` (e.g. `feature.tracklet.pages.dev`), existing `web.app`/`firebaseapp.com` and `netlify.app` patterns. The web app replies with `postMessage(..., window.location.origin)` instead of `'*'`.
+- **Narrow `externally_connectable`**: change `https://*.pages.dev/*` to `https://tracklet.pages.dev/*` and `https://*.tracklet.pages.dev/*`.
+- **Pitfall**: A wildcard `*.pages.dev` lets *any* Pages-hosted site message the extension. That's a real spoofing vector.
 
 ## R7. Connect action & URLs (FR-007, FR-010)
 
-- **Decision**: A single `TRACKLET_APP_URL = 'https://tracklet-eight.vercel.app'` constant in `popup.js`. `focusOrOpenWorkspace()` uses it as the fallback instead of `http://localhost:3000`. The status chip becomes a `<button>` that calls it when not connected.
+- **Decision**: A single `TRACKLET_APP_URL = 'https://tracklet.pages.dev'` constant in `popup.js`. `focusOrOpenWorkspace()` uses it as the fallback instead of `http://localhost:3000`. The status chip becomes a `<button>` that calls it when not connected.
 
 ## R8. Single owner for credentials and writes (FR-006)
 

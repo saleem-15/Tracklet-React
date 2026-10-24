@@ -15,7 +15,7 @@ Tracklet Companion is currently distributed via manual GitHub repository navigat
 
 | Option | Architecture | Reliability | Dependencies | Decision |
 | :--- | :--- | :--- | :--- | :--- |
-| **Option A: Pure Node.js Cross-Platform Packaging Script** | A zero-dependency script (`scripts/package-extension.js`) executed during build (`npm run package:ext` / `npm run build`) that zips `extension/` into `public/tracklet-extension.zip`. | 100% across Windows, macOS, Linux, and Vercel/Firebase CI. | 0 external npm packages (uses native OS tools or `node:fs` / `node:zlib`). | **SELECTED** |
+| **Option A: Pure Node.js Cross-Platform Packaging Script** | A zero-dependency script (`scripts/package-extension.js`) executed during build (`npm run package:ext` / `npm run build`) that zips `extension/` into `public/tracklet-extension.zip`. | 100% across Windows, macOS, Linux, and Cloudflare Pages/Firebase CI. | 0 external npm packages (uses native OS tools or `node:fs` / `node:zlib`). | **SELECTED** |
 | **Option B: GitHub Releases API Only** | UI button links directly to GitHub's `releases/latest/download/tracklet-extension.zip`. | 95% (depends on GitHub API rate limits and network availability). | None. | **SECONDARY / FALLBACK** |
 | **Option C: Heavy third-party zip libraries (`jszip` / `archiver`)** | Adds 2–5MB dependency footprint to bundle. | High, but adds maintenance and supply-chain overhead. | Additional devDependencies. | **REJECTED** |
 

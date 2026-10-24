@@ -99,7 +99,7 @@ export type CreateTesterReportInput = Omit<
     "diagnostics": {
       "appVersion": "1.2.0",
       "activeTab": "pipeline",
-      "url": "https://tracklet.vercel.app/?tab=pipeline",
+      "url": "https://tracklet.pages.dev/?tab=pipeline",
       "browser": "Chrome 128.0",
       "os": "Windows 11",
       "viewport": "1920x1080",

@@ -48,7 +48,7 @@ Constitution Principle IV and PLG acquisition demand that the Chrome Extension a
 ### Decision
 - **Mandatory Auth in Extension**:
   - The extension popup (`extension/popup.html`) requires an authenticated Firebase session.
-  - If no session exists in `chrome.storage.local`, the popup displays a polished sign-in state with a CTA: *"Sign in to Tracklet"*, opening `https://tracklet-eight.vercel.app/login?source=extension`.
+  - If no session exists in `chrome.storage.local`, the popup displays a polished sign-in state with a CTA: *"Sign in to Tracklet"*, opening `https://tracklet.pages.dev/login?source=extension`.
   - Job capture, duplicate detection, and autofill are gated behind authentication.
 - **Web-to-Extension Auth Bridge**:
   - When a user signs in, refreshes their token, or logs out in the React app, `AuthContext` dispatches a `TRACKLET_AUTH_SYNC` message to the window.
@@ -106,7 +106,7 @@ Serverless endpoints `/api/scrape-job.ts` and `/api/report-issue.ts` were previo
 ### Decision
 - **Bearer Token Verification**:
   - All calls to `/api/scrape-job` and `/api/report-issue` require header: `Authorization: Bearer <firebaseIdToken>`.
-  - In serverless runtimes (Vercel Node/Edge), verify the token by verifying the JWT signature against Google's public JWKS certificates (`https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com`) or querying Firebase Auth Tokeninfo.
+  - In serverless runtimes (Cloudflare Pages Functions / Node), verify the token by verifying the JWT signature against Google's public JWKS certificates (`https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com`) or querying Firebase Auth Tokeninfo.
   - Return HTTP `401 Unauthorized` immediately if missing or invalid.
 - **Quota Metering for AI Scraping**:
   - Free tier: 20 scrapes / month.

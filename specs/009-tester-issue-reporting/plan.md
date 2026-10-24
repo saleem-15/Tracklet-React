@@ -8,12 +8,12 @@
 
 ## Summary
 
-Build an in-app tester bug and feedback reporting engine for Tracklet that operates 100% free with zero credit cards, leveraging Vercel Serverless Functions on the Hobby free tier and Firebase Spark.
+Build an in-app tester bug and feedback reporting engine for Tracklet that operates 100% free with zero credit cards, leveraging Cloudflare Pages / Serverless Functions and Firebase Spark.
 The feature introduces:
 1. **Frictionless In-App Reporter Modal**: Modal with category classification (Bug Report, Visual Glitch, Feature Request, Feedback), severity ranking, title, and description.
 2. **Automated Diagnostic Introspection**: Silently captures non-invasive environment metadata (browser, OS, viewport, active route, auth mode, sanitized recent console errors) without user manual entry.
 3. **Visual Evidence Attachment**: Drag-and-drop, native file picker, and direct clipboard image paste (`Ctrl + V`) with client-side canvas compression (<300KB) and instant preview/removal controls.
-4. **Zero-Cost Issue Routing**: Dispatches to GitHub Issues via Vercel Serverless Function `/api/report-issue` (or fallback pre-filled issue URL) backed by persistent storage in Firestore (`tester_feedback`).
+4. **Zero-Cost Issue Routing**: Dispatches to GitHub Issues via Serverless Function `/api/report-issue` (or fallback pre-filled issue URL) backed by persistent storage in Firestore (`tester_feedback`).
 5. **Dual Surface Access**: Dedicated "Help & Feedback" card in Settings (`SettingsView.tsx`), quick link in Sidebar footer (`Sidebar.tsx`), and optional global hotkey (`?`).
 
 ---
@@ -23,7 +23,7 @@ The feature introduces:
 **Language/Version**: TypeScript 5.8+ / React 19  
 **Primary Dependencies**: Vite 6, TailwindCSS v4, Lucide React (unified blue/slate tokens)  
 **Storage**: Firestore `tester_feedback` collection (Firebase Spark Free Tier, no credit card); `localStorage` (`tracklet_tester_report_draft`) for offline draft resilience  
-**Serverless Endpoint**: Vercel Hobby Free Tier (`api/report-issue.ts`) with GitHub REST API (`octokit` / `fetch`) using repository secret `GITHUB_TOKEN` (zero credit card required)  
+**Serverless Endpoint**: Cloudflare Pages / Node Functions (`functions/api/report-issue.ts`, `api/report-issue.ts`) with GitHub REST API (`octokit` / `fetch`) using repository secret `GITHUB_TOKEN` (zero credit card required)  
 **Testing**: Vitest (`npm test`)  
 **Target Platform**: Desktop and Mobile responsive web browsers  
 **Performance Goals**: <45s average report submission; <300ms modal summon; image compression capped to <300KB WebP  
@@ -57,7 +57,7 @@ specs/009-tester-issue-reporting/
 ├── data-model.md            # TypeScript interfaces & Firestore schema
 ├── quickstart.md            # Manual walkthrough & verification guide
 ├── contracts/
-│   └── api-report-issue.json # API schema for Vercel -> GitHub issue
+│   └── api-report-issue.json # API schema for Serverless -> GitHub issue
 └── checklists/
     └── requirements.md      # Spec completeness checklist
 ```
@@ -66,7 +66,7 @@ specs/009-tester-issue-reporting/
 
 ```text
 api/
-└── report-issue.ts                       # Vercel Serverless Function (GitHub REST API dispatcher)
+└── report-issue.ts                       # Serverless Function (GitHub REST API dispatcher)
 
 src/
 ├── types.ts                              # TesterIssueReport, DiagnosticContext, TesterAttachment
@@ -96,7 +96,7 @@ tests/
 
 | Decision | Why Needed | Simpler Alternative Rejected Because |
 | :--- | :--- | :--- |
-| Vercel Serverless Function (`api/report-issue.ts`) | Dispatches to GitHub REST API securely without exposing token | Client-side API token embedding is a fatal security leak; Firebase Functions requires credit card |
+| Serverless Function (`api/report-issue.ts`) | Dispatches to GitHub REST API securely without exposing token | Client-side API token embedding is a fatal security leak; Firebase Functions requires credit card |
 | Canvas Image Compression | Caps screenshots to <300KB before transmission | Sending multi-megabyte 4K raw screenshots causes upload timeouts on mobile/poor connections |
 | Native Paste Listener (`Ctrl+V`) | Enables immediate screenshot pasting from OS snippet tools | Heavy screenshot libraries like `html2canvas` add bloat and break with cross-origin assets |
 

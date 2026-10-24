@@ -66,15 +66,15 @@
 
 ---
 
-## Phase 5: User Story 3 (P3) - GitHub Issue Routing via Vercel Serverless Function & Cloud Persistence
+## Phase 5: User Story 3 (P3) - GitHub Issue Routing via Serverless Function & Cloud Persistence
 
-**Goal**: Automatically route submitted reports to GitHub Issues with raw title, severity labels, diagnostic tables, and screenshot embeds via Vercel Serverless Function on the free Hobby tier (no credit card).
+**Goal**: Automatically route submitted reports to GitHub Issues with raw title, severity labels, diagnostic tables, and screenshot embeds via Serverless Function (no credit card).
 
 **Independent Test**: Can be verified by submitting a report and verifying the creation of a GitHub Issue in the repository with labels (`bug`, `tester-feedback`, `severity: high`) and markdown diagnostics, or viewing the 1-click GitHub URL fallback in local dev.
 
 ### Implementation for User Story 3
 
-- [x] T017 [P] [US3] Create Vercel Serverless Function `api/report-issue.ts` using GitHub REST API to create issues with raw title, labels (`bug`, `tester-feedback`, severity), formatted diagnostic tables, and optional reporter details
+- [x] T017 [P] [US3] Create Serverless Function `api/report-issue.ts` using GitHub REST API to create issues with raw title, labels (`bug`, `tester-feedback`, severity), formatted diagnostic tables, and optional reporter details
 - [x] T018 [US3] Update `src/lib/feedbackRepository.ts` to dispatch submissions to `/api/report-issue` with graceful fallback to Firestore storage and 1-click GitHub Issue URL generator for local development
 - [x] T019 [US3] Update `src/components/feedback/TesterReportModal.tsx` confirmation receipt to display linked GitHub Issue number/URL when returned by the API
 
@@ -136,5 +136,5 @@ Phase 3: User Story 1 (P1)   Phase 4: User Story 2 (P2)   Phase 5: User Story 3 
 
 ### Incremental Delivery
 1. Add User Story 2: Paste screenshots via `Ctrl + V` and file picker.
-2. Add User Story 3: Vercel Serverless Function `/api/report-issue` to auto-generate GitHub Issues.
+2. Add User Story 3: Serverless Function `/api/report-issue` to auto-generate GitHub Issues.
 3. Polish: Hotkey `?`, draft auto-save, and full build validation.

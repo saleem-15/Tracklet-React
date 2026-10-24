@@ -1747,7 +1747,7 @@ DM me if interested!</div>
         storage: {
           local: {
             get: (_keys: any, cb?: any) => {
-              const res = { tracklet_web_origin: 'https://tracklet-eight.vercel.app' };
+              const res = { tracklet_web_origin: 'https://tracklet.pages.dev' };
               if (cb) cb(res);
               return Promise.resolve(res);
             },
@@ -2106,7 +2106,7 @@ DM me if interested!</div>
           local: {
             get: (_keys: any, cb?: any) => {
               const res = {
-                tracklet_web_origin: 'https://tracklet-eight.vercel.app',
+                tracklet_web_origin: 'https://tracklet.pages.dev',
                 // Cached by content.js when user initially loaded the top of the profile (marketing headline)
                 tracklet_active_tab_data: {
                   url: 'https://www.linkedin.com/in/belalnayzak/',
@@ -2305,7 +2305,7 @@ DM me if interested!</div>
         storage: {
           local: {
             get: (_keys: any, cb?: any) => {
-              const res = { tracklet_web_origin: 'https://tracklet-eight.vercel.app' };
+              const res = { tracklet_web_origin: 'https://tracklet.pages.dev' };
               if (cb) cb(res);
               return Promise.resolve(res);
             },
@@ -2829,7 +2829,7 @@ DM me if interested!</div>
         storage: {
           local: {
             get: (_keys: any, cb?: any) => {
-              const res = { tracklet_web_origin: 'https://tracklet-eight.vercel.app' };
+              const res = { tracklet_web_origin: 'https://tracklet.pages.dev' };
               if (cb) cb(res);
               return Promise.resolve(res);
             },

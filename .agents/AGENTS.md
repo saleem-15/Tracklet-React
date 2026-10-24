@@ -8,7 +8,7 @@ Tracklet is a **commercial, closed-source B2C SaaS web application and Chrome Ex
 - **Frontend (`src/`):** React 19, TypeScript, Vite, Tailwind CSS, Lucide Icons.
   - Domain hooks & state: `src/hooks/`, `src/context/` (see `docs/architecture-migration/`).
   - Core views: `ActivePipelineBoard.tsx`, `AllApplicationsTable.tsx`, `ApplicationDetailPanel.tsx`, `StatsView.tsx`.
-- **Backend & Persistence:** Firebase Authentication, Cloud Firestore (`firestore.rules`), Firebase Cloud Storage (for resumes/documents), and Vercel/Node Serverless Functions (`api/`).
+- **Backend & Persistence:** Firebase Authentication, Cloud Firestore (`firestore.rules`), Firebase Cloud Storage (for resumes/documents), and Cloudflare Pages Functions / Serverless Functions (`functions/api/`, `api/`).
 - **Browser Extension (`extension/`):** Manifest V3 Chrome Extension (`popup.js`, `content.js`, `background.js`, `jobBoardRegistry.js`).
 - **Specs & Architecture:**
   - Product & Business Truth: `PRODUCT.md`, `STRATEGY.md`, `DESIGN.md`.
