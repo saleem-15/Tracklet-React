@@ -14,7 +14,7 @@ This guide walks through validation scenarios to verify that the extension captu
    - Navigate to `chrome://extensions/`
    - Enable "Developer mode" (top right toggle)
    - Click "Load unpacked" and select `d:\Programming\Tracklet\extension` (or click reload icon if already loaded)
-3. Open `http://localhost:5173` (or production `https://tracklet-eight.vercel.app`) and sign in.
+3. Open `http://localhost:5173` (or production `https://tracklet.pages.dev`) and sign in.
 
 ---
 

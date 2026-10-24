@@ -125,4 +125,4 @@ When deterministic extraction cannot confidently populate critical fields (`role
 ## Assumptions
 
 - Contact profile scraping (`contact_profile` / LinkedIn profile extraction) is handled in a separate workstream and MUST NOT be altered by job-posting scraper changes.
-- Tracklet's existing Vercel deployment (`https://tracklet-eight.vercel.app`) hosts `/api/*` serverless routes (alongside `api/report-issue.ts`).
+- Tracklet's Cloudflare Pages deployment (`https://tracklet.pages.dev`) hosts `/api/*` serverless routes (alongside `api/report-issue.ts`).

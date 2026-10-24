@@ -15,7 +15,7 @@ Use this skill when auditing, adding UI features, or optimizing performance and 
    - `index.html` must always have a descriptive, non-generic `<meta name="description">` (50–160 chars).
    - Document title must follow: `Tracklet — Modern Job Application Tracker`.
 2. **Canonical Link**:
-   - Maintain `<link rel="canonical" href="https://tracklet-eight.vercel.app/" />`.
+   - Maintain `<link rel="canonical" href="https://tracklet.pages.dev/" />` (or configured canonical origin).
 3. **Robots & Agentic Browsing**:
    - `public/robots.txt` must explicitly allow crawling (`Allow: /`) and reference `sitemap.xml`.
    - `public/llms.txt` must follow LLMs.txt format: `# Project Name`, markdown blockquote summary, `## About`, `## Features`, and hyperlinked navigation endpoints.

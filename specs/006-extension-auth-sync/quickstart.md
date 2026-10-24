@@ -32,7 +32,7 @@ Expected new unit cases to pass:
 | 6 | In DevTools for extension, set both `idToken` and `refreshToken` to garbage → save a job | Refresh fails: falls back locally, success says **Saved on this device**, chip = **Reconnect** | US3-3, FR-008 |
 | 7 | Sign out on web app → open popup | Chip = **Not connected** | FR-003 |
 | 8 | On an unrelated site console: `postMessage({type:'TRACKLET_WEB_AUTH_SYNC',payload:{user:{uid:'x',idToken:'y'}}}, '*')` | Stored session unchanged | US4-2, FR-009 |
-| 9 | Sign in on a `tracklet-*.vercel.app` preview URL | Connects | US4-1 |
+| 9 | Sign in on a `tracklet-*.pages.dev` preview URL | Connects | US4-1 |
 | 10 | DevTools → Network offline → open popup | Chip = **Offline** | FR-006 |
 
 Inspect storage: on `chrome://extensions`, open the service worker console and run `chrome.storage.local.get('tracklet_user_session', console.log)`.

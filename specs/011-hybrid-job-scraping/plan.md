@@ -14,22 +14,22 @@ Raise Tracklet's browser extension job-scraping accuracy from ~55–65% to **95%
    - Fix the 9 root-cause bugs identified across `workable.com`, `cosy.green`, and `arc.dev` (missing `cleanRoleTitle` helper, `og:title` vs `<h1>` inversion, `"Karriere bei"` company prefix pollution, JSON-LD `employmentType` space/hyphen normalization, `applicantLocationRequirements` remote country extraction, non-ARIA React portal modal detection, sibling label-value metadata extraction, prose company extraction for `"Join Our Team at X"`, and Readability-style description density scoring).
    - Fix SPA late-hydration drops by adding `notes.length` and `employmentType` to `threadSig` in `extension/content.js`, syncing `classifyTabUrl()` in `extension/popup.js` with `JobBoardRegistry.ATS_HOSTS` + `/j/` + `/karriere/`, and re-polling when `notes` is empty.
 2. **Layer 2 — Hybrid AI Fallback (`api/scrape-job.ts`, reaches 95–99% accuracy at `$0` free tier / `<$0.0005` per scrape paid)**:
-   - Add a Vercel Serverless Function (`api/scrape-job.ts`) calling **Gemini 2.5 Flash-Lite** with Structured Outputs (`responseSchema`) on cleaned visible page text (`<= 12,000` chars).
+   - Add a Serverless Function (`api/scrape-job.ts` & `functions/api/scrape-job.ts`) calling **Gemini 2.5 Flash-Lite** with Structured Outputs (`responseSchema`) on cleaned visible page text (`<= 12,000` chars).
    - Trigger automatically (and/or via a manual button) only when Layer 1 leaves critical fields (`role`, `company`, or `notes`) incomplete, merging results strictly into unedited/empty fields.
 
 ---
 
 ## Technical Context
 
-**Language/Version**: TypeScript 5 (Vercel serverless function & unit tests), plain ES2020 JavaScript (MV3 extension in `extension/`)
+**Language/Version**: TypeScript 5 (Serverless function & unit tests), plain ES2020 JavaScript (MV3 extension in `extension/`)
 
-**Primary Dependencies**: Chrome Extension MV3 APIs (`chrome.tabs`, `chrome.runtime`, `chrome.storage`), Vercel Serverless Runtime (`api/scrape-job.ts`), Google Gemini REST API (`gemini-2.5-flash-lite` via `fetch` — zero heavy SDK dependencies required)
+**Primary Dependencies**: Chrome Extension MV3 APIs (`chrome.tabs`, `chrome.runtime`, `chrome.storage`), Cloudflare Pages / Serverless Runtime (`api/scrape-job.ts`), Google Gemini REST API (`gemini-2.5-flash-lite` via `fetch` — zero heavy SDK dependencies required)
 
 **Storage**: `chrome.storage.local` (`tracklet_active_tab_data` transient cache), Firestore `applications` collection on save
 
 **Testing**: Vitest (`tests/unit/extensionAutoScrape.test.ts`, `tests/unit/extensionTabContext.test.ts`)
 
-**Target Platform**: Chromium browsers (Chrome, Edge, Brave) MV3 + Vercel Hobby Free Tier
+**Target Platform**: Chromium browsers (Chrome, Edge, Brave) MV3 + Cloudflare Pages / Netlify Functions
 
 **Performance Goals**:
 - Layer 1 (Deterministic): `< 50ms` execution time, `0` network calls
@@ -74,7 +74,7 @@ specs/011-hybrid-job-scraping/
 
 ```text
 api/
-├── report-issue.ts             # Existing Vercel serverless function (reference pattern)
+├── report-issue.ts             # Existing serverless function (reference pattern)
 └── scrape-job.ts               # NEW: Hybrid AI fallback endpoint (Gemini 2.5 Flash-Lite JSON schema)
 
 extension/
@@ -91,7 +91,7 @@ tests/unit/
 ## Phased Execution Plan
 
 ### Phase 1: Standalone Serverless AI Fallback (`api/scrape-job.ts`) — *Zero Conflict with Parallel Agent*
-1. Create `api/scrape-job.ts` using the same zero-dependency Vercel Serverless Function pattern as `api/report-issue.ts`.
+1. Create `api/scrape-job.ts` using the same zero-dependency Serverless Function pattern as `api/report-issue.ts`.
 2. Accept `{ text, url, pageTitle, currentScraped }` (truncating `text` to `12,000` chars server-side for safety).
 3. Call Gemini REST API (`gemini-2.5-flash-lite`) with `responseMimeType: "application/json"` and strict `responseSchema` for `{ role, company, companyDomain, location, workLocation, employmentType, salary, notes }`.
 4. Return graceful JSON `{ fallbackAvailable: false }` if `GEMINI_API_KEY` is not yet configured in environment variables so the extension never errors.

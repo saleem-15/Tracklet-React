@@ -138,6 +138,6 @@ Because the extension can now act on the account without Tracklet open, signing 
 
 - The extension has no standalone sign-in screen; Tracklet remains where users sign in.
 - Granting the extension a long-lived credential is accepted. Rationale and threat model live in `research.md` (R4). It's limited to official Tracklet origins, held in extension-private storage, and revoked by sign-out, Disconnect, or password change.
-- Production is `tracklet-eight.vercel.app`; previews follow `tracklet-*.vercel.app`.
+- Production is `tracklet.pages.dev`; previews follow `tracklet-*.pages.dev`.
 - Distribution stays "load unpacked" for testers; Chrome Web Store publishing is out of scope.
 - Signing out of Tracklet on *one* device does not disconnect extensions on *other* devices; only a password change or account-wide revocation does. This matches how the web app itself behaves today.

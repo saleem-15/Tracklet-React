@@ -131,7 +131,7 @@ git add src/lib/firebase.ts src/vite-env.d.ts .env.example
 ### Step 4: Commit with Clear Message
 ```bash
 git commit -m "fix(firebase): remove local json import in favor of vite env variables" -m "Why:
-The previous implementation imported a gitignored JSON config file directly, causing clean clones and deployment builds on Vercel/Netlify to fail with module resolution errors.
+The previous implementation imported a gitignored JSON config file directly, causing clean clones and deployment builds on Cloudflare Pages/Netlify to fail with module resolution errors.
 
 What:
 - Switched Firebase initialization strictly to import.meta.env.VITE_FIREBASE_* variables.
