@@ -14,7 +14,8 @@ import {
   PanelLeftOpen,
   X,
   Bug,
-  Puzzle
+  Puzzle,
+  ShieldCheck
 } from 'lucide-react';
 import { ActiveTab, Application, Contact, ExpiryNotificationSettings } from '../types';
 import { User } from '../lib/firebase';
@@ -394,13 +395,35 @@ export const Sidebar: React.FC<SidebarProps> = (props) => {
         aria-label="Report an Issue or Feedback (Ctrl+Alt+B)"
         className={`w-full flex items-center ${
           !isMobileView && isCollapsed ? 'justify-center p-2' : 'justify-start px-2.5 py-1.5'
-        } rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 transition-colors text-xs font-medium cursor-pointer`}
+        } rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 transition-colors text-xs font-medium cursor-pointer active:scale-[0.98] motion-reduce:transform-none`}
       >
         <Bug className="w-4 h-4 text-slate-500 shrink-0" />
         {(isMobileView || !isCollapsed) && (
           <div className="ml-2 flex items-center justify-between flex-1">
             <span className="font-medium">Report Issue</span>
             <kbd className="text-[11px] text-slate-500 font-mono">Ctrl+Alt+B</kbd>
+          </div>
+        )}
+      </button>
+
+      {/* Legal & Trust Pages Action */}
+      <button
+        type="button"
+        onClick={() => {
+          if (isMobileView && onCloseMobile) onCloseMobile();
+          nav.navigateToLegal('privacy');
+        }}
+        title="Privacy Policy & Terms of Service"
+        aria-label="Privacy Policy & Terms of Service"
+        className={`w-full flex items-center ${
+          !isMobileView && isCollapsed ? 'justify-center p-2' : 'justify-start px-2.5 py-1.5'
+        } rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 transition-colors text-xs font-medium cursor-pointer active:scale-[0.98] motion-reduce:transform-none`}
+      >
+        <ShieldCheck className="w-4 h-4 text-slate-500 shrink-0" />
+        {(isMobileView || !isCollapsed) && (
+          <div className="ml-2 flex items-center justify-between flex-1">
+            <span className="font-medium">Legal & Trust</span>
+            <span className="text-[11px] text-slate-500 font-mono font-medium">Privacy</span>
           </div>
         )}
       </button>

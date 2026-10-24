@@ -2,10 +2,11 @@ import { useState, useEffect, type ReactNode } from 'react';
 import { EmailVerificationGate } from '../EmailVerificationGate';
 import { AuthScreen } from '../AuthScreen';
 import { ToastContainer } from '../Toast';
-import { LegalView } from '../legal/LegalView';
+import { PrivacyPolicyPage } from '../legal/PrivacyPolicyPage';
+import { TermsOfServicePage } from '../legal/TermsOfServicePage';
 import { useAuth } from '../../context/AuthContext';
 import { useToastContext } from '../../context/ToastContext';
-import { isLegalPath, getLegalDocFromPath } from '../../lib/routeUtils';
+import { isPrivacyPath, isTermsPath, navigateToRoute } from '../../lib/routeUtils';
 
 export interface AuthGateProps {
   onReloadData: () => Promise<void>;
@@ -45,16 +46,24 @@ export function AuthGate({
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  // 1. Public Legal & Trust Pages (bypasses auth loading, unverified, and login wall)
-  if (isLegalPath(currentPath)) {
+  // 1. Dedicated Public Legal & Trust Pages (bypasses auth loading, unverified, and login wall)
+  if (isPrivacyPath(currentPath)) {
     return (
-      <LegalView
-        initialDoc={getLegalDocFromPath(currentPath)}
+      <PrivacyPolicyPage
         onNavigateHome={() => {
           const destination = user ? '/applications' : '/login';
-          window.history.pushState(null, '', destination);
-          setCurrentPath(destination);
-          window.dispatchEvent(new PopStateEvent('popstate'));
+          navigateToRoute(destination);
+        }}
+      />
+    );
+  }
+
+  if (isTermsPath(currentPath)) {
+    return (
+      <TermsOfServicePage
+        onNavigateHome={() => {
+          const destination = user ? '/applications' : '/login';
+          navigateToRoute(destination);
         }}
       />
     );

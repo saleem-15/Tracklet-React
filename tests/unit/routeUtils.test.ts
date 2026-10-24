@@ -10,6 +10,7 @@ import {
   getPathForTab,
   LEGAL_PATH_TO_DOC,
   DOC_TO_LEGAL_PATH,
+  navigateToRoute,
 } from '../../src/lib/routeUtils';
 
 describe('routeUtils - Legal & Trust Routes', () => {
@@ -66,5 +67,24 @@ describe('routeUtils - Legal & Trust Routes', () => {
     expect(getPathForAuthMode('signup')).toBe('/signup');
     expect(getTabFromPath('/pipeline')).toBe('pipeline');
     expect(getPathForTab('pipeline')).toBe('/pipeline');
+  });
+
+  it('updates window.location.pathname and dispatches popstate event on navigateToRoute', () => {
+    let popstateFired = false;
+    const listener = () => {
+      popstateFired = true;
+    };
+    window.addEventListener('popstate', listener);
+
+    navigateToRoute('/privacy');
+    expect(window.location.pathname).toBe('/privacy');
+    expect(popstateFired).toBe(true);
+
+    popstateFired = false;
+    navigateToRoute('/terms', true);
+    expect(window.location.pathname).toBe('/terms');
+    expect(popstateFired).toBe(true);
+
+    window.removeEventListener('popstate', listener);
   });
 });

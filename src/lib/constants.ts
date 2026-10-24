@@ -420,3 +420,9 @@ export const EXTENSION_STATUS_CONFIG = {
 
 
 
+
+export const LEGAL_CONFIG = {
+  SUPPORT_EMAIL: 'saleemmahdi10@gmail.com',
+  PRIVACY_EMAIL: 'saleemmahdi10@gmail.com',
+  LEGAL_EMAIL: 'saleemmahdi10@gmail.com',
+} as const;

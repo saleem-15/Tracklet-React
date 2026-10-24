@@ -1,10 +1,12 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { ActiveTab, FilterState } from '../types';
 import { useUrlNavigation } from '../hooks/useUrlNavigation';
+import { LegalDocType, getPathForLegalDoc, navigateToRoute } from '../lib/routeUtils';
 
 export interface NavigationContextType {
   activeTab: ActiveTab;
   setActiveTab: (tab: ActiveTab) => void;
+  navigateToLegal: (doc?: LegalDocType) => void;
   filter: FilterState;
   setFilter: React.Dispatch<React.SetStateAction<FilterState>>;
   resetFilters: () => void;
@@ -94,9 +96,14 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const openExtensionModal = useCallback(() => setIsExtensionModalOpen(true), []);
   const closeExtensionModal = useCallback(() => setIsExtensionModalOpen(false), []);
 
+  const navigateToLegal = useCallback((doc: LegalDocType = 'privacy') => {
+    navigateToRoute(getPathForLegalDoc(doc));
+  }, []);
+
   const value = useMemo<NavigationContextType>(() => ({
     activeTab,
     setActiveTab,
+    navigateToLegal,
     filter,
     setFilter,
     resetFilters,
@@ -121,6 +128,7 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   }), [
     activeTab,
     setActiveTab,
+    navigateToLegal,
     filter,
     setFilter,
     resetFilters,
