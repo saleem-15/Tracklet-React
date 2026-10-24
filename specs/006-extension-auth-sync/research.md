@@ -48,8 +48,8 @@
 
 ## R6. Trusted origins (FR-009, US4)
 
-- **Decision**: `content.js` accepts a message only if `event.source === window` **and** `event.origin === window.location.origin` **and** the hostname matches the allowlist: `localhost`, `127.0.0.1`, `tracklet.pages.dev`, `/^tracklet(-[a-z0-9-]+)?\.pages\.dev$/`, existing `web.app`/`firebaseapp.com` patterns. The web app replies with `postMessage(..., window.location.origin)` instead of `'*'`.
-- **Narrow `externally_connectable`**: change `https://*.pages.dev/*` to tracklet-specific hosts.
+- **Decision**: `content.js` accepts a message only if `event.source === window` **and** `event.origin === window.location.origin` **and** the hostname matches the allowlist: `localhost`, `127.0.0.1`, `tracklet.pages.dev`, `*.tracklet.pages.dev` (e.g. `feature.tracklet.pages.dev`), existing `web.app`/`firebaseapp.com` and `netlify.app` patterns. The web app replies with `postMessage(..., window.location.origin)` instead of `'*'`.
+- **Narrow `externally_connectable`**: change `https://*.pages.dev/*` to `https://tracklet.pages.dev/*` and `https://*.tracklet.pages.dev/*`.
 - **Pitfall**: A wildcard `*.pages.dev` lets *any* Pages-hosted site message the extension. That's a real spoofing vector.
 
 ## R7. Connect action & URLs (FR-007, FR-010)
