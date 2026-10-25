@@ -12,15 +12,13 @@ import React, {
 import { createPortal } from 'react-dom';
 import {
   TooltipPlacement,
-  TooltipVariant,
   TooltipCoordinates,
   parseTooltipText,
   formatShortcutForPlatform,
   calculateTooltipPosition,
 } from '../lib/tooltipUtils';
-import { TooltipLabSwitcher } from './TooltipLabSwitcher';
 
-export type { TooltipPlacement, TooltipVariant };
+export type { TooltipPlacement };
 export { parseTooltipText, formatShortcutForPlatform };
 
 export interface TooltipProps {
@@ -45,8 +43,6 @@ interface ActiveTooltipState {
 interface TooltipContextType {
   showTooltip: (state: ActiveTooltipState) => void;
   hideTooltip: (target?: HTMLElement) => void;
-  variant: TooltipVariant;
-  setVariant: (variant: TooltipVariant) => void;
 }
 
 const TooltipContext = createContext<TooltipContextType | null>(null);
@@ -59,18 +55,10 @@ export const useTooltip = (): TooltipContextType => {
   return ctx;
 };
 
-function getInitialVariant(): TooltipVariant {
-  if (typeof window === 'undefined') return 'a';
-  const param = new URLSearchParams(window.location.search).get('variant');
-  if (param?.toLowerCase() === 'b') return 'b';
-  return 'a';
-}
-
 export const TooltipProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [active, setActive] = useState<ActiveTooltipState | null>(null);
   const [coords, setCoords] = useState<TooltipCoordinates | null>(null);
   const [isVisible, setIsVisible] = useState(false);
-  const [variant, setVariant] = useState<TooltipVariant>(getInitialVariant);
 
   const activeRef = useRef<ActiveTooltipState | null>(null);
   activeRef.current = active;
@@ -118,15 +106,14 @@ export const TooltipProvider: React.FC<{ children: ReactNode }> = ({ children })
     [clearTimer]
   );
 
-  // Position calculation with variant-specific gap
+  // Position calculation for floating island (8px gap)
   useEffect(() => {
     if (!active || !tooltipRef.current) return;
     const targetRect = active.target.getBoundingClientRect();
     const tooltipRect = tooltipRef.current.getBoundingClientRect();
-    const gap = variant === 'a' ? 8 : 6;
-    const calculated = calculateTooltipPosition(targetRect, tooltipRect, active.placement, gap);
+    const calculated = calculateTooltipPosition(targetRect, tooltipRect, active.placement, 8);
     setCoords(calculated);
-  }, [active, variant]);
+  }, [active]);
 
   // Global delegated listener for hover, keyboard focus, and native title suppression
   useEffect(() => {
@@ -256,7 +243,7 @@ export const TooltipProvider: React.FC<{ children: ReactNode }> = ({ children })
   const currentPlacement = coords?.placement ?? active?.placement ?? 'top';
   const isWarm = active?.isWarm ?? false;
 
-  // Subtle, premium micro-motion: 1.5px spatial settle without scale deformation
+  // Whisper-settling micro-motion (1.5px spatial drift without scale distortion)
   const getDirectionalTransform = () => {
     if (isVisible && coords) {
       return 'translate-x-0 translate-y-0 opacity-100';
@@ -278,24 +265,9 @@ export const TooltipProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
   };
 
-  const arrowClassMap: Record<TooltipPlacement, string> = {
-    top: '-bottom-1 border-r border-b',
-    bottom: '-top-1 border-l border-t',
-    left: '-right-1 border-t border-r',
-    right: '-left-1 border-b border-l',
-  };
-
-  const arrowStyle =
-    currentPlacement === 'top' || currentPlacement === 'bottom'
-      ? { left: `${coords?.arrowOffset ?? 12}px`, transform: 'translateX(-50%) rotate(45deg)' }
-      : { top: `${coords?.arrowOffset ?? 12}px`, transform: 'translateY(-50%) rotate(45deg)' };
-
   return (
-    <TooltipContext.Provider value={{ showTooltip, hideTooltip, variant, setVariant }}>
+    <TooltipContext.Provider value={{ showTooltip, hideTooltip }}>
       {children}
-
-      {/* Development & Live Sandbox Variant Switcher */}
-      <TooltipLabSwitcher variant={variant} onVariantChange={setVariant} />
 
       {typeof document !== 'undefined' &&
         active &&
@@ -314,11 +286,7 @@ export const TooltipProvider: React.FC<{ children: ReactNode }> = ({ children })
               isVisible && coords
                 ? 'duration-100 ease-out'
                 : 'duration-60 ease-in'
-            } motion-reduce:transition-none motion-reduce:transform-none ${getDirectionalTransform()} ${
-              variant === 'a'
-                ? 'px-2.5 py-1 bg-slate-950/92 backdrop-blur-md text-slate-50 text-[11.5px] font-sans font-medium tracking-tight rounded-md ring-1 ring-inset ring-white/10 shadow-[0_2px_4px_rgba(0,0,0,0.3),0_8px_18px_rgba(0,0,0,0.4)]'
-                : 'px-2.5 py-1 bg-slate-900/96 backdrop-blur-sm text-slate-100 text-[11px] font-sans font-medium leading-tight rounded-[6px] border border-slate-700/80 shadow-[0_4px_12px_rgba(0,0,0,0.4)]'
-            }`}
+            } motion-reduce:transition-none motion-reduce:transform-none ${getDirectionalTransform()} px-2.5 py-1 bg-slate-950/92 backdrop-blur-md text-slate-50 text-[11.5px] font-sans font-medium tracking-tight rounded-md ring-1 ring-inset ring-white/10 shadow-[0_2px_4px_rgba(0,0,0,0.3),0_8px_18px_rgba(0,0,0,0.4)]`}
           >
             {parsed ? (
               <>
@@ -326,27 +294,13 @@ export const TooltipProvider: React.FC<{ children: ReactNode }> = ({ children })
                   {parsed.label}
                 </span>
                 {parsed.shortcut && (
-                  <kbd
-                    className={`inline-flex items-center font-mono uppercase ${
-                      variant === 'a'
-                        ? 'px-1.5 py-0.5 bg-white/10 text-slate-300 text-[9px] font-medium rounded ring-1 ring-white/15 shadow-inner'
-                        : 'px-1 py-0.2 bg-slate-800 text-slate-300 text-[9.5px] rounded border border-slate-700/80 shadow-2xs'
-                    }`}
-                  >
+                  <kbd className="inline-flex items-center font-mono uppercase px-1.5 py-0.5 bg-white/10 text-slate-300 text-[9px] font-medium rounded ring-1 ring-white/15 shadow-inner">
                     {formatShortcutForPlatform(parsed.shortcut)}
                   </kbd>
                 )}
               </>
             ) : (
               active.content
-            )}
-
-            {/* Variant B Caret Arrow */}
-            {variant === 'b' && (
-              <div
-                className={`absolute w-1.5 h-1.5 bg-slate-900 border-slate-700/80 pointer-events-none ${arrowClassMap[currentPlacement]}`}
-                style={arrowStyle}
-              />
             )}
           </div>,
           document.body
