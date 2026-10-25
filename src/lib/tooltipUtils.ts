@@ -1,5 +1,4 @@
 export type TooltipPlacement = 'top' | 'bottom' | 'left' | 'right';
-export type TooltipVariant = 'a' | 'b';
 
 export interface TooltipCoordinates {
   top: number;
