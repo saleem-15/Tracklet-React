@@ -1,11 +1,14 @@
 import React from 'react';
 import { Trash2, Copy, Mail, Check, X, LucideIcon } from 'lucide-react';
+import type { TooltipPlacement } from './Tooltip';
 
 export interface IconButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   icon: LucideIcon;
   variant?: 'default' | 'danger' | 'primary' | 'subtle';
   size?: 'sm' | 'md';
   title?: string;
+  tooltipPlacement?: TooltipPlacement;
+  shortcut?: string;
 }
 
 export const IconButton: React.FC<IconButtonProps> = ({
@@ -13,6 +16,8 @@ export const IconButton: React.FC<IconButtonProps> = ({
   variant = 'default',
   size = 'sm',
   title,
+  tooltipPlacement,
+  shortcut,
   className = '',
   onClick,
   disabled,
@@ -41,6 +46,9 @@ export const IconButton: React.FC<IconButtonProps> = ({
       onClick={onClick}
       disabled={disabled}
       title={title}
+      data-tooltip={title}
+      data-tooltip-placement={tooltipPlacement}
+      data-tooltip-shortcut={shortcut}
       aria-label={title}
       className={`relative inline-flex items-center justify-center transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:min-w-[44px] after:min-h-[44px] after:w-full after:h-full ${sizeStyles[size]} ${variantStyles[variant]} ${className}`}
       {...props}
@@ -98,11 +106,13 @@ export const CopyIconButton: React.FC<CopyIconButtonProps> = ({
 
 export interface EmailIconButtonProps extends Omit<IconButtonProps, 'icon'> {
   email: string;
+  tooltipPlacement?: TooltipPlacement;
 }
 
 export const EmailIconButton: React.FC<EmailIconButtonProps> = ({
   email,
   title = `Send email to ${email}`,
+  tooltipPlacement,
   size = 'sm',
   className = '',
 }) => (
@@ -111,6 +121,8 @@ export const EmailIconButton: React.FC<EmailIconButtonProps> = ({
     target="_blank"
     rel="noopener noreferrer"
     title={title}
+    data-tooltip={title}
+    data-tooltip-placement={tooltipPlacement}
     aria-label={title}
     className={`relative inline-flex items-center justify-center text-blue-700 hover:text-blue-800 hover:bg-blue-50 transition-colors rounded-lg after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:min-w-[44px] after:min-h-[44px] after:w-full after:h-full ${
       size === 'md' ? 'p-2' : 'p-1.5'
