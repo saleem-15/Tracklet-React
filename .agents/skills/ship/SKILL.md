@@ -66,6 +66,10 @@ npx vitest run
 npm run build
 ```
 
+#### Experimental Harness Verification:
+- **Zero Prototyping Residue**: Ensure no temporary variant switchers (e.g. `*LabSwitcher.tsx`, floating comparison bars, debug toggles) remain in the working tree.
+- **Single Canonical Implementation**: Confirm all secondary exploratory variants have been purged and only the user-selected canonical component is wired.
+
 If code files were added or modified in Tracklet, update the persistent knowledge graph:
 ```bash
 graphify update .
