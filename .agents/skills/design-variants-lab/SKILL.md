@@ -74,8 +74,11 @@ Run each variant through this structured evaluation rubric with the user:
 | **Accessibility (WCAG AA)** | Do spine dots maintain uniform 10px geometry? Are contrast ratios >= 4.5:1? Does motion avoid disruptive continuous animations (`animate-ping`)? |
 
 ### Phase 5: Selection, Harmonization & Production Integration
-1. Review feedback with the user and cherry-pick the best aspects of each variant.
-2. Refactor the selected variant into the canonical production component (`<Feature>.tsx`).
+1. Review feedback with the user and identify the chosen canonical archetype.
+2. **Mandatory Sandbox Dismantling (Zero Experimental Residue)**:
+   - **Delete Prototyping Widgets**: Completely delete temporary comparison harnesses (e.g. `*LabSwitcher.tsx`, floating comparison bars, sandbox debug toggles).
+   - **Purge Secondary Variants**: Strip all multi-variant branching, port-based variant detection, and unused alternative variant components.
+   - **Canonical Refactoring**: Refactor the chosen archetype into the single canonical, production-grade component with clean, domain-specific props.
 3. Wire live callbacks (`onUpdateApp`, persistence layer, optimistic UI updates, Undo toast receipts).
 4. Verify with:
    ```bash
