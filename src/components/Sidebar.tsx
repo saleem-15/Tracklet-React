@@ -132,8 +132,11 @@ export const Sidebar: React.FC<SidebarProps> = (props) => {
   };
 
   // Shared Navigation list content
-  const renderNavItems = (isMobileView = false) => (
-    <nav className={`space-y-1 ${isMobileView ? 'p-3' : 'p-2'}`}>
+  const renderNavItems = (isMobileView = false) => {
+    const isSectionTooltipDisabled = !isCollapsed || isMobileView;
+
+    return (
+      <nav className={`space-y-1 ${isMobileView ? 'p-3' : 'p-2'}`}>
       {(!isCollapsed || isMobileView) && (
         <div className="px-2.5 pt-1.5 pb-1 text-[11px] font-mono uppercase tracking-wider text-slate-500 font-bold">
           Views
@@ -145,6 +148,9 @@ export const Sidebar: React.FC<SidebarProps> = (props) => {
         type="button"
         onClick={() => handleTabClick('all')}
         title="All Applications"
+        data-tooltip={isSectionTooltipDisabled ? undefined : 'All Applications'}
+        data-tooltip-placement="right"
+        data-no-tooltip={isSectionTooltipDisabled ? '' : undefined}
         className={`w-full flex items-center ${
           isMobileView
             ? 'justify-between px-3.5 py-3 min-h-[44px]'
@@ -168,6 +174,9 @@ export const Sidebar: React.FC<SidebarProps> = (props) => {
         type="button"
         onClick={() => handleTabClick('pipeline')}
         title="Active Pipeline"
+        data-tooltip={isSectionTooltipDisabled ? undefined : 'Active Pipeline'}
+        data-tooltip-placement="right"
+        data-no-tooltip={isSectionTooltipDisabled ? '' : undefined}
         className={`w-full flex items-center ${
           isMobileView
             ? 'justify-between px-3.5 py-3 min-h-[44px]'
@@ -191,6 +200,9 @@ export const Sidebar: React.FC<SidebarProps> = (props) => {
         type="button"
         onClick={() => handleTabClick('contacts')}
         title="Contacts & Mentors"
+        data-tooltip={isSectionTooltipDisabled ? undefined : 'Contacts & Mentors'}
+        data-tooltip-placement="right"
+        data-no-tooltip={isSectionTooltipDisabled ? '' : undefined}
         className={`w-full flex items-center ${
           isMobileView
             ? 'justify-between px-3.5 py-3 min-h-[44px]'
@@ -226,6 +238,9 @@ export const Sidebar: React.FC<SidebarProps> = (props) => {
         type="button"
         onClick={() => handleTabClick('stats')}
         title="Analytics & Stats"
+        data-tooltip={isSectionTooltipDisabled ? undefined : 'Analytics & Stats'}
+        data-tooltip-placement="right"
+        data-no-tooltip={isSectionTooltipDisabled ? '' : undefined}
         className={`w-full flex items-center ${
           isMobileView
             ? 'justify-between px-3.5 py-3 min-h-[44px]'
@@ -249,6 +264,9 @@ export const Sidebar: React.FC<SidebarProps> = (props) => {
         type="button"
         onClick={() => handleTabClick('settings')}
         title="Settings"
+        data-tooltip={isSectionTooltipDisabled ? undefined : 'Settings'}
+        data-tooltip-placement="right"
+        data-no-tooltip={isSectionTooltipDisabled ? '' : undefined}
         className={`w-full flex items-center ${
           isMobileView
             ? 'justify-between px-3.5 py-3 min-h-[44px]'
@@ -270,7 +288,8 @@ export const Sidebar: React.FC<SidebarProps> = (props) => {
         )}
       </button>
     </nav>
-  );
+    );
+  };
 
   // Shared Expiring Tasks Card
   const renderExpiringCard = (isMobileView = false) => {
@@ -327,7 +346,9 @@ export const Sidebar: React.FC<SidebarProps> = (props) => {
   };
 
   // Shared Account Footer
-  const renderFooter = (isMobileView = false) => (
+  const renderFooter = (isMobileView = false) => {
+    const isSectionTooltipDisabled = !isCollapsed || isMobileView;
+    return (
     <div className={`border-t border-slate-200/80 space-y-1.5 bg-slate-50/90 ${isMobileView ? 'p-3' : 'p-2'}`}>
       {/* Companion Extension Action */}
       <button
@@ -392,6 +413,9 @@ export const Sidebar: React.FC<SidebarProps> = (props) => {
           nav.openFeedbackModal();
         }}
         title="Report an Issue or Feedback (Ctrl+Alt+B)"
+        data-tooltip={isSectionTooltipDisabled ? undefined : 'Report an Issue or Feedback (Ctrl+Alt+B)'}
+        data-tooltip-placement="right"
+        data-no-tooltip={isSectionTooltipDisabled ? '' : undefined}
         aria-label="Report an Issue or Feedback (Ctrl+Alt+B)"
         className={`w-full flex items-center ${
           !isMobileView && isCollapsed ? 'justify-center p-2' : 'justify-start px-2.5 py-1.5'
@@ -414,6 +438,9 @@ export const Sidebar: React.FC<SidebarProps> = (props) => {
           nav.navigateToLegal('privacy');
         }}
         title="Privacy Policy & Terms of Service"
+        data-tooltip={isSectionTooltipDisabled ? undefined : 'Privacy Policy & Terms of Service'}
+        data-tooltip-placement="right"
+        data-no-tooltip={isSectionTooltipDisabled ? '' : undefined}
         aria-label="Privacy Policy & Terms of Service"
         className={`w-full flex items-center ${
           !isMobileView && isCollapsed ? 'justify-center p-2' : 'justify-start px-2.5 py-1.5'
@@ -466,6 +493,9 @@ export const Sidebar: React.FC<SidebarProps> = (props) => {
           type="button"
           onClick={handleMobileSignIn}
           title="Sign In / Register"
+          data-tooltip={isSectionTooltipDisabled ? undefined : 'Sign In / Register'}
+          data-tooltip-placement="right"
+          data-no-tooltip={isSectionTooltipDisabled ? '' : undefined}
           className={`w-full flex items-center justify-center gap-2 ${
             isMobileView
               ? 'px-3 py-2.5 min-h-[44px]'
@@ -479,7 +509,8 @@ export const Sidebar: React.FC<SidebarProps> = (props) => {
         </button>
       )}
     </div>
-  );
+    );
+  };
 
   return (
     <>
