@@ -40,7 +40,9 @@ export function isKnownRoute(pathname: string): boolean {
  * Resolves the destination URL for the public marketing / landing page.
  * Respects VITE_LANDING_URL or VITE_LANDING_PAGE_URL environment variables.
  * In local development on localhost / 127.0.0.1, defaults to http://localhost:3000
- * (the landing page dev server port); in production, defaults to '/landing.html'.
+ * (the landing page dev server port). In production, if no landing URL is configured
+ * (because the landing page is still under development), defaults safely to '/login'
+ * rather than a non-existent static path.
  */
 export function getLandingPageUrl(): string {
   if (typeof import.meta !== 'undefined' && import.meta.env) {
@@ -53,7 +55,7 @@ export function getLandingPageUrl(): string {
   ) {
     return 'http://localhost:3000';
   }
-  return '/landing.html';
+  return '/login';
 }
 
 /**

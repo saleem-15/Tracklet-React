@@ -1,9 +1,9 @@
 import React from 'react';
 import { Home, Menu } from 'lucide-react';
-import { getLandingPageUrl } from '../lib/routeUtils';
+import { navigateToRoute } from '../lib/routeUtils';
 
 export interface NotFoundViewProps {
-  landingUrl?: string;
+  onNavigateHome?: () => void;
   onOpenMobileSidebar?: () => void;
 }
 
@@ -11,14 +11,21 @@ export interface NotFoundViewProps {
  * NotFoundView
  *
  * In-workspace 404 screen featuring an oversized bold numeral,
- * human-friendly error copy, and a single, high-clarity recovery CTA
- * returning the user to the landing page.
+ * human-friendly error copy, and a single, high-clarity recovery CTA.
+ * When the user is authenticated inside the workspace, recovery returns
+ * them to their workspace applications dashboard.
  */
 export const NotFoundView: React.FC<NotFoundViewProps> = ({
-  landingUrl: customLandingUrl,
+  onNavigateHome,
   onOpenMobileSidebar,
 }) => {
-  const landingUrl = customLandingUrl || getLandingPageUrl();
+  const handleHomeClick = () => {
+    if (onNavigateHome) {
+      onNavigateHome();
+    } else {
+      navigateToRoute('/applications');
+    }
+  };
 
   return (
     <section className="flex-1 flex flex-col min-w-0 bg-slate-50 overflow-y-auto">
@@ -33,7 +40,13 @@ export const NotFoundView: React.FC<NotFoundViewProps> = ({
           >
             <Menu className="w-5 h-5" />
           </button>
-          <span className="font-heading font-bold text-sm text-slate-800">Tracklet</span>
+          <button
+            type="button"
+            onClick={handleHomeClick}
+            className="font-heading font-bold text-sm text-slate-800 hover:text-blue-600 transition-colors cursor-pointer"
+          >
+            Tracklet
+          </button>
           <div className="w-5" aria-hidden="true" />
         </header>
       )}
@@ -61,13 +74,14 @@ export const NotFoundView: React.FC<NotFoundViewProps> = ({
 
           {/* Single High-Clarity Recovery Action */}
           <div className="mt-8 flex justify-center w-full">
-            <a
-              href={landingUrl}
+            <button
+              type="button"
+              onClick={handleHomeClick}
               className="h-10 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-semibold shadow-xs text-xs sm:text-sm cursor-pointer inline-flex items-center justify-center gap-2 transition-all shadow-blue-500/20"
             >
               <Home className="w-4 h-4 shrink-0" aria-hidden="true" />
               <span>Back to home</span>
-            </a>
+            </button>
           </div>
         </div>
       </div>

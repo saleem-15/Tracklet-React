@@ -101,7 +101,11 @@ export function AuthGate({
   // 4. Not authenticated (Authentication Wall)
   if (!user) {
     if (!isKnownRoute(currentPath)) {
-      return <NotFoundPage />;
+      return (
+        <NotFoundPage
+          onNavigateHome={() => navigateToRoute('/login')}
+        />
+      );
     }
     return (
       <div className="min-h-screen w-screen bg-slate-50 font-sans">
