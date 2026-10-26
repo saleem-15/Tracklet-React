@@ -11,7 +11,7 @@ import {
 import { useExtensionSync } from './hooks/useExtensionSync';
 import { useDataLoader } from './hooks/useDataLoader';
 import { getPathForTab, isAuthPath, isLegalPath } from './lib/routeUtils';
-import { purgeLegacyGuestStorage } from './lib/constants';
+import { purgeLegacyGuestStorage, SUBSCRIPTIONS_ENABLED } from './lib/constants';
 
 function TrackletAppContent() {
   const { user, loading: authLoading, signOut } = useAuth();
@@ -96,24 +96,24 @@ function TrackletAppContent() {
           {(activeTab === 'all' || activeTab === 'pipeline') && <TopBar />}
           <WorkspaceContent 
             isLoading={authLoading || dataLoading}
-            activeQuota={{
+            activeQuota={SUBSCRIPTIONS_ENABLED ? {
               current: entitlement.activeCount,
               max: entitlement.maxActiveQuota,
               isGrandfathered: entitlement.isGrandfathered,
               onUpgradeClick: () => entitlement.openPaywall('pipeline_cap'),
-            }}
+            } : undefined}
           />
         </div>
         <AppSlideOvers />
         <AppModals
-          paywall={{
+          paywall={SUBSCRIPTIONS_ENABLED ? {
             isOpen: entitlement.isPaywallOpen,
             context: entitlement.paywallContext,
             currentUsage: entitlement.activeCount,
             maxQuota: entitlement.maxActiveQuota,
             onClose: entitlement.closePaywall,
             onUpgradeClick: entitlement.handleUpgradeClick,
-          }}
+          } : undefined}
         />
         <ToastContainer toasts={toasts} onDismiss={dismissToast} />
       </div>

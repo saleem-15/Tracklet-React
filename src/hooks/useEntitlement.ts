@@ -9,7 +9,8 @@ import {
 import { 
   ACTIVE_STATUSES, 
   TERMINAL_STATUSES, 
-  SAAS_LIMITS 
+  SAAS_LIMITS,
+  SUBSCRIPTIONS_ENABLED,
 } from '../lib/constants';
 import { EntitlementRepository } from '../lib/entitlementRepository';
 import posthog from '../lib/posthog';
@@ -79,21 +80,26 @@ export function useEntitlement({
   }, [applications]);
 
   const planTier: PlanTier = profile?.planTier ?? 'free';
-  const isPro = planTier === 'pro';
-  const maxActiveQuota = isPro ? Infinity : SAAS_LIMITS.FREE_MAX_ACTIVE_APPS;
+  const isPro = SUBSCRIPTIONS_ENABLED ? planTier === 'pro' : true;
+  const maxActiveQuota = SUBSCRIPTIONS_ENABLED
+    ? (isPro ? Infinity : SAAS_LIMITS.FREE_MAX_ACTIVE_APPS)
+    : Infinity;
 
   // Grandfathered mode: Free tier user who imported >20 active cards from legacy guest session
-  const isGrandfathered = !isPro && activeCount > SAAS_LIMITS.FREE_MAX_ACTIVE_APPS;
+  const isGrandfathered = SUBSCRIPTIONS_ENABLED && !isPro && activeCount > SAAS_LIMITS.FREE_MAX_ACTIVE_APPS;
 
   // Gate adding new active applications
-  const canAddActiveApp = isPro || activeCount < SAAS_LIMITS.FREE_MAX_ACTIVE_APPS;
+  const canAddActiveApp = !SUBSCRIPTIONS_ENABLED || isPro || activeCount < SAAS_LIMITS.FREE_MAX_ACTIVE_APPS;
 
   // Scrape quota
   const currentScrapes = profile?.quotas?.scrapesUsedThisMonth ?? 0;
-  const maxScrapes = isPro ? SAAS_LIMITS.PRO_MONTHLY_SCRAPES : SAAS_LIMITS.FREE_MONTHLY_SCRAPES;
-  const canScrape = currentScrapes < maxScrapes;
+  const maxScrapes = SUBSCRIPTIONS_ENABLED
+    ? (isPro ? SAAS_LIMITS.PRO_MONTHLY_SCRAPES : SAAS_LIMITS.FREE_MONTHLY_SCRAPES)
+    : Infinity;
+  const canScrape = !SUBSCRIPTIONS_ENABLED || currentScrapes < maxScrapes;
 
   const openPaywall = useCallback((context: PaywallTriggerContext) => {
+    if (!SUBSCRIPTIONS_ENABLED) return;
     setPaywallContext(context);
     setIsPaywallOpen(true);
     posthog.capture('paywall_modal_viewed', {
@@ -108,6 +114,7 @@ export function useEntitlement({
   }, []);
 
   const handleUpgradeClick = useCallback(() => {
+    if (!SUBSCRIPTIONS_ENABLED) return;
     posthog.capture('paywall_upgrade_clicked', {
       trigger_context: paywallContext,
       active_count: activeCount,

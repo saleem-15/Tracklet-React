@@ -50,7 +50,7 @@ describe('DomainMigrationBanner', () => {
     expect(host?.textContent).toBe('');
   });
 
-  it('renders on netlify domain with switch and dismiss actions', () => {
+  it('renders on netlify domain with switch and dismiss actions without bookmark copy', () => {
     const originalLocation = window.location;
     delete (window as any).location;
     window.location = {
@@ -64,7 +64,9 @@ describe('DomainMigrationBanner', () => {
 
     try {
       mount(<DomainMigrationBanner targetUrl="https://tracklet.pages.dev" />);
-      expect(host?.textContent).toContain('Tracklet has moved to our faster home on Cloudflare!');
+      expect(host?.textContent).toContain('Tracklet has moved to tracklet.pages.dev');
+      expect(host?.textContent).toContain('The application is the same, only the URL has changed');
+      expect(host?.textContent).not.toContain('bookmarks');
 
       const dismissBtn = host?.querySelector('button[aria-label="Dismiss migration notice"]');
       expect(dismissBtn).toBeDefined();
@@ -75,6 +77,38 @@ describe('DomainMigrationBanner', () => {
 
       expect(localStorage.getItem('tracklet_migration_banner_dismissed')).toBe('true');
       expect(host?.textContent).toBe('');
+    } finally {
+      (window as any).location = originalLocation;
+    }
+  });
+
+  it('defaults to tracklet.pages.dev destination without explicit prop on netlify', () => {
+    const originalLocation = window.location;
+    delete (window as any).location;
+    window.location = {
+      ...originalLocation,
+      hostname: 'tracklet.netlify.app',
+      pathname: '/all',
+      search: '?tab=active',
+      hash: '#table',
+      href: 'https://tracklet.netlify.app/all?tab=active#table',
+    } as any;
+
+    try {
+      mount(<DomainMigrationBanner />);
+      expect(host?.textContent).toContain('tracklet.pages.dev');
+      expect(host?.textContent).not.toContain('bookmarks');
+
+      const switchBtn = Array.from(host?.querySelectorAll('button') || []).find((b) =>
+        b.textContent?.includes('Switch Now')
+      );
+      expect(switchBtn).toBeDefined();
+
+      act(() => {
+        switchBtn?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      });
+
+      expect(window.location.href).toBe('https://tracklet.pages.dev/all?tab=active#table');
     } finally {
       (window as any).location = originalLocation;
     }

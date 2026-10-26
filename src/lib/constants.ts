@@ -160,6 +160,9 @@ export const LOCAL_STORAGE_KEYS = {
   EMAIL_RESEND_COOLDOWN: 'tracklet_email_resend_cooldown',
 };
 
+// Subscriptions & pricing: disabled during experimental preview
+export const SUBSCRIPTIONS_ENABLED = false;
+
 export const SAAS_LIMITS = {
   FREE_MAX_ACTIVE_APPS: 20,
   FREE_MONTHLY_SCRAPES: 20,
@@ -383,7 +386,7 @@ export const TESTER_REPORT_SEVERITIES: { label: string; value: TesterReportSever
 export const STORAGE_KEY_TESTER_DRAFT = 'tracklet_tester_report_draft';
 
 // --- Browser Extension Distribution & Status ---
-export const LATEST_EXTENSION_VERSION = '1.3.5';
+export const LATEST_EXTENSION_VERSION = '1.3.6';
 
 export const EXTENSION_DISTRIBUTION_CONFIG = {
   latestVersion: LATEST_EXTENSION_VERSION,

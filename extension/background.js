@@ -346,7 +346,9 @@ async function saveAndSyncApplication(appData) {
   const activeStages = ['Saved', 'Applied', 'Screening', 'Interview', 'Offer'];
   const currentActive = (tracklet_apps_index || []).filter(a => activeStages.includes(a.status)).length;
   const isProPlan = tracklet_user_session.planTier === 'pro';
-  if (!isProPlan && currentActive >= 20 && !existing) {
+  // Subscriptions disabled during experimental preview (unlimited cards)
+  const SUBSCRIPTIONS_ENABLED = false;
+  if (SUBSCRIPTIONS_ENABLED && !isProPlan && currentActive >= 20 && !existing) {
     console.warn('[Tracklet] Save blocked: Free tier active quota reached (20/20).');
     return {
       success: false,

@@ -19,8 +19,11 @@ export const DomainMigrationBanner: React.FC<DomainMigrationBannerProps> = ({
     }
   });
 
-  // Target Cloudflare destination
-  const destinationUrl = targetUrl || import.meta.env.VITE_CLOUDFLARE_URL || '';
+  // Target destination URL (defaults to tracklet.pages.dev)
+  const destinationUrl =
+    targetUrl !== undefined
+      ? targetUrl
+      : (import.meta.env.VITE_CLOUDFLARE_URL || 'https://tracklet.pages.dev');
 
   // Detect whether currently running on Netlify or an explicitly configured legacy origin
   const isNetlifyOrigin = (() => {
@@ -65,7 +68,7 @@ export const DomainMigrationBanner: React.FC<DomainMigrationBannerProps> = ({
       <div className="flex items-center gap-2 min-w-0">
         <Sparkles className="w-4 h-4 text-indigo-200 shrink-0" aria-hidden="true" />
         <span className="truncate">
-          Tracklet has moved to our faster home on Cloudflare! Please update your bookmarks.
+          Tracklet has moved to <strong className="font-semibold text-white underline decoration-white/50 underline-offset-2">tracklet.pages.dev</strong>. The application is the same, only the URL has changed.
         </span>
       </div>
       <div className="flex items-center gap-2 shrink-0 ml-3">
