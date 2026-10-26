@@ -15,7 +15,16 @@ import { purgeLegacyGuestStorage, SUBSCRIPTIONS_ENABLED } from './lib/constants'
 
 function TrackletAppContent() {
   const { user, loading: authLoading, signOut } = useAuth();
-  const { activeTab, isNotFound, setSelectedAppId, openFeedbackModal } = useNavigation();
+  const {
+    activeTab,
+    isNotFound,
+    setActiveTab,
+    setSelectedAppId,
+    openFeedbackModal,
+    isShortcutsModalOpen,
+    openShortcutsModal,
+    closeShortcutsModal,
+  } = useNavigation();
   const { toasts, addToast, dismissToast } = useToastContext();
   const { applications, setApplications, applicationsRef } = useApplicationsContext();
   const entitlement = useEntitlementContext();
@@ -35,16 +44,35 @@ function TrackletAppContent() {
     purgeLegacyGuestStorage();
   }, []);
 
-  // Global hotkey: press 'Ctrl+Alt+B' or 'Ctrl+Shift+B' to summon tester issue reporter
+  // Global keyboard shortcuts: '?' or 'Ctrl+/' (shortcuts cheat sheet), 'Ctrl+Alt+B' (bug reporter), '1'-'5' (tab switching)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const activeEl = document.activeElement as HTMLElement | null;
-      const isEditable = 
-        activeEl?.tagName === 'INPUT' || 
-        activeEl?.tagName === 'TEXTAREA' || 
-        activeEl?.isContentEditable;
+      const isEditable =
+        activeEl?.tagName === 'INPUT' ||
+        activeEl?.tagName === 'TEXTAREA' ||
+        activeEl?.tagName === 'SELECT' ||
+        activeEl?.isContentEditable ||
+        activeEl?.getAttribute('contenteditable') === 'true' ||
+        activeEl?.closest('[contenteditable="true"]') !== null;
 
-      const isReporterHotkey = 
+      // 1. Cheat sheet toggle: '?' (when not typing) or 'Ctrl+/' / 'Cmd+/'
+      const isShortcutsHotkey =
+        (!e.ctrlKey && !e.metaKey && !e.altKey && e.key === '?') ||
+        ((e.ctrlKey || e.metaKey) && e.key === '/');
+
+      if (!isEditable && isShortcutsHotkey) {
+        e.preventDefault();
+        if (isShortcutsModalOpen) {
+          closeShortcutsModal();
+        } else {
+          openShortcutsModal();
+        }
+        return;
+      }
+
+      // 2. Tester issue & bug reporting hotkey: 'Ctrl+Alt+B', 'Ctrl+Shift+B', or 'Cmd+Shift+B'
+      const isReporterHotkey =
         (e.ctrlKey && e.altKey && e.key.toLowerCase() === 'b') ||
         (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'b') ||
         (e.metaKey && e.shiftKey && e.key.toLowerCase() === 'b');
@@ -52,12 +80,39 @@ function TrackletAppContent() {
       if (!isEditable && isReporterHotkey) {
         e.preventDefault();
         openFeedbackModal();
+        return;
+      }
+
+      // 3. Numbered tab navigation: '1'-'5' (or 'Alt+1'-'Alt+5') when not typing and no modal dialog is active
+      const hasOpenModal =
+        document.querySelector('[role="dialog"]') !== null ||
+        document.querySelector('.fixed.inset-0.z-50') !== null ||
+        document.querySelector('[aria-modal="true"]') !== null;
+
+      if (!isEditable && !hasOpenModal) {
+        const tabNumberMap: Record<string, typeof activeTab> = {
+          '1': 'all',
+          '2': 'pipeline',
+          '3': 'contacts',
+          '4': 'stats',
+          '5': 'settings',
+        };
+        if (!e.ctrlKey && !e.metaKey && !e.shiftKey && tabNumberMap[e.key]) {
+          e.preventDefault();
+          setActiveTab(tabNumberMap[e.key]);
+        }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [openFeedbackModal]);
+  }, [
+    openFeedbackModal,
+    isShortcutsModalOpen,
+    openShortcutsModal,
+    closeShortcutsModal,
+    setActiveTab,
+  ]);
 
   useEffect(() => {
     if (authLoading) return;

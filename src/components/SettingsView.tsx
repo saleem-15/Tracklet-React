@@ -77,7 +77,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 }) => {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const jsonFileInputRef = useRef<HTMLInputElement>(null);
-  const { openFeedbackModal, openExtensionModal } = useNavigation();
+  const { openFeedbackModal, openExtensionModal, navigateToLegal } = useNavigation();
   const { user } = useAuth();
   const extensionState = useExtensionContext();
   const expiringTasks = getExpiringSoonTasks(applications, settings.expiryThresholdHours);
@@ -616,6 +616,27 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             </button>
           )}
         </div>
+      </div>
+
+      {/* Legal & Compliance Governance Links */}
+      <div className="pt-2 pb-6 flex items-center justify-center gap-3 text-xs text-slate-500 font-sans border-t border-slate-200/60">
+        <span>Tracklet Cloud © {new Date().getFullYear()}</span>
+        <span>•</span>
+        <button
+          type="button"
+          onClick={() => navigateToLegal('privacy')}
+          className="hover:text-slate-800 transition-colors underline-offset-4 hover:underline cursor-pointer"
+        >
+          Privacy Policy
+        </button>
+        <span>•</span>
+        <button
+          type="button"
+          onClick={() => navigateToLegal('terms')}
+          className="hover:text-slate-800 transition-colors underline-offset-4 hover:underline cursor-pointer"
+        >
+          Terms of Service
+        </button>
       </div>
 
       {/* CSV Import Modal */}

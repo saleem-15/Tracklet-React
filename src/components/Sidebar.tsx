@@ -1,22 +1,30 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { motion, useReducedMotion, AnimatePresence } from 'motion/react';
 import { 
   Table, 
   Kanban, 
   Users, 
   BarChart3, 
   LogIn, 
-  LogOut, 
+  LogOut,
   User as UserIcon, 
   Settings, 
   Clock, 
   ChevronRight,
+  ChevronLeft,
+  ChevronsUpDown,
+  Sparkles,
   PanelLeftClose,
   PanelLeftOpen,
   X,
   Bug,
-  Puzzle,
-  ShieldCheck
+  Keyboard,
+  HelpCircle,
+  FileText,
+  Shield,
+  ExternalLink
 } from 'lucide-react';
+import { ChromeIcon } from './icons/ChromeIcon';
 import { ActiveTab, Application, Contact, ExpiryNotificationSettings } from '../types';
 import { User } from '../lib/firebase';
 import { getExpiringSoonTasks } from '../lib/expiryUtils';
@@ -28,7 +36,30 @@ import { useApplicationsContext } from '../context/ApplicationsContext';
 import { useContactsContext } from '../context/ContactsContext';
 import { useSettings } from '../context/SettingsContext';
 import { useExtensionContext } from '../context/ExtensionContext';
+import { useEntitlementContext } from '../context/EntitlementContext';
 import { LATEST_EXTENSION_VERSION } from '../lib/constants';
+
+/**
+ * Spring-animated gliding pill for active navigation item.
+ * Glides smoothly between tabs using Framer Motion layoutId with spring physics (520 stiffness, 42 damping).
+ */
+const ActivePill: React.FC<{ isMobileView?: boolean }> = ({ isMobileView = false }) => {
+  const prefersReducedMotion = useReducedMotion();
+  const baseClass = 'pointer-events-none absolute inset-0 rounded-[10px] bg-slate-200/75';
+
+  if (prefersReducedMotion) {
+    return <span aria-hidden="true" className={baseClass} />;
+  }
+
+  return (
+    <motion.span
+      aria-hidden="true"
+      layoutId={isMobileView ? 'mobile-sidebar-active-pill' : 'desktop-sidebar-active-pill'}
+      transition={{ type: 'spring', stiffness: 520, damping: 42 }}
+      className={baseClass}
+    />
+  );
+};
 
 export interface SidebarProps {
   activeTab?: ActiveTab;
@@ -51,6 +82,7 @@ export const Sidebar: React.FC<SidebarProps> = (props) => {
   const apps = useApplicationsContext();
   const contactsCtx = useContactsContext();
   const settingsCtx = useSettings();
+  const prefersReducedMotion = useReducedMotion();
 
   const activeTab = props.activeTab ?? (nav.isNotFound ? null : nav.activeTab);
   const setActiveTab = props.setActiveTab ?? nav.setActiveTab;
@@ -63,6 +95,21 @@ export const Sidebar: React.FC<SidebarProps> = (props) => {
   const onSeedDemoData = props.onSeedDemoData ?? apps.handleSeedDemoData;
   const isMobileOpen = props.isMobileOpen ?? nav.isMobileSidebarOpen;
   const onCloseMobile = props.onCloseMobile ?? nav.closeMobileSidebar;
+
+  let planTier = 'free';
+  let openPaywall: ((ctx: any) => void) | undefined;
+  try {
+    const entitlement = useEntitlementContext();
+    planTier = entitlement.planTier;
+    openPaywall = entitlement.openPaywall;
+  } catch {
+    // Graceful fallback if outside provider
+  }
+
+  const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
+  const [activeSubmenu, setActiveSubmenu] = useState<'none' | 'help'>('none');
+  const accountMenuRef = useRef<HTMLDivElement>(null);
+
   const [isCollapsed, setIsCollapsed] = useState<boolean>(() => {
     try {
       return localStorage.getItem('tracklet_sidebar_collapsed') === 'true';
@@ -75,6 +122,35 @@ export const Sidebar: React.FC<SidebarProps> = (props) => {
   useEscapeKey(() => {
     if (onCloseMobile) onCloseMobile();
   }, isMobileOpen);
+
+  // Close account menu / submenu on click outside or Escape
+  useEffect(() => {
+    if (!isAccountMenuOpen) {
+      setActiveSubmenu('none');
+      return;
+    }
+    const handleClickOutside = (e: MouseEvent) => {
+      if (accountMenuRef.current && !accountMenuRef.current.contains(e.target as Node)) {
+        setIsAccountMenuOpen(false);
+        setActiveSubmenu('none');
+      }
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (activeSubmenu !== 'none') {
+          setActiveSubmenu('none');
+        } else {
+          setIsAccountMenuOpen(false);
+        }
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isAccountMenuOpen, activeSubmenu]);
 
   // Lock body scroll on mobile when drawer is open
   useEffect(() => {
@@ -89,6 +165,8 @@ export const Sidebar: React.FC<SidebarProps> = (props) => {
   }, [isMobileOpen]);
 
   const toggleSidebar = () => {
+    setIsAccountMenuOpen(false);
+    setActiveSubmenu('none');
     const nextState = !isCollapsed;
     setIsCollapsed(nextState);
     try {
@@ -97,6 +175,33 @@ export const Sidebar: React.FC<SidebarProps> = (props) => {
       console.error(e);
     }
   };
+
+  // Keyboard shortcut (Ctrl+B / Cmd+B) to toggle desktop sidebar
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b' && !e.altKey && !e.shiftKey) {
+        const activeEl = document.activeElement as HTMLElement | null;
+        const isEditable =
+          activeEl?.tagName === 'INPUT' ||
+          activeEl?.tagName === 'TEXTAREA' ||
+          activeEl?.isContentEditable ||
+          activeEl?.getAttribute('contenteditable') === 'true' ||
+          activeEl?.closest('[contenteditable="true"]') !== null;
+
+        const hasOpenModal =
+          document.querySelector('[role="dialog"]') !== null ||
+          document.querySelector('.fixed.inset-0.z-50') !== null ||
+          document.querySelector('[aria-modal="true"]') !== null;
+
+        if (!isEditable && !hasOpenModal) {
+          e.preventDefault();
+          toggleSidebar();
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isCollapsed]);
 
   const expiringTasks = getExpiringSoonTasks(
     applications,
@@ -111,6 +216,8 @@ export const Sidebar: React.FC<SidebarProps> = (props) => {
   ).length;
 
   const handleTabClick = (tab: ActiveTab) => {
+    setIsAccountMenuOpen(false);
+    setActiveSubmenu('none');
     setActiveTab(tab);
     if (isMobileOpen && onCloseMobile) {
       onCloseMobile();
@@ -124,170 +231,116 @@ export const Sidebar: React.FC<SidebarProps> = (props) => {
     }
   };
 
-  const handleMobileSignOut = () => {
-    onSignOut();
-    if (isMobileOpen && onCloseMobile) {
-      onCloseMobile();
-    }
-  };
-
   // Shared Navigation list content
   const renderNavItems = (isMobileView = false) => {
     const isSectionTooltipDisabled = !isCollapsed || isMobileView;
 
+    const navItems: Array<{
+      id: ActiveTab;
+      label: string;
+      icon: React.ComponentType<{ className?: string }>;
+      badge?: React.ReactNode;
+      collapsedBadge?: React.ReactNode;
+    }> = [
+      {
+        id: 'all',
+        label: 'All Applications',
+        icon: Table,
+      },
+      {
+        id: 'pipeline',
+        label: 'Active Pipeline',
+        icon: Kanban,
+      },
+      {
+        id: 'contacts',
+        label: 'Contacts & Mentors',
+        icon: Users,
+        badge: followUpDueCount > 0 ? (
+          <span
+            className="font-mono text-xs text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded-md border border-amber-200/80 font-bold animate-pulse motion-reduce:animate-none shrink-0"
+            title={`${followUpDueCount} follow-up${followUpDueCount === 1 ? '' : 's'} due soon`}
+          >
+            {followUpDueCount}
+          </span>
+        ) : undefined,
+        collapsedBadge: followUpDueCount > 0 ? (
+          <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-amber-500 animate-pulse motion-reduce:animate-none ring-2 ring-slate-50" />
+        ) : undefined,
+      },
+      {
+        id: 'stats',
+        label: 'Analytics & Stats',
+        icon: BarChart3,
+      },
+      {
+        id: 'settings',
+        label: 'Settings',
+        icon: Settings,
+        badge: expirySettings.enabled && expiringTasksCount > 0 ? (
+          <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse motion-reduce:animate-none shrink-0" title="Tasks due soon" />
+        ) : undefined,
+        collapsedBadge: expirySettings.enabled && expiringTasksCount > 0 ? (
+          <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-amber-500 animate-pulse motion-reduce:animate-none ring-2 ring-slate-50" />
+        ) : undefined,
+      },
+    ];
+
     return (
-      <nav className={`space-y-1 ${isMobileView ? 'p-3' : 'p-2'}`}>
-      {(!isCollapsed || isMobileView) && (
-        <div className="px-2.5 pt-1.5 pb-1 text-[11px] font-mono uppercase tracking-wider text-slate-500 font-bold">
-          Views
-        </div>
-      )}
+      <nav className={`space-y-1 ${isMobileView ? 'p-3' : 'p-2 overflow-hidden'}`}>
+        {navItems.map((item) => {
+          const IconComponent = item.icon;
+          const isActive = activeTab === item.id;
 
-      {/* All Applications */}
-      <button
-        type="button"
-        onClick={() => handleTabClick('all')}
-        title="All Applications"
-        data-tooltip={isSectionTooltipDisabled ? undefined : 'All Applications'}
-        data-tooltip-placement="right"
-        data-no-tooltip={isSectionTooltipDisabled ? '' : undefined}
-        className={`w-full flex items-center ${
-          isMobileView
-            ? 'justify-between px-3.5 py-3 min-h-[44px]'
-            : isCollapsed
-            ? 'justify-center py-2.5 px-0'
-            : 'justify-between px-2.5 py-2'
-        } rounded-[10px] border transition-colors duration-150 text-left group cursor-pointer font-semibold ${
-          activeTab === 'all'
-            ? 'bg-white text-slate-900 border-slate-200/90 shadow-xs ring-1 ring-slate-950/5'
-            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50 border-transparent'
-        }`}
-      >
-        <div className="flex items-center gap-2.5">
-          <Table className={`w-4 h-4 shrink-0 transition-colors ${activeTab === 'all' ? 'text-blue-600' : 'text-slate-500 group-hover:text-slate-700'}`} />
-          {(!isCollapsed || isMobileView) && <span className="text-xs">All Applications</span>}
-        </div>
-      </button>
-
-      {/* Active Pipeline (Kanban) */}
-      <button
-        type="button"
-        onClick={() => handleTabClick('pipeline')}
-        title="Active Pipeline"
-        data-tooltip={isSectionTooltipDisabled ? undefined : 'Active Pipeline'}
-        data-tooltip-placement="right"
-        data-no-tooltip={isSectionTooltipDisabled ? '' : undefined}
-        className={`w-full flex items-center ${
-          isMobileView
-            ? 'justify-between px-3.5 py-3 min-h-[44px]'
-            : isCollapsed
-            ? 'justify-center py-2.5 px-0'
-            : 'justify-between px-2.5 py-2'
-        } rounded-[10px] border transition-colors duration-150 text-left group cursor-pointer font-semibold ${
-          activeTab === 'pipeline'
-            ? 'bg-white text-slate-900 border-slate-200/90 shadow-xs ring-1 ring-slate-950/5'
-            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50 border-transparent'
-        }`}
-      >
-        <div className="flex items-center gap-2.5">
-          <Kanban className={`w-4 h-4 shrink-0 transition-colors ${activeTab === 'pipeline' ? 'text-blue-600' : 'text-slate-500 group-hover:text-slate-700'}`} />
-          {(!isCollapsed || isMobileView) && <span className="text-xs">Active Pipeline</span>}
-        </div>
-      </button>
-
-      {/* Contacts & Mentors (Action badge displayed only when followUpDueCount > 0) */}
-      <button
-        type="button"
-        onClick={() => handleTabClick('contacts')}
-        title="Contacts & Mentors"
-        data-tooltip={isSectionTooltipDisabled ? undefined : 'Contacts & Mentors'}
-        data-tooltip-placement="right"
-        data-no-tooltip={isSectionTooltipDisabled ? '' : undefined}
-        className={`w-full flex items-center ${
-          isMobileView
-            ? 'justify-between px-3.5 py-3 min-h-[44px]'
-            : isCollapsed
-            ? 'justify-center py-2.5 px-0'
-            : 'justify-between px-2.5 py-2'
-        } rounded-[10px] border transition-colors duration-150 text-left group cursor-pointer font-semibold ${
-          activeTab === 'contacts'
-            ? 'bg-white text-slate-900 border-slate-200/90 shadow-xs ring-1 ring-slate-950/5'
-            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50 border-transparent'
-        }`}
-      >
-        <div className="flex items-center gap-2.5">
-          <Users className={`w-4 h-4 shrink-0 transition-colors ${activeTab === 'contacts' ? 'text-blue-600' : 'text-slate-500 group-hover:text-slate-700'}`} />
-          {(!isCollapsed || isMobileView) && <span className="text-xs">Contacts</span>}
-        </div>
-        {!isCollapsed || isMobileView ? (
-          followUpDueCount > 0 && (
-            <span
-              className="font-mono text-xs text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded-md border border-amber-200/80 font-bold animate-pulse motion-reduce:animate-none"
-              title={`${followUpDueCount} follow-up${followUpDueCount === 1 ? '' : 's'} due soon`}
+          return (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => handleTabClick(item.id)}
+              title={item.label}
+              aria-current={isActive ? 'page' : undefined}
+              data-tooltip={isSectionTooltipDisabled ? undefined : item.label}
+              data-tooltip-placement="right"
+              data-no-tooltip={isSectionTooltipDisabled ? '' : undefined}
+              className={`relative w-full flex items-center ${
+                isMobileView
+                  ? 'justify-between px-3.5 py-3 min-h-[44px]'
+                  : 'h-9 px-2'
+              } rounded-[10px] border border-transparent transition-colors duration-150 text-left group cursor-pointer font-semibold active:scale-[0.98] ${
+                isActive
+                  ? 'text-slate-900 shadow-none'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50 shadow-none'
+              }`}
             >
-              {followUpDueCount}
-            </span>
-          )
-        ) : followUpDueCount > 0 ? (
-          <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse motion-reduce:animate-none" />
-        ) : null}
-      </button>
+              {isActive && <ActivePill isMobileView={isMobileView} />}
 
-      {/* Analytics & Stats */}
-      <button
-        type="button"
-        onClick={() => handleTabClick('stats')}
-        title="Analytics & Stats"
-        data-tooltip={isSectionTooltipDisabled ? undefined : 'Analytics & Stats'}
-        data-tooltip-placement="right"
-        data-no-tooltip={isSectionTooltipDisabled ? '' : undefined}
-        className={`w-full flex items-center ${
-          isMobileView
-            ? 'justify-between px-3.5 py-3 min-h-[44px]'
-            : isCollapsed
-            ? 'justify-center py-2.5 px-0'
-            : 'justify-between px-2.5 py-2'
-        } rounded-[10px] border transition-colors duration-150 text-left group cursor-pointer font-semibold ${
-          activeTab === 'stats'
-            ? 'bg-white text-slate-900 border-slate-200/90 shadow-xs ring-1 ring-slate-950/5'
-            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50 border-transparent'
-        }`}
-      >
-        <div className="flex items-center gap-2.5">
-          <BarChart3 className={`w-4 h-4 shrink-0 transition-colors ${activeTab === 'stats' ? 'text-blue-600' : 'text-slate-500 group-hover:text-slate-700'}`} />
-          {(!isCollapsed || isMobileView) && <span className="text-xs">Analytics & Stats</span>}
-        </div>
-      </button>
+              {/* Fixed-Position Icon Slot (center pinned at x=34px across states) */}
+              <div className="relative z-10 w-8 h-8 shrink-0 flex items-center justify-center">
+                <IconComponent
+                  className={`w-4 h-4 shrink-0 transition-colors ${
+                    isActive ? 'text-blue-600' : 'text-slate-500 group-hover:text-slate-700'
+                  }`}
+                />
+                {!isMobileView && isCollapsed && item.collapsedBadge}
+              </div>
 
-      {/* Settings */}
-      <button
-        type="button"
-        onClick={() => handleTabClick('settings')}
-        title="Settings"
-        data-tooltip={isSectionTooltipDisabled ? undefined : 'Settings'}
-        data-tooltip-placement="right"
-        data-no-tooltip={isSectionTooltipDisabled ? '' : undefined}
-        className={`w-full flex items-center ${
-          isMobileView
-            ? 'justify-between px-3.5 py-3 min-h-[44px]'
-            : isCollapsed
-            ? 'justify-center py-2.5 px-0'
-            : 'justify-between px-2.5 py-2'
-        } rounded-[10px] border transition-colors duration-150 text-left group cursor-pointer font-semibold ${
-          activeTab === 'settings'
-            ? 'bg-white text-slate-900 border-slate-200/90 shadow-xs ring-1 ring-slate-950/5'
-            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50 border-transparent'
-        }`}
-      >
-        <div className="flex items-center gap-2.5">
-          <Settings className={`w-4 h-4 shrink-0 transition-colors ${activeTab === 'settings' ? 'text-blue-600' : 'text-slate-500 group-hover:text-slate-700'}`} />
-          {(!isCollapsed || isMobileView) && <span className="text-xs">Settings</span>}
-        </div>
-        {expirySettings.enabled && expiringTasksCount > 0 && (
-          <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse motion-reduce:animate-none" title="Tasks due soon" />
-        )}
-      </button>
-    </nav>
+              {/* Smoothly Animated Label Container (whitespace-nowrap + overflow-hidden) */}
+              <motion.div
+                initial={false}
+                animate={{
+                  opacity: isCollapsed && !isMobileView ? 0 : 1,
+                  width: isCollapsed && !isMobileView ? 0 : 'auto',
+                }}
+                transition={{ duration: 0.18, ease: [0.25, 0.1, 0.25, 1.0] }}
+                className="relative z-10 overflow-hidden whitespace-nowrap min-w-0 flex-1 flex items-center justify-between ml-1.5"
+              >
+                <span className="text-xs truncate">{item.label}</span>
+                {item.badge}
+              </motion.div>
+            </button>
+          );
+        })}
+      </nav>
     );
   };
 
@@ -296,51 +349,72 @@ export const Sidebar: React.FC<SidebarProps> = (props) => {
     if (!expirySettings.enabled) return null;
 
     return (
-      <div className={isMobileView ? 'mx-3 my-2' : 'mx-2 my-2'}>
-        {!isCollapsed || isMobileView ? (
-          expiringTasksCount > 0 ? (
+      <div className={isMobileView ? 'mx-3 my-2' : 'mx-2 my-2 overflow-hidden'}>
+        {/* Expanded View Card */}
+        <motion.div
+          initial={false}
+          animate={{
+            opacity: isCollapsed && !isMobileView ? 0 : 1,
+            height: isCollapsed && !isMobileView ? 0 : 'auto',
+          }}
+          transition={{ duration: 0.18, ease: [0.25, 0.1, 0.25, 1.0] }}
+          className="overflow-hidden whitespace-nowrap"
+        >
+          {expiringTasksCount > 0 ? (
             <button
               type="button"
               onClick={() => handleTabClick('settings')}
-              className="w-full text-left p-2.5 rounded-xl bg-gradient-to-br from-amber-50/90 via-amber-100/40 to-orange-50/60 border border-amber-200/90 shadow-2xs hover:border-amber-300 transition-all motion-reduce:transition-none cursor-pointer group space-y-1.5 min-h-[44px]"
+              className="w-full text-left p-2.5 rounded-xl bg-gradient-to-br from-amber-50/90 via-amber-100/40 to-orange-50/60 border border-amber-200/90 shadow-2xs hover:border-amber-300 transition-colors cursor-pointer group space-y-1.5 min-h-[44px]"
             >
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5 text-amber-900 font-bold text-xs">
-                  <Clock className="w-3.5 h-3.5 text-amber-600" />
-                  <span>Soon to Expire</span>
+                <div className="flex items-center gap-1.5 text-amber-900 font-bold text-xs truncate">
+                  <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                  <span className="truncate">Soon to Expire</span>
                 </div>
-                <span className="font-mono text-xs font-extrabold bg-amber-500 text-white px-1.5 py-0.2 rounded-full shadow-2xs animate-pulse motion-reduce:animate-none">
+                <span className="font-mono text-xs font-extrabold bg-amber-500 text-white px-1.5 py-0.2 rounded-full shadow-2xs animate-pulse motion-reduce:animate-none shrink-0">
                   {expiringTasksCount}
                 </span>
               </div>
-              <p className="text-xs text-amber-800/90 leading-tight">
+              <p className="text-xs text-amber-800/90 leading-tight truncate">
                 {expiringTasksCount === 1 
                   ? '1 task due within ' + expirySettings.expiryThresholdHours + 'h!' 
                   : `${expiringTasksCount} tasks due within ${expirySettings.expiryThresholdHours}h!`}
               </p>
               <div className="flex items-center justify-between text-xs font-mono text-amber-700 font-semibold pt-0.5 border-t border-amber-200/60">
                 <span>View in Settings</span>
-                <ChevronRight className="w-3 h-3 text-amber-600 group-hover:translate-x-0.5 transition-transform motion-reduce:transition-none" />
+                <ChevronRight className="w-3 h-3 text-amber-600 group-hover:translate-x-0.5 transition-transform motion-reduce:transition-none shrink-0" />
               </div>
             </button>
           ) : (
             <div className="p-2 rounded-xl bg-slate-100/70 border border-slate-200/60 text-xs font-mono text-slate-500 flex items-center justify-between">
-              <div className="flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5 text-slate-500" />
-                <span>Tasks: Up to date</span>
+              <div className="flex items-center gap-1.5 truncate">
+                <Clock className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                <span className="truncate">Tasks: Up to date</span>
               </div>
             </div>
-          )
-        ) : expiringTasksCount > 0 ? (
-          <button
-            type="button"
-            onClick={() => handleTabClick('settings')}
-            title={`${expiringTasksCount} tasks expiring soon!`}
-            className="w-full flex justify-center p-2 rounded-xl bg-amber-100 border border-amber-300 text-amber-700 animate-pulse motion-reduce:animate-none"
+          )}
+        </motion.div>
+
+        {/* Collapsed Mode Icon-only Indicator (when expiring tasks exist) */}
+        {!isMobileView && isCollapsed && expiringTasksCount > 0 && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.15 }}
+            className="flex justify-center"
           >
-            <Clock className="w-4 h-4 text-amber-600" />
-          </button>
-        ) : null}
+            <button
+              type="button"
+              onClick={() => handleTabClick('settings')}
+              title={`${expiringTasksCount} tasks expiring soon!`}
+              data-tooltip={`${expiringTasksCount} tasks expiring soon!`}
+              data-tooltip-placement="right"
+              className="w-8 h-8 flex items-center justify-center rounded-xl bg-amber-100 border border-amber-300 text-amber-700 animate-pulse motion-reduce:animate-none cursor-pointer"
+            >
+              <Clock className="w-4 h-4 text-amber-600" />
+            </button>
+          </motion.div>
+        )}
       </div>
     );
   };
@@ -349,144 +423,350 @@ export const Sidebar: React.FC<SidebarProps> = (props) => {
   const renderFooter = (isMobileView = false) => {
     const isSectionTooltipDisabled = !isCollapsed || isMobileView;
     return (
-    <div className={`border-t border-slate-200/80 space-y-1.5 bg-slate-50/90 ${isMobileView ? 'p-3' : 'p-2'}`}>
-      {/* Companion Extension Action */}
-      <button
-        type="button"
-        onClick={() => {
-          if (isMobileView && onCloseMobile) onCloseMobile();
-          nav.openExtensionModal();
-        }}
-        title={
-          extensionState.status === 'connected'
-            ? `Tracklet Chrome Extension v${extensionState.installedVersion} (Connected)`
-            : extensionState.status === 'update_available'
-            ? `Tracklet Chrome Extension update ready (v${extensionState.latestVersion})`
-            : 'Tracklet Chrome Extension — Click to download & install'
-        }
-        aria-label="Tracklet Chrome Extension"
-        className={`w-full flex items-center ${
-          !isMobileView && isCollapsed ? 'justify-center p-2' : 'justify-start px-2.5 py-1.5'
-        } rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 transition-colors text-xs font-medium cursor-pointer group`}
-      >
-        <div className="relative shrink-0 flex items-center justify-center">
-          <Puzzle className={`w-4 h-4 transition-colors ${
-            extensionState.status === 'connected'
-              ? 'text-emerald-600'
-              : extensionState.status === 'update_available'
-              ? 'text-amber-600'
-              : 'text-slate-500 group-hover:text-blue-600'
-          }`} />
-          {extensionState.status === 'update_available' && (
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 absolute -top-0.5 -right-0.5 animate-pulse motion-reduce:animate-none" />
-          )}
-        </div>
-        {(isMobileView || !isCollapsed) && (
-          <div className="ml-2 flex items-center justify-between flex-1">
-            <span className="font-medium">Chrome Extension</span>
-            {extensionState.status === 'connected' ? (
-              <span className="text-[11px] font-mono text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-1.5 py-0.5 rounded-full font-semibold">
-                v{extensionState.installedVersion}
-              </span>
-            ) : extensionState.status === 'update_available' ? (
-              <span className="text-[11px] font-mono text-amber-700 bg-amber-50 border border-amber-200/60 px-1.5 py-0.5 rounded-full font-bold animate-pulse motion-reduce:animate-none">
-                Update
-              </span>
-            ) : extensionState.status === 'checking' ? (
-              <span className="text-[11px] text-slate-500 font-mono">
-                Checking...
-              </span>
-            ) : (
-              <span className="text-[11px] text-blue-700 bg-blue-50 border border-blue-200/80 px-2 py-0.5 rounded-full font-semibold group-hover:bg-blue-100/80 transition-colors">
-                Download
-              </span>
-            )}
-          </div>
-        )}
-      </button>
-
-      {/* Report an Issue Action */}
-      <button
-        type="button"
-        onClick={() => {
-          if (isMobileView && onCloseMobile) onCloseMobile();
-          nav.openFeedbackModal();
-        }}
-        title="Report an Issue or Feedback (Ctrl+Alt+B)"
-        data-tooltip={isSectionTooltipDisabled ? undefined : 'Report an Issue or Feedback (Ctrl+Alt+B)'}
-        data-tooltip-placement="right"
-        data-no-tooltip={isSectionTooltipDisabled ? '' : undefined}
-        aria-label="Report an Issue or Feedback (Ctrl+Alt+B)"
-        className={`w-full flex items-center ${
-          !isMobileView && isCollapsed ? 'justify-center p-2' : 'justify-start px-2.5 py-1.5'
-        } rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 transition-colors text-xs font-medium cursor-pointer active:scale-[0.98] motion-reduce:transform-none`}
-      >
-        <Bug className="w-4 h-4 text-slate-500 shrink-0" />
-        {(isMobileView || !isCollapsed) && (
-          <div className="ml-2 flex items-center justify-between flex-1">
-            <span className="font-medium">Report Issue</span>
-            <kbd className="text-[11px] text-slate-500 font-mono">Ctrl+Alt+B</kbd>
-          </div>
-        )}
-      </button>
-
-      {/* Legal & Trust Pages Action */}
-      <button
-        type="button"
-        onClick={() => {
-          if (isMobileView && onCloseMobile) onCloseMobile();
-          nav.navigateToLegal('privacy');
-        }}
-        title="Privacy Policy & Terms of Service"
-        data-tooltip={isSectionTooltipDisabled ? undefined : 'Privacy Policy & Terms of Service'}
-        data-tooltip-placement="right"
-        data-no-tooltip={isSectionTooltipDisabled ? '' : undefined}
-        aria-label="Privacy Policy & Terms of Service"
-        className={`w-full flex items-center ${
-          !isMobileView && isCollapsed ? 'justify-center p-2' : 'justify-start px-2.5 py-1.5'
-        } rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 transition-colors text-xs font-medium cursor-pointer active:scale-[0.98] motion-reduce:transform-none`}
-      >
-        <ShieldCheck className="w-4 h-4 text-slate-500 shrink-0" />
-        {(isMobileView || !isCollapsed) && (
-          <div className="ml-2 flex items-center justify-between flex-1">
-            <span className="font-medium">Legal & Trust</span>
-            <span className="text-[11px] text-slate-500 font-mono font-medium">Privacy</span>
-          </div>
-        )}
-      </button>
-
+    <div className={`border-t border-slate-200/80 space-y-1 bg-slate-50/90 ${isMobileView ? 'p-3' : 'p-2'}`}>
+      {/* Account Row & Popup Menu */}
       {user ? (
-        <div className={`p-2 rounded-xl bg-white border border-slate-200/80 shadow-2xs flex items-center ${!isMobileView && isCollapsed ? 'justify-center' : 'justify-between'} gap-2`}>
-          <div className="flex items-center gap-2 min-w-0">
-            {user.photoURL ? (
-              <img
-                src={user.photoURL}
-                alt={user.displayName || 'User'}
-                className="w-6 h-6 rounded-full shrink-0 border border-slate-200"
-                referrerPolicy="no-referrer"
-              />
-            ) : (
-              <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center shrink-0 border border-slate-200">
-                <UserIcon className="w-4 h-4 text-slate-500" />
-              </div>
+        <div className="relative" ref={accountMenuRef}>
+          {/* Account Menu Popover */}
+          <AnimatePresence>
+            {isAccountMenuOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 8, scale: 0.96 }}
+                transition={{ duration: 0.15, ease: [0.23, 1, 0.32, 1] }}
+                className={`absolute z-50 bg-white border border-slate-200/90 shadow-2xl rounded-2xl p-1.5 text-slate-700 text-xs backdrop-blur-md ${
+                  !isMobileView && isCollapsed
+                    ? 'bottom-0 left-full ml-3 w-64'
+                    : 'bottom-full left-0 right-0 mb-2 w-full min-w-[220px]'
+                }`}
+              >
+                {/* Header: User identity & plan badge */}
+                <div className="px-2.5 py-2 mb-1 border-b border-slate-100 flex items-center gap-2.5">
+                  {user.photoURL ? (
+                    <img
+                      src={user.photoURL}
+                      alt=""
+                      className="w-8 h-8 rounded-full object-cover shrink-0"
+                      referrerPolicy="no-referrer"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200/80 flex items-center justify-center text-slate-700 font-bold text-xs shrink-0">
+                      {user.displayName
+                        ? user.displayName.charAt(0).toUpperCase()
+                        : user.email
+                        ? user.email.charAt(0).toUpperCase()
+                        : <UserIcon className="w-4 h-4 text-slate-500" />}
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-xs font-semibold text-slate-900 leading-tight">
+                      {user.displayName || (user.email ? user.email.split('@')[0] : 'User')}
+                    </div>
+                    <div className="truncate text-[11px] text-slate-500 leading-tight">
+                      {user.email || ''}
+                    </div>
+                  </div>
+                  <span className="shrink-0 text-[10px] font-mono font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">
+                    {planTier}
+                  </span>
+                </div>
+
+                {/* Menu Items */}
+                {isMobileView && activeSubmenu === 'help' ? (
+                  <div className="space-y-1">
+                    <button
+                      type="button"
+                      onClick={() => setActiveSubmenu('none')}
+                      className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-slate-700 hover:text-slate-900 hover:bg-slate-100/80 transition-colors text-xs font-semibold cursor-pointer border-b border-slate-100 mb-1"
+                    >
+                      <ChevronLeft className="w-4 h-4 shrink-0" />
+                      <span>Back</span>
+                    </button>
+                    <div className="space-y-0.5">
+                      {/* Keyboard Shortcuts */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsAccountMenuOpen(false);
+                          setActiveSubmenu('none');
+                          if (onCloseMobile) onCloseMobile();
+                          nav.openShortcutsModal();
+                        }}
+                        className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-slate-700 hover:text-slate-900 hover:bg-slate-100/80 transition-colors text-xs font-medium cursor-pointer"
+                      >
+                        <span>Keyboard shortcuts</span>
+                      </button>
+
+                      {/* Terms and Conditions */}
+                      <a
+                        href="/terms"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() => {
+                          setIsAccountMenuOpen(false);
+                          setActiveSubmenu('none');
+                          if (onCloseMobile) onCloseMobile();
+                        }}
+                        className="group w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-slate-700 hover:text-slate-900 hover:bg-slate-100/80 transition-colors text-xs font-medium cursor-pointer"
+                      >
+                        <span>Terms and Conditions</span>
+                        <ExternalLink className="w-3.5 h-3.5 text-slate-400 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </a>
+
+                      {/* Privacy Policy */}
+                      <a
+                        href="/privacy"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() => {
+                          setIsAccountMenuOpen(false);
+                          setActiveSubmenu('none');
+                          if (onCloseMobile) onCloseMobile();
+                        }}
+                        className="group w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-slate-700 hover:text-slate-900 hover:bg-slate-100/80 transition-colors text-xs font-medium cursor-pointer"
+                      >
+                        <span>Privacy Policy</span>
+                        <ExternalLink className="w-3.5 h-3.5 text-slate-400 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </a>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-0.5">
+                    {/* Settings */}
+                    <button
+                      type="button"
+                      onMouseEnter={() => {
+                        if (!isMobileView) setActiveSubmenu('none');
+                      }}
+                      onClick={() => {
+                        setIsAccountMenuOpen(false);
+                        handleTabClick('settings');
+                      }}
+                      className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-slate-700 hover:text-slate-900 hover:bg-slate-100/80 transition-colors text-xs font-medium cursor-pointer"
+                    >
+                      <Settings className="w-4 h-4 text-slate-500 shrink-0" />
+                      <span>Settings</span>
+                    </button>
+
+                    {/* Upgrade to Pro (Free tier only) */}
+                    {planTier === 'free' && openPaywall && (
+                      <button
+                        type="button"
+                        onMouseEnter={() => {
+                          if (!isMobileView) setActiveSubmenu('none');
+                        }}
+                        onClick={() => {
+                          setIsAccountMenuOpen(false);
+                          openPaywall('pipeline_cap');
+                        }}
+                        className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-blue-700 hover:bg-blue-50/80 transition-colors text-xs font-semibold cursor-pointer"
+                      >
+                        <Sparkles className="w-4 h-4 text-blue-600 shrink-0" />
+                        <span>Upgrade to Pro</span>
+                      </button>
+                    )}
+
+                    {/* Chrome Extension */}
+                    <button
+                      type="button"
+                      onMouseEnter={() => {
+                        if (!isMobileView) setActiveSubmenu('none');
+                      }}
+                      onClick={() => {
+                        setIsAccountMenuOpen(false);
+                        if (isMobileView && onCloseMobile) onCloseMobile();
+                        nav.openExtensionModal();
+                      }}
+                      className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-slate-700 hover:text-slate-900 hover:bg-slate-100/80 transition-colors text-xs font-medium cursor-pointer"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <ChromeIcon className="w-4 h-4 text-slate-500 shrink-0" />
+                        <span>Chrome Extension</span>
+                      </div>
+                      {extensionState.status === 'connected' && (
+                        <span className="text-[10px] font-mono text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-full font-semibold">
+                          v{extensionState.installedVersion}
+                        </span>
+                      )}
+                    </button>
+
+                    {/* Help (opens sub-menu) */}
+                    <div
+                      className="relative"
+                      onMouseEnter={() => {
+                        if (!isMobileView) setActiveSubmenu('help');
+                      }}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => setActiveSubmenu((prev) => (prev === 'help' ? 'none' : 'help'))}
+                        className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-slate-700 hover:text-slate-900 hover:bg-slate-100/80 transition-colors text-xs font-medium cursor-pointer ${
+                          activeSubmenu === 'help' ? 'bg-slate-100 text-slate-900 font-semibold' : ''
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <HelpCircle className="w-4 h-4 text-slate-500 shrink-0" />
+                          <span>Help</span>
+                        </div>
+                        <ChevronRight className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                      </button>
+
+                      {/* Desktop Flyout Sub-menu (no title, clean items) */}
+                      {!isMobileView && activeSubmenu === 'help' && (
+                        <div
+                          className="absolute left-full bottom-0 ml-1.5 w-60 z-50 bg-white border border-slate-200/90 shadow-2xl rounded-2xl p-1.5 text-slate-700 text-xs backdrop-blur-md animate-in fade-in slide-in-from-left-2 duration-150"
+                          onMouseLeave={() => setActiveSubmenu('none')}
+                        >
+                          <div className="space-y-0.5">
+                            {/* Keyboard Shortcuts */}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setIsAccountMenuOpen(false);
+                                setActiveSubmenu('none');
+                                nav.openShortcutsModal();
+                              }}
+                              className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-slate-700 hover:text-slate-900 hover:bg-slate-100/80 transition-colors text-xs font-medium cursor-pointer"
+                            >
+                              <span>Keyboard shortcuts</span>
+                            </button>
+
+                            {/* Terms and Conditions */}
+                            <a
+                              href="/terms"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={() => {
+                                setIsAccountMenuOpen(false);
+                                setActiveSubmenu('none');
+                              }}
+                              className="group w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-slate-700 hover:text-slate-900 hover:bg-slate-100/80 transition-colors text-xs font-medium cursor-pointer"
+                            >
+                              <span>Terms and Conditions</span>
+                              <ExternalLink className="w-3.5 h-3.5 text-slate-400 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                            </a>
+
+                            {/* Privacy Policy */}
+                            <a
+                              href="/privacy"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={() => {
+                                setIsAccountMenuOpen(false);
+                                setActiveSubmenu('none');
+                              }}
+                              className="group w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-slate-700 hover:text-slate-900 hover:bg-slate-100/80 transition-colors text-xs font-medium cursor-pointer"
+                            >
+                              <span>Privacy Policy</span>
+                              <ExternalLink className="w-3.5 h-3.5 text-slate-400 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                            </a>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Report a Bug (renamed & relocated per user instruction) */}
+                    <button
+                      type="button"
+                      onMouseEnter={() => {
+                        if (!isMobileView) setActiveSubmenu('none');
+                      }}
+                      onClick={() => {
+                        setIsAccountMenuOpen(false);
+                        setActiveSubmenu('none');
+                        if (isMobileView && onCloseMobile) onCloseMobile();
+                        nav.openFeedbackModal();
+                      }}
+                      className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-slate-700 hover:text-slate-900 hover:bg-slate-100/80 transition-colors text-xs font-medium cursor-pointer"
+                    >
+                      <Bug className="w-4 h-4 text-slate-500 shrink-0" />
+                      <span>Report a bug</span>
+                    </button>
+
+                    {/* Divider */}
+                    <div className="my-1 border-t border-slate-100" />
+
+                    {/* Log Out */}
+                    <button
+                      type="button"
+                      onMouseEnter={() => {
+                        if (!isMobileView) setActiveSubmenu('none');
+                      }}
+                      onClick={() => {
+                        setIsAccountMenuOpen(false);
+                        setActiveSubmenu('none');
+                        onSignOut();
+                        if (isMobileView && onCloseMobile) onCloseMobile();
+                      }}
+                      className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-slate-600 hover:text-rose-600 hover:bg-rose-50 transition-colors text-xs font-medium cursor-pointer group"
+                    >
+                      <LogOut className="w-4 h-4 text-slate-400 group-hover:text-rose-500 shrink-0" />
+                      <span>Log out</span>
+                    </button>
+                  </div>
+                )}
+              </motion.div>
             )}
-            {(isMobileView || !isCollapsed) && (
-              <span className="truncate text-xs text-slate-700 font-mono font-medium">
-                {user.email ? user.email.split('@')[0] : 'Signed in'}
-              </span>
-            )}
-          </div>
-          {(isMobileView || !isCollapsed) && (
-            <button
-              type="button"
-              onClick={handleMobileSignOut}
-              title="Sign out"
-              aria-label="Sign out"
-              className="text-slate-500 hover:text-slate-700 p-2 rounded-md hover:bg-slate-100 transition-colors cursor-pointer min-h-[36px] min-w-[36px] flex items-center justify-center"
+          </AnimatePresence>
+
+          {/* Account Trigger Button */}
+          <button
+            type="button"
+            onClick={() => setIsAccountMenuOpen((prev) => !prev)}
+            title={user.displayName ? `${user.displayName} (${user.email})` : (user.email || 'User Account')}
+            data-tooltip={isSectionTooltipDisabled ? undefined : (user.displayName ? `${user.displayName} (${user.email})` : user.email || 'User Account')}
+            data-tooltip-placement="right"
+            data-no-tooltip={isSectionTooltipDisabled ? '' : undefined}
+            aria-expanded={isAccountMenuOpen}
+            aria-haspopup="menu"
+            className={`w-full flex items-center ${
+              isMobileView ? 'px-2 py-1.5 justify-between' : 'h-10 px-2'
+            } rounded-xl hover:bg-slate-200/50 transition-colors cursor-pointer group active:scale-[0.98] ${
+              isAccountMenuOpen ? 'bg-slate-200/60' : ''
+            }`}
+          >
+            {/* Stationary Avatar Container (centered at x=34px across states) */}
+            <div className="w-8 h-8 shrink-0 flex items-center justify-center">
+              {user.photoURL ? (
+                <img
+                  src={user.photoURL}
+                  alt=""
+                  className="w-6 h-6 shrink-0 rounded-full object-cover"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <div className="w-6 h-6 shrink-0 rounded-full bg-slate-200/80 flex items-center justify-center text-slate-700 font-semibold text-[11px]">
+                  {user.displayName
+                    ? user.displayName.charAt(0).toUpperCase()
+                    : user.email
+                    ? user.email.charAt(0).toUpperCase()
+                    : <UserIcon className="w-3.5 h-3.5 text-slate-500" />}
+                </div>
+              )}
+            </div>
+
+            {/* Smoothly Animated User Name & Chevrons */}
+            <motion.div
+              initial={false}
+              animate={{
+                opacity: isCollapsed && !isMobileView ? 0 : 1,
+                width: isCollapsed && !isMobileView ? 0 : 'auto',
+              }}
+              transition={{ duration: 0.18, ease: [0.25, 0.1, 0.25, 1.0] }}
+              className="overflow-hidden whitespace-nowrap min-w-0 flex-1 flex items-center justify-between ml-1.5"
             >
-              <LogOut className="w-4 h-4" />
-            </button>
-          )}
+              <div className="min-w-0 flex-1 text-left">
+                <div className="truncate text-[12.5px] font-medium leading-tight text-slate-900">
+                  {user.displayName || (user.email ? user.email.split('@')[0] : 'User')}
+                </div>
+                <div className="truncate text-[11px] leading-tight text-slate-500">
+                  {user.email || ''}
+                </div>
+              </div>
+              <ChevronsUpDown className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 shrink-0 ml-1" />
+            </motion.div>
+          </button>
         </div>
       ) : (
         <button
@@ -496,16 +776,24 @@ export const Sidebar: React.FC<SidebarProps> = (props) => {
           data-tooltip={isSectionTooltipDisabled ? undefined : 'Sign In / Register'}
           data-tooltip-placement="right"
           data-no-tooltip={isSectionTooltipDisabled ? '' : undefined}
-          className={`w-full flex items-center justify-center gap-2 ${
-            isMobileView
-              ? 'px-3 py-2.5 min-h-[44px]'
-              : isCollapsed
-              ? 'p-2'
-              : 'px-2.5 py-2'
-          } rounded-[10px] bg-white hover:bg-slate-100/80 text-slate-900 border border-slate-200 transition-all font-semibold text-xs shadow-2xs hover:shadow-xs active:scale-[0.99] cursor-pointer`}
+          className={`w-full flex items-center ${
+            isMobileView ? 'px-3 py-2.5 min-h-[44px] justify-center gap-2' : 'h-9 px-2'
+          } rounded-[10px] bg-white hover:bg-slate-100/80 text-slate-900 border border-slate-200 transition-colors font-semibold text-xs shadow-2xs hover:shadow-xs active:scale-[0.99] cursor-pointer`}
         >
-          <LogIn className="w-4 h-4 text-blue-600 shrink-0" />
-          {(isMobileView || !isCollapsed) && <span>Sign In</span>}
+          <div className="w-8 h-8 shrink-0 flex items-center justify-center">
+            <LogIn className="w-4 h-4 text-blue-600 shrink-0" />
+          </div>
+          <motion.div
+            initial={false}
+            animate={{
+              opacity: isCollapsed && !isMobileView ? 0 : 1,
+              width: isCollapsed && !isMobileView ? 0 : 'auto',
+            }}
+            transition={{ duration: 0.18, ease: [0.25, 0.1, 0.25, 1.0] }}
+            className="overflow-hidden whitespace-nowrap min-w-0 flex-1 text-left ml-1.5"
+          >
+            <span>Sign In</span>
+          </motion.div>
         </button>
       )}
     </div>
@@ -515,43 +803,73 @@ export const Sidebar: React.FC<SidebarProps> = (props) => {
   return (
     <>
       {/* ── Desktop Sidebar (Visible on md: ≥ 768px) ── */}
-      <aside 
-        className={`hidden md:flex ${
-          isCollapsed ? 'w-[68px]' : 'w-[210px]'
-        } shrink-0 bg-slate-50/90 border-r border-slate-200/80 flex-col justify-between h-screen sticky top-0 select-none text-slate-900 font-sans text-xs backdrop-blur-xs transition-all duration-200 z-20`}
+      <motion.aside 
+        initial={false}
+        animate={{ width: isCollapsed ? 68 : 210 }}
+        transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.22, ease: [0.25, 0.1, 0.25, 1.0] }}
+        className={`hidden md:flex shrink-0 bg-slate-50/90 border-r border-slate-200/80 flex-col justify-between h-screen sticky top-0 select-none text-slate-900 font-sans text-xs backdrop-blur-xs z-20 ${
+          isAccountMenuOpen ? 'overflow-visible' : 'overflow-hidden'
+        }`}
       >
-        <div>
+        <div className="overflow-hidden">
           {/* Desktop Brand Header */}
-          <div className={`h-13 px-3 flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} border-b border-slate-200/80`}>
-            {!isCollapsed ? (
-              <div className="flex items-center gap-2.5 min-w-0">
-                <img src="/logo.svg" alt="Tracklet Logo" className="w-7 h-7 shrink-0" />
-                <div className="flex flex-col truncate">
-                  <span className="font-bold text-slate-900 tracking-tight text-xs sm:text-sm leading-none font-heading">
-                    Tracklet
-                  </span>
-                  <span className="text-[11px] text-slate-500 font-medium tracking-wide mt-0.5 font-mono">
-                    Job OS
-                  </span>
-                </div>
-              </div>
-            ) : (
-              <img src="/logo.svg" alt="Tracklet Logo" className="w-7.5 h-7.5 shrink-0" />
-            )}
+          <div className="h-13 px-3.5 flex items-center justify-between border-b border-slate-200/80 relative overflow-hidden">
+            <div className="flex items-center min-w-0 flex-1">
+              {/* Stationary Logo Button (centered at x=34px across states, toggles sidebar on click) */}
+              <button
+                type="button"
+                onClick={toggleSidebar}
+                title={isCollapsed ? 'Expand sidebar (Ctrl+B)' : 'Collapse sidebar (Ctrl+B)'}
+                data-tooltip={isCollapsed ? 'Expand sidebar (Ctrl+B)' : undefined}
+                data-tooltip-placement="right"
+                aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                className="w-9 h-9 shrink-0 flex items-center justify-center rounded-lg hover:bg-slate-200/60 transition-colors cursor-pointer group"
+              >
+                <img
+                  src="/logo.svg"
+                  alt="Tracklet Logo"
+                  className="w-7 h-7 shrink-0 transition-transform group-hover:scale-105 active:scale-95"
+                />
+              </button>
 
-            <button
-              type="button"
-              onClick={toggleSidebar}
-              title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-              aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-              className="p-1.5 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-200/60 transition-colors cursor-pointer shrink-0 min-h-[36px] min-w-[36px] flex items-center justify-center"
+              {/* Smoothly Animated Brand Title (whitespace-nowrap + overflow-hidden) */}
+              <motion.div
+                initial={false}
+                animate={{
+                  opacity: isCollapsed ? 0 : 1,
+                  width: isCollapsed ? 0 : 'auto',
+                }}
+                transition={{ duration: 0.18, ease: [0.25, 0.1, 0.25, 1.0] }}
+                className="overflow-hidden whitespace-nowrap min-w-0"
+              >
+                <span className="font-bold text-slate-900 tracking-tight text-sm leading-none font-heading pl-2 select-none">
+                  Tracklet
+                </span>
+              </motion.div>
+            </div>
+
+            {/* Collapse Toggle Button (fades and scales out cleanly on collapse, zero collision) */}
+            <motion.div
+              initial={false}
+              animate={{
+                opacity: isCollapsed ? 0 : 1,
+                scale: isCollapsed ? 0.8 : 1,
+                width: isCollapsed ? 0 : 'auto',
+                pointerEvents: isCollapsed ? 'none' : 'auto',
+              }}
+              transition={{ duration: 0.15, ease: [0.25, 0.1, 0.25, 1.0] }}
+              className="overflow-hidden shrink-0"
             >
-              {isCollapsed ? (
-                <PanelLeftOpen className="w-4 h-4" />
-              ) : (
+              <button
+                type="button"
+                onClick={toggleSidebar}
+                title="Collapse sidebar (Ctrl+B)"
+                aria-label="Collapse sidebar"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-colors cursor-pointer flex items-center justify-center"
+              >
                 <PanelLeftClose className="w-4 h-4" />
-              )}
-            </button>
+              </button>
+            </motion.div>
           </div>
 
           {/* Desktop Navigation Items */}
@@ -563,7 +881,7 @@ export const Sidebar: React.FC<SidebarProps> = (props) => {
 
         {/* Desktop Footer */}
         {renderFooter(false)}
-      </aside>
+      </motion.aside>
 
       {/* ── Mobile Drawer Overlay (Visible on < 768px when opened) ── */}
       {isMobileOpen && (
@@ -583,14 +901,9 @@ export const Sidebar: React.FC<SidebarProps> = (props) => {
               <div className="h-14 px-4 flex items-center justify-between border-b border-slate-200/80 bg-white">
                 <div className="flex items-center gap-2.5 min-w-0">
                   <img src="/logo.svg" alt="Tracklet Logo" className="w-7 h-7 shrink-0" />
-                  <div className="flex flex-col truncate">
-                    <span className="font-bold text-slate-900 tracking-tight text-sm leading-none font-heading">
-                      Tracklet
-                    </span>
-                    <span className="text-[11px] text-slate-500 font-medium tracking-wide mt-0.5 font-mono">
-                      Job Application OS
-                    </span>
-                  </div>
+                  <span className="font-bold text-slate-900 tracking-tight text-sm leading-none font-heading truncate">
+                    Tracklet
+                  </span>
                 </div>
 
                 <button
