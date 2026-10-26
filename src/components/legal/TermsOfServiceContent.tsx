@@ -103,6 +103,9 @@ export const TermsOfServiceContent: React.FC = () => {
         <h2 className="text-xl font-heading font-bold text-slate-900">
           5. Subscription Plans, Billing & Cancellations
         </h2>
+        <div className="p-3.5 bg-blue-50 border border-blue-200/90 rounded-xl text-xs text-blue-900 leading-relaxed">
+          <strong className="font-bold">Experimental Preview Notice:</strong> Tracklet is currently in an experimental preview. Paid subscriptions, billing, and tier restrictions are temporarily disabled during this testing period; all registered users enjoy full platform access free of charge.
+        </div>
         <p>
           Tracklet provides both Free and Pro subscription plans. Specific plan features, quotas, and pricing details are published on our pricing surfaces:
         </p>

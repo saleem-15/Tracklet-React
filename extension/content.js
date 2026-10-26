@@ -5469,8 +5469,8 @@ function announceTrackletPresence() {
   try {
     const manifest = (typeof chrome !== 'undefined' && chrome.runtime?.getManifest)
       ? chrome.runtime.getManifest()
-      : { version: '1.3.5', name: 'Tracklet' };
-    const version = manifest.version || '1.3.5';
+      : { version: '1.3.6', name: 'Tracklet' };
+    const version = manifest.version || '1.3.6';
 
     // 1. Direct DOM markers on documentElement for instant zero-latency detection
     if (document.documentElement) {

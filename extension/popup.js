@@ -5,7 +5,7 @@
  */
 
 document.addEventListener('DOMContentLoaded', async () => {
-  const TRACKLET_APP_URL = 'https://usetracklet.netlify.app';
+  const TRACKLET_APP_URL = 'https://tracklet.pages.dev';
 
   // --- Token Refresh Helpers ---
 
@@ -995,7 +995,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   function updateUserBadge(session) {
     if (session && session.uid) {
       userAccountDot.classList.add('connected');
-      const tierLabel = session.planTier === 'pro' ? 'Pro' : 'Free';
+      // Subscriptions disabled during experimental preview
+      const tierLabel = 'Experimental';
       if (userAccountBadge) {
         userAccountBadge.title = `Connected: ${session.email || session.uid} (${tierLabel} Tier)`;
       }
@@ -4534,7 +4535,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     const activeStages = ['Saved', 'Applied', 'Screening', 'Interview', 'Offer'];
     const currentActiveCount = (allKnownAppsList || []).filter(a => activeStages.includes(a.status)).length;
     const isPro = currentUserSession.planTier === 'pro';
-    if (!isPro && currentActiveCount >= 20 && !matchedApplication) {
+    // Subscriptions disabled during experimental preview (unlimited cards)
+    const SUBSCRIPTIONS_ENABLED = false;
+    if (SUBSCRIPTIONS_ENABLED && !isPro && currentActiveCount >= 20 && !matchedApplication) {
       showToast('Free tier limit reached (20/20 active jobs). Upgrade to Pro or archive an application.');
       focusOrOpenWorkspace(null, '/settings');
       return;
