@@ -28,7 +28,7 @@ afterEach(() => {
 describe('NotFoundView component (In-Workspace Oversized 404)', () => {
   it('renders oversized 404 numeral, heading, and single Back to home CTA without clutter', () => {
     act(() => {
-      root!.render(<NotFoundView landingUrl="https://usetracklet.com" />);
+      root!.render(<NotFoundView />);
     });
 
     expect(host?.textContent).toContain('404');
@@ -43,15 +43,22 @@ describe('NotFoundView component (In-Workspace Oversized 404)', () => {
     expect(host?.textContent).not.toContain('Active Pipeline');
   });
 
-  it('configures Back to home anchor with the target landing page URL', () => {
+  it('triggers onNavigateHome callback when Back to home button is clicked', () => {
+    const handleNavigateHome = vi.fn();
     act(() => {
-      root!.render(<NotFoundView landingUrl="http://localhost:3000" />);
+      root!.render(<NotFoundView onNavigateHome={handleNavigateHome} />);
     });
 
-    const homeLink = host?.querySelector('a') as HTMLAnchorElement | null;
-    expect(homeLink).toBeDefined();
-    expect(homeLink?.getAttribute('href')).toBe('http://localhost:3000');
-    expect(homeLink?.textContent).toContain('Back to home');
+    const homeButton = Array.from(host?.querySelectorAll('button') ?? []).find((b) =>
+      b.textContent?.includes('Back to home')
+    );
+    expect(homeButton).toBeDefined();
+
+    act(() => {
+      homeButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+
+    expect(handleNavigateHome).toHaveBeenCalledTimes(1);
   });
 
   it('triggers onOpenMobileSidebar when mobile header menu button is clicked', () => {
@@ -74,7 +81,7 @@ describe('NotFoundView component (In-Workspace Oversized 404)', () => {
 describe('NotFoundPage component (Public Standalone Oversized 404)', () => {
   it('updates document.title and renders single Back to home CTA with landing page link', () => {
     act(() => {
-      root!.render(<NotFoundPage landingUrl="https://usetracklet.netlify.app/landing.html" />);
+      root!.render(<NotFoundPage landingUrl="https://usetracklet.com" />);
     });
 
     expect(document.title).toBe('404 — Page Not Found | Tracklet');
@@ -87,6 +94,23 @@ describe('NotFoundPage component (Public Standalone Oversized 404)', () => {
 
     const homeLinks = Array.from(host?.querySelectorAll('a') ?? []) as HTMLAnchorElement[];
     const ctaLink = homeLinks.find((a) => a.textContent?.includes('Back to home'));
-    expect(ctaLink?.getAttribute('href')).toBe('https://usetracklet.netlify.app/landing.html');
+    expect(ctaLink?.getAttribute('href')).toBe('https://usetracklet.com');
+  });
+
+  it('triggers onNavigateHome callback when Back to home link is clicked', () => {
+    const handleNavigateHome = vi.fn();
+    act(() => {
+      root!.render(<NotFoundPage onNavigateHome={handleNavigateHome} />);
+    });
+
+    const homeLinks = Array.from(host?.querySelectorAll('a') ?? []) as HTMLAnchorElement[];
+    const ctaLink = homeLinks.find((a) => a.textContent?.includes('Back to home'));
+    expect(ctaLink).toBeDefined();
+
+    act(() => {
+      ctaLink?.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    });
+
+    expect(handleNavigateHome).toHaveBeenCalledTimes(1);
   });
 });

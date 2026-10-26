@@ -4,6 +4,7 @@ import { getLandingPageUrl, navigateToRoute } from '../lib/routeUtils';
 
 export interface NotFoundPageProps {
   landingUrl?: string;
+  onNavigateHome?: () => void;
 }
 
 /**
@@ -11,16 +12,29 @@ export interface NotFoundPageProps {
  *
  * Standalone public 404 error page featuring an oversized numeral hero,
  * strong typography, and a single, high-clarity recovery action returning
- * the user to the landing page.
+ * the user to the landing page or login view.
  */
 export const NotFoundPage: React.FC<NotFoundPageProps> = ({
   landingUrl: customLandingUrl,
+  onNavigateHome,
 }) => {
   useEffect(() => {
     document.title = '404 — Page Not Found | Tracklet';
   }, []);
 
   const landingUrl = customLandingUrl || getLandingPageUrl();
+  const isExternalLanding =
+    landingUrl.startsWith('http://') || landingUrl.startsWith('https://');
+
+  const handleHomeClick = (e: React.MouseEvent) => {
+    if (onNavigateHome) {
+      e.preventDefault();
+      onNavigateHome();
+    } else if (!isExternalLanding) {
+      e.preventDefault();
+      navigateToRoute(landingUrl);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans antialiased flex flex-col justify-between">
@@ -29,6 +43,7 @@ export const NotFoundPage: React.FC<NotFoundPageProps> = ({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <a
             href={landingUrl}
+            onClick={handleHomeClick}
             aria-label="Tracklet Home"
             className="flex items-center gap-2.5 text-left rounded-xl p-1 -m-1 hover:bg-slate-100/70 active:scale-[0.98] transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-hidden"
           >
@@ -65,6 +80,7 @@ export const NotFoundPage: React.FC<NotFoundPageProps> = ({
           <div className="mt-8 flex justify-center w-full">
             <a
               href={landingUrl}
+              onClick={handleHomeClick}
               className="h-10 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-semibold shadow-xs text-xs sm:text-sm cursor-pointer inline-flex items-center justify-center gap-2 transition-all shadow-blue-500/20"
             >
               <Home className="w-4 h-4 shrink-0" aria-hidden="true" />

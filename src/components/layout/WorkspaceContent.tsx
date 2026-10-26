@@ -148,6 +148,7 @@ export function WorkspaceContent({ isLoading = false, activeQuota }: WorkspaceCo
     return (
       <NotFoundView
         onOpenMobileSidebar={openMobileSidebar}
+        onNavigateHome={() => setActiveTab('all')}
       />
     );
   }
