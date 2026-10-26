@@ -11,6 +11,7 @@ import { useToastContext } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
 import { TesterReportModal } from '../feedback/TesterReportModal';
 import { ExtensionModal } from '../extension/ExtensionModal';
+import { KeyboardShortcutsModal } from '../KeyboardShortcutsModal';
 import { useExtensionContext } from '../../context/ExtensionContext';
 
 export interface AppModalsProps {
@@ -39,7 +40,9 @@ export function AppModals({ paywall }: AppModalsProps = {}) {
     isFeedbackModalOpen, 
     closeFeedbackModal, 
     isExtensionModalOpen,
-    closeExtensionModal, 
+    closeExtensionModal,
+    isShortcutsModalOpen,
+    closeShortcutsModal,
     activeTab 
   } = useNavigation();
   const { user } = useAuth();
@@ -96,6 +99,12 @@ export function AppModals({ paywall }: AppModalsProps = {}) {
         onClose={closeExtensionModal}
         extensionState={extensionState}
         onShowToast={addToast}
+      />
+
+      {/* Keyboard Shortcuts Cheat Sheet Modal */}
+      <KeyboardShortcutsModal
+        isOpen={isShortcutsModalOpen}
+        onClose={closeShortcutsModal}
       />
 
       {/* SaaS Entitlement Upgrade Modal */}

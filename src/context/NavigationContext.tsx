@@ -29,6 +29,10 @@ export interface NavigationContextType {
   setIsExtensionModalOpen: (open: boolean) => void;
   openExtensionModal: () => void;
   closeExtensionModal: () => void;
+  isShortcutsModalOpen: boolean;
+  setIsShortcutsModalOpen: (open: boolean) => void;
+  openShortcutsModal: () => void;
+  closeShortcutsModal: () => void;
 }
 
 const NavigationContext = createContext<NavigationContextType | null>(null);
@@ -62,6 +66,7 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
+  const [isShortcutsModalOpen, setIsShortcutsModalOpen] = useState(false);
   const [isExtensionModalOpen, setIsExtensionModalOpen] = useState(() => {
     try {
       const params = new URLSearchParams(window.location.search);
@@ -99,6 +104,9 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const openExtensionModal = useCallback(() => setIsExtensionModalOpen(true), []);
   const closeExtensionModal = useCallback(() => setIsExtensionModalOpen(false), []);
 
+  const openShortcutsModal = useCallback(() => setIsShortcutsModalOpen(true), []);
+  const closeShortcutsModal = useCallback(() => setIsShortcutsModalOpen(false), []);
+
   const navigateToLegal = useCallback((doc: LegalDocType = 'privacy') => {
     navigateToRoute(getPathForLegalDoc(doc));
   }, []);
@@ -129,6 +137,10 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     setIsExtensionModalOpen,
     openExtensionModal,
     closeExtensionModal,
+    isShortcutsModalOpen,
+    setIsShortcutsModalOpen,
+    openShortcutsModal,
+    closeShortcutsModal,
   }), [
     activeTab,
     setActiveTab,
@@ -152,6 +164,9 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     isExtensionModalOpen,
     openExtensionModal,
     closeExtensionModal,
+    isShortcutsModalOpen,
+    openShortcutsModal,
+    closeShortcutsModal,
   ]);
 
   return (

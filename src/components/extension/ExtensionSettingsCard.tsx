@@ -1,6 +1,5 @@
 import React from 'react';
 import { 
-  Puzzle, 
   Download, 
   ExternalLink, 
   RefreshCw, 
@@ -8,6 +7,7 @@ import {
   AlertCircle,
   ArrowRight
 } from 'lucide-react';
+import { ChromeIcon } from '../icons/ChromeIcon';
 import { ExtensionState } from '../../types';
 import { EXTENSION_DISTRIBUTION_CONFIG, EXTENSION_STATUS_CONFIG } from '../../lib/constants';
 
@@ -31,7 +31,7 @@ export const ExtensionSettingsCard: React.FC<ExtensionSettingsCardProps> = ({
         {/* Left Side: Brand icon, title, description */}
         <div className="flex items-start gap-3.5">
           <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-200/80 flex items-center justify-center text-blue-600 shrink-0 shadow-2xs">
-            <Puzzle className="w-5 h-5" />
+            <ChromeIcon className="w-5 h-5 text-blue-600" />
           </div>
 
           <div className="space-y-1">
