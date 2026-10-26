@@ -429,9 +429,7 @@ export const ContactDetailPanel: React.FC<ContactDetailPanelProps> = ({
                 ) : (
                   <div>
                     <div className="flex items-center gap-2">
-                      <h2 className="text-base font-bold text-slate-900 truncate font-heading leading-tight">
-                        {contact.name}
-                      </h2>
+                      <h2 dir="auto" className="text-base font-bold text-slate-900 truncate font-heading leading-tight text-start">{contact.name}</h2>
                       {category && category !== 'Other' && (
                         <span
                           className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold border shrink-0 ${categoryStyle.bg} ${categoryStyle.text} ${categoryStyle.border}`}

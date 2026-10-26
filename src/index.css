@@ -169,7 +169,49 @@
   color: #94a3b8;
 }
 
+/* =========================================================================
+   RTL (Right-to-Left) & Bidirectional (BiDi) Text Rules
+   ========================================================================= */
 
+/* Ensure elements with dir="auto" or dir="rtl" naturally align to inline start */
+[dir="auto"],
+[dir="rtl"] {
+  text-align: start;
+}
+
+/* Inline bidirectional isolates never leak neutrals across boundaries */
+bdi,
+[data-bidi-isolate] {
+  unicode-bidi: isolate;
+}
+
+/* Source code, commands, pre, and inline code must stay strictly LTR */
+[dir="rtl"] pre,
+pre[dir="ltr"],
+code[dir="ltr"] {
+  direction: ltr !important;
+  text-align: left !important;
+}
+
+/* Proper padding and border mirroring in RTL context */
+[dir="rtl"] ul.list-disc,
+[dir="rtl"] ol.list-decimal,
+[dir="rtl"] ul.task-list {
+  padding-left: 0;
+  padding-right: 1.25rem;
+}
+
+[dir="rtl"] blockquote {
+  border-left-width: 0;
+  border-right-width: 4px;
+  padding-left: 0.5rem;
+  padding-right: 0.75rem;
+}
+
+/* In RTL task rows, checkbox sits at start (right), text follows (left) */
+[dir="rtl"] .task-item {
+  flex-direction: row;
+}
 
 /* Print Optimization for Legal Documents */
 @media print {

@@ -367,15 +367,11 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
                               size="sm"
                             />
 
-                            <span className="font-heading font-bold text-slate-900 text-xs truncate">
-                              {app.company}
-                            </span>
+                            <span dir="auto" className="font-heading font-bold text-slate-900 text-xs truncate text-start">{app.company}</span>
                           </div>
 
                           {/* Role Title */}
-                          <p className="text-slate-700 text-xs font-semibold truncate mb-2">
-                            {app.role}
-                          </p>
+                          <p dir="auto" className="text-slate-700 text-xs font-semibold truncate mb-2 text-start">{app.role}</p>
 
                           {/* Notes snippet or Tasks/Contacts chips */}
                           {Boolean(app.tasks?.length || app.contacts?.length || app.contactEmail || app.emails?.length) ? (

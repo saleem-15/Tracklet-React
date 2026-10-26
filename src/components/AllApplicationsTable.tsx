@@ -489,7 +489,7 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
                           companyDomain={app.companyDomain}
                           size="xs"
                         />
-                        <span className="truncate">{app.company}</span>
+                        <span dir="auto" className="truncate text-start">{app.company}</span>
                         {app.jobLink && (
                           <a
                             href={app.jobLink}
@@ -508,7 +508,7 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
                     {/* Role */}
                     <td className="px-3 py-1 text-slate-700 font-medium truncate max-w-[220px] align-middle">
                       <span className="flex items-center gap-1.5">
-                        <span className="truncate">{app.role}</span>
+                        <span dir="auto" className="truncate text-start">{app.role}</span>
                         {(app.workLocation || app.employmentType) && (
                           <JobTypeBadges
                             workLocation={app.workLocation}

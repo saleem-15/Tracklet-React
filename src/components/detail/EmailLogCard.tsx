@@ -102,7 +102,8 @@ export const EmailLogCard: React.FC<EmailLogCardProps> = ({
     <div className="bg-white rounded-xl border border-slate-200/80 p-3 shadow-2xs hover:shadow-xs transition-shadow relative">
       {/* Top Row: Full-Width Clean Subject (Max 2 lines when collapsed, unconstrained when expanded) */}
       <h4
-        className={`text-[13px] font-semibold text-slate-900 leading-snug break-words select-text ${
+        dir="auto"
+        className={`text-[13px] font-semibold text-slate-900 leading-snug break-words select-text text-start ${
           isExpanded ? '' : 'line-clamp-2'
         }`}
         title={email.subject}
@@ -116,12 +117,12 @@ export const EmailLogCard: React.FC<EmailLogCardProps> = ({
           {isInbound ? (
             <>
               <span className="text-slate-500 font-normal shrink-0">From</span>
-              <span className="font-medium text-slate-700 truncate">{primaryLabel}</span>
+              <span dir="auto" className="font-medium text-slate-700 truncate">{primaryLabel}</span>
             </>
           ) : (
             <>
               <span className="text-slate-500 font-normal shrink-0">To</span>
-              <span className="font-medium text-slate-700 truncate">
+              <span dir="auto" className="font-medium text-slate-700 truncate">
                 {primaryLabel.startsWith('To: ') ? primaryLabel.slice(4) : primaryLabel}
               </span>
             </>
@@ -141,7 +142,7 @@ export const EmailLogCard: React.FC<EmailLogCardProps> = ({
               title={`View application for ${linkedApplication.company}`}
             >
               <Briefcase className="w-2.5 h-2.5" />
-              <span className="truncate max-w-[100px]">{linkedApplication.company}</span>
+              <span dir="auto" className="truncate max-w-[100px]">{linkedApplication.company}</span>
             </button>
           )}
           <span className="text-[11px] font-mono text-slate-500 whitespace-nowrap text-right tabular-nums">
@@ -152,7 +153,7 @@ export const EmailLogCard: React.FC<EmailLogCardProps> = ({
 
       {/* Secondary Email Handle (Directly below sender/recipient) */}
       {secondaryEmail && (
-        <div className="text-[11px] font-mono text-slate-500 select-all truncate mt-0.5" title={secondaryEmail}>
+        <div dir="ltr" className="text-[11px] font-mono text-slate-500 select-all truncate mt-0.5 text-start" title={secondaryEmail}>
           {secondaryEmail}
         </div>
       )}

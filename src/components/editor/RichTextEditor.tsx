@@ -32,6 +32,7 @@ const isEmptyMarkdown = (md: string): boolean => !canonicalizeMarkdown(md);
  * Shared, generic WYSIWYG Markdown editor (contracts §1).
  * Reusable far beyond notes: hosts provide a value and receive
  * canonical Markdown back. Caret-safe across background saves.
+ * Fully supports RTL (Right-to-Left) languages and bidirectional mixed text.
  */
 export const RichTextEditor: React.FC<RichTextEditorProps> = ({
   value,
@@ -156,7 +157,10 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
       {/* Editable surface */}
       <div className="relative">
         {isEmpty && (
-          <div className="absolute top-3.5 left-3.5 text-slate-400 text-xs pointer-events-none select-none font-sans leading-relaxed">
+          <div
+            dir="auto"
+            className="absolute top-3.5 start-3.5 text-slate-400 text-xs pointer-events-none select-none font-sans leading-relaxed text-start"
+          >
             {placeholder}
           </div>
         )}
@@ -166,6 +170,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
           data-rich-text-editor="true"
           contentEditable
           suppressContentEditableWarning
+          dir="auto"
           onInput={handleInput}
           onKeyDown={handleKeyDown}
           onPaste={handlePaste}
@@ -173,8 +178,11 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
           onClick={handleClick}
           onFocus={() => setEditorFocused(true)}
           onBlur={() => setEditorFocused(false)}
-          style={{ minHeight: userHeight ? `${userHeight}px` : minHeight }}
-          className="w-full p-3.5 pb-8 bg-white text-slate-800 focus:outline-none font-sans text-xs leading-relaxed border-none block"
+          style={{
+            minHeight: userHeight ? `${userHeight}px` : minHeight,
+            unicodeBidi: 'plaintext',
+          }}
+          className="w-full p-3.5 pb-8 bg-white text-slate-800 focus:outline-none font-sans text-xs leading-relaxed border-none block text-start"
           role="textbox"
           aria-multiline="true"
           aria-label={ariaLabel}

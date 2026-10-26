@@ -2,6 +2,7 @@ import React from 'react';
 import { ExternalLink } from 'lucide-react';
 import { tokenizeTextWithLinks } from './linkUtils';
 import { htmlToMarkdown } from './editor/richTextMarkdownUtils';
+import { detectTextDirection, renderWithBidiIsolation } from './rtlUtils';
 
 /**
  * Normalizes email body content by converting HTML fragments to clean Markdown
@@ -31,11 +32,12 @@ export interface RenderInlineOptions {
   linkClassName?: string;
   showLinkIcon?: boolean;
   stopClickPropagation?: boolean;
+  baseDir?: 'rtl' | 'ltr';
 }
 
 /**
  * Parses inline formatting (links, bold, italic, code, strikethrough)
- * and returns safe, pure React nodes.
+ * and returns safe, pure React nodes with bidirectional isolation.
  */
 export function renderInlineFormattedText(
   text: string,
@@ -48,6 +50,7 @@ export function renderInlineFormattedText(
     linkClassName = 'text-blue-600 hover:text-blue-700 underline underline-offset-2 font-medium transition-colors cursor-pointer',
     showLinkIcon = false,
     stopClickPropagation = true,
+    baseDir = detectTextDirection(text),
   } = options;
 
   // 1. Tokenize links first to prevent inner underscores or formatting from breaking URLs
@@ -59,7 +62,7 @@ export function renderInlineFormattedText(
     if (token.type === 'link' && token.url) {
       // Parse any inline bold/italic inside the link label if present
       const labelNodes = token.label
-        ? parseInlineStyles(token.label, `${tokenKey}-lbl`)
+        ? parseInlineStyles(token.label, `${tokenKey}-lbl`, baseDir)
         : [token.value];
 
       return (
@@ -68,6 +71,7 @@ export function renderInlineFormattedText(
           href={token.url}
           target="_blank"
           rel="noopener noreferrer"
+          dir="auto"
           onClick={(e) => {
             if (stopClickPropagation) e.stopPropagation();
           }}
@@ -83,7 +87,7 @@ export function renderInlineFormattedText(
     // For plain text tokens, parse bold (**text** or __text__), italic (*text* or _text_), code (`text`), strike (~~text~~)
     return (
       <React.Fragment key={tokenKey}>
-        {parseInlineStyles(token.value, tokenKey)}
+        {parseInlineStyles(token.value, tokenKey, baseDir)}
       </React.Fragment>
     );
   });
@@ -96,7 +100,11 @@ export function renderInlineFormattedText(
  * - Code: `text`
  * - Strike: ~~text~~
  */
-function parseInlineStyles(text: string, keyPrefix: string): React.ReactNode[] {
+function parseInlineStyles(
+  text: string,
+  keyPrefix: string,
+  baseDir: 'rtl' | 'ltr' = 'ltr'
+): React.ReactNode[] {
   if (!text) return [];
 
   // Match:
@@ -119,17 +127,18 @@ function parseInlineStyles(text: string, keyPrefix: string): React.ReactNode[] {
       const inner = part.slice(2, -2);
       return (
         <strong key={key} className="font-semibold text-slate-900">
-          {inner}
+          {renderWithBidiIsolation(inner, baseDir, `${key}-b`)}
         </strong>
       );
     }
 
-    // Inline code: `text`
+    // Inline code: `text` (pinned to LTR for code/syntax integrity)
     if (part.startsWith('`') && part.endsWith('`') && part.length >= 2) {
       const inner = part.slice(1, -1);
       return (
         <code
           key={key}
+          dir="ltr"
           className="font-mono text-[11px] bg-slate-100 text-slate-800 px-1 py-0.5 rounded border border-slate-200"
         >
           {inner}
@@ -142,7 +151,7 @@ function parseInlineStyles(text: string, keyPrefix: string): React.ReactNode[] {
       const inner = part.slice(2, -2);
       return (
         <del key={key} className="line-through text-slate-400">
-          {inner}
+          {renderWithBidiIsolation(inner, baseDir, `${key}-s`)}
         </del>
       );
     }
@@ -155,12 +164,17 @@ function parseInlineStyles(text: string, keyPrefix: string): React.ReactNode[] {
       const inner = part.slice(1, -1);
       return (
         <em key={key} className="italic text-slate-800">
-          {inner}
+          {renderWithBidiIsolation(inner, baseDir, `${key}-i`)}
         </em>
       );
     }
 
-    return part;
+    // Plain text with bidirectional isolation for opposing-script parenthesized terms
+    return (
+      <React.Fragment key={key}>
+        {renderWithBidiIsolation(part, baseDir, key)}
+      </React.Fragment>
+    );
   });
 }
 
@@ -175,6 +189,8 @@ export type EmailBlock =
 /**
  * Splits normalized multi-line email content into structured blocks
  * for clean visual rendering (headings, bullet lists, blockquotes, paragraphs).
+ * Supports standard markdown bullet lists, numbered lists (both "1." and "1)"),
+ * blockquotes, and headings.
  */
 export function parseEmailBlocks(rawContent: string): EmailBlock[] {
   const content = normalizeEmailContent(rawContent);
@@ -251,8 +267,8 @@ export function parseEmailBlocks(rawContent: string): EmailBlock[] {
       continue;
     }
 
-    // Numbered item: 1. item, 2. item
-    const numberedMatch = trimmed.match(/^(\d+)\.\s+(.*)$/);
+    // Numbered item: 1. item, 2. item, 1) item, 2) item
+    const numberedMatch = trimmed.match(/^(\d+)[.)]\s+(.*)$/);
     if (numberedMatch) {
       if (currentBulletList) flushLists();
       if (!currentNumberedList) currentNumberedList = [];

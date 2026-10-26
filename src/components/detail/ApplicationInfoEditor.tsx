@@ -70,28 +70,30 @@ export const ApplicationInfoEditor: React.FC<ApplicationInfoEditorProps> = ({
         <div>
           <label className="block text-[11px] font-mono font-medium text-slate-500 mb-1">Company *</label>
           <div className="relative">
-            <Building2 className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-slate-500" />
+            <Building2 className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-slate-500 pointer-events-none" />
             <input
               type="text"
               required
+              dir="auto"
               value={editCompany}
               onChange={(e) => setEditCompany(e.target.value)}
               placeholder="e.g. Google"
-              className="w-full bg-white text-slate-900 font-semibold pl-8 pr-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 text-xs transition-all"
+              className="w-full bg-white text-slate-900 font-semibold pl-8 pr-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 text-xs text-start transition-all"
             />
           </div>
         </div>
         <div>
           <label className="block text-[11px] font-mono font-medium text-slate-500 mb-1">Role *</label>
           <div className="relative">
-            <Briefcase className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-slate-500" />
+            <Briefcase className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-slate-500 pointer-events-none" />
             <input
               type="text"
               required
+              dir="auto"
               value={editRole}
               onChange={(e) => setEditRole(e.target.value)}
               placeholder="e.g. Senior Software Engineer"
-              className="w-full bg-white text-slate-900 font-semibold pl-8 pr-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 text-xs transition-all"
+              className="w-full bg-white text-slate-900 font-semibold pl-8 pr-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 text-xs text-start transition-all"
             />
           </div>
         </div>
@@ -121,10 +123,11 @@ export const ApplicationInfoEditor: React.FC<ApplicationInfoEditorProps> = ({
           <label className="block text-[11px] font-mono font-medium text-slate-500 mb-1">Company Domain</label>
           <input
             type="text"
+            dir="ltr"
             value={editCompanyDomain}
             onChange={(e) => setEditCompanyDomain(e.target.value)}
             placeholder="e.g. google.com"
-            className="w-full bg-white text-slate-900 font-mono px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 text-xs transition-all"
+            className="w-full bg-white text-slate-900 font-mono px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 text-xs text-start transition-all"
           />
         </div>
       </div>
@@ -162,10 +165,11 @@ export const ApplicationInfoEditor: React.FC<ApplicationInfoEditorProps> = ({
           <input
             id="edit-job-location"
             type="text"
+            dir="auto"
             value={editJobLocation}
             onChange={(e) => setEditJobLocation(e.target.value)}
             placeholder="e.g. San Francisco, CA"
-            className="w-full bg-white text-slate-900 font-mono px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 text-xs transition-all"
+            className="w-full bg-white text-slate-900 font-mono px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 text-xs text-start transition-all"
           />
         </div>
       </div>
@@ -175,9 +179,10 @@ export const ApplicationInfoEditor: React.FC<ApplicationInfoEditorProps> = ({
         <div>
           <label className="block text-[11px] font-mono font-medium text-slate-500 mb-1">Job Posting URL</label>
           <div className="relative">
-            <Link className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-slate-500" />
+            <Link className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-slate-500 pointer-events-none" />
             <input
               type="url"
+              dir="ltr"
               value={editJobLink}
               onChange={(e) => setEditJobLink(e.target.value)}
               placeholder="https://company.com/jobs/..."
@@ -188,9 +193,10 @@ export const ApplicationInfoEditor: React.FC<ApplicationInfoEditorProps> = ({
         <div>
           <label className="block text-[11px] font-mono font-medium text-slate-500 mb-1">Primary Contact Email</label>
           <div className="relative">
-            <AtSign className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-slate-500" />
+            <AtSign className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-slate-500 pointer-events-none" />
             <input
               type="email"
+              dir="ltr"
               value={editContactEmail}
               onChange={(e) => setEditContactEmail(e.target.value)}
               placeholder="recruiter@company.com"
@@ -206,9 +212,10 @@ export const ApplicationInfoEditor: React.FC<ApplicationInfoEditorProps> = ({
           Email Thread URL <span className="text-slate-400 font-normal">(Gmail / Outlook webmail link)</span>
         </label>
         <div className="relative">
-          <MessageSquareText className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-slate-500" />
+          <MessageSquareText className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-slate-500 pointer-events-none" />
           <input
             type="url"
+            dir="ltr"
             value={editEmailThreadUrl}
             onChange={(e) => setEditEmailThreadUrl(e.target.value)}
             placeholder="https://mail.google.com/mail/u/0/#inbox/..."

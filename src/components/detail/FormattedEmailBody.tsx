@@ -4,6 +4,7 @@ import {
   renderInlineFormattedText,
   normalizeEmailContent,
 } from '../../lib/emailContentUtils';
+import { detectTextDirection } from '../../lib/rtlUtils';
 
 export interface FormattedEmailBodyProps {
   text?: string | null;
@@ -17,6 +18,7 @@ export interface FormattedEmailBodyProps {
 /**
  * High-clarity email body renderer:
  * - Automatically normalizes HTML markup and Markdown.
+ * - Fully supports RTL languages (Arabic, Hebrew, etc.) and bidirectional mixed text.
  * - In collapsed state: renders a tight 2-line clamped preview with bold and links.
  * - In expanded state: renders structured blocks (paragraphs, bullet lists, blockquotes, bold, links).
  */
@@ -47,9 +49,18 @@ export const FormattedEmailBody: React.FC<FormattedEmailBodyProps> = ({
       .replace(/\r?\n+/g, ' ')
       .trim();
 
+    const previewDir = detectTextDirection(flattenedText);
+
     return (
-      <p className={`text-xs text-slate-600 leading-relaxed line-clamp-2 ${className}`}>
-        {renderInlineFormattedText(flattenedText, inlineOptions, 'preview')}
+      <p
+        dir="auto"
+        className={`text-xs text-slate-600 leading-relaxed line-clamp-2 text-start ${className}`}
+      >
+        {renderInlineFormattedText(
+          flattenedText,
+          { ...inlineOptions, baseDir: previewDir },
+          'preview'
+        )}
       </p>
     );
   }
@@ -66,46 +77,87 @@ export const FormattedEmailBody: React.FC<FormattedEmailBodyProps> = ({
           case 'heading': {
             const headingClasses =
               block.level === 1
-                ? 'text-sm font-bold text-slate-900 mt-2 mb-1'
-                : 'text-xs font-bold text-slate-900 mt-1.5 mb-0.5';
+                ? 'text-sm font-bold text-slate-900 mt-2 mb-1 text-start'
+                : 'text-xs font-bold text-slate-900 mt-1.5 mb-0.5 text-start';
+            const headingDir = detectTextDirection(block.content);
             return (
-              <h5 key={key} className={headingClasses}>
-                {renderInlineFormattedText(block.content, inlineOptions, key)}
+              <h5 key={key} dir="auto" className={headingClasses}>
+                {renderInlineFormattedText(
+                  block.content,
+                  { ...inlineOptions, baseDir: headingDir },
+                  key
+                )}
               </h5>
             );
           }
 
           case 'bullet-list': {
             return (
-              <ul key={key} className="my-1.5 pl-4 list-disc space-y-1 text-slate-700">
-                {block.items.map((item, itemIdx) => (
-                  <li key={`${key}-item-${itemIdx}`} className="leading-relaxed pl-0.5">
-                    {renderInlineFormattedText(item, inlineOptions, `${key}-item-${itemIdx}`)}
-                  </li>
-                ))}
+              <ul
+                key={key}
+                dir="auto"
+                className="my-1.5 ps-5 list-disc space-y-1 text-slate-700 text-start"
+              >
+                {block.items.map((item, itemIdx) => {
+                  const itemDir = detectTextDirection(item);
+                  return (
+                    <li
+                      key={`${key}-item-${itemIdx}`}
+                      dir="auto"
+                      className="leading-relaxed ps-0.5"
+                    >
+                      {renderInlineFormattedText(
+                        item,
+                        { ...inlineOptions, baseDir: itemDir },
+                        `${key}-item-${itemIdx}`
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             );
           }
 
           case 'numbered-list': {
             return (
-              <ol key={key} className="my-1.5 pl-4 list-decimal space-y-1 text-slate-700">
-                {block.items.map((item, itemIdx) => (
-                  <li key={`${key}-item-${itemIdx}`} className="leading-relaxed pl-0.5">
-                    {renderInlineFormattedText(item, inlineOptions, `${key}-item-${itemIdx}`)}
-                  </li>
-                ))}
+              <ol
+                key={key}
+                dir="auto"
+                className="my-1.5 ps-5 list-decimal space-y-1 text-slate-700 text-start"
+              >
+                {block.items.map((item, itemIdx) => {
+                  const itemDir = detectTextDirection(item);
+                  return (
+                    <li
+                      key={`${key}-item-${itemIdx}`}
+                      dir="auto"
+                      className="leading-relaxed ps-0.5"
+                    >
+                      {renderInlineFormattedText(
+                        item,
+                        { ...inlineOptions, baseDir: itemDir },
+                        `${key}-item-${itemIdx}`
+                      )}
+                    </li>
+                  );
+                })}
               </ol>
             );
           }
 
           case 'quote': {
+            const quoteDir = detectTextDirection(block.content);
             return (
               <blockquote
                 key={key}
-                className="border-l-3 border-blue-400 bg-blue-50/50 pl-3 py-1 my-1.5 text-slate-600 italic rounded-r-lg"
+                dir="auto"
+                className="border-s-3 border-blue-400 bg-blue-50/50 ps-3 pe-2 py-1 my-1.5 text-slate-600 italic rounded-e-lg text-start"
               >
-                {renderInlineFormattedText(block.content, inlineOptions, key)}
+                {renderInlineFormattedText(
+                  block.content,
+                  { ...inlineOptions, baseDir: quoteDir },
+                  key
+                )}
               </blockquote>
             );
           }
@@ -116,9 +168,18 @@ export const FormattedEmailBody: React.FC<FormattedEmailBodyProps> = ({
 
           case 'paragraph':
           default: {
+            const paraDir = detectTextDirection(block.content);
             return (
-              <p key={key} className="leading-relaxed break-words">
-                {renderInlineFormattedText(block.content, inlineOptions, key)}
+              <p
+                key={key}
+                dir="auto"
+                className="leading-relaxed break-words text-start"
+              >
+                {renderInlineFormattedText(
+                  block.content,
+                  { ...inlineOptions, baseDir: paraDir },
+                  key
+                )}
               </p>
             );
           }
