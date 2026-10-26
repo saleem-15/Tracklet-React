@@ -6,6 +6,7 @@ import { LegalDocType, getPathForLegalDoc, navigateToRoute } from '../lib/routeU
 export interface NavigationContextType {
   activeTab: ActiveTab;
   setActiveTab: (tab: ActiveTab) => void;
+  isNotFound: boolean;
   navigateToLegal: (doc?: LegalDocType) => void;
   filter: FilterState;
   setFilter: React.Dispatch<React.SetStateAction<FilterState>>;
@@ -45,7 +46,9 @@ const NavigationContext = createContext<NavigationContextType | null>(null);
  * Analogous to Flutter's GoRouter / RouteInformationParser combined with NavigationCubit.
  */
 export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+
   const {
+    isNotFound,
     activeTab,
     setActiveTab,
     filter,
@@ -103,6 +106,7 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const value = useMemo<NavigationContextType>(() => ({
     activeTab,
     setActiveTab,
+    isNotFound,
     navigateToLegal,
     filter,
     setFilter,
@@ -128,6 +132,7 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   }), [
     activeTab,
     setActiveTab,
+    isNotFound,
     navigateToLegal,
     filter,
     setFilter,

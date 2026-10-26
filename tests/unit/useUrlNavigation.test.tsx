@@ -43,6 +43,7 @@ describe('useUrlNavigation hook', () => {
   it('initializes with default tab and empty selections', () => {
     mountHarness();
     expect(navResult.activeTab).toBe('all');
+    expect(navResult.isNotFound).toBe(false);
     expect(navResult.selectedAppId).toBeNull();
     expect(navResult.isAddModalOpen).toBe(false);
     expect(navResult.filter.search).toBe('');
@@ -93,6 +94,7 @@ describe('useUrlNavigation hook', () => {
   it('synchronizes active tab and params on browser popstate navigation', () => {
     mountHarness();
     expect(navResult.activeTab).toBe('all');
+    expect(navResult.isNotFound).toBe(false);
 
     act(() => {
       window.history.pushState(null, '', '/contacts?q=Alice');
@@ -101,5 +103,40 @@ describe('useUrlNavigation hook', () => {
 
     expect(navResult.activeTab).toBe('contacts');
     expect(navResult.filter.search).toBe('Alice');
+    expect(navResult.isNotFound).toBe(false);
+  });
+
+  it('detects unknown routes as not found and resets on tab selection', () => {
+    window.history.pushState(null, '', '/non-existent-route');
+    mountHarness();
+    expect(navResult.isNotFound).toBe(true);
+
+    act(() => {
+      navResult.setActiveTab('pipeline');
+    });
+
+    expect(navResult.isNotFound).toBe(false);
+    expect(navResult.activeTab).toBe('pipeline');
+    expect(window.location.pathname).toBe('/pipeline');
+  });
+
+  it('updates isNotFound on popstate to and from unknown routes', () => {
+    mountHarness();
+    expect(navResult.isNotFound).toBe(false);
+
+    act(() => {
+      window.history.pushState(null, '', '/invalid-path');
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    });
+
+    expect(navResult.isNotFound).toBe(true);
+
+    act(() => {
+      window.history.pushState(null, '', '/applications');
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    });
+
+    expect(navResult.isNotFound).toBe(false);
+    expect(navResult.activeTab).toBe('all');
   });
 });
