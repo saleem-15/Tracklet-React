@@ -4,9 +4,10 @@ import { AuthScreen } from '../AuthScreen';
 import { ToastContainer } from '../Toast';
 import { PrivacyPolicyPage } from '../legal/PrivacyPolicyPage';
 import { TermsOfServicePage } from '../legal/TermsOfServicePage';
+import { NotFoundPage } from '../NotFoundPage';
 import { useAuth } from '../../context/AuthContext';
 import { useToastContext } from '../../context/ToastContext';
-import { isPrivacyPath, isTermsPath, navigateToRoute } from '../../lib/routeUtils';
+import { isPrivacyPath, isTermsPath, navigateToRoute, isKnownRoute, getPathForAuthMode } from '../../lib/routeUtils';
 
 export interface AuthGateProps {
   onReloadData: () => Promise<void>;
@@ -99,6 +100,9 @@ export function AuthGate({
 
   // 4. Not authenticated (Authentication Wall)
   if (!user) {
+    if (!isKnownRoute(currentPath)) {
+      return <NotFoundPage />;
+    }
     return (
       <div className="min-h-screen w-screen bg-slate-50 font-sans">
         <AuthScreen

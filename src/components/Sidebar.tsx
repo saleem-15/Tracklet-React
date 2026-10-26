@@ -52,7 +52,7 @@ export const Sidebar: React.FC<SidebarProps> = (props) => {
   const contactsCtx = useContactsContext();
   const settingsCtx = useSettings();
 
-  const activeTab = props.activeTab ?? nav.activeTab;
+  const activeTab = props.activeTab ?? (nav.isNotFound ? null : nav.activeTab);
   const setActiveTab = props.setActiveTab ?? nav.setActiveTab;
   const applications = props.applications ?? apps.applications;
   const contacts = props.contacts ?? contactsCtx.contacts;

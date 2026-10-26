@@ -10,12 +10,12 @@ import {
 } from './context';
 import { useExtensionSync } from './hooks/useExtensionSync';
 import { useDataLoader } from './hooks/useDataLoader';
-import { getPathForTab, isAuthPath, isLegalPath } from './lib/routeUtils';
+import { getPathForTab, isAuthPath, isLegalPath, isKnownRoute } from './lib/routeUtils';
 import { purgeLegacyGuestStorage, SUBSCRIPTIONS_ENABLED } from './lib/constants';
 
 function TrackletAppContent() {
   const { user, loading: authLoading, signOut } = useAuth();
-  const { activeTab, setSelectedAppId, openFeedbackModal } = useNavigation();
+  const { activeTab, isNotFound, setSelectedAppId, openFeedbackModal } = useNavigation();
   const { toasts, addToast, dismissToast } = useToastContext();
   const { applications, setApplications, applicationsRef } = useApplicationsContext();
   const entitlement = useEntitlementContext();
@@ -66,6 +66,7 @@ function TrackletAppContent() {
     if (isLegalPath(path)) return;
 
     if (!user) {
+      if (!isKnownRoute(path)) return;
       if (!isAuthPath(path)) window.history.replaceState(null, '', '/login');
     } else {
       if (!user.emailVerified) {
@@ -93,7 +94,7 @@ function TrackletAppContent() {
         <Sidebar onSignOut={handleSignOut} />
         <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
           <DomainMigrationBanner />
-          {(activeTab === 'all' || activeTab === 'pipeline') && <TopBar />}
+          {(activeTab === 'all' || activeTab === 'pipeline') && !isNotFound && <TopBar />}
           <WorkspaceContent 
             isLoading={authLoading || dataLoading}
             activeQuota={SUBSCRIPTIONS_ENABLED ? {

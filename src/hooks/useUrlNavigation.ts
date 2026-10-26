@@ -9,13 +9,15 @@ import {
   syncAddModalToUrl,
   DEFAULT_FILTER,
   isAuthPath,
+  isKnownRoute,
 } from '../lib/routeUtils';
 
-export { DEFAULT_FILTER, getPathForTab, isAuthPath } from '../lib/routeUtils';
+export { DEFAULT_FILTER, getPathForTab, isAuthPath, isKnownRoute } from '../lib/routeUtils';
 
 export interface UseUrlNavigationReturn {
   activeTab: ActiveTab;
   setActiveTab: (tab: ActiveTab) => void;
+  isNotFound: boolean;
   filter: FilterState;
   setFilter: React.Dispatch<React.SetStateAction<FilterState>>;
   resetFilters: () => void;
@@ -39,6 +41,9 @@ export function useUrlNavigation(): UseUrlNavigationReturn {
   const [activeTab, setActiveTabState] = useState<ActiveTab>(() =>
     getTabFromPath(window.location.pathname)
   );
+  const [isNotFound, setIsNotFoundState] = useState<boolean>(() =>
+    !isKnownRoute(window.location.pathname)
+  );
   const [filter, setFilterState] = useState<FilterState>(() => initialUrlState.filter);
   const [selectedAppId, setSelectedAppIdState] = useState<string | null>(
     () => initialUrlState.selectedAppId
@@ -54,6 +59,7 @@ export function useUrlNavigation(): UseUrlNavigationReturn {
 
   const setActiveTab = useCallback((tab: ActiveTab) => {
     setActiveTabState(tab);
+    setIsNotFoundState(false);
     const targetPath = getPathForTab(tab);
     if (window.location.pathname !== targetPath) {
       window.history.pushState(null, '', targetPath);
@@ -91,6 +97,7 @@ export function useUrlNavigation(): UseUrlNavigationReturn {
       const { filter: uFilter, selectedAppId: uSelectedAppId, isAddModalOpen: uIsAddModalOpen } =
         readUrlState();
       setActiveTabState(getTabFromPath(window.location.pathname));
+      setIsNotFoundState(!isKnownRoute(window.location.pathname));
       filterRef.current = uFilter;
       selectedAppIdRef.current = uSelectedAppId;
       isAddModalOpenRef.current = uIsAddModalOpen;
@@ -106,6 +113,7 @@ export function useUrlNavigation(): UseUrlNavigationReturn {
   return {
     activeTab,
     setActiveTab,
+    isNotFound,
     filter,
     setFilter,
     resetFilters,

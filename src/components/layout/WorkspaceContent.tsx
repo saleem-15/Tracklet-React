@@ -5,6 +5,7 @@ import { ACTIVE_STATUSES, TERMINAL_STATUSES } from '../../lib/constants';
 import { ContactsView } from '../ContactsView';
 import { StatsView } from '../StatsView';
 import { SettingsView } from '../SettingsView';
+import { NotFoundView } from '../NotFoundView';
 import { useNavigation } from '../../context/NavigationContext';
 import { useApplicationsContext } from '../../context/ApplicationsContext';
 import { useContactsContext } from '../../context/ContactsContext';
@@ -35,6 +36,8 @@ export function WorkspaceContent({ isLoading = false, activeQuota }: WorkspaceCo
   const { addToast } = useToastContext();
   const {
     activeTab,
+    setActiveTab,
+    isNotFound,
     selectedAppId,
     setSelectedAppId,
     openAddModal,
@@ -140,6 +143,14 @@ export function WorkspaceContent({ isLoading = false, activeQuota }: WorkspaceCo
     }
     openAddModal();
   };
+
+  if (isNotFound) {
+    return (
+      <NotFoundView
+        onOpenMobileSidebar={openMobileSidebar}
+      />
+    );
+  }
 
   if (isLoading) {
     return (

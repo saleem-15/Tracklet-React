@@ -20,6 +20,58 @@ export const PATH_TO_TAB: Record<string, ActiveTab> = {
   '/settings': 'settings',
 };
 
+/**
+ * Validates whether a pathname corresponds to an existing valid application route
+ * (workspace view, authentication path, legal document, or verification gate).
+ * Used to determine when to trigger the 404 Not Found experience.
+ */
+export function isKnownRoute(pathname: string): boolean {
+  const normalized =
+    pathname.length > 1 && pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
+  return (
+    Boolean(PATH_TO_TAB[normalized]) ||
+    isAuthPath(normalized) ||
+    isLegalPath(normalized) ||
+    normalized === '/verify-email'
+  );
+}
+
+/**
+ * Resolves the destination URL for the public marketing / landing page.
+ * Respects VITE_LANDING_URL or VITE_LANDING_PAGE_URL environment variables.
+ * In local development on localhost / 127.0.0.1, defaults to http://localhost:3000
+ * (the landing page dev server port); in production, defaults to '/landing.html'.
+ */
+export function getLandingPageUrl(): string {
+  if (typeof import.meta !== 'undefined' && import.meta.env) {
+    if (import.meta.env.VITE_LANDING_URL) return import.meta.env.VITE_LANDING_URL;
+    if (import.meta.env.VITE_LANDING_PAGE_URL) return import.meta.env.VITE_LANDING_PAGE_URL;
+  }
+  if (
+    typeof window !== 'undefined' &&
+    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+  ) {
+    return 'http://localhost:3000';
+  }
+  return '/landing.html';
+}
+
+/**
+ * Determines whether browser history can be safely popped without
+ * ejecting the user from the application origin.
+ * Verifies that an internal document.referrer from the same origin exists
+ * and that history contains preceding entries.
+ */
+export function canSafelyGoBack(): boolean {
+  if (typeof window === 'undefined' || typeof document === 'undefined') {
+    return false;
+  }
+  const hasInternalReferrer =
+    Boolean(document.referrer) &&
+    document.referrer.startsWith(window.location.origin);
+  return Boolean(hasInternalReferrer && window.history.length > 1);
+}
+
 export type AuthRouteMode = 'signin' | 'signup' | 'forgot-password' | 'reset-password';
 
 export const AUTH_PATH_TO_MODE: Record<string, AuthRouteMode> = {
