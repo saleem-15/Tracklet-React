@@ -207,11 +207,11 @@ export const EmailLogSection: React.FC<EmailLogSectionProps> = ({
         !showAddEmail && (
           <div className="bg-white rounded-xl border border-slate-200/80 p-5 text-center shadow-2xs">
             <Mail className="w-5 h-5 text-slate-400 mx-auto mb-1.5 opacity-60" />
-            <div className="text-slate-500 font-mono text-xs font-medium">
+            <div className="text-slate-600 font-mono text-xs font-medium">
               No emails logged yet
             </div>
-            <p className="text-[11px] text-slate-500 mt-1">
-              Click &ldquo;Log Email&rdquo; above or use the webmail companion extension to clip emails here.
+            <p className="text-[11px] text-slate-500 mt-1 max-w-sm mx-auto">
+              Track recruiter outreach, interview invites, and follow-ups for {companyName?.trim() || 'this application'}.
             </p>
           </div>
         )
