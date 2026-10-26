@@ -18,7 +18,7 @@ export function escapeHtml(text: string): string {
 
 /**
  * Parses inline Markdown formatting (bold, italic, inline code, and links)
- * into safe HTML snippet string.
+ * into safe HTML snippet string. Supports bidirectional isolation.
  */
 export function parseInlineMarkdownToHtml(line: string): string {
   if (!line) return '';
@@ -33,7 +33,7 @@ export function parseInlineMarkdownToHtml(line: string): string {
         const label = token.label
           ? escapeHtml(token.label)
           : escapeHtml(token.value);
-        return `<a href="${escapedUrl}" target="_blank" rel="noopener noreferrer" class="${LINK_CLASS}">${label}</a>`;
+        return `<a href="${escapedUrl}" target="_blank" rel="noopener noreferrer" class="${LINK_CLASS}" dir="auto">${label}</a>`;
       }
 
       // 2. Format inline bold (**text**), italic (*text*), and code (`code`)
@@ -51,10 +51,10 @@ export function parseInlineMarkdownToHtml(line: string): string {
         '$1<em class="italic text-slate-700">$2</em>'
       );
 
-      // Inline code: `text`
+      // Inline code: `text` (pinned to LTR for code/syntax stability in RTL contexts)
       escaped = escaped.replace(
         /`([^`]+)`/g,
-        '<code class="font-mono text-[11px] bg-slate-100 text-slate-800 px-1 py-0.5 rounded border border-slate-200">$1</code>'
+        '<code class="font-mono text-[11px] bg-slate-100 text-slate-800 px-1 py-0.5 rounded border border-slate-200" dir="ltr">$1</code>'
       );
 
       return escaped;
@@ -129,7 +129,7 @@ export function markdownToHtml(
       const inner = quoteBuffer
         .map((l) => parseInlineMarkdownToHtml(l))
         .join('<br>');
-      htmlParts.push(`<blockquote class="${BLOCK_STYLES.quote}">${inner}</blockquote>`);
+      htmlParts.push(`<blockquote class="${BLOCK_STYLES.quote}" dir="auto">${inner}</blockquote>`);
     }
     quoteBuffer = null;
   };
@@ -145,11 +145,11 @@ export function markdownToHtml(
       flushQuote();
       closeOpenLists();
       if (inCodeBlock) {
-        // Close code block
+        // Close code block (strictly LTR)
         const codeContent = codeBuffer.map(escapeHtml).join('\n');
         const langAttr = currentCodeLang ? ` data-language="${escapeHtml(currentCodeLang)}"` : '';
         htmlParts.push(
-          `<pre class="${BLOCK_STYLES.codeBlock}"${langAttr}><code>${codeContent}</code></pre>`
+          `<pre class="${BLOCK_STYLES.codeBlock}"${langAttr} dir="ltr"><code>${codeContent}</code></pre>`
         );
         codeBuffer = [];
         currentCodeLang = '';
@@ -202,7 +202,7 @@ export function markdownToHtml(
         inOl = false;
       }
       if (!inUl) {
-        htmlParts.push(`<ul class="${BLOCK_STYLES.taskList} text-slate-800 text-xs">`);
+        htmlParts.push(`<ul class="${BLOCK_STYLES.taskList} text-slate-800 text-xs" dir="auto">`);
         inUl = true;
       }
       const checked = (taskMatch[1] || '').toLowerCase() === 'x';
@@ -210,7 +210,7 @@ export function markdownToHtml(
       const content = rawContent ? parseInlineMarkdownToHtml(rawContent) : '<br>';
       const taskLabel = rawContent.replace(/<[^>]*>/g, '').trim() || 'Toggle to-do item';
       htmlParts.push(
-        `<li class="${BLOCK_STYLES.taskItem}${checked ? ' task-checked' : ''}" data-task="true" data-checked="${checked}">` +
+        `<li class="${BLOCK_STYLES.taskItem}${checked ? ' task-checked' : ''}" data-task="true" data-checked="${checked}" dir="auto">` +
           `<input type="checkbox"${checked ? ' checked' : ''}${readOnly ? ' disabled' : ''} data-task-checkbox="true" aria-label="${escapeHtml(taskLabel)}" class="${BLOCK_STYLES.checkbox}" />` +
           `<span class="flex-1 task-text${checked ? ' line-through text-slate-400' : ''}">${content}</span>` +
           `</li>`
@@ -222,21 +222,21 @@ export function markdownToHtml(
     if (line.startsWith('### ')) {
       closeOpenLists();
       const content = parseInlineMarkdownToHtml(line.slice(4));
-      htmlParts.push(`<h4 class="${BLOCK_STYLES.h3}">${content}</h4>`);
+      htmlParts.push(`<h4 class="${BLOCK_STYLES.h3}" dir="auto">${content}</h4>`);
       continue;
     }
 
     if (line.startsWith('## ')) {
       closeOpenLists();
       const content = parseInlineMarkdownToHtml(line.slice(3));
-      htmlParts.push(`<h3 class="${BLOCK_STYLES.h2}">${content}</h3>`);
+      htmlParts.push(`<h3 class="${BLOCK_STYLES.h2}" dir="auto">${content}</h3>`);
       continue;
     }
 
     if (line.startsWith('# ')) {
       closeOpenLists();
       const content = parseInlineMarkdownToHtml(line.slice(2));
-      htmlParts.push(`<h2 class="${BLOCK_STYLES.h1}">${content}</h2>`);
+      htmlParts.push(`<h2 class="${BLOCK_STYLES.h1}" dir="auto">${content}</h2>`);
       continue;
     }
 
@@ -248,7 +248,7 @@ export function markdownToHtml(
         inUl = false;
       }
       if (!inOl) {
-        htmlParts.push(`<ol class="${BLOCK_STYLES.numberedList} text-slate-800 text-xs">`);
+        htmlParts.push(`<ol class="${BLOCK_STYLES.numberedList} text-slate-800 text-xs" dir="auto">`);
         inOl = true;
       }
       const itemContent = parseInlineMarkdownToHtml(numberedMatch[2]);
@@ -264,7 +264,7 @@ export function markdownToHtml(
         inOl = false;
       }
       if (!inUl) {
-        htmlParts.push(`<ul class="${BLOCK_STYLES.bulletList} text-slate-800 text-xs">`);
+        htmlParts.push(`<ul class="${BLOCK_STYLES.bulletList} text-slate-800 text-xs" dir="auto">`);
         inUl = true;
       }
       const itemContent = parseInlineMarkdownToHtml(bulletMatch[1]);
@@ -275,7 +275,7 @@ export function markdownToHtml(
     // Standard Paragraph (no self-margin — rhythm comes from spacers)
     closeOpenLists();
     const paraContent = parseInlineMarkdownToHtml(line);
-    htmlParts.push(`<p class="${BLOCK_STYLES.paragraph}">${paraContent}</p>`);
+    htmlParts.push(`<p class="${BLOCK_STYLES.paragraph}" dir="auto">${paraContent}</p>`);
   }
 
   flushQuote();
@@ -285,7 +285,7 @@ export function markdownToHtml(
     const codeContent = codeBuffer.map(escapeHtml).join('\n');
     const langAttr = currentCodeLang ? ` data-language="${escapeHtml(currentCodeLang)}"` : '';
     htmlParts.push(
-      `<pre class="${BLOCK_STYLES.codeBlock}"${langAttr}><code>${codeContent}</code></pre>`
+      `<pre class="${BLOCK_STYLES.codeBlock}"${langAttr} dir="ltr"><code>${codeContent}</code></pre>`
     );
   }
 
@@ -557,6 +557,7 @@ function makeTaskItemElement(text: string, checked: boolean): HTMLElement {
   li.className = `${BLOCK_STYLES.taskItem}${checked ? ' task-checked' : ''}`;
   li.dataset.task = 'true';
   li.dataset.checked = checked ? 'true' : 'false';
+  li.setAttribute('dir', 'auto');
 
   const input = document.createElement('input');
   input.type = 'checkbox';
@@ -580,7 +581,7 @@ function makeTaskItemElement(text: string, checked: boolean): HTMLElement {
 
 /**
  * Canonical form of a Markdown string: what the note looks like after one
- * render â†’ serialize cycle. Stored/saved notes converge to this form.
+ * render → serialize cycle. Stored/saved notes converge to this form.
  */
 export function canonicalizeMarkdown(markdown: string): string {
   if (!markdown || !markdown.trim()) return '';

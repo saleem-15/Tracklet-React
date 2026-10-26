@@ -147,10 +147,11 @@ export const EmailLogForm: React.FC<EmailLogFormProps> = ({
         <input
           type="text"
           required
+          dir="auto"
           value={subject}
           onChange={(e) => setSubject(e.target.value)}
           placeholder="e.g. Interview Confirmation or Mentorship Advice"
-          className="w-full bg-slate-50 text-slate-900 placeholder-slate-400 px-2.5 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:border-blue-500 focus:bg-white text-xs transition-colors"
+          className="w-full bg-slate-50 text-slate-900 placeholder-slate-400 px-2.5 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:border-blue-500 focus:bg-white text-xs text-start transition-colors"
         />
       </div>
 
@@ -185,10 +186,11 @@ export const EmailLogForm: React.FC<EmailLogFormProps> = ({
         <input
           type="text"
           required
+          dir="auto"
           value={counterparty}
           onChange={(e) => setCounterparty(e.target.value)}
           placeholder="Name or email address"
-          className="w-full bg-slate-50 text-slate-900 placeholder-slate-400 px-2.5 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:border-blue-500 focus:bg-white text-xs font-mono transition-colors"
+          className="w-full bg-slate-50 text-slate-900 placeholder-slate-400 px-2.5 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:border-blue-500 focus:bg-white text-xs font-mono text-start transition-colors"
         />
 
         {/* Quick Fill Chips */}
@@ -246,10 +248,11 @@ export const EmailLogForm: React.FC<EmailLogFormProps> = ({
         </label>
         <textarea
           value={body}
+          dir="auto"
           onChange={(e) => setBody(e.target.value)}
           placeholder="Paste or type email body..."
           rows={3}
-          className="w-full bg-slate-50 text-slate-900 placeholder-slate-400 p-2.5 rounded-lg border border-slate-200 focus:outline-none focus:border-blue-500 focus:bg-white text-xs resize-y transition-colors leading-relaxed"
+          className="w-full bg-slate-50 text-slate-900 placeholder-slate-400 p-2.5 rounded-lg border border-slate-200 focus:outline-none focus:border-blue-500 focus:bg-white text-xs text-start resize-y transition-colors leading-relaxed"
         />
       </div>
 

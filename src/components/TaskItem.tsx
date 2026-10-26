@@ -165,11 +165,12 @@ export const TaskItem: React.FC<TaskItemProps> = ({
             <input
               ref={inputRef}
               type="text"
+              dir="auto"
               value={titleText}
               onChange={(e) => setTitleText(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Task title"
-              className="flex-1 min-w-[120px] bg-white border border-blue-400 rounded-md px-2 py-1 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 font-semibold"
+              className="flex-1 min-w-[120px] bg-white border border-blue-400 rounded-md px-2 py-1 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 font-semibold text-start"
             />
             <input
               type="date"
@@ -205,7 +206,8 @@ export const TaskItem: React.FC<TaskItemProps> = ({
           >
             <span className="relative inline-block max-w-full">
               <span
-                className={`text-xs truncate font-semibold block transition-opacity duration-300 ${
+                dir="auto"
+                className={`text-xs truncate font-semibold block transition-opacity duration-300 text-start ${
                   task.completed
                     ? 'text-slate-500 opacity-70'
                     : 'text-slate-900 hover:text-blue-600'

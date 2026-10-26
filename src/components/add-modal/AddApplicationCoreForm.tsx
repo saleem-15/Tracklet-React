@@ -55,14 +55,15 @@ export const AddApplicationCoreForm: React.FC<AddApplicationCoreFormProps> = ({
             Company <span className="text-rose-500">*</span>
           </label>
           <div className="relative">
-            <Building2 className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+            <Building2 className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
             <input
               type="text"
               required
+              dir="auto"
               value={company}
               onChange={(e) => onCompanyChange(e.target.value)}
               placeholder="Linear, Stripe"
-              className="w-full bg-white text-slate-900 placeholder-slate-500 pl-8 pr-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 text-xs font-semibold transition-all shadow-2xs"
+              className="w-full bg-white text-slate-900 placeholder-slate-500 pl-8 pr-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 text-xs font-semibold text-start transition-all shadow-2xs"
             />
           </div>
         </div>
@@ -70,9 +71,10 @@ export const AddApplicationCoreForm: React.FC<AddApplicationCoreFormProps> = ({
         <div>
           <label className="block text-[11px] font-mono font-medium text-slate-500 mb-1">Domain</label>
           <div className="relative">
-            <Globe className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+            <Globe className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
             <input
               type="text"
+              dir="ltr"
               value={companyDomain}
               onChange={(e) => onCompanyDomainChange(e.target.value.toLowerCase().trim())}
               placeholder="linear.app"
@@ -89,14 +91,15 @@ export const AddApplicationCoreForm: React.FC<AddApplicationCoreFormProps> = ({
             Role <span className="text-rose-500">*</span>
           </label>
           <div className="relative">
-            <Briefcase className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+            <Briefcase className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
             <input
               type="text"
               required
+              dir="auto"
               value={role}
               onChange={(e) => onRoleChange(e.target.value)}
               placeholder="Software Engineer"
-              className="w-full bg-white text-slate-900 placeholder-slate-500 pl-8 pr-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 text-xs font-semibold transition-all shadow-2xs"
+              className="w-full bg-white text-slate-900 placeholder-slate-500 pl-8 pr-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 text-xs font-semibold text-start transition-all shadow-2xs"
             />
           </div>
         </div>
@@ -104,9 +107,10 @@ export const AddApplicationCoreForm: React.FC<AddApplicationCoreFormProps> = ({
         <div>
           <label className="block text-[11px] font-mono font-medium text-slate-500 mb-1">Job Link</label>
           <div className="relative">
-            <Link className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+            <Link className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
             <input
               type="text"
+              dir="ltr"
               value={jobLink}
               onChange={(e) => handleJobLinkChange(e.target.value)}
               placeholder="https://"
@@ -123,9 +127,10 @@ export const AddApplicationCoreForm: React.FC<AddApplicationCoreFormProps> = ({
             Email Thread URL <span className="text-slate-400 font-normal">(optional Gmail/Outlook link)</span>
           </label>
           <div className="relative">
-            <MessageSquareText className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+            <MessageSquareText className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
             <input
               type="text"
+              dir="ltr"
               value={emailThreadUrl || ''}
               onChange={(e) => onEmailThreadUrlChange(e.target.value)}
               placeholder="https://mail.google.com/mail/u/0/#inbox/..."
