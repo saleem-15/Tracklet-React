@@ -4,10 +4,20 @@
 
 import {
   cleanCompanyDomain,
-  isJobBoardOrAts,
   isJobBoardOrAtsLogo,
   KNOWN_COMPANY_DOMAINS,
 } from './jobBoardRegistry';
+
+/**
+ * Global in-memory logo cache across all components and view transitions.
+ * - string: Verified working logo image URL
+ * - null: Known missing / failed logo (renders fallback immediately on Frame 0 with ZERO flicker)
+ */
+export const verifiedLogoCache = new Map<string, string | null>();
+
+export function getCompanyCacheKey(companyName: string, domain?: string): string {
+  return `${(companyName || '').trim().toLowerCase()}::${(domain || '').trim().toLowerCase()}`;
+}
 
 /**
  * Cleanly extracts a hostname/domain from a company name or job link.
@@ -49,12 +59,11 @@ export function getCompanyDomain(companyName: string, jobLink?: string, customDo
 }
 
 /**
- * Returns prioritized Logo URLs (Clearbit -> Google Favicons -> Unavatar)
+ * Returns prioritized Logo URLs (Google Favicons with default_icon=none -> Unavatar)
  */
 export function getCompanyLogoUrls(companyName: string, jobLink?: string, customLogoUrl?: string, customDomain?: string): string[] {
   if (customLogoUrl && customLogoUrl.trim()) {
     const trimmed = customLogoUrl.trim();
-    // Do not use the customLogoUrl if it points to a job board or ATS host logo (e.g. logo.clearbit.com/linkedin.com)
     if (!isJobBoardOrAtsLogo(trimmed)) {
       return [trimmed];
     }
@@ -63,14 +72,74 @@ export function getCompanyLogoUrls(companyName: string, jobLink?: string, custom
   const domain = getCompanyDomain(companyName, jobLink, customDomain);
   
   return [
-    `https://www.google.com/s2/favicons?domain=${domain}&sz=128`,
+    `https://www.google.com/s2/favicons?domain=${domain}&sz=128&default_icon=none`,
     `https://unavatar.io/${domain}?fallback=false`,
   ];
 }
 
+export interface CorporateIconPalette {
+  bg: string;
+  icon: string;
+  border: string;
+}
+
 /**
- * Generates a deterministic pastel background color and text color from company name
+ * Clean, solid daylight corporate brand tints. Pure solid colors (ZERO gradients).
+ * Deterministic based on the company name.
  */
+export function getCompanyCorporatePalette(companyName: string): CorporateIconPalette {
+  const palettes: CorporateIconPalette[] = [
+    {
+      bg: 'bg-indigo-50',
+      icon: 'text-indigo-600',
+      border: 'border-indigo-200/70',
+    },
+    {
+      bg: 'bg-sky-50',
+      icon: 'text-sky-600',
+      border: 'border-sky-200/70',
+    },
+    {
+      bg: 'bg-emerald-50',
+      icon: 'text-emerald-600',
+      border: 'border-emerald-200/70',
+    },
+    {
+      bg: 'bg-amber-50',
+      icon: 'text-amber-600',
+      border: 'border-amber-200/70',
+    },
+    {
+      bg: 'bg-rose-50',
+      icon: 'text-rose-600',
+      border: 'border-rose-200/70',
+    },
+    {
+      bg: 'bg-violet-50',
+      icon: 'text-violet-600',
+      border: 'border-violet-200/70',
+    },
+    {
+      bg: 'bg-slate-100',
+      icon: 'text-slate-600',
+      border: 'border-slate-300/70',
+    },
+    {
+      bg: 'bg-blue-50',
+      icon: 'text-blue-600',
+      border: 'border-blue-200/70',
+    },
+  ];
+
+  const str = (companyName || '').trim().toLowerCase();
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash) % palettes.length;
+  return palettes[index];
+}
+
 export function getCompanyAvatarColors(companyName: string): { bg: string; text: string; border: string } {
   const colors = [
     { bg: 'bg-indigo-50', text: 'text-indigo-700', border: 'border-indigo-200' },
