@@ -2,6 +2,10 @@
 // Compatible with Node.js, Cloudflare Pages, and Netlify Functions.
 
 import crypto from 'crypto';
+import { Buffer } from 'buffer';
+
+export const DEFAULT_FIREBASE_API_KEY = 'AIzaSyB8_w86FtF-uWWIofxRYODc2URCibEXY5U';
+export const DEFAULT_FIREBASE_PROJECT_ID = 'tracklet-e3409';
 
 export interface VerifiedTokenUser {
   uid: string;
@@ -93,18 +97,24 @@ export async function verifyFirebaseIdToken(
     };
   }
 
+  // Fast format validation: Firebase Auth ID tokens are strictly 3-part JWTs
+  const parts = token.split('.');
+  if (parts.length !== 3) {
+    return null;
+  }
+
   const apiKey =
     env?.VITE_FIREBASE_API_KEY ||
     env?.FIREBASE_API_KEY ||
     process.env.VITE_FIREBASE_API_KEY ||
     process.env.FIREBASE_API_KEY ||
-    '';
+    DEFAULT_FIREBASE_API_KEY;
   const projectId =
     env?.VITE_FIREBASE_PROJECT_ID ||
     env?.FIREBASE_PROJECT_ID ||
     process.env.VITE_FIREBASE_PROJECT_ID ||
     process.env.FIREBASE_PROJECT_ID ||
-    '';
+    DEFAULT_FIREBASE_PROJECT_ID;
 
   // 1. If Firebase API Key is configured, verify via Firebase Auth REST accounts:lookup
   if (apiKey && apiKey !== 'YOUR_API_KEY') {
@@ -147,9 +157,6 @@ export async function verifyFirebaseIdToken(
 
   // 2. Cryptographic signature and claim verification against Google's public certificates
   try {
-    const parts = token.split('.');
-    if (parts.length !== 3) return null;
-
     // Decode and parse JWT header
     const headerJson = Buffer.from(parts[0], 'base64url').toString('utf8');
     const header = JSON.parse(headerJson);
