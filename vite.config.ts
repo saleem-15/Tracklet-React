@@ -4,6 +4,8 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 import { defineConfig, loadEnv, type Plugin } from 'vite';
 
+let cachedCliToken: string | null | undefined = undefined;
+
 export function createDevApiReportIssueMiddleware(env: Record<string, string>) {
   return async (req: any, res: any, next: any) => {
     const rawUrl = req.url || '';
@@ -103,15 +105,25 @@ export function createDevApiReportIssueMiddleware(env: Record<string, string>) {
 
           // Auto-fallback to local GitHub CLI in development if env var is not specified
           if (!githubToken && process.env.NODE_ENV !== 'test') {
-            try {
-              const { execSync } = await import('child_process');
-              const cliToken = execSync('gh auth token', { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'ignore'] }).trim();
-              if (cliToken && cliToken.startsWith('gh')) {
-                githubToken = cliToken;
-                console.log('[dev-api-report-issue] Authenticated with local GitHub CLI (gh auth token).');
+            if (cachedCliToken === undefined) {
+              try {
+                const { execSync } = await import('child_process');
+                const cliToken = execSync('gh auth token', {
+                  encoding: 'utf-8',
+                  stdio: ['pipe', 'pipe', 'ignore'],
+                  timeout: 2000,
+                }).trim();
+                cachedCliToken = (cliToken && cliToken.startsWith('gh')) ? cliToken : null;
+                if (cachedCliToken) {
+                  console.log('[dev-api-report-issue] Authenticated with local GitHub CLI (gh auth token).');
+                }
+              } catch {
+                // gh CLI not available, timed out, or not logged in; cache failure for process lifetime
+                cachedCliToken = null;
               }
-            } catch {
-              // gh CLI not available or logged in
+            }
+            if (cachedCliToken) {
+              githubToken = cachedCliToken;
             }
           }
 

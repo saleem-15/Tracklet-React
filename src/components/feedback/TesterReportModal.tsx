@@ -66,7 +66,7 @@ export const TesterReportModal: React.FC<TesterReportModalProps> = ({
       // Auto-focus textarea smoothly
       setTimeout(() => textareaRef.current?.focus(), 50);
     }
-  }, [isOpen, user]);
+  }, [isOpen, user?.email]);
 
   const handleRequestClose = () => {
     FeedbackRepository.clearDraft();
@@ -85,6 +85,7 @@ export const TesterReportModal: React.FC<TesterReportModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
     setErrorMessage(null);
 
     const trimmed = message.trim();

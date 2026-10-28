@@ -184,14 +184,14 @@ export function inferReportSeverity(
 1. **Auto-Focus**: The primary textarea is automatically focused on modal mount via `autoFocus` or `ref.current?.focus()`.
 2. **Keyboard Ergonomics**:
    - `Cmd+Enter` (macOS) and `Ctrl+Enter` (Windows/Linux) triggers form submission.
-   - `Escape` dismisses the modal. If dirty, saves draft silently to `localStorage` without a jarring alert dialog.
+   - `Escape` dismisses the modal and discards the current draft without showing an alert.
    - `Ctrl+V` pastes screenshots into attachment tray from anywhere in the modal.
 3. **DOM & Accessibility Invariants**:
    - **Zero nested `<button>` elements**: Accordions, file pickers, and toolbars must never nest interactive elements.
    - Modal container has `role="dialog"`, `aria-modal="true"`, and `aria-labelledby`.
    - WCAG 2.1 AA text contrast: All text must be `text-slate-500` or darker on light backgrounds (minimum 4.5:1 ratio).
 4. **Modularity & Code Standards**:
-   - [`TesterReportModal.tsx`](file:///C:/Users/Saleem/.gemini/antigravity/worktrees/Tracklet/redesign_bug_report_modal/src/components/feedback/TesterReportModal.tsx) must be strictly **under 300 lines** (per `AGENTS.md`).
+   - [`TesterReportModal.tsx`](../../src/components/feedback/TesterReportModal.tsx) must be strictly **under 300 lines** (per `AGENTS.md`).
    - Clean sub-component extraction for the compact attachment tray.
 
 ### Acceptance Gates
