@@ -242,7 +242,8 @@ export type TesterReportCategory =
   | 'bug' 
   | 'visual_glitch' 
   | 'feature_request' 
-  | 'general_feedback';
+  | 'general_feedback'
+  | 'other';
 
 export type TesterReportSeverity = 
   | 'low' 

@@ -4,6 +4,8 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 import { defineConfig, loadEnv, type Plugin } from 'vite';
 
+let cachedCliToken: string | null | undefined = undefined;
+
 export function createDevApiReportIssueMiddleware(env: Record<string, string>) {
   return async (req: any, res: any, next: any) => {
     const rawUrl = req.url || '';
@@ -91,7 +93,7 @@ export function createDevApiReportIssueMiddleware(env: Record<string, string>) {
             return;
           }
 
-          const githubToken = (
+          let githubToken = (
             env.GITHUB_TOKEN ||
             process.env.GITHUB_TOKEN ||
             env.GH_TOKEN ||
@@ -100,6 +102,32 @@ export function createDevApiReportIssueMiddleware(env: Record<string, string>) {
             process.env.GITHUB_PAT ||
             ''
           ).trim();
+
+          // Auto-fallback to local GitHub CLI in development if env var is not specified
+          if (!githubToken && process.env.NODE_ENV !== 'test') {
+            if (cachedCliToken === undefined) {
+              try {
+                const { execSync } = await import('child_process');
+                const cliToken = execSync('gh auth token', {
+                  encoding: 'utf-8',
+                  stdio: ['pipe', 'pipe', 'ignore'],
+                  timeout: 2000,
+                }).trim();
+                cachedCliToken = (cliToken && cliToken.startsWith('gh')) ? cliToken : null;
+                if (cachedCliToken) {
+                  console.log('[dev-api-report-issue] Authenticated with local GitHub CLI (gh auth token).');
+                }
+              } catch {
+                // gh CLI not available, timed out, or not logged in; cache failure for process lifetime
+                cachedCliToken = null;
+              }
+            }
+            if (cachedCliToken) {
+              githubToken = cachedCliToken;
+            }
+          }
+
+
           const githubRepo = (
             env.GITHUB_REPO ||
             process.env.GITHUB_REPO ||

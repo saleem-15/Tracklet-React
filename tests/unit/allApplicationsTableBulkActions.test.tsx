@@ -101,7 +101,7 @@ describe('Navigation UX Standards: Action-Only Badge Hierarchy in Sidebar', () =
     expect(contactsButton).not.toBeNull();
     // No static inventory count (e.g. "1") on contacts tab when up to date
     expect(contactsButton!.querySelector('.font-mono')).toBeNull();
-    expect(contactsButton!.textContent).toBe('Contacts');
+    expect(contactsButton!.textContent).toBe('Contacts & Mentors');
   });
 });
 

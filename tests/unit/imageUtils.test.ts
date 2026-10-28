@@ -34,7 +34,7 @@ describe('imageUtils', () => {
       expect(res.error).toContain('Unsupported format');
     });
 
-    it('rejects files larger than 2MB', () => {
+    it('rejects files larger than 5MB', () => {
       // Mock large file by overriding size getter
       const largeFile = new File([''], 'big.png', { type: 'image/png' });
       Object.defineProperty(largeFile, 'size', { value: MAX_ATTACHMENT_SIZE_BYTES + 1024 });
