@@ -76,11 +76,41 @@ describe('Serverless API Authentication & Quota Hardening', () => {
       process.env.FIREBASE_API_KEY = 'valid_api_key_test';
 
       try {
-        const user = await verifyFirebaseIdToken('some-invalid-token');
+        const user = await verifyFirebaseIdToken('header.payload.signature');
         expect(user).toBeNull();
       } finally {
         delete process.env.FIREBASE_API_KEY;
       }
+    });
+
+    it('verifies valid 3-part ID token via accounts:lookup using default Firebase config fallback', async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          users: [
+            {
+              localId: 'prod-user-456',
+              email: 'user@example.com',
+              emailVerified: true,
+            },
+          ],
+        }),
+      });
+      global.fetch = mockFetch;
+
+      const user = await verifyFirebaseIdToken('jwt.header.payload');
+      expect(user).not.toBeNull();
+      expect(user?.uid).toBe('prod-user-456');
+      expect(user?.email).toBe('user@example.com');
+      expect(user?.emailVerified).toBe(true);
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('https://identitytoolkit.googleapis.com/v1/accounts:lookup?key='),
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({ idToken: 'jwt.header.payload' }),
+        })
+      );
     });
   });
 

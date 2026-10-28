@@ -116,7 +116,7 @@ export class FeedbackRepository {
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       try {
         if (auth.currentUser) {
-          const idToken = await auth.currentUser.getIdToken();
+          const idToken = await auth.currentUser.getIdToken(true);
           headers['Authorization'] = `Bearer ${idToken}`;
         }
       } catch (tokenErr) {

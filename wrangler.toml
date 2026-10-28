@@ -5,3 +5,4 @@ compatibility_flags = ["nodejs_compat"]
 
 [vars]
 GITHUB_REPO = "saleem-15/Tracklet-React"
+FIREBASE_PROJECT_ID = "tracklet-e3409"
