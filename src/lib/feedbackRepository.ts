@@ -48,7 +48,18 @@ export class FeedbackRepository {
       try {
         const feedbackCol = collection(db, 'tester_feedback');
         const docRef = doc(feedbackCol, id);
-        await setDoc(docRef, sanitizeForFirestore({ ...report } as Record<string, unknown>));
+        const firestoreReport = {
+          ...report,
+          attachments: (report.attachments || []).map((a) => ({
+            id: a.id,
+            fileName: a.fileName,
+            mediaType: a.mediaType,
+            fileSizeBytes: a.fileSizeBytes,
+            storageUrl: a.storageUrl || '',
+            source: a.source,
+          })),
+        };
+        await setDoc(docRef, sanitizeForFirestore(firestoreReport as Record<string, unknown>));
       } catch (err) {
         console.warn('[FeedbackRepository] Could not write to Firestore (persisting locally):', err);
       }
@@ -100,7 +111,7 @@ export class FeedbackRepository {
   static async dispatchToApi(
     report: TesterIssueReport, 
     _repo = DEFAULT_REPO
-  ): Promise<{ success: boolean; issueNumber?: number; issueUrl?: string; error?: string; fallbackUrl?: string }> {
+  ): Promise<{ success: boolean; devMode?: boolean; issueNumber?: number; issueUrl?: string; error?: string; fallbackUrl?: string }> {
     try {
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       try {
@@ -125,7 +136,14 @@ export class FeedbackRepository {
           reporterEmail: report.reporterEmail,
           diagnostics: report.diagnostics,
           screenshotUrl: report.attachments[0]?.storageUrl,
-          attachments: report.attachments,
+          attachments: (report.attachments || []).map((a) => ({
+            id: a.id,
+            fileName: a.fileName,
+            mediaType: a.mediaType,
+            fileSizeBytes: a.fileSizeBytes,
+            storageUrl: a.storageUrl,
+            source: a.source,
+          })),
         }),
       });
 
@@ -141,6 +159,7 @@ export class FeedbackRepository {
         }
         return {
           success: true,
+          devMode: Boolean(data.devMode),
           issueNumber: typeof data.issueNumber === 'number' ? data.issueNumber : undefined,
           issueUrl: typeof data.issueUrl === 'string' ? data.issueUrl : undefined,
         };
@@ -300,7 +319,18 @@ ${errorRows}
   private static saveToLocalCache(report: TesterIssueReport): void {
     try {
       const existing = this.loadFromLocalCache();
-      const updated = [report, ...existing.filter((r) => r.id !== report.id)].slice(0, 50);
+      const sanitizedReport: TesterIssueReport = {
+        ...report,
+        attachments: (report.attachments || []).map((a) => ({
+          id: a.id,
+          fileName: a.fileName,
+          mediaType: a.mediaType,
+          fileSizeBytes: a.fileSizeBytes,
+          storageUrl: a.storageUrl,
+          source: a.source,
+        })),
+      };
+      const updated = [sanitizedReport, ...existing.filter((r) => r.id !== report.id)].slice(0, 50);
       localStorage.setItem(STORAGE_KEY_SUBMITTED_REPORTS, JSON.stringify(updated));
     } catch (e) {
       console.error('[FeedbackRepository] Failed saving to local cache:', e);

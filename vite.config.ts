@@ -91,7 +91,7 @@ export function createDevApiReportIssueMiddleware(env: Record<string, string>) {
             return;
           }
 
-          const githubToken = (
+          let githubToken = (
             env.GITHUB_TOKEN ||
             process.env.GITHUB_TOKEN ||
             env.GH_TOKEN ||
@@ -100,6 +100,22 @@ export function createDevApiReportIssueMiddleware(env: Record<string, string>) {
             process.env.GITHUB_PAT ||
             ''
           ).trim();
+
+          // Auto-fallback to local GitHub CLI in development if env var is not specified
+          if (!githubToken && process.env.NODE_ENV !== 'test') {
+            try {
+              const { execSync } = await import('child_process');
+              const cliToken = execSync('gh auth token', { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'ignore'] }).trim();
+              if (cliToken && cliToken.startsWith('gh')) {
+                githubToken = cliToken;
+                console.log('[dev-api-report-issue] Authenticated with local GitHub CLI (gh auth token).');
+              }
+            } catch {
+              // gh CLI not available or logged in
+            }
+          }
+
+
           const githubRepo = (
             env.GITHUB_REPO ||
             process.env.GITHUB_REPO ||

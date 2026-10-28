@@ -5,6 +5,7 @@ import React from 'react';
 import { TesterReportModal } from '../../src/components/feedback/TesterReportModal';
 import { FeedbackRepository } from '../../src/lib/feedbackRepository';
 import { ToastProvider } from '../../src/context/ToastContext';
+import { AuthUser } from '../../src/types';
 
 (globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -14,10 +15,25 @@ vi.mock('../../src/lib/posthog', () => ({
   },
 }));
 
+vi.mock('../../src/lib/imageUtils', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../src/lib/imageUtils')>();
+  return {
+    ...actual,
+    compressImageToDataUrl: vi.fn().mockResolvedValue({
+      dataUrl: 'data:image/webp;base64,mockWebpContent',
+      width: 400,
+      height: 300,
+      sizeBytes: 2048,
+      fileName: 'test-screenshot.png',
+      mediaType: 'image/webp',
+    }),
+  };
+});
+
 let host: HTMLDivElement | null = null;
 let root: Root | null = null;
 
-describe('TesterReportModal UI & GitHub detachment', () => {
+describe('TesterReportModal UI & Streamlined Feedback Flow', () => {
   beforeEach(() => {
     localStorage.clear();
     vi.clearAllMocks();
@@ -33,7 +49,7 @@ describe('TesterReportModal UI & GitHub detachment', () => {
     host = null;
   });
 
-  function renderModal(props: { isOpen: boolean; onClose?: () => void }) {
+  function renderModal(props: { isOpen: boolean; onClose?: () => void; user?: AuthUser | null }) {
     act(() => {
       root!.render(
         <ToastProvider>
@@ -41,6 +57,7 @@ describe('TesterReportModal UI & GitHub detachment', () => {
             isOpen={props.isOpen}
             onClose={props.onClose || vi.fn()}
             activeTab="pipeline"
+            user={props.user}
           />
         </ToastProvider>
       );
@@ -55,13 +72,13 @@ describe('TesterReportModal UI & GitHub detachment', () => {
     element.dispatchEvent(new Event('change', { bubbles: true }));
   }
 
-  it('renders success card with Reference ID and NO GitHub buttons or links upon successful submit', async () => {
-    vi.spyOn(FeedbackRepository, 'saveReport').mockResolvedValue({
+  it('submits feedback through single unified canvas, deriving title & severity automatically', async () => {
+    const saveReportSpy = vi.spyOn(FeedbackRepository, 'saveReport').mockResolvedValue({
       id: 'TRK-BUG-999888',
       type: 'bug',
-      title: 'Valid issue summary',
-      description: 'Detailed description of the issue that occurred',
-      severity: 'medium',
+      title: 'Kanban drag fails on column drop',
+      description: 'Kanban drag fails on column drop. Moving card freezes the board.',
+      severity: 'high',
       status: 'new',
       diagnostics: {
         appVersion: '1.2.0',
@@ -71,7 +88,7 @@ describe('TesterReportModal UI & GitHub detachment', () => {
         os: 'Windows',
         viewport: '1920x1080',
         devicePixelRatio: 1,
-        authMode: 'unauthenticated',
+        authMode: 'authenticated',
         timestamp: '2026-10-20T12:00:00.000Z',
         recentErrors: [],
       },
@@ -86,17 +103,26 @@ describe('TesterReportModal UI & GitHub detachment', () => {
       issueUrl: 'https://github.com/saleem-15/Tracklet-React/issues/50',
     });
 
-    renderModal({ isOpen: true });
+    const mockUser: AuthUser = {
+      uid: 'u123',
+      email: 'alex@company.com',
+      displayName: 'Alex',
+      photoURL: null,
+      providerId: 'google.com',
+      emailVerified: true,
+    };
 
-    // Fill in required fields
-    const titleInput = host!.querySelector('input[placeholder*="Kanban card"]') as HTMLInputElement;
-    const descTextarea = host!.querySelector('textarea') as HTMLTextAreaElement;
-    expect(titleInput).not.toBeNull();
-    expect(descTextarea).not.toBeNull();
+    renderModal({ isOpen: true, user: mockUser });
+
+    // Verify authenticated user identity is NOT rendered as visual clutter
+    expect(host!.textContent).not.toContain('Sending as');
+
+    // Single unified textarea exists and is auto-focused
+    const textarea = host!.querySelector('textarea') as HTMLTextAreaElement;
+    expect(textarea).not.toBeNull();
 
     act(() => {
-      setInputValue(titleInput, 'Valid issue summary');
-      setInputValue(descTextarea, 'Detailed description of the issue that occurred');
+      setInputValue(textarea, 'Kanban drag fails on column drop. Moving card freezes the board.');
     });
 
     const form = host!.querySelector('form') as HTMLFormElement;
@@ -106,21 +132,30 @@ describe('TesterReportModal UI & GitHub detachment', () => {
       form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
     });
 
-    // Verify success receipt is displayed
-    expect(host!.textContent).toContain('Thank You for Your Feedback!');
-    expect(host!.textContent).toContain('TRK-BUG-999888');
-    expect(host!.textContent).toContain('Return to Testing');
+    // Verify saveReport called with derived title and full description
+    expect(saveReportSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'bug',
+        title: 'Kanban drag fails on column drop',
+        description: 'Kanban drag fails on column drop. Moving card freezes the board.',
+        reporterEmail: 'alex@company.com',
+        reporterName: 'Alex',
+      })
+    );
 
-    // CRITICAL: Ensure NO GitHub buttons, GitHub links, or sync error text exist anywhere in the modal DOM
+    // Verify warm success screen is rendered
+    expect(host!.textContent).toContain('Thank You for Your Feedback!');
+    expect(host!.textContent).toContain("I've received your note and will review it right away.");
+    expect(host!.textContent).toContain('Done');
+
+    // Ensure zero telemetry jargon or GitHub buttons in DOM
+    expect(host!.textContent).not.toContain('Diagnostic context');
+    expect(host!.textContent).not.toContain('Auto-Detected Environment');
     expect(host!.textContent).not.toContain('GitHub Issue #');
-    expect(host!.textContent).not.toContain('View Issue');
-    expect(host!.textContent).not.toContain('on GitHub');
-    expect(host!.textContent).not.toContain('Open Pre-filled GitHub Issue');
-    expect(host!.textContent).not.toContain('Automated GitHub sync not configured');
-    expect(host!.querySelector('a[href*="github.com"]')).toBeNull();
+    expect(host!.textContent).not.toContain('TRK-BUG');
   });
 
-  it('preserves form state and displays error message when API fails (does not show success card)', async () => {
+  it('preserves user input and displays clean error message when submission fails', async () => {
     vi.spyOn(FeedbackRepository, 'saveReport').mockResolvedValue({
       id: 'TRK-BUG-777666',
       type: 'bug',
@@ -147,21 +182,17 @@ describe('TesterReportModal UI & GitHub detachment', () => {
 
     vi.spyOn(FeedbackRepository, 'dispatchToApi').mockResolvedValue({
       success: false,
-      error: 'Missing required fields: title, description, or diagnostics.',
+      error: 'Network connection timeout. Please check your connection.',
     });
 
     renderModal({ isOpen: true });
 
-    const titleInput = host!.querySelector('input[placeholder*="Kanban card"]') as HTMLInputElement;
-    const descTextarea = host!.querySelector('textarea') as HTMLTextAreaElement;
-
+    const textarea = host!.querySelector('textarea') as HTMLTextAreaElement;
     act(() => {
-      setInputValue(titleInput, 'Valid issue summary');
-      setInputValue(descTextarea, 'Detailed description of the issue that occurred');
+      setInputValue(textarea, 'Detailed description of the issue that occurred');
     });
 
     const form = host!.querySelector('form') as HTMLFormElement;
-
     await act(async () => {
       form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
     });
@@ -169,64 +200,71 @@ describe('TesterReportModal UI & GitHub detachment', () => {
     // Success card must NOT be displayed
     expect(host!.textContent).not.toContain('Thank You for Your Feedback!');
     // Error message must be visible
-    expect(host!.textContent).toContain('Submission failed: Missing required fields: title, description, or diagnostics.');
-    // Form and input text must be preserved
-    expect(titleInput.value).toBe('Valid issue summary');
-    expect(descTextarea.value).toBe('Detailed description of the issue that occurred');
-    // NO GitHub button or fallback link
-    expect(host!.querySelector('a[href*="github.com"]')).toBeNull();
+    expect(host!.textContent).toContain('Network connection timeout');
+    // Input must be preserved
+    expect(textarea.value).toBe('Detailed description of the issue that occurred');
   });
 
-  it('displays clean error feedback without any GitHub link when reporter service is unconfigured', async () => {
-    vi.spyOn(FeedbackRepository, 'saveReport').mockResolvedValue({
-      id: 'TRK-BUG-111222',
-      type: 'bug',
-      title: 'Valid issue summary',
-      description: 'Detailed description of the issue that occurred',
-      severity: 'medium',
-      status: 'new',
-      diagnostics: {
-        appVersion: '1.2.0',
-        activeTab: 'pipeline',
-        url: 'http://localhost:5173/?tab=pipeline',
-        browser: 'Chrome',
-        os: 'Windows',
-        viewport: '1920x1080',
-        devicePixelRatio: 1,
-        authMode: 'unauthenticated',
-        timestamp: '2026-10-20T12:00:00.000Z',
-        recentErrors: [],
-      },
-      attachments: [],
-      createdAt: '2026-10-20T12:00:00.000Z',
-      updatedAt: '2026-10-20T12:00:00.000Z',
-    });
-
-    vi.spyOn(FeedbackRepository, 'dispatchToApi').mockResolvedValue({
-      success: false,
-      error: 'Automated issue reporter service is temporarily unconfigured.',
-    });
-
+  it('allows switching category pill to Feature Request or Account with dynamic placeholders', () => {
     renderModal({ isOpen: true });
 
-    const titleInput = host!.querySelector('input[placeholder*="Kanban card"]') as HTMLInputElement;
-    const descTextarea = host!.querySelector('textarea') as HTMLTextAreaElement;
+    // Billing should not exist in category pills
+    expect(host!.textContent).not.toContain('Billing');
+
+    const radioButtons = Array.from(host!.querySelectorAll('button[role="radio"]'));
+    expect(radioButtons.length).toBe(4);
+    const labels = radioButtons.map(b => b.textContent?.trim());
+    expect(labels).toEqual(['Bug Report', 'Feature Request', 'Account', 'Other']);
+
+    const featureButton = radioButtons.find(
+      (b) => b.textContent?.includes('Feature Request')
+    ) as HTMLButtonElement;
+
+    expect(featureButton).toBeDefined();
 
     act(() => {
-      setInputValue(titleInput, 'Valid issue summary');
-      setInputValue(descTextarea, 'Detailed description of the issue that occurred');
+      featureButton.click();
     });
 
-    const form = host!.querySelector('form') as HTMLFormElement;
+    expect(featureButton.getAttribute('aria-checked')).toBe('true');
+    const textarea = host!.querySelector('textarea') as HTMLTextAreaElement;
+    expect(textarea.placeholder).toContain('What feature or workflow enhancement');
+  });
 
-    await act(async () => {
-      form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+  it('guarantees zero nested button elements in the modal dialog', () => {
+    renderModal({ isOpen: true });
+
+    const buttons = host!.querySelectorAll('button');
+    buttons.forEach((btn) => {
+      expect(btn.querySelector('button')).toBeNull();
+    });
+  });
+
+  it('does not save a draft and clears draft when user escapes from modal', async () => {
+    const clearDraftSpy = vi.spyOn(FeedbackRepository, 'clearDraft');
+    const saveDraftSpy = vi.spyOn(FeedbackRepository, 'saveDraft');
+    const handleClose = vi.fn();
+
+    renderModal({ isOpen: true, onClose: handleClose });
+
+    const textarea = host!.querySelector('textarea') as HTMLTextAreaElement;
+    act(() => {
+      setInputValue(textarea, 'Some feedback text that user decides to abandon');
     });
 
-    expect(host!.textContent).not.toContain('Thank You for Your Feedback!');
-    expect(host!.textContent).toContain('Automated issue reporter service is temporarily unconfigured.');
-    expect(host!.textContent).not.toContain('GitHub');
-    expect(host!.querySelector('a[href*="github.com"]')).toBeNull();
-    expect(host!.querySelector('button[title*="GitHub"]')).toBeNull();
+    // Press Escape to dismiss modal
+    act(() => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    });
+
+    // Modal close triggered and draft explicitly cleared
+    expect(handleClose).toHaveBeenCalledTimes(1);
+    expect(clearDraftSpy).toHaveBeenCalled();
+    expect(saveDraftSpy).not.toHaveBeenCalled();
+
+    // Reopening modal must start fresh without abandoned text
+    renderModal({ isOpen: true });
+    const reopenedTextarea = host!.querySelector('textarea') as HTMLTextAreaElement;
+    expect(reopenedTextarea.value).toBe('');
   });
 });

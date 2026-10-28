@@ -1,4 +1,4 @@
-export const MAX_ATTACHMENT_SIZE_BYTES = 2 * 1024 * 1024; // 2 MB
+export const MAX_ATTACHMENT_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
 export const ALLOWED_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
 
 export interface CompressedImageResult {
@@ -28,7 +28,7 @@ export function validateImageFile(file: File): { isValid: boolean; error?: strin
   if (file.size > MAX_ATTACHMENT_SIZE_BYTES) {
     return { 
       isValid: false, 
-      error: `File is too large (${formatFileSize(file.size)}). Maximum allowed size is 2MB.` 
+      error: `File is too large (${formatFileSize(file.size)}). Maximum allowed size is 5MB.` 
     };
   }
 

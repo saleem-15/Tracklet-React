@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { Upload, X, Image as ImageIcon, Eye, AlertCircle } from 'lucide-react';
+import { Paperclip, X, Image as ImageIcon, Eye, AlertCircle } from 'lucide-react';
 import { TesterAttachment } from '../../types';
 import { 
   validateImageFile, 
@@ -8,10 +8,12 @@ import {
   compressImageToDataUrl, 
   formatFileSize 
 } from '../../lib/imageUtils';
+import { useEscapeKey } from '../../lib/useEscapeKey';
 
 interface AttachmentDropzoneProps {
   attachments: TesterAttachment[];
   onAddAttachment: (attachment: TesterAttachment) => void;
+  onAddAttachments?: (attachments: TesterAttachment[]) => void;
   onRemoveAttachment: (id: string) => void;
   disabled?: boolean;
 }
@@ -19,55 +21,79 @@ interface AttachmentDropzoneProps {
 export const AttachmentDropzone: React.FC<AttachmentDropzoneProps> = ({
   attachments,
   onAddAttachment,
+  onAddAttachments,
   onRemoveAttachment,
   disabled = false,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [isDragging, setIsDragging] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [previewModalUrl, setPreviewModalUrl] = useState<string | null>(null);
 
-  const processFile = async (file: File) => {
+  const processFiles = async (files: File[]) => {
     setErrorMessage(null);
-    const validation = validateImageFile(file);
-    if (!validation.isValid) {
-      setErrorMessage(validation.error || 'Invalid image file.');
+    if (!files.length) return;
+
+    const remainingSlots = 4 - attachments.length;
+    if (remainingSlots <= 0) {
+      setErrorMessage('Maximum 4 attachments allowed.');
       return;
     }
 
-    if (attachments.length >= 2) {
-      setErrorMessage('Maximum 2 screenshots allowed per report.');
-      return;
+    const filesToProcess = files.slice(0, remainingSlots);
+    let limitNotice = '';
+    if (files.length > remainingSlots) {
+      limitNotice = `Maximum 4 attachments allowed. Only adding ${remainingSlots} of ${files.length} selected.`;
     }
 
-    try {
-      const compressed = await compressImageToDataUrl(file);
-      const newAttachment: TesterAttachment = {
-        id: `att-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-        fileName: compressed.fileName,
-        mediaType: compressed.mediaType,
-        fileSizeBytes: compressed.sizeBytes,
-        dataUrl: compressed.dataUrl,
-        source: 'file_upload',
-      };
-      onAddAttachment(newAttachment);
-    } catch (err) {
-      console.error('Error compressing image:', err);
-      setErrorMessage('Failed processing image. Please try another file.');
+    const newAttachments: TesterAttachment[] = [];
+    const errors: string[] = [];
+
+    for (let i = 0; i < filesToProcess.length; i++) {
+      const file = filesToProcess[i];
+      const validation = validateImageFile(file);
+      if (!validation.isValid) {
+        errors.push(`${file.name}: ${validation.error}`);
+        continue;
+      }
+
+      try {
+        const compressed = await compressImageToDataUrl(file);
+        newAttachments.push({
+          id: `att-${Date.now()}-${Math.random().toString(36).slice(2, 6)}-${i}`,
+          fileName: compressed.fileName,
+          mediaType: compressed.mediaType,
+          fileSizeBytes: compressed.sizeBytes,
+          dataUrl: compressed.dataUrl,
+          source: 'file_upload',
+        });
+      } catch (err) {
+        console.error('Error compressing image:', err);
+        errors.push(`Failed processing ${file.name}.`);
+      }
+    }
+
+    if (errors.length > 0) {
+      setErrorMessage(errors.join(' '));
+    } else if (limitNotice) {
+      setErrorMessage(limitNotice);
+    }
+
+    if (newAttachments.length > 0) {
+      if (onAddAttachments) {
+        onAddAttachments(newAttachments);
+      } else {
+        newAttachments.forEach((att) => onAddAttachment(att));
+      }
     }
   };
 
   // Clipboard paste listener on window/modal
   useEffect(() => {
     const handlePaste = (e: ClipboardEvent) => {
-      // Ignore if user is currently pasting inside a text input or textarea
-      const target = e.target as HTMLElement;
-      if (target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA') return;
-
       const file = extractImageFromClipboard(e);
       if (file) {
         e.preventDefault();
-        processFile(file);
+        processFiles([file]);
       }
     };
 
@@ -75,45 +101,16 @@ export const AttachmentDropzone: React.FC<AttachmentDropzoneProps> = ({
     return () => window.removeEventListener('paste', handlePaste);
   }, [attachments.length]);
 
-  // Listen for Escape key to close image preview overlay cleanly
-  useEffect(() => {
-    if (!previewModalUrl) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        e.stopPropagation();
-        setPreviewModalUrl(null);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown, true);
-    return () => window.removeEventListener('keydown', handleKeyDown, true);
-  }, [previewModalUrl]);
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    if (!disabled) setIsDragging(true);
-  };
-
-  const handleDragLeave = () => {
-    setIsDragging(false);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    if (disabled) return;
-
-    const file = extractImageFromDataTransfer(e.dataTransfer);
-    if (file) {
-      processFile(file);
-    }
-  };
+  // Dismiss image preview overlay cleanly without closing parent modal
+  useEscapeKey(() => {
+    setPreviewModalUrl(null);
+  }, !!previewModalUrl);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      processFile(file);
+    const fileList = e.target.files;
+    if (fileList && fileList.length > 0) {
+      processFiles(Array.from(fileList));
     }
-    // reset input so the same file can be re-selected if removed
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -121,85 +118,63 @@ export const AttachmentDropzone: React.FC<AttachmentDropzoneProps> = ({
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
-          <ImageIcon className="w-3.5 h-3.5 text-slate-500" />
-          Screenshots & Visual Evidence
-          <span className="text-slate-500 font-normal text-[11px]">(Optional • Max 2)</span>
-        </label>
-        <span className="text-[11px] text-slate-500 font-mono">
-          Paste with Ctrl+V anywhere
-        </span>
-      </div>
+      {/* Hidden file input supporting multiple files */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        accept="image/png,image/jpeg,image/webp"
+        className="hidden"
+        onChange={handleFileChange}
+        disabled={disabled}
+      />
 
-      {/* Dropzone Card */}
-      {attachments.length < 2 && (
-        <div
-          role="button"
-          tabIndex={disabled ? -1 : 0}
-          aria-label="Upload screenshot or drag image"
-          onKeyDown={(e) => {
-            if (!disabled && (e.key === 'Enter' || e.key === ' ')) {
-              e.preventDefault();
-              fileInputRef.current?.click();
-            }
-          }}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-          onClick={() => !disabled && fileInputRef.current?.click()}
-          className={`relative border-2 border-dashed rounded-xl p-3.5 text-center cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 ${
-            isDragging
-              ? 'border-blue-500 bg-blue-50/70 scale-[0.99]'
-              : 'border-slate-200 hover:border-slate-300 bg-slate-50/50 hover:bg-slate-50'
-          } ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
-        >
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/png,image/jpeg,image/webp"
-            className="hidden"
-            onChange={handleFileChange}
+      {/* Compact attachment bar */}
+      <div className="flex items-center justify-between gap-2">
+        {attachments.length < 4 && (
+          <button
+            type="button"
+            onClick={() => !disabled && fileInputRef.current?.click()}
             disabled={disabled}
-          />
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-600 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-colors cursor-pointer disabled:opacity-50"
+          >
+            <Paperclip className="w-3.5 h-3.5 text-slate-500" />
+            <span>Attach image</span>
+          </button>
+        )}
 
-          <div className="flex items-center justify-center gap-2.5 text-slate-600">
-            <div className="p-2 rounded-lg bg-white shadow-2xs border border-slate-200 text-blue-600">
-              <Upload className="w-4 h-4" />
-            </div>
-            <div className="text-left text-xs">
-              <span className="font-semibold text-slate-800">Click to upload</span> or drag image here
-              <p className="text-[11px] text-slate-500">PNG, JPEG, WebP up to 2MB • Press <kbd className="px-1 py-0.5 rounded bg-slate-100 border border-slate-300 font-mono text-[11px]">Ctrl+V</kbd> to paste</p>
-            </div>
-          </div>
-        </div>
-      )}
+        {attachments.length > 0 && (
+          <span className="text-[11px] text-slate-500 font-medium">
+            {attachments.length}/4 attached
+          </span>
+        )}
+      </div>
 
       {/* Error message */}
       {errorMessage && (
-        <div className="flex items-center gap-1.5 text-rose-600 text-xs mt-1">
+        <div className="flex items-center gap-1.5 text-rose-600 text-xs">
           <AlertCircle className="w-3.5 h-3.5 shrink-0" />
           <span>{errorMessage}</span>
         </div>
       )}
 
-      {/* Attached thumbnails */}
+      {/* Attached image preview chips */}
       {attachments.length > 0 && (
-        <div className="grid grid-cols-2 gap-2 pt-1">
+        <div className="flex flex-wrap gap-2 pt-1">
           {attachments.map((att) => (
             <div
               key={att.id}
-              className="relative group rounded-lg border border-slate-200 bg-white p-1.5 flex items-center gap-2 shadow-2xs"
+              className="group flex items-center gap-2 px-2 py-1.5 rounded-lg border border-slate-200 bg-slate-50/70 hover:bg-slate-100/70 transition-colors text-xs shadow-2xs max-w-xs"
             >
               {att.dataUrl ? (
                 <img
                   src={att.dataUrl}
                   alt={att.fileName}
-                  className="w-12 h-12 object-cover rounded-md border border-slate-100 shrink-0"
+                  className="w-7 h-7 object-cover rounded border border-slate-200 shrink-0"
                 />
               ) : (
-                <div className="w-12 h-12 rounded-md bg-slate-100 flex items-center justify-center shrink-0">
-                  <ImageIcon className="w-5 h-5 text-slate-400" />
+                <div className="w-7 h-7 rounded bg-slate-200 flex items-center justify-center shrink-0">
+                  <ImageIcon className="w-3.5 h-3.5 text-slate-500" />
                 </div>
               )}
 
@@ -207,33 +182,27 @@ export const AttachmentDropzone: React.FC<AttachmentDropzoneProps> = ({
                 <p className="text-xs font-medium text-slate-800 truncate" title={att.fileName}>
                   {att.fileName}
                 </p>
-                <p className="text-[11px] text-slate-500">
+                <p className="text-[10px] text-slate-500">
                   {formatFileSize(att.fileSizeBytes)}
                 </p>
               </div>
 
-              <div className="flex items-center gap-1 shrink-0">
+              <div className="flex items-center gap-1 shrink-0 ml-1">
                 {att.dataUrl && (
                   <button
                     type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setPreviewModalUrl(att.dataUrl || null);
-                    }}
+                    onClick={() => setPreviewModalUrl(att.dataUrl || null)}
                     title="Enlarge preview"
-                    className="p-1 rounded text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer"
+                    className="p-1 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-colors cursor-pointer"
                   >
                     <Eye className="w-3.5 h-3.5" />
                   </button>
                 )}
                 <button
                   type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onRemoveAttachment(att.id);
-                  }}
+                  onClick={() => onRemoveAttachment(att.id)}
                   title="Remove image"
-                  className="p-1 rounded text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                  className="p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
@@ -243,20 +212,23 @@ export const AttachmentDropzone: React.FC<AttachmentDropzoneProps> = ({
         </div>
       )}
 
-      {/* Full image preview overlay modal */}
+      {/* Enlarged image preview overlay */}
       {previewModalUrl && (
         <div
           role="dialog"
           aria-modal="true"
           aria-label="Image Preview"
-          className="fixed inset-0 z-60 bg-slate-900/80 backdrop-blur-xs flex items-center justify-center p-4"
+          className="fixed inset-0 z-60 bg-slate-900/80 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150"
           onClick={() => setPreviewModalUrl(null)}
         >
-          <div className="relative max-w-4xl max-h-[90vh] bg-white rounded-xl overflow-hidden shadow-2xl p-2" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="relative max-w-3xl max-h-[85vh] bg-white rounded-2xl overflow-hidden shadow-2xl p-2"
+            onClick={(e) => e.stopPropagation()}
+          >
             <button
               type="button"
               onClick={() => setPreviewModalUrl(null)}
-              className="absolute top-3 right-3 p-1.5 rounded-full bg-slate-900/60 hover:bg-slate-900 text-white transition-colors cursor-pointer z-10"
+              className="absolute top-4 right-4 p-1.5 rounded-full bg-slate-900/70 hover:bg-slate-900 text-white transition-colors cursor-pointer z-10"
               aria-label="Close image preview"
             >
               <X className="w-4 h-4" />
@@ -264,7 +236,7 @@ export const AttachmentDropzone: React.FC<AttachmentDropzoneProps> = ({
             <img
               src={previewModalUrl}
               alt="Enlarged screenshot"
-              className="max-h-[85vh] max-w-full rounded-lg object-contain"
+              className="max-h-[80vh] max-w-full rounded-xl object-contain"
             />
           </div>
         </div>
