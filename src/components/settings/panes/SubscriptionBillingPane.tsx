@@ -47,19 +47,19 @@ export const SubscriptionBillingPane: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-0">
       {/* ── 1. Plan Overview & Quota Meters ── */}
       <SettingsCard
         title={isPro ? 'Tracklet Pro Subscription' : 'Tracklet Free Workspace'}
         icon={<CreditCard className="w-5 h-5 text-blue-600" />}
         badge={
           isPro ? (
-            <span className="inline-flex items-center gap-1 font-mono text-xs bg-purple-50 text-purple-700 border border-purple-200/80 px-2.5 py-0.5 rounded-full font-bold">
+            <span className="inline-flex items-center gap-1 font-sans text-xs bg-purple-50 text-purple-700 border border-purple-200/80 px-2.5 py-0.5 rounded-full font-semibold">
               <Sparkles className="w-3.5 h-3.5 text-purple-600" />
               <span>Pro Plan Active</span>
             </span>
           ) : (
-            <span className="font-mono text-xs bg-slate-100 text-slate-700 border border-slate-200 px-2.5 py-0.5 rounded-full font-bold">
+            <span className="font-sans text-xs bg-slate-100 text-slate-700 border border-slate-200 px-2.5 py-0.5 rounded-full font-semibold">
               Free Plan
             </span>
           )

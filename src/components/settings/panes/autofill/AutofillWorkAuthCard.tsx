@@ -56,10 +56,10 @@ export const AutofillWorkAuthCard: React.FC<AutofillWorkAuthCardProps> = ({ data
         {/* Gate Question 1: Authorized without restriction */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl border border-slate-200/80 bg-slate-50/50">
           <div>
-            <span className="block text-xs font-semibold text-slate-900">
+            <span className="block text-sm font-semibold text-slate-900">
               Are you legally authorized to work in your target job country?
             </span>
-            <span className="text-[11px] text-slate-500 font-sans block mt-0.5">
+            <span className="text-xs text-slate-500 font-sans block mt-0.5">
               Autofills the primary legal eligibility radio question on Greenhouse, Lever, and Workday.
             </span>
           </div>
@@ -92,10 +92,10 @@ export const AutofillWorkAuthCard: React.FC<AutofillWorkAuthCardProps> = ({ data
         {/* Gate Question 2: Requires Visa Sponsorship */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl border border-slate-200/80 bg-slate-50/50">
           <div>
-            <span className="block text-xs font-semibold text-slate-900">
+            <span className="block text-sm font-semibold text-slate-900">
               Will you now or in the future require visa sponsorship?
             </span>
-            <span className="text-[11px] text-slate-500 font-sans block mt-0.5">
+            <span className="text-xs text-slate-500 font-sans block mt-0.5">
               Autofills company immigration sponsorship screening questions.
             </span>
           </div>
@@ -129,7 +129,7 @@ export const AutofillWorkAuthCard: React.FC<AutofillWorkAuthCardProps> = ({ data
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
           {/* Visa Status */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-800 flex items-center gap-1">
+            <label className="text-xs font-semibold text-slate-700 flex items-center gap-1">
               <ShieldCheck className="w-3.5 h-3.5 text-slate-500" />
               <span>Current Status</span>
             </label>
@@ -143,7 +143,7 @@ export const AutofillWorkAuthCard: React.FC<AutofillWorkAuthCardProps> = ({ data
 
           {/* Notice Period */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-800 flex items-center gap-1">
+            <label className="text-xs font-semibold text-slate-700 flex items-center gap-1">
               <Clock className="w-3.5 h-3.5 text-slate-500" />
               <span>Notice Period</span>
             </label>
@@ -157,7 +157,7 @@ export const AutofillWorkAuthCard: React.FC<AutofillWorkAuthCardProps> = ({ data
 
           {/* Relocation Preference */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-800 flex items-center gap-1">
+            <label className="text-xs font-semibold text-slate-700 flex items-center gap-1">
               <MapPin className="w-3.5 h-3.5 text-slate-500" />
               <span>Relocation</span>
             </label>

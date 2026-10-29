@@ -64,19 +64,19 @@ export const WorkflowAlertsPane: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-0">
       {/* ── 1. Soon to Expire Notification Indicator ── */}
       <SettingsCard
         title="'Soon to Expire' Task Notification Indicator"
         icon={<Clock className="w-5 h-5 text-blue-600" />}
         badge={
-          <span className="font-mono text-[11px] text-blue-800 bg-blue-50 border border-blue-200/80 px-2 py-0.5 rounded-full font-semibold">
+          <span className="font-sans text-xs text-blue-800 bg-blue-50 border border-blue-200/80 px-2 py-0.5 rounded-full font-semibold">
             Pipeline Signal
           </span>
         }
         headerAction={
           <div className="flex items-center gap-2">
-            <span className="text-xs font-mono font-medium text-slate-600">
+            <span className="text-xs font-medium text-slate-600">
               {expirySettings.enabled ? 'Enabled' : 'Disabled'}
             </span>
             <SettingsSwitch
@@ -90,7 +90,7 @@ export const WorkflowAlertsPane: React.FC = () => {
         <div className={`space-y-5 transition-opacity duration-200 ${expirySettings.enabled ? 'opacity-100' : 'opacity-40 pointer-events-none'}`}>
           {/* Quick Select Presets */}
           <div className="space-y-2">
-            <label className="block text-xs font-mono text-slate-700 uppercase tracking-wider font-bold">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500">
               Expiry Alert Lookahead Presets
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
@@ -111,7 +111,7 @@ export const WorkflowAlertsPane: React.FC = () => {
                     <span className={`font-mono text-xs font-bold ${isActive ? 'text-white' : 'text-slate-900'}`}>
                       {preset >= 24 ? `${days}d` : `${preset}h`}
                     </span>
-                    <span className={`text-[11px] ${isActive ? 'text-blue-100' : 'text-slate-500'}`}>
+                    <span className={`text-xs ${isActive ? 'text-blue-100' : 'text-slate-500'}`}>
                       {preset < 24 ? `${preset} hours` : `${days} ${days === 1 ? 'day' : 'days'}`}
                     </span>
                   </button>
@@ -177,7 +177,7 @@ export const WorkflowAlertsPane: React.FC = () => {
           title="Automated Ghosting Suggestion"
           subtitle="Suggest moving applications with 45+ days of inactivity into Archived / Ghosted."
         >
-          <span className="font-mono text-xs text-slate-500">
+          <span className="text-xs text-slate-500 font-medium">
             Active in Pipeline
           </span>
         </SettingsRow>

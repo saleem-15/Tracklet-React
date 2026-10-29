@@ -85,7 +85,7 @@ export const SettingsStepInput: React.FC<SettingsStepInputProps> = ({
       </div>
 
       {/* Unit Selector */}
-      <div className="flex items-center bg-slate-100/80 p-0.5 rounded-lg border border-slate-200/80 text-[11px] font-semibold">
+      <div className="flex items-center bg-slate-100/80 p-0.5 rounded-lg border border-slate-200/80 text-xs font-semibold">
         <button
           type="button"
           onClick={() => toggleUnit('hours')}

@@ -37,7 +37,7 @@ export const SettingsRow: React.FC<SettingsRowProps> = ({
           </div>
         )}
         <div className="space-y-0.5 min-w-0">
-          <div className="text-xs sm:text-sm font-semibold text-slate-900 leading-snug">
+          <div className="text-sm font-semibold text-slate-900 leading-snug">
             {title}
           </div>
           {subtitle && (

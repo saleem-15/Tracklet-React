@@ -16,6 +16,13 @@ export const AutofillCompletenessHeader: React.FC<AutofillCompletenessHeaderProp
     { name: 'Current Role', done: Boolean(profile.experience?.currentTitle) },
     { name: 'Target Titles', done: Boolean(profile.targetTitles && profile.targetTitles.length > 0) },
     { name: 'LinkedIn URL', done: Boolean(profile.linkedInUrl) },
+    {
+      name: 'Portfolio or other link',
+      done: Boolean(
+        profile.portfolioUrl ||
+          (Array.isArray(profile.additionalLinks) && profile.additionalLinks.some((link) => Boolean(link?.url)))
+      ),
+    },
   ];
 
   const completedCount = checks.filter((c) => c.done).length;
@@ -23,7 +30,7 @@ export const AutofillCompletenessHeader: React.FC<AutofillCompletenessHeaderProp
   const nextMissing = checks.find((c) => !c.done);
 
   return (
-    <div className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200/90 shadow-2xs space-y-3">
+    <div className="p-4 sm:p-5 rounded-xl bg-slate-50/70 border border-slate-200/80 space-y-3">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
           <h3 className="font-heading text-sm font-bold text-slate-900 tracking-tight">

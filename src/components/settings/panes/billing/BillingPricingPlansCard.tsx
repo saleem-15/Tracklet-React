@@ -14,10 +14,10 @@ export const BillingPricingPlansCard: React.FC = () => {
   const entitlement = useEntitlementContext();
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-6 sm:py-8 border-b border-slate-200/70">
       {/* Job Hunt Pass (Recommended Best Value) */}
       <div className="rounded-2xl border-2 border-blue-600 bg-white p-5 space-y-3.5 shadow-xs relative">
-        <span className="absolute -top-3 right-4 px-2.5 py-0.5 rounded-full bg-blue-600 text-white font-mono text-[10px] font-bold uppercase tracking-wider shadow-2xs">
+        <span className="absolute -top-3 right-4 px-2.5 py-0.5 rounded-full bg-blue-600 text-white font-sans text-xs font-bold uppercase tracking-wider shadow-2xs">
           Best Value (Recommended)
         </span>
         <div className="space-y-1">

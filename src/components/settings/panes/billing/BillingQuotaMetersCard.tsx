@@ -32,7 +32,7 @@ export const BillingQuotaMetersCard: React.FC = () => {
             <Layers className="w-3.5 h-3.5 text-blue-600" />
             <span>Active Pipeline Capacity</span>
           </span>
-          <span className="font-mono font-bold text-slate-900">
+          <span className="font-mono font-semibold tabular-nums text-slate-900">
             {entitlement.activeCount} / {isPro ? '∞' : SAAS_LIMITS.FREE_MAX_ACTIVE_APPS}
           </span>
         </div>
@@ -55,7 +55,7 @@ export const BillingQuotaMetersCard: React.FC = () => {
             }}
           />
         </div>
-        <p className="text-[11px] text-slate-500 font-sans">
+        <p className="text-xs text-slate-500 font-sans leading-normal">
           Terminal roles (Rejected / Archived) do not count toward this cap.
         </p>
       </div>
@@ -67,7 +67,7 @@ export const BillingQuotaMetersCard: React.FC = () => {
             <Zap className="w-3.5 h-3.5 text-indigo-600" />
             <span>Monthly AI Web Scrapes</span>
           </span>
-          <span className="font-mono font-bold text-slate-900">
+          <span className="font-mono font-semibold tabular-nums text-slate-900">
             {scrapesUsed} / {isPro ? '∞' : maxScrapes}
           </span>
         </div>
@@ -86,7 +86,7 @@ export const BillingQuotaMetersCard: React.FC = () => {
             }}
           />
         </div>
-        <p className="text-[11px] text-slate-500 font-sans">
+        <p className="text-xs text-slate-500 font-sans leading-normal">
           Used when extracting job details from unsupported company boards.
         </p>
       </div>
@@ -98,7 +98,7 @@ export const BillingQuotaMetersCard: React.FC = () => {
             <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
             <span>1-Click ATS Autofills</span>
           </span>
-          <span className="font-mono font-bold text-slate-900">
+          <span className="font-mono font-semibold tabular-nums text-slate-900">
             {autofillsUsed} / {isPro ? '∞' : maxAutofills}
           </span>
         </div>
@@ -117,7 +117,7 @@ export const BillingQuotaMetersCard: React.FC = () => {
             }}
           />
         </div>
-        <p className="text-[11px] text-slate-500 font-sans">
+        <p className="text-xs text-slate-500 font-sans leading-normal">
           Instantly fills Greenhouse, Lever, Ashby, and Workday applications.
         </p>
       </div>
@@ -129,7 +129,7 @@ export const BillingQuotaMetersCard: React.FC = () => {
             <FileText className="w-3.5 h-3.5 text-blue-600" />
             <span>Cloud Resume Versions</span>
           </span>
-          <span className="font-mono font-bold text-slate-900">
+          <span className="font-mono font-semibold tabular-nums text-slate-900">
             {currentResumes} / {isPro ? '∞' : maxResumes}
           </span>
         </div>
@@ -148,7 +148,7 @@ export const BillingQuotaMetersCard: React.FC = () => {
             }}
           />
         </div>
-        <p className="text-[11px] text-slate-500 font-sans">
+        <p className="text-xs text-slate-500 font-sans leading-normal">
           Pro includes unlimited tailored CV versions stored in encrypted cloud.
         </p>
       </div>

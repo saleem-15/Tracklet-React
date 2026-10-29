@@ -1,12 +1,10 @@
 import React, { useState, useRef } from 'react';
-import { 
-  Database, 
-  FileCode2, 
-  Upload, 
-  FileSpreadsheet, 
-  Download, 
-  ChevronRight,
-  ExternalLink
+import {
+  FileCode2,
+  Upload,
+  FileSpreadsheet,
+  Download,
+  ChevronRight
 } from 'lucide-react';
 import { useApplicationsContext } from '../../../../context/ApplicationsContext';
 import { useContactsContext } from '../../../../context/ContactsContext';
@@ -16,27 +14,91 @@ import { exportApplicationsToJSON, validateAndParseJSONBackup } from '../../../.
 import { exportContactsToCSV } from '../../../../lib/exportCsv';
 import { ImportCSVModal } from '../../../ImportCSVModal';
 
+interface PortabilityRowProps {
+  icon: React.ReactNode;
+  iconClass: string;
+  label: string;
+  description: string;
+  meta?: string;
+  trailing: 'download' | 'chevron';
+  onClick: () => void;
+}
+
+/**
+ * A quiet, full-width settings list row on the white canvas.
+ * Icon chip + bold label + muted description + optional live count,
+ * with a trailing affordance that hints at the outcome.
+ */
+const PortabilityRow: React.FC<PortabilityRowProps> = ({
+  icon,
+  iconClass,
+  label,
+  description,
+  meta,
+  trailing,
+  onClick,
+}) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className="group w-full flex items-center gap-3 px-3 -mx-3 py-3 rounded-xl text-left hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/30 transition-colors cursor-pointer"
+  >
+    <span className={`w-8 h-8 rounded-lg border flex items-center justify-center shrink-0 ${iconClass}`}>
+      {icon}
+    </span>
+    <span className="flex-1 min-w-0">
+      <span className="block text-sm font-semibold text-slate-900 truncate">{label}</span>
+      <span className="block text-xs text-slate-500 truncate">{description}</span>
+    </span>
+    {meta && (
+      <span className="hidden sm:block font-mono text-xs text-slate-500 tabular-nums shrink-0">{meta}</span>
+    )}
+    {trailing === 'download' ? (
+      <Download
+        className="w-4 h-4 text-slate-400 group-hover:text-blue-600 group-hover:-translate-y-0.5 transition-all shrink-0"
+        aria-hidden="true"
+      />
+    ) : (
+      <ChevronRight
+        className="w-4 h-4 text-slate-300 group-hover:text-slate-500 group-hover:translate-x-0.5 transition-all shrink-0"
+        aria-hidden="true"
+      />
+    )}
+  </button>
+);
+
+const Overline: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = '' }) => (
+  <p className={`text-xs font-semibold uppercase tracking-wider text-slate-500 ${className}`}>
+    {children}
+  </p>
+);
+
 /**
  * AccountDataPortabilityCard
  *
- * Dedicated sub-component for candidate data portability and backups within Account settings:
- * - 1:1 Complete Workspace JSON Backup & Restore
- * - CSV Portability (Applications Table Export, Contacts Directory Export, CSV Import)
- * - Quiet footer links to legal policies
+ * Data portability and backups within Account settings, on the flat white canvas:
+ * - Workspace Backup rows: 1:1 JSON snapshot export + restore from file
+ * - Spreadsheet rows: Jobs CSV export, Contacts directory export, CSV import
+ * - Live record counts preview what each export contains
  * - Enforces title-only header paradigm and sub-300 lines rule
  */
 export const AccountDataPortabilityCard: React.FC = () => {
-  const { 
-    applications, 
-    handleExportCSV, 
-    handleBatchImportApplications 
+  const {
+    applications,
+    handleExportCSV,
+    handleBatchImportApplications
   } = useApplicationsContext();
-  
+
   const { contacts } = useContactsContext();
   const { addToast } = useToastContext();
 
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const jsonFileInputRef = useRef<HTMLInputElement>(null);
+
+  const applicationCount = applications?.length ?? 0;
+  const contactCount = contacts?.length ?? 0;
+  const applicationMeta = `${applicationCount} application${applicationCount === 1 ? '' : 's'}`;
+  const contactMeta = `${contactCount} contact${contactCount === 1 ? '' : 's'}`;
 
   const handleDownloadJSON = () => {
     if (!applications || applications.length === 0) {
@@ -102,113 +164,62 @@ export const AccountDataPortabilityCard: React.FC = () => {
 
       <SettingsCard
         title="Data Portability & Backups"
-        icon={<Database className="w-5 h-5 text-blue-600" />}
+        subtitle="Your workspace, your data. Export a complete snapshot, restore it anywhere, or move records in and out with spreadsheets."
       >
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {/* JSON Backup Download */}
-          <button
-            type="button"
-            onClick={handleDownloadJSON}
-            className="flex items-center justify-between p-3.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 hover:border-slate-300 text-slate-800 transition-colors cursor-pointer shadow-2xs group text-left"
-          >
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 border border-blue-200/80 flex items-center justify-center shrink-0">
-                <FileCode2 className="w-4 h-4" />
-              </div>
-              <div className="min-w-0">
-                <span className="block font-bold text-xs text-slate-900 truncate">JSON Backup</span>
-                <span className="text-[11px] text-slate-500 truncate block">1:1 complete snapshot</span>
-              </div>
-            </div>
-            <Download className="w-4 h-4 text-slate-500 group-hover:text-blue-600 shrink-0" />
-          </button>
-
-          {/* JSON Restore Drop */}
-          <button
-            type="button"
-            onClick={() => jsonFileInputRef.current?.click()}
-            className="flex items-center justify-between p-3.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 hover:border-slate-300 text-slate-800 transition-colors cursor-pointer shadow-2xs group text-left"
-          >
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 border border-indigo-200/80 flex items-center justify-center shrink-0">
-                <Upload className="w-4 h-4" />
-              </div>
-              <div className="min-w-0">
-                <span className="block font-bold text-xs text-slate-900 truncate">Restore JSON</span>
-                <span className="text-[11px] text-slate-500 truncate block">Import backup file</span>
-              </div>
-            </div>
-            <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-indigo-600 shrink-0" />
-          </button>
-
-          {/* CSV Import */}
-          <button
-            type="button"
-            onClick={() => setIsImportModalOpen(true)}
-            className="flex items-center justify-between p-3.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 hover:border-slate-300 text-slate-800 transition-colors cursor-pointer shadow-2xs group text-left"
-          >
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center shrink-0">
-                <FileSpreadsheet className="w-4 h-4" />
-              </div>
-              <div className="min-w-0">
-                <span className="block font-bold text-xs text-slate-900 truncate">Import CSV</span>
-                <span className="text-[11px] text-slate-500 truncate block">Spreadsheet import</span>
-              </div>
-            </div>
-            <ChevronRight className="w-4 h-4 text-slate-500 shrink-0" />
-          </button>
-
-          {/* CSV Export Applications */}
-          <button
-            type="button"
-            onClick={handleExportCSV}
-            className="flex items-center justify-between p-3.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 hover:border-slate-300 text-slate-800 transition-colors cursor-pointer shadow-2xs group text-left"
-          >
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center shrink-0">
-                <Download className="w-4 h-4" />
-              </div>
-              <div className="min-w-0">
-                <span className="block font-bold text-xs text-slate-900 truncate">Export Jobs CSV</span>
-                <span className="text-[11px] text-slate-500 truncate block">Applications table</span>
-              </div>
-            </div>
-            <ChevronRight className="w-4 h-4 text-slate-500 shrink-0" />
-          </button>
+        {/* ── Workspace Backup ── */}
+        <div className="space-y-1">
+          <Overline className="pb-1">Workspace Backup</Overline>
+          <div className="divide-y divide-slate-100">
+            <PortabilityRow
+              icon={<FileCode2 className="w-4 h-4" />}
+              iconClass="bg-blue-50 text-blue-600 border-blue-200/80"
+              label="JSON Backup"
+              description="1:1 complete snapshot of your pipeline"
+              meta={applicationMeta}
+              trailing="download"
+              onClick={handleDownloadJSON}
+            />
+            <PortabilityRow
+              icon={<Upload className="w-4 h-4" />}
+              iconClass="bg-indigo-50 text-indigo-600 border-indigo-200/80"
+              label="Restore JSON"
+              description="Bring a .json backup file back into Tracklet"
+              trailing="chevron"
+              onClick={() => jsonFileInputRef.current?.click()}
+            />
+          </div>
         </div>
 
-        {/* Secondary CSV Contacts & Legal Policy Links */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100">
-          <button
-            type="button"
-            onClick={handleDownloadContactsCSV}
-            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
-          >
-            <Download className="w-3.5 h-3.5 text-slate-500" />
-            <span>Export Contacts Directory (CSV)</span>
-          </button>
-
-          <div className="flex items-center gap-3 text-xs text-slate-500">
-            <a
-              href="/privacy"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-slate-500 hover:text-slate-800 font-medium transition-colors"
-            >
-              <span>Privacy Policy</span>
-              <ExternalLink className="w-3 h-3" />
-            </a>
-            <span className="text-slate-300">•</span>
-            <a
-              href="/terms"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-slate-500 hover:text-slate-800 font-medium transition-colors"
-            >
-              <span>Terms of Service</span>
-              <ExternalLink className="w-3 h-3" />
-            </a>
+        {/* ── Spreadsheets ── */}
+        <div className="space-y-1 pt-4">
+          <Overline className="pb-1">Spreadsheets</Overline>
+          <div className="divide-y divide-slate-100">
+            <PortabilityRow
+              icon={<FileSpreadsheet className="w-4 h-4" />}
+              iconClass="bg-emerald-50 text-emerald-600 border-emerald-200/80"
+              label="Export Jobs CSV"
+              description="Applications table with status and history"
+              meta={applicationMeta}
+              trailing="download"
+              onClick={handleExportCSV}
+            />
+            <PortabilityRow
+              icon={<FileSpreadsheet className="w-4 h-4" />}
+              iconClass="bg-slate-100 text-slate-600 border-slate-200"
+              label="Export Contacts Directory (CSV)"
+              description="Recruiter and mentor directory"
+              meta={contactMeta}
+              trailing="download"
+              onClick={handleDownloadContactsCSV}
+            />
+            <PortabilityRow
+              icon={<Upload className="w-4 h-4" />}
+              iconClass="bg-slate-100 text-slate-600 border-slate-200"
+              label="Import CSV"
+              description="Bulk-add applications from a spreadsheet"
+              trailing="chevron"
+              onClick={() => setIsImportModalOpen(true)}
+            />
           </div>
         </div>
       </SettingsCard>

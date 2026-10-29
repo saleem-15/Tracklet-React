@@ -51,6 +51,7 @@ export const AutofillProfilePane: React.FC = () => {
       linkedInUrl: profile?.linkedInUrl || '',
       githubUrl: profile?.githubUrl || '',
       portfolioUrl: profile?.portfolioUrl || '',
+      additionalLinks: profile?.additionalLinks || [],
       bioSnippet: profile?.bioSnippet || '',
       coverLetterSnippet: profile?.coverLetterSnippet || '',
     };
@@ -95,7 +96,7 @@ export const AutofillProfilePane: React.FC = () => {
   };
 
   return (
-    <form noValidate onSubmit={handleSaveProfile} className="space-y-6">
+    <form noValidate onSubmit={handleSaveProfile} className="space-y-0">
       {/* ── 1. Profile Readiness Progress Header ── */}
       <AutofillCompletenessHeader profile={formData} />
 
@@ -118,7 +119,7 @@ export const AutofillProfilePane: React.FC = () => {
       <AutofillSnippetsCard data={formData} onChange={updateField} />
 
       {/* ── Sticky / Clean Action Bar ── */}
-      <div className="p-4 bg-white rounded-2xl border border-slate-200/90 shadow-2xs flex items-center justify-end">
+      <div className="flex items-center justify-end pt-4">
         <button
           type="submit"
           disabled={isSaving}

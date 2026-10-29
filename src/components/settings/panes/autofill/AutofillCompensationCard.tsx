@@ -39,7 +39,7 @@ export const AutofillCompensationCard: React.FC<AutofillCompensationCardProps> =
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {/* Currency Dropdown */}
         <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-slate-800 flex items-center gap-1">
+          <label className="text-xs font-semibold text-slate-700 flex items-center gap-1">
             <DollarSign className="w-3.5 h-3.5 text-slate-500" />
             <span>Currency</span>
           </label>
@@ -59,7 +59,7 @@ export const AutofillCompensationCard: React.FC<AutofillCompensationCardProps> =
 
         {/* Minimum Base Salary */}
         <div className="space-y-1.5">
-          <label htmlFor="min-salary" className="text-xs font-semibold text-slate-800 flex items-center gap-1">
+          <label htmlFor="min-salary" className="text-xs font-semibold text-slate-700 flex items-center gap-1">
             <DollarSign className="w-3.5 h-3.5 text-slate-500" />
             <span>Minimum Base Salary</span>
           </label>
@@ -75,13 +75,13 @@ export const AutofillCompensationCard: React.FC<AutofillCompensationCardProps> =
               )
             }
             placeholder="160000"
-            className="w-full h-9 px-3 text-xs bg-slate-50 text-slate-900 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white transition-colors font-mono"
+            className="w-full h-9 px-3 text-base sm:text-sm bg-slate-50 text-slate-900 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white transition-colors font-mono"
           />
         </div>
 
         {/* Target OTE / Total Comp */}
         <div className="space-y-1.5">
-          <label htmlFor="target-ote" className="text-xs font-semibold text-slate-800 flex items-center gap-1">
+          <label htmlFor="target-ote" className="text-xs font-semibold text-slate-700 flex items-center gap-1">
             <DollarSign className="w-3.5 h-3.5 text-slate-500" />
             <span>Target OTE / Total Comp</span>
           </label>
@@ -97,7 +97,7 @@ export const AutofillCompensationCard: React.FC<AutofillCompensationCardProps> =
               )
             }
             placeholder="200000"
-            className="w-full h-9 px-3 text-xs bg-slate-50 text-slate-900 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white transition-colors font-mono"
+            className="w-full h-9 px-3 text-base sm:text-sm bg-slate-50 text-slate-900 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white transition-colors font-mono"
           />
         </div>
       </div>

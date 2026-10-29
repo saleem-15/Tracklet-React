@@ -2,9 +2,7 @@ import React, { useState } from 'react';
 import { SettingsPaneId } from '../../types';
 import { SettingsSubNav } from './SettingsSubNav';
 import { AccountProfilePane } from './panes/AccountProfilePane';
-import { AutofillProfilePane } from './panes/AutofillProfilePane';
-import { SubscriptionBillingPane } from './panes/SubscriptionBillingPane';
-import { WorkflowAlertsPane } from './panes/WorkflowAlertsPane';
+// AutofillProfilePane, SubscriptionBillingPane, WorkflowAlertsPane temporarily disabled
 
 export interface SettingsHubViewProps {
   initialPane?: SettingsPaneId;
@@ -13,9 +11,9 @@ export interface SettingsHubViewProps {
 /**
  * SettingsHubView
  *
- * Master-Detail Settings Hub:
- * - Responsive split-pane layout: vertical rail on desktop (lg:), segmented pill tabs on mobile.
- * - Dedicated panes: Account & Security, ATS Autofill Profile, Subscription & Billing, Workflow & Alerts, Data Portability.
+ * Flat Settings Hub on a continuous white canvas:
+ * - Full-width horizontal text tabs (no icons, no boxes) with an active underline indicator.
+ * - Dedicated panes: Account, ATS Autofill, Billing, Workflow.
  * - Zero prop-drilling: sub-panes consume directly from scoped React context providers.
  * - Deep-linkable via query parameter (?tab=settings&section=<paneId>).
  */
@@ -26,7 +24,8 @@ export const SettingsHubView: React.FC<SettingsHubViewProps> = ({
     try {
       const params = new URLSearchParams(window.location.search);
       const section = params.get('section') as SettingsPaneId;
-      if (section && ['account', 'autofill', 'billing', 'workflow'].includes(section)) {
+      // Only 'account' is active; other panes are temporarily disabled
+      if (section && ['account'].includes(section)) {
         return section;
       }
     } catch {
@@ -49,31 +48,25 @@ export const SettingsHubView: React.FC<SettingsHubViewProps> = ({
   };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6 pb-16 animate-in fade-in duration-150">
-      {/* ── Page Header (Executive Command Center - Rule 5.1) ── */}
-      <div className="border-b border-slate-200/80 pb-4">
-        <h1 className="font-heading text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+    <div className="max-w-4xl mx-auto space-y-6 pb-20 animate-in fade-in duration-150">
+      {/* ── Page Heading ── */}
+      <div className="pb-1">
+        <h1 className="font-heading text-2xl font-bold text-slate-900 tracking-tight">
           Settings
         </h1>
       </div>
 
-      {/* ── Responsive Master-Detail Workspace Layout ── */}
-      <div className="flex flex-col lg:flex-row gap-6 items-start">
-        {/* Navigation Rail / Mobile Segmented Tabs */}
-        <SettingsSubNav
-          activePane={activePane}
-          onSelectPane={handleSelectPane}
-          className="w-full lg:w-56 shrink-0"
-        />
+      {/* ── Horizontal Sub-Navigation Tab Bar ── */}
+      <SettingsSubNav
+        activePane={activePane}
+        onSelectPane={handleSelectPane}
+      />
 
-        {/* Active Detail Pane */}
-        <main className="flex-1 w-full min-w-0" aria-label="Settings panel content">
-          {activePane === 'account' && <AccountProfilePane />}
-          {activePane === 'autofill' && <AutofillProfilePane />}
-          {activePane === 'billing' && <SubscriptionBillingPane />}
-          {activePane === 'workflow' && <WorkflowAlertsPane />}
-        </main>
-      </div>
+      {/* ── Active Detail Pane on Flat White Canvas ── */}
+      <main className="w-full pt-2" aria-label="Settings panel content">
+        {activePane === 'account' && <AccountProfilePane />}
+        {/* autofill, billing, and workflow panes are temporarily disabled */}
+      </main>
     </div>
   );
 };

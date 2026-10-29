@@ -4,8 +4,7 @@ import {
   Mail, 
   LogOut, 
   KeyRound, 
-  Clock, 
-  AlertTriangle 
+  Clock
 } from 'lucide-react';
 import { SettingsCard } from '../SettingsCard';
 import { AccountDataPortabilityCard } from './account/AccountDataPortabilityCard';
@@ -134,27 +133,36 @@ export const AccountProfilePane: React.FC<AccountProfilePaneProps> = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-0">
       {/* ── 1. Candidate Identity & Credentials ── */}
       <SettingsCard
-        title={user.displayName || user.email || 'Candidate Account'}
-        icon={
-          user.photoURL ? (
-            <img
-              src={user.photoURL}
-              alt="Avatar"
-              className="w-10 h-10 rounded-xl object-cover"
-              referrerPolicy="no-referrer"
-            />
-          ) : (
-            <User className="w-5 h-5 text-blue-600" />
-          )
+        title={
+          <span className="flex items-center gap-3">
+            {user.photoURL ? (
+              <img
+                src={user.photoURL}
+                alt={user.displayName || 'User avatar'}
+                className="w-10 h-10 rounded-full object-cover border border-slate-200 shrink-0"
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              <span className="w-10 h-10 rounded-full bg-blue-50 border border-blue-100 text-blue-600 flex items-center justify-center shrink-0">
+                <User className="w-5 h-5" />
+              </span>
+            )}
+            <span className="flex flex-col min-w-0">
+              <span className="block truncate">
+                {user.displayName || user.email || 'Candidate Account'}
+              </span>
+              {user.email && user.displayName && (
+                <span className="block truncate text-xs font-normal text-slate-500 font-mono">
+                  {user.email}
+                </span>
+              )}
+            </span>
+          </span>
         }
       >
-        {user.email && user.displayName && (
-          <p className="text-xs text-slate-500 font-mono -mt-1 pb-1">{user.email}</p>
-        )}
-
         {/* Unverified Email Warning Banner */}
         {!user.emailVerified && (
           <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
@@ -212,27 +220,25 @@ export const AccountProfilePane: React.FC<AccountProfilePaneProps> = ({
       {/* ── 2. Workspace Data Portability & Backups ── */}
       <AccountDataPortabilityCard />
 
-      {/* ── 3. Danger Zone (Calm Resting State) ── */}
-      <SettingsCard
-        title="Danger Zone"
-        icon={<AlertTriangle className="w-5 h-5 text-rose-500" />}
-      >
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-xl border border-slate-200 bg-slate-50/60">
-          <div>
-            <h4 className="text-xs font-bold text-slate-900">Delete Account & Wipe Cloud Data</h4>
-            <p className="text-[11px] text-slate-500 mt-0.5 max-w-md">
-              Permanently purge all job applications, history timeline records, and delete your Firebase account.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => setIsDeleteModalOpen(true)}
-            className="px-3.5 py-2 rounded-xl text-xs font-semibold border border-slate-300 bg-white text-slate-700 hover:text-rose-700 hover:border-rose-300 hover:bg-rose-50 transition-colors shadow-2xs cursor-pointer shrink-0"
-          >
-            Delete Account
-          </button>
+      {/* ── 3. Danger Zone (Safely Bounded Warning Container) ── */}
+      <h3 className="font-heading font-bold text-base sm:text-lg text-rose-950 tracking-tight mt-6">
+        Danger Zone
+      </h3>
+      <div className="mt-2 rounded-xl border border-rose-200 bg-rose-50/30 p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h4 className="text-sm font-semibold text-slate-900">Delete Account & Wipe Cloud Data</h4>
+          <p className="text-xs text-slate-500 mt-0.5 max-w-md">
+            Permanently purge all job applications, history timeline records, and delete your Firebase account.
+          </p>
         </div>
-      </SettingsCard>
+        <button
+          type="button"
+          onClick={() => setIsDeleteModalOpen(true)}
+          className="px-3.5 py-2 rounded-xl text-xs font-semibold border border-rose-200 bg-white text-rose-700 hover:text-rose-800 hover:border-rose-300 hover:bg-rose-50 transition-colors shadow-2xs cursor-pointer shrink-0"
+        >
+          Delete Account
+        </button>
+      </div>
 
       {/* Delete Account Confirmation Modal */}
       {isDeleteModalOpen && (
