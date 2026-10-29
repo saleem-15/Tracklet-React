@@ -21,7 +21,7 @@ export const AccountDangerZone: React.FC<AccountDangerZoneProps> = ({ onOpenDele
         <button
           type="button"
           onClick={onOpenDeleteModal}
-          className="px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 active:scale-[0.99] text-white font-bold text-xs shadow-2xs transition-all cursor-pointer shrink-0 self-start sm:self-auto"
+          className="px-3.5 py-2 rounded-xl border border-rose-300 bg-white hover:bg-rose-600 hover:text-white active:scale-[0.99] text-rose-700 font-bold text-xs shadow-2xs transition-colors cursor-pointer shrink-0 self-start sm:self-auto"
         >
           Delete Account
         </button>

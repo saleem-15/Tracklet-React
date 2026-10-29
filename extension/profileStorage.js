@@ -42,6 +42,14 @@
       }
     }
 
+    const locationStr = typeof raw.location === 'string'
+      ? raw.location.trim()
+      : (raw.location?.formattedLocation || raw.location?.city || '');
+
+    const currentTitle = raw.currentTitle || raw.experience?.currentTitle || '';
+    const currentCompany = raw.currentCompany || raw.experience?.currentCompany || '';
+    const yearsExp = raw.yearsOfExperience ?? raw.experience?.yearsOfExperience;
+
     return {
       id: raw.id || `cand_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
       fullName,
@@ -49,12 +57,21 @@
       lastName: lastName || undefined,
       email: (raw.email || '').trim(),
       phone: (raw.phone || '').trim() || undefined,
-      location: (raw.location || '').trim() || undefined,
+      location: locationStr || undefined,
       linkedInUrl: normalizeUrl(raw.linkedInUrl) || undefined,
       githubUrl: normalizeUrl(raw.githubUrl) || undefined,
       portfolioUrl: normalizeUrl(raw.portfolioUrl) || undefined,
-      targetTitle: (raw.targetTitle || '').trim() || undefined,
-      workAuthorization: (raw.workAuthorization || '').trim() || undefined,
+      targetTitle: (raw.targetTitle || (Array.isArray(raw.targetTitles) ? raw.targetTitles[0] : '') || '').trim() || undefined,
+      targetTitles: Array.isArray(raw.targetTitles) ? raw.targetTitles : (raw.targetTitle ? [raw.targetTitle] : []),
+      workAuthorization: (raw.workAuthorization || raw.workAuth?.currentStatus || '').trim() || undefined,
+      workAuth: raw.workAuth || undefined,
+      noticePeriod: raw.noticePeriod || undefined,
+      currentTitle: currentTitle || undefined,
+      currentCompany: currentCompany || undefined,
+      yearsOfExperience: yearsExp !== undefined ? yearsExp : undefined,
+      experience: raw.experience || undefined,
+      salaryTarget: raw.salaryTarget || undefined,
+      bioSnippet: (raw.bioSnippet || '').trim() || undefined,
       preferredResumeName: (raw.preferredResumeName || '').trim() || undefined,
       updatedAt: raw.updatedAt || new Date().toISOString()
     };

@@ -160,6 +160,120 @@ export interface SortState {
 
 export type ActiveTab = 'all' | 'pipeline' | 'contacts' | 'stats' | 'settings';
 
+export type SettingsPaneId = 
+  | 'account'      // Account, Security & Data Portability
+  | 'autofill'     // ATS Autofill Profile
+  | 'billing'      // Subscription & Billing
+  | 'workflow';    // Workflow & Alerts
+
+export interface PipelinePreferences {
+  defaultClipStage: 'Saved' | 'Applied';
+  stalenessThresholdDays: number; // default 14
+  autoArchiveGhostedDays?: number; // default 45
+}
+
+export interface SalaryTarget {
+  minimumBase?: number;
+  targetOTE?: number;
+  currency: string;
+}
+
+export type NoticePeriodOption = 
+  | 'immediate'
+  | '2_weeks'
+  | '1_month'
+  | '2_months'
+  | '3_months';
+
+export type RelocationPreference = 
+  | 'remote_only'
+  | 'willing_to_relocate'
+  | 'not_willing'
+  | 'negotiable';
+
+export interface CandidateWorkAuth {
+  isLegallyAuthorized: boolean;           // "Are you authorized to work in target country without restriction?"
+  requiresSponsorship: boolean;           // "Will you now or in future require visa sponsorship?"
+  currentStatus?: string;                 // e.g. "Citizen / Permanent Resident", "Employment Visa (H-1B, TN)", etc.
+}
+
+export interface CandidateExperienceSnapshot {
+  currentTitle?: string;                  // e.g. "Senior Frontend Engineer"
+  currentCompany?: string;                // e.g. "Stripe"
+  yearsOfExperience?: number;             // e.g. 7
+  primaryDiscipline?: string;             // e.g. "Engineering"
+}
+
+export interface CandidateLocation {
+  city: string;
+  stateRegion?: string;
+  country: string;
+  postalCode?: string;
+  formattedLocation?: string;
+}
+
+export interface CandidateProfile {
+  id?: string;
+  // Personal Identity & Contact Information
+  fullName?: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
+  location?: string | CandidateLocation;
+
+  // Work Authorization & Availability
+  workAuthorization?: string;             // Legacy string fallback
+  workAuth?: CandidateWorkAuth;           // Structured booleans for real ATS radios
+  noticePeriod?: NoticePeriodOption;
+  earliestStartDate?: string;             // YYYY-MM-DD
+  relocationPreference?: RelocationPreference;
+
+  // Professional Snapshot & Targeting
+  experience?: CandidateExperienceSnapshot;
+  targetTitles: string[];
+  targetLocations?: string[];
+  salaryTarget?: SalaryTarget;
+
+  // Online Presence & Portfolios
+  linkedInUrl?: string;
+  githubUrl?: string;
+  portfolioUrl?: string;
+  twitterUrl?: string;
+
+  // ATS Boilerplate Snippets
+  bioSnippet?: string;                    // Short elevator pitch
+  coverLetterSnippet?: string;            // Standard introduction note
+  preferredResumeName?: string;
+  defaultResumeId?: string;
+
+  updatedAt?: string;
+}
+
+export interface UserPreferences {
+  expirySettings: ExpiryNotificationSettings;
+  pipelinePreferences: PipelinePreferences;
+  uiPreferences?: {
+    tableRowDensity?: 'dense' | 'roomy';
+    soundEffectsEnabled?: boolean;
+    toastDurationSeconds?: number;
+  };
+  updatedAt: string;
+}
+
+export type CommercialPlanType = 
+  | 'free'
+  | 'pro_monthly'         // $12/mo
+  | 'pro_job_hunt_pass';   // $29/3mo
+
+export interface QuotaDimension {
+  used: number;
+  limit: number | 'unlimited';
+  label: string;
+  unit: string;
+  renewalDate?: string;
+}
+
 export interface ExpiryNotificationSettings {
   enabled: boolean;
   expiryThresholdHours: number; // default 48

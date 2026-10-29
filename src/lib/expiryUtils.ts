@@ -2,14 +2,24 @@ import { Application, ApplicationTask, ExpiryNotificationSettings } from '../typ
 
 export const SETTINGS_STORAGE_KEY = 'tracklet_expiry_settings_v1';
 
+export function getScopedExpiryKey(userId?: string): string {
+  if (userId) return `tracklet_u_${userId}_expiry_settings_v1`;
+  return SETTINGS_STORAGE_KEY;
+}
+
 export const DEFAULT_EXPIRY_SETTINGS: ExpiryNotificationSettings = {
   enabled: true,
   expiryThresholdHours: 48,
 };
 
-export function loadExpirySettings(): ExpiryNotificationSettings {
+export function loadExpirySettings(userId?: string): ExpiryNotificationSettings {
   try {
-    const saved = localStorage.getItem(SETTINGS_STORAGE_KEY);
+    const key = getScopedExpiryKey(userId);
+    let saved = localStorage.getItem(key);
+    if (!saved && userId) {
+      // Fallback to legacy un-scoped key
+      saved = localStorage.getItem(SETTINGS_STORAGE_KEY);
+    }
     if (saved) {
       const parsed = JSON.parse(saved);
       return {
@@ -25,9 +35,10 @@ export function loadExpirySettings(): ExpiryNotificationSettings {
   return DEFAULT_EXPIRY_SETTINGS;
 }
 
-export function saveExpirySettings(settings: ExpiryNotificationSettings): void {
+export function saveExpirySettings(settings: ExpiryNotificationSettings, userId?: string): void {
   try {
-    localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+    const key = getScopedExpiryKey(userId);
+    localStorage.setItem(key, JSON.stringify(settings));
   } catch (err) {
     console.error('Failed to save expiry settings', err);
   }

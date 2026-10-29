@@ -3283,6 +3283,24 @@ function detectAtsForm() {
       selectors: ['input[name*="portfolio" i]', 'input[name*="website" i]', 'input[name*="urls[Portfolio]"]', 'input[placeholder*="website" i]', 'input[placeholder*="portfolio" i]'],
       fieldType: 'url',
       label: 'Portfolio / Website'
+    },
+    {
+      candidateKey: 'currentTitle',
+      selectors: ['input[name*="current_title" i]', 'input[name*="headline" i]', 'input[name*="current_role" i]', 'input[placeholder*="current title" i]', 'input[placeholder*="current role" i]'],
+      fieldType: 'text',
+      label: 'Current Title'
+    },
+    {
+      candidateKey: 'currentCompany',
+      selectors: ['input[name*="current_company" i]', 'input[name*="company" i]', 'input[placeholder*="current company" i]', 'input[placeholder*="current employer" i]'],
+      fieldType: 'text',
+      label: 'Current Company'
+    },
+    {
+      candidateKey: 'bioSnippet',
+      selectors: ['textarea[name*="summary" i]', 'textarea[name*="bio" i]', 'textarea[placeholder*="about you" i]', 'textarea[placeholder*="tell us about" i]'],
+      fieldType: 'text',
+      label: 'Bio / Summary'
     }
   ];
 
@@ -3361,6 +3379,42 @@ function executeAutofill(profile) {
           label: match.label,
           valueSnippet: String(val).slice(0, 30)
         });
+      }
+    }
+  }
+
+  // Autofill binary work authorization & sponsorship radios if present
+  const isAuth = profile.workAuth ? profile.workAuth.isLegallyAuthorized : profile.isLegallyAuthorized;
+  if (isAuth !== undefined) {
+    const authRadios = formRoot.querySelectorAll('input[type="radio"][name*="authorized" i], input[type="radio"][name*="legally" i], input[type="radio"][name*="work_auth" i]');
+    for (const r of authRadios) {
+      if ((isAuth && /^(?:yes|true|1|authorized)$/i.test(r.value)) || (!isAuth && /^(?:no|false|0|not_authorized)$/i.test(r.value))) {
+        r.checked = true;
+        r.dispatchEvent(new Event('change', { bubbles: true }));
+        populatedFields.push({
+          candidateKey: 'isLegallyAuthorized',
+          targetSelector: `input[name="${r.name}"]`,
+          label: 'Work Authorization',
+          valueSnippet: String(isAuth)
+        });
+        break;
+      }
+    }
+  }
+  const reqSpon = profile.workAuth ? profile.workAuth.requiresSponsorship : profile.requiresSponsorship;
+  if (reqSpon !== undefined) {
+    const sponRadios = formRoot.querySelectorAll('input[type="radio"][name*="sponsor" i], input[type="radio"][name*="visa" i]');
+    for (const r of sponRadios) {
+      if ((reqSpon && /^(?:yes|true|1|requires)$/i.test(r.value)) || (!reqSpon && /^(?:no|false|0|no_sponsorship)$/i.test(r.value))) {
+        r.checked = true;
+        r.dispatchEvent(new Event('change', { bubbles: true }));
+        populatedFields.push({
+          candidateKey: 'requiresSponsorship',
+          targetSelector: `input[name="${r.name}"]`,
+          label: 'Visa Sponsorship',
+          valueSnippet: String(reqSpon)
+        });
+        break;
       }
     }
   }
@@ -5469,8 +5523,8 @@ function announceTrackletPresence() {
   try {
     const manifest = (typeof chrome !== 'undefined' && chrome.runtime?.getManifest)
       ? chrome.runtime.getManifest()
-      : { version: '1.3.6', name: 'Tracklet' };
-    const version = manifest.version || '1.3.6';
+      : { version: '1.3.7', name: 'Tracklet' };
+    const version = manifest.version || '1.3.7';
 
     // 1. Direct DOM markers on documentElement for instant zero-latency detection
     if (document.documentElement) {

@@ -251,6 +251,17 @@ export const Sidebar: React.FC<SidebarProps> = (props) => {
         id: 'pipeline',
         label: 'Active Pipeline',
         icon: Kanban,
+        badge: expirySettings.enabled && expiringTasksCount > 0 ? (
+          <span
+            className="font-mono text-xs text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded-md border border-amber-200/80 font-bold animate-pulse motion-reduce:animate-none shrink-0"
+            title={`${expiringTasksCount} task${expiringTasksCount === 1 ? '' : 's'} due soon`}
+          >
+            {expiringTasksCount}
+          </span>
+        ) : undefined,
+        collapsedBadge: expirySettings.enabled && expiringTasksCount > 0 ? (
+          <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-amber-500 animate-pulse motion-reduce:animate-none ring-2 ring-slate-50" />
+        ) : undefined,
       },
       {
         id: 'contacts',
@@ -277,12 +288,6 @@ export const Sidebar: React.FC<SidebarProps> = (props) => {
         id: 'settings',
         label: 'Settings',
         icon: Settings,
-        badge: expirySettings.enabled && expiringTasksCount > 0 ? (
-          <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse motion-reduce:animate-none shrink-0" title="Tasks due soon" />
-        ) : undefined,
-        collapsedBadge: expirySettings.enabled && expiringTasksCount > 0 ? (
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-amber-500 animate-pulse motion-reduce:animate-none ring-2 ring-slate-50" />
-        ) : undefined,
       },
     ];
 
@@ -363,7 +368,7 @@ export const Sidebar: React.FC<SidebarProps> = (props) => {
           {expiringTasksCount > 0 ? (
             <button
               type="button"
-              onClick={() => handleTabClick('settings')}
+              onClick={() => handleTabClick('pipeline')}
               className="w-full text-left p-2.5 rounded-xl bg-gradient-to-br from-amber-50/90 via-amber-100/40 to-orange-50/60 border border-amber-200/90 shadow-2xs hover:border-amber-300 transition-colors cursor-pointer group space-y-1.5 min-h-[44px]"
             >
               <div className="flex items-center justify-between">
@@ -381,7 +386,7 @@ export const Sidebar: React.FC<SidebarProps> = (props) => {
                   : `${expiringTasksCount} tasks due within ${expirySettings.expiryThresholdHours}h!`}
               </p>
               <div className="flex items-center justify-between text-xs font-mono text-amber-700 font-semibold pt-0.5 border-t border-amber-200/60">
-                <span>View in Settings</span>
+                <span>View in Pipeline</span>
                 <ChevronRight className="w-3 h-3 text-amber-600 group-hover:translate-x-0.5 transition-transform motion-reduce:transition-none shrink-0" />
               </div>
             </button>
@@ -405,7 +410,7 @@ export const Sidebar: React.FC<SidebarProps> = (props) => {
           >
             <button
               type="button"
-              onClick={() => handleTabClick('settings')}
+              onClick={() => handleTabClick('pipeline')}
               title={`${expiringTasksCount} tasks expiring soon!`}
               data-tooltip={`${expiringTasksCount} tasks expiring soon!`}
               data-tooltip-placement="right"

@@ -108,7 +108,7 @@ export const TemplateEditorModal: React.FC<TemplateEditorModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+            className="p-1.5 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
             aria-label="Close modal"
           >
             <X className="w-5 h-5" />
@@ -116,7 +116,7 @@ export const TemplateEditorModal: React.FC<TemplateEditorModalProps> = ({
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto max-h-[75vh]">
+        <form noValidate onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto max-h-[75vh]">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="sm:col-span-2 space-y-1.5">
               <label htmlFor="template-title" className="block text-xs font-semibold text-slate-700">

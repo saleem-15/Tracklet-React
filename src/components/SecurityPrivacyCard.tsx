@@ -159,13 +159,6 @@ export const SecurityPrivacyCard: React.FC<SecurityPrivacyCardProps> = () => {
 
               <a
                 href={activeTab === 'privacy' ? '/privacy' : '/terms'}
-                onClick={(e) => {
-                  if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
-                    e.preventDefault();
-                    setIsModalOpen(false);
-                    navigateToRoute(activeTab === 'privacy' ? '/privacy' : '/terms');
-                  }
-                }}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-800 transition-colors cursor-pointer"

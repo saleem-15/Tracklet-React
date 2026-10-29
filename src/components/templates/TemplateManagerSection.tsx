@@ -94,9 +94,6 @@ export const TemplateManagerSection: React.FC<TemplateManagerSectionProps> = ({
               <FileText className="w-4 h-4 text-blue-600" />
               Follow-Up Templates
             </h3>
-            <span className="text-xs font-mono font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
-              {templates.length}
-            </span>
           </div>
           <p className="text-xs text-slate-500">
             Standardize your recruiter check-ins, interview thank-yous, and status inquiries.
@@ -220,7 +217,7 @@ export const TemplateManagerSection: React.FC<TemplateManagerSectionProps> = ({
 
                   <div className="space-y-1 pt-1">
                     <p className="text-xs font-mono font-medium text-slate-700 truncate">
-                      <span className="text-slate-400 font-sans mr-1">Subject:</span>
+                      <span className="text-slate-500 font-sans mr-1">Subject:</span>
                       {template.subject}
                     </p>
                     <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">
@@ -284,7 +281,7 @@ export const TemplateManagerSection: React.FC<TemplateManagerSectionProps> = ({
                 type="button"
                 disabled={isResetting}
                 onClick={handleConfirmReset}
-                className="px-3.5 py-1.5 text-xs font-semibold text-white bg-rose-600 hover:bg-rose-700 disabled:opacity-50 rounded-xl shadow-xs transition-colors cursor-pointer"
+                className="px-3.5 py-1.5 text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 disabled:opacity-50 rounded-xl shadow-xs transition-colors cursor-pointer"
               >
                 {isResetting ? 'Resetting...' : 'Reset to Defaults'}
               </button>

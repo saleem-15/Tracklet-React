@@ -121,7 +121,7 @@ export const ExtensionSettingsCard: React.FC<ExtensionSettingsCardProps> = ({
             Recheck
           </button>
           <span className="text-slate-300">•</span>
-          <span className="text-[11px] text-slate-400 font-mono">
+          <span className="text-[11px] text-slate-500 font-mono font-medium">
             Latest: v{latestVersion}
           </span>
         </div>

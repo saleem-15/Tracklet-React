@@ -83,6 +83,18 @@ service cloud.firestore {
         allow read, delete: if isOwner(userId);
         allow create, update: if isOwner(userId) && isValidContact(request.resource.data);
       }
+
+      match /preferences/{docId} {
+        allow read, write, delete: if isOwner(userId);
+      }
+
+      match /profile/{docId} {
+        allow read, write, delete: if isOwner(userId);
+      }
+
+      match /templates/{templateId} {
+        allow read, write, delete: if isOwner(userId);
+      }
     }
 
     // Tester Feedback & Bug Reports

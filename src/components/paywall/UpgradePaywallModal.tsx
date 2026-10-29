@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { PaywallModalProps, PaywallTriggerContext } from '../../types';
 import { useEscapeKey } from '../../lib/useEscapeKey';
-import { SAAS_LIMITS } from '../../lib/constants';
+import { SAAS_LIMITS, SAAS_PRICING } from '../../lib/constants';
 
 const CONTEXT_TITLES: Record<PaywallTriggerContext, { title: string; subtitle: string }> = {
   pipeline_cap: {
@@ -107,8 +107,11 @@ export const UpgradePaywallModal: React.FC<PaywallModalProps> = ({
                 <p className="text-[11px] text-slate-600">Built for high-volume, organized job searches</p>
               </div>
               <div className="text-right">
-                <span className="text-lg font-bold text-slate-900">$5</span>
+                <span className="text-lg font-bold text-slate-900">${SAAS_PRICING.PRO_MONTHLY_USD}</span>
                 <span className="text-xs text-slate-500"> / month</span>
+                <div className="text-[10px] text-blue-600 font-semibold font-mono">
+                  or ${SAAS_PRICING.PRO_JOB_HUNT_PASS_USD}/3mo pass
+                </div>
               </div>
             </div>
 
