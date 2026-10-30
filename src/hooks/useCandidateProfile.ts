@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { CandidateProfile } from '../types';
+import { CandidateProfile, CandidateLink } from '../types';
 import { db } from '../lib/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { useAuth } from '../context/AuthContext';
@@ -35,10 +35,67 @@ export const DEFAULT_CANDIDATE_PROFILE: CandidateProfile = {
   linkedInUrl: '',
   githubUrl: '',
   portfolioUrl: '',
+  additionalLinks: [],
   bioSnippet: '',
   coverLetterSnippet: '',
   defaultResumeId: undefined,
 };
+
+/**
+ * True when a flexible link points at GitHub.
+ */
+function isGithubLink(link: CandidateLink): boolean {
+  if ((link.label || '').trim().toLowerCase() === 'github') return true;
+  return /(?:^|\.)github\.com(?:\/|$)/i.test(link.url.trim().replace(/^https?:\/\//i, ''));
+}
+
+/**
+ * Mirrors a GitHub entry from the flexible list back into the legacy
+ * `githubUrl` field for older consumers (e.g. the Chrome extension).
+ */
+function findGithubLink(links: CandidateLink[]): CandidateLink | undefined {
+  return links.find(isGithubLink);
+}
+
+/**
+ * Trims, drops empty entries, and caps user-defined links at 8.
+ */
+function sanitizeAdditionalLinks(links?: CandidateLink[]): CandidateLink[] {
+  if (!Array.isArray(links)) return [];
+  return links
+    .filter((link) => link && typeof link.url === 'string' && link.url.trim())
+    .map((link) => {
+      const url = link.url.trim();
+      const label = typeof link.label === 'string' ? link.label.trim() : '';
+      return {
+        ...(link.id ? { id: link.id } : {}),
+        ...(label ? { label } : {}),
+        url,
+      };
+    })
+    .slice(0, 8);
+}
+
+/**
+ * Normalizes stored profiles and migrates the legacy engineering-specific
+ * `githubUrl` field into the free-form `additionalLinks` list.
+ */
+function migrateLegacyLinks(profile: CandidateProfile): CandidateProfile {
+  const links = sanitizeAdditionalLinks(profile.additionalLinks);
+
+  const githubUrl = (profile.githubUrl || '').trim();
+  // An existing GitHub entry wins over a stale legacy field.
+  const additionalLinks = githubUrl && !findGithubLink(links)
+    ? [{ id: 'legacy-github', label: 'GitHub', url: githubUrl }, ...links].slice(0, 8)
+    : links;
+
+  return {
+    ...profile,
+    // Mirror the flexible GitHub entry so older consumers keep working.
+    githubUrl: findGithubLink(additionalLinks)?.url || '',
+    additionalLinks,
+  };
+}
 
 function getLocalProfileKey(userId?: string): string {
   if (userId) return `tracklet_u_${userId}_candidate_profile_v1`;
@@ -49,7 +106,7 @@ function loadLocalCandidateProfile(userId?: string): CandidateProfile {
   try {
     const raw = localStorage.getItem(getLocalProfileKey(userId));
     if (raw) {
-      return { ...DEFAULT_CANDIDATE_PROFILE, ...JSON.parse(raw) };
+      return migrateLegacyLinks({ ...DEFAULT_CANDIDATE_PROFILE, ...JSON.parse(raw) });
     }
   } catch (err) {
     console.warn('Could not parse local candidate profile:', err);
@@ -105,10 +162,10 @@ export function useCandidateProfile(): UseCandidateProfileReturn {
         if (!isMounted) return;
         if (docSnap.exists()) {
           const cloudData = docSnap.data() as CandidateProfile;
-          const merged: CandidateProfile = {
+          const merged: CandidateProfile = migrateLegacyLinks({
             ...DEFAULT_CANDIDATE_PROFILE,
             ...cloudData,
-          };
+          });
           setProfile(merged);
           saveLocalCandidateProfile(merged, userId);
         }
@@ -127,9 +184,14 @@ export function useCandidateProfile(): UseCandidateProfileReturn {
 
   const saveProfile = useCallback(
     async (updates: Partial<CandidateProfile>): Promise<boolean> => {
+      const additionalLinks = sanitizeAdditionalLinks(
+        updates.additionalLinks ?? profile.additionalLinks
+      );
       const merged: CandidateProfile = {
         ...profile,
         ...updates,
+        additionalLinks,
+        githubUrl: findGithubLink(additionalLinks)?.url || '',
         updatedAt: new Date().toISOString(),
       };
 

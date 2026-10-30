@@ -212,6 +212,18 @@ export interface CandidateLocation {
   formattedLocation?: string;
 }
 
+/**
+ * A user-defined online profile / portfolio link.
+ * Label is optional; when omitted it is inferred from the URL hostname
+ * (e.g. dribbble.com -> "Dribbble") so non-engineering job seekers can
+ * surface Behance, ArtStation, Medium, Scholar, etc.
+ */
+export interface CandidateLink {
+  id?: string;
+  label?: string;
+  url: string;
+}
+
 export interface CandidateProfile {
   id?: string;
   // Personal Identity & Contact Information
@@ -237,9 +249,10 @@ export interface CandidateProfile {
 
   // Online Presence & Portfolios
   linkedInUrl?: string;
-  githubUrl?: string;
+  githubUrl?: string;                     // Legacy: migrated into additionalLinks
   portfolioUrl?: string;
   twitterUrl?: string;
+  additionalLinks?: CandidateLink[];      // Free-form links (Dribbble, Behance, Scholar, etc.)
 
   // ATS Boilerplate Snippets
   bioSnippet?: string;                    // Short elevator pitch

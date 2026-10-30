@@ -88,7 +88,8 @@ export const AutofillProfilePane: React.FC = () => {
       if (success) {
         setHasSaved(true);
         setTimeout(() => setHasSaved(false), 2500);
-        addToast('success', 'Autofill Profile Saved', 'Updated target profile for Chrome Extension ATS autofill.');
+        // No toast here: saveProfile already displays the appropriate
+        // notification for signed-in and signed-out users.
       }
     } catch {
       addToast('error', 'Save Failed', 'Could not save profile changes.');

@@ -32,6 +32,7 @@ export interface CandidateProfile {
   linkedInUrl?: string;
   githubUrl?: string;
   portfolioUrl?: string;
+  additionalLinks?: Array<{ label?: string; url: string }>;
   targetTitle?: string;
   workAuthorization?: string;
   preferredResumeName?: string;
@@ -335,6 +336,94 @@ export function resolveFormFields(
           break;
         }
       }
+    }
+  }
+
+  // Additional custom links → remaining generic URL inputs.
+  // Match by label/domain first, then fill remaining generic URL fields in order.
+  const additionalLinks = (profile.additionalLinks || []).filter((link) => link && link.url);
+  if (additionalLinks.length > 0) {
+    const urlInputs = Array.from(
+      container.querySelectorAll(
+        'input[type="url"], input[name*="url" i], input[name*="link" i], input[name*="website" i], input[name*="portfolio" i], input[name*="urls[" i], input[placeholder*="url" i], input[placeholder*="website" i]'
+      )
+    ).filter(
+      (el): el is HTMLInputElement =>
+        el instanceof HTMLInputElement &&
+        !claimedElements.has(el) &&
+        el.type !== 'hidden' &&
+        el.type !== 'submit'
+    );
+
+    // Platform-specific inputs must not receive an unrelated platform's URL.
+    const PLATFORM_HINTS = [
+      'linkedin', 'github', 'gitlab', 'dribbble', 'behance', 'artstation',
+      'medium', 'substack', 'scholar', 'orcid', 'researchgate', 'kaggle',
+      'imdb', 'youtube', 'vimeo', 'twitter', 'x.com',
+    ];
+
+    const readInputDescriptor = (input: HTMLInputElement): string => {
+      const labelText = input.labels && input.labels.length > 0
+        ? Array.from(input.labels).map((label) => label.textContent || '').join(' ')
+        : '';
+      return `${input.name || ''} ${input.id || ''} ${input.placeholder || ''} ${input.getAttribute('aria-label') || ''} ${labelText}`.toLowerCase();
+    };
+
+    // Values already mapped by LinkedIn / Portfolio / legacy GitHub must not
+    // be duplicated into a second "other link" input.
+    const filledValues = new Set(
+      matched
+        .map((match) => (match.value || '').trim().replace(/\/+$/, '').toLowerCase())
+        .filter(Boolean)
+    );
+
+    for (const link of additionalLinks) {
+      const rawUrl = typeof link.url === 'string' ? link.url.trim() : '';
+      if (!rawUrl) continue;
+      const normalizedUrl = rawUrl.replace(/\/+$/, '').toLowerCase();
+      if (filledValues.has(normalizedUrl)) continue;
+
+      const linkLabel = (link.label || '').toLowerCase().trim();
+      let host = '';
+      try {
+        host = new URL(rawUrl).hostname.replace(/^www\./, '').toLowerCase();
+      } catch {
+        host = '';
+      }
+      const linkTokens = [linkLabel, host.split('.')[0]].filter((token) => token.length >= 3);
+
+      let target = urlInputs.find((input) => {
+        if (claimedElements.has(input)) return false;
+        const descriptor = readInputDescriptor(input);
+        return linkTokens.some((token) => descriptor.includes(token));
+      });
+
+      if (!target) {
+        target = urlInputs.find((input) => {
+          if (claimedElements.has(input)) return false;
+          const descriptor = readInputDescriptor(input);
+          return !PLATFORM_HINTS.some((hint) => descriptor.includes(hint));
+        });
+      }
+
+      if (!target) continue;
+
+      claimedElements.add(target);
+      filledValues.add(normalizedUrl);
+      const escapedId = target.id
+        ? (typeof CSS !== 'undefined' && CSS.escape
+            ? CSS.escape(target.id)
+            : target.id.replace(/([ #;?%&,.+*~':"!^$[\]()=>|/@])/g, '\\$1'))
+        : '';
+
+      matched.push({
+        fieldKey: 'portfolioUrl',
+        label: link.label || 'Additional Link',
+        selector: target.id ? `#${escapedId}` : target.name ? `[name="${target.name}"]` : 'input',
+        value: rawUrl,
+        tier: 'semantic',
+        element: target,
+      });
     }
   }
 
