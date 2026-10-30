@@ -16,6 +16,14 @@ vi.mock('../../src/context/AuthContext', () => ({
   }),
 }));
 
+vi.mock('../../src/context/ToastContext', () => ({
+  useToastContext: () => ({
+    toasts: [],
+    addToast: vi.fn(),
+    dismissToast: vi.fn(),
+  }),
+}));
+
 const mockDoc = vi.fn((_db, ...pathSegments) => pathSegments.join('/'));
 const mockGetDoc = vi.fn();
 const mockSetDoc = vi.fn();
