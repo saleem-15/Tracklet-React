@@ -194,6 +194,120 @@ describe('ATS Form Detection & 4-Tier Field Resolution (US6 / T035)', () => {
     });
   });
 
+  describe('Flexible Additional Links', () => {
+    const linksProfile: CandidateProfile = {
+      ...sampleProfile,
+      portfolioUrl: 'https://saleem.dev',
+      additionalLinks: [
+        { label: 'Dribbble', url: 'https://dribbble.com/saleem' },
+        { url: 'https://behance.net/saleem' },
+      ],
+    };
+
+    it('fills platform-matching URL inputs for additional links', () => {
+      const container = document.createElement('div');
+      container.innerHTML = `
+        <form class="application-form">
+          <input name="name" />
+          <input name="email" />
+          <input name="urls[LinkedIn]" />
+          <input name="urls[GitHub]" />
+          <input name="urls[Portfolio]" />
+          <input name="urls[Dribbble]" />
+          <input name="urls[Behance]" />
+        </form>
+      `;
+
+      const matches = resolveFormFields(container, linksProfile, 'lever');
+
+      const dribbble = matches.find((m) => m.label === 'Dribbble');
+      expect(dribbble?.value).toBe('https://dribbble.com/saleem');
+      expect(dribbble?.selector).toBe('[name="urls[Dribbble]"]');
+
+      // Label omitted -> inferred from the behance.net hostname.
+      const behance = matches.find((m) => m.label === 'Additional Link');
+      expect(behance?.value).toBe('https://behance.net/saleem');
+      expect(behance?.selector).toBe('[name="urls[Behance]"]');
+    });
+
+    it('does not duplicate a GitHub link already filled from the legacy field', () => {
+      const container = document.createElement('div');
+      container.innerHTML = `
+        <form>
+          <input name="urls[GitHub]" />
+          <input name="otherUrl" type="url" />
+        </form>
+      `;
+
+      const profile: CandidateProfile = {
+        ...sampleProfile,
+        additionalLinks: [{ label: 'GitHub', url: 'https://github.com/saleem-dev' }],
+      };
+
+      const matches = resolveFormFields(container, profile, 'lever');
+      const githubMatches = matches.filter((m) => m.value === 'https://github.com/saleem-dev');
+
+      expect(githubMatches).toHaveLength(1);
+      expect(githubMatches[0].selector).toBe('input[name="urls[GitHub]"]');
+      expect(
+        (container.querySelector('input[name="otherUrl"]') as HTMLInputElement).value
+      ).toBe('');
+    });
+
+    it('falls back to unclaimed generic URL inputs in order', () => {
+      const container = document.createElement('div');
+      container.innerHTML = `
+        <form>
+          <input name="customUrlOne" type="url" />
+          <input name="customUrlTwo" type="url" />
+        </form>
+      `;
+
+      const linksOnly: CandidateProfile = {
+        fullName: 'Saleem Dev',
+        email: 'saleem@example.com',
+        additionalLinks: [
+          { label: 'Dribbble', url: 'https://dribbble.com/saleem' },
+          { label: 'Behance', url: 'https://behance.net/saleem' },
+        ],
+      };
+
+      const matches = resolveFormFields(container, linksOnly, 'generic');
+      const linkMatches = matches.filter((m) => m.label === 'Dribbble' || m.label === 'Behance');
+
+      expect(linkMatches).toHaveLength(2);
+      expect(linkMatches[0].value).toBe('https://dribbble.com/saleem');
+      expect(linkMatches[0].selector).toBe('[name="customUrlOne"]');
+      expect(linkMatches[1].value).toBe('https://behance.net/saleem');
+      expect(linkMatches[1].selector).toBe('[name="customUrlTwo"]');
+    });
+
+    it('never places a link into another platform-specific field', () => {
+      const container = document.createElement('div');
+      container.innerHTML = `
+        <form>
+          <input name="urls[GitHub]" />
+          <input name="urls[Dribbble]" />
+        </form>
+      `;
+
+      const githubOnly: CandidateProfile = {
+        fullName: 'Saleem Dev',
+        email: 'saleem@example.com',
+        additionalLinks: [{ label: 'GitHub', url: 'https://github.com/saleem-dev' }],
+      };
+
+      const matches = resolveFormFields(container, githubOnly, 'generic');
+      const filled = matches.filter((m) => m.value === 'https://github.com/saleem-dev');
+
+      expect(filled).toHaveLength(1);
+      expect(filled[0].selector).toBe('[name="urls[GitHub]"]');
+      expect(
+        (container.querySelector('input[name="urls[Dribbble]"]') as HTMLInputElement).value
+      ).toBe('');
+    });
+  });
+
   describe('Manual Alerts Detection', () => {
     it('detects file inputs and prompts for resume attachment review', () => {
       const container = document.createElement('div');

@@ -42,6 +42,44 @@
       }
     }
 
+    const locationStr = typeof raw.location === 'string'
+      ? raw.location.trim()
+      : (raw.location?.formattedLocation || raw.location?.city || '');
+
+    const currentTitle = raw.currentTitle || raw.experience?.currentTitle || '';
+    const currentCompany = raw.currentCompany || raw.experience?.currentCompany || '';
+    const yearsExp = raw.yearsOfExperience ?? raw.experience?.yearsOfExperience;
+
+    // Free-form additional links (Dribbble, Behance, Scholar, etc.).
+    // Normalize URLs, cap the list, and keep an optional label.
+    const additionalLinks = Array.isArray(raw.additionalLinks)
+      ? raw.additionalLinks
+          .map((link) => {
+            const url = normalizeUrl(typeof link === 'string' ? link : link && link.url);
+            if (!url) return null;
+            const label = typeof link === 'object' && link && link.label ? String(link.label).trim() : '';
+            return { label: label || undefined, url };
+          })
+          .filter(Boolean)
+          .slice(0, 8)
+      : [];
+
+    // Migrate the legacy hardcoded GitHub field into the flexible list.
+    const isGithubLink = (link) => {
+      if ((link.label || '').trim().toLowerCase() === 'github') return true;
+      return /(?:^|\.)github\.com(?:\/|$)/i.test(link.url.trim().replace(/^https?:\/\//i, ''));
+    };
+    const legacyGithubUrl = normalizeUrl(raw.githubUrl);
+    const sameUrl = (a, b) => a.replace(/\/+$/, '').toLowerCase() === b.replace(/\/+$/, '').toLowerCase();
+    if (legacyGithubUrl && !additionalLinks.some((link) => sameUrl(link.url, legacyGithubUrl) || isGithubLink(link))) {
+      additionalLinks.unshift({ label: 'GitHub', url: legacyGithubUrl });
+      if (additionalLinks.length > 8) additionalLinks.length = 8;
+    }
+
+    // Mirror a flexible GitHub entry back into the legacy field so older
+    // autofill code can still map it directly.
+    const githubLink = additionalLinks.find(isGithubLink);
+
     return {
       id: raw.id || `cand_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
       fullName,
@@ -49,12 +87,22 @@
       lastName: lastName || undefined,
       email: (raw.email || '').trim(),
       phone: (raw.phone || '').trim() || undefined,
-      location: (raw.location || '').trim() || undefined,
+      location: locationStr || undefined,
       linkedInUrl: normalizeUrl(raw.linkedInUrl) || undefined,
-      githubUrl: normalizeUrl(raw.githubUrl) || undefined,
+      githubUrl: githubLink ? githubLink.url : undefined,
       portfolioUrl: normalizeUrl(raw.portfolioUrl) || undefined,
-      targetTitle: (raw.targetTitle || '').trim() || undefined,
-      workAuthorization: (raw.workAuthorization || '').trim() || undefined,
+      additionalLinks,
+      targetTitle: (raw.targetTitle || (Array.isArray(raw.targetTitles) ? raw.targetTitles[0] : '') || '').trim() || undefined,
+      targetTitles: Array.isArray(raw.targetTitles) ? raw.targetTitles : (raw.targetTitle ? [raw.targetTitle] : []),
+      workAuthorization: (raw.workAuthorization || raw.workAuth?.currentStatus || '').trim() || undefined,
+      workAuth: raw.workAuth || undefined,
+      noticePeriod: raw.noticePeriod || undefined,
+      currentTitle: currentTitle || undefined,
+      currentCompany: currentCompany || undefined,
+      yearsOfExperience: yearsExp !== undefined ? yearsExp : undefined,
+      experience: raw.experience || undefined,
+      salaryTarget: raw.salaryTarget || undefined,
+      bioSnippet: (raw.bioSnippet || '').trim() || undefined,
       preferredResumeName: (raw.preferredResumeName || '').trim() || undefined,
       updatedAt: raw.updatedAt || new Date().toISOString()
     };
@@ -104,9 +152,14 @@
    */
   async function saveCandidateProfile(profileUpdates) {
     const existing = (await loadCandidateProfile()) || {};
+    const mergedRaw = { ...existing, ...profileUpdates };
+    // The new UI supplies the complete flexible link list. Drop the derived
+    // legacy field so removing a GitHub entry does not re-migrate it.
+    if (Array.isArray(profileUpdates.additionalLinks)) {
+      delete mergedRaw.githubUrl;
+    }
     const normalized = normalizeCandidateProfile({
-      ...existing,
-      ...profileUpdates,
+      ...mergedRaw,
       updatedAt: new Date().toISOString()
     });
 

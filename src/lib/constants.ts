@@ -8,7 +8,8 @@ import {
   FollowUpTemplate,
   TesterReportCategory,
   TesterReportSeverity,
-  UserQuotas
+  UserQuotas,
+  PipelinePreferences
 } from '../types';
 
 export const FOLLOWUP_CATEGORIES: FollowUpCategory[] = [
@@ -166,8 +167,24 @@ export const SUBSCRIPTIONS_ENABLED = false;
 export const SAAS_LIMITS = {
   FREE_MAX_ACTIVE_APPS: 20,
   FREE_MONTHLY_SCRAPES: 20,
+  FREE_MONTHLY_AUTOFILLS: 5,
+  FREE_MAX_RESUMES: 1,
   PRO_MONTHLY_SCRAPES: 500,
+  PRO_MONTHLY_AUTOFILLS: Infinity,
+  PRO_MAX_RESUMES: Infinity,
 } as const;
+
+export const SAAS_PRICING = {
+  PRO_MONTHLY_USD: 12,
+  PRO_JOB_HUNT_PASS_USD: 29,
+  PRO_JOB_HUNT_PASS_MONTHS: 3,
+} as const;
+
+export const DEFAULT_PIPELINE_PREFERENCES: PipelinePreferences = {
+  defaultClipStage: 'Saved',
+  stalenessThresholdDays: 14,
+  autoArchiveGhostedDays: 45,
+};
 
 export const DEFAULT_USER_QUOTAS: UserQuotas = {
   scrapesUsedThisMonth: 0,
@@ -386,7 +403,7 @@ export const TESTER_REPORT_SEVERITIES: { label: string; value: TesterReportSever
 export const STORAGE_KEY_TESTER_DRAFT = 'tracklet_tester_report_draft';
 
 // --- Browser Extension Distribution & Status ---
-export const LATEST_EXTENSION_VERSION = '1.3.6';
+export const LATEST_EXTENSION_VERSION = '1.3.7';
 
 export const EXTENSION_DISTRIBUTION_CONFIG = {
   latestVersion: LATEST_EXTENSION_VERSION,

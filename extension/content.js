@@ -3280,9 +3280,27 @@ function detectAtsForm() {
     },
     {
       candidateKey: 'portfolioUrl',
-      selectors: ['input[name*="portfolio" i]', 'input[name*="website" i]', 'input[name*="urls[Portfolio]"]', 'input[placeholder*="website" i]', 'input[placeholder*="portfolio" i]'],
+      selectors: ['input[name*="portfolio" i]', 'input[name*="website" i]', 'input[name*="urls[Portfolio]"]', 'input[name*="urls[Other]"]', 'input[placeholder*="website" i]', 'input[placeholder*="portfolio" i]'],
       fieldType: 'url',
       label: 'Portfolio / Website'
+    },
+    {
+      candidateKey: 'currentTitle',
+      selectors: ['input[name*="current_title" i]', 'input[name*="headline" i]', 'input[name*="current_role" i]', 'input[placeholder*="current title" i]', 'input[placeholder*="current role" i]'],
+      fieldType: 'text',
+      label: 'Current Title'
+    },
+    {
+      candidateKey: 'currentCompany',
+      selectors: ['input[name*="current_company" i]', 'input[name*="company" i]', 'input[placeholder*="current company" i]', 'input[placeholder*="current employer" i]'],
+      fieldType: 'text',
+      label: 'Current Company'
+    },
+    {
+      candidateKey: 'bioSnippet',
+      selectors: ['textarea[name*="summary" i]', 'textarea[name*="bio" i]', 'textarea[placeholder*="about you" i]', 'textarea[placeholder*="tell us about" i]'],
+      fieldType: 'text',
+      label: 'Bio / Summary'
     }
   ];
 
@@ -3348,12 +3366,16 @@ function executeAutofill(profile) {
   const formRoot = (detection.formSelector && detection.formSelector !== 'form' ? document.querySelector(detection.formSelector) : null) || document;
   const populatedFields = [];
   const manualFieldsRequired = [];
+  const claimedElements = new Set();
+  const filledValues = new Set();
 
   for (const match of detection.fieldsMatched) {
     const val = profile[match.candidateKey];
     if (val) {
       const el = formRoot.querySelector(match.targetSelector);
       if (el && (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement)) {
+        claimedElements.add(el);
+        filledValues.add(String(val).trim().replace(/\/+$/, '').toLowerCase());
         setNativeInputValue(el, val);
         populatedFields.push({
           candidateKey: match.candidateKey,
@@ -3361,6 +3383,111 @@ function executeAutofill(profile) {
           label: match.label,
           valueSnippet: String(val).slice(0, 30)
         });
+      }
+    }
+  }
+
+  // Free-form additional links (Dribbble, Behance, Scholar, etc.) →
+  // remaining generic URL fields. Match by label/domain first, then fall back
+  // to unclaimed generic inputs in order.
+  const additionalLinks = Array.isArray(profile.additionalLinks)
+    ? profile.additionalLinks.filter((link) => link && link.url)
+    : [];
+
+  if (additionalLinks.length > 0) {
+    const urlInputs = Array.from(
+      formRoot.querySelectorAll(
+        'input[type="url"], input[name*="url" i], input[name*="link" i], input[name*="website" i], input[name*="portfolio" i], input[name*="urls[" i], input[placeholder*="url" i], input[placeholder*="website" i]'
+      )
+    ).filter(
+      (el) => el instanceof HTMLInputElement && el.type !== 'hidden' && el.type !== 'submit' && !claimedElements.has(el)
+    );
+
+    // Platform-specific inputs must not receive an unrelated platform's URL.
+    const PLATFORM_HINTS = [
+      'linkedin', 'github', 'gitlab', 'dribbble', 'behance', 'artstation',
+      'medium', 'substack', 'scholar', 'orcid', 'researchgate', 'kaggle',
+      'imdb', 'youtube', 'vimeo', 'twitter', 'x.com'
+    ];
+
+    const describeInput = (el) => {
+      const labels = el.labels ? Array.from(el.labels).map((label) => label.textContent || '').join(' ') : '';
+      return `${el.name || ''} ${el.id || ''} ${el.placeholder || ''} ${el.getAttribute('aria-label') || ''} ${labels}`.toLowerCase();
+    };
+
+    for (const link of additionalLinks) {
+      const rawUrl = typeof link.url === 'string' ? link.url.trim() : '';
+      if (!rawUrl) continue;
+      const normalizedUrl = rawUrl.replace(/\/+$/, '').toLowerCase();
+      if (filledValues.has(normalizedUrl)) continue;
+
+      const linkLabel = (link.label || '').toLowerCase().trim();
+      let host = '';
+      try {
+        host = new URL(rawUrl).hostname.replace(/^www\./, '').toLowerCase();
+      } catch {
+        host = '';
+      }
+      const tokens = [linkLabel, host.split('.')[0]].filter((token) => token.length >= 3);
+
+      let target = urlInputs.find(
+        (el) => !claimedElements.has(el) && tokens.some((token) => describeInput(el).includes(token))
+      );
+
+      if (!target) {
+        target = urlInputs.find(
+          (el) => !claimedElements.has(el) && !PLATFORM_HINTS.some((hint) => describeInput(el).includes(hint))
+        );
+      }
+
+      if (!target) continue;
+
+      claimedElements.add(target);
+      filledValues.add(normalizedUrl);
+      setNativeInputValue(target, rawUrl);
+      populatedFields.push({
+        candidateKey: 'additionalLink',
+        targetSelector: target.id ? `#${target.id}` : (target.name ? `input[name="${target.name}"]` : 'input'),
+        label: link.label || 'Additional Link',
+        valueSnippet: String(rawUrl).slice(0, 30)
+      });
+    }
+  }
+
+  // Autofill binary work authorization & sponsorship radios if present
+  const isAuth = profile.workAuth ? profile.workAuth.isLegallyAuthorized : profile.isLegallyAuthorized;
+  if (isAuth !== undefined) {
+    const authRadios = formRoot.querySelectorAll('input[type="radio"][name*="authorized" i], input[type="radio"][name*="legally" i], input[type="radio"][name*="work_auth" i]');
+    for (const r of authRadios) {
+      if ((isAuth && /^(?:yes|true|1|authorized)$/i.test(r.value)) || (!isAuth && /^(?:no|false|0|not_authorized)$/i.test(r.value))) {
+        // Click the radio so controlled forms receive the native click →
+        // input → change event sequence instead of a synthetic change.
+        r.click();
+        populatedFields.push({
+          candidateKey: 'isLegallyAuthorized',
+          targetSelector: `input[name="${r.name}"]`,
+          label: 'Work Authorization',
+          valueSnippet: String(isAuth)
+        });
+        break;
+      }
+    }
+  }
+  const reqSpon = profile.workAuth ? profile.workAuth.requiresSponsorship : profile.requiresSponsorship;
+  if (reqSpon !== undefined) {
+    const sponRadios = formRoot.querySelectorAll('input[type="radio"][name*="sponsor" i], input[type="radio"][name*="visa" i]');
+    for (const r of sponRadios) {
+      if ((reqSpon && /^(?:yes|true|1|requires)$/i.test(r.value)) || (!reqSpon && /^(?:no|false|0|no_sponsorship)$/i.test(r.value))) {
+        // Click the radio so controlled forms receive the native click →
+        // input → change event sequence instead of a synthetic change.
+        r.click();
+        populatedFields.push({
+          candidateKey: 'requiresSponsorship',
+          targetSelector: `input[name="${r.name}"]`,
+          label: 'Visa Sponsorship',
+          valueSnippet: String(reqSpon)
+        });
+        break;
       }
     }
   }
@@ -5469,8 +5596,8 @@ function announceTrackletPresence() {
   try {
     const manifest = (typeof chrome !== 'undefined' && chrome.runtime?.getManifest)
       ? chrome.runtime.getManifest()
-      : { version: '1.3.6', name: 'Tracklet' };
-    const version = manifest.version || '1.3.6';
+      : { version: '1.3.7', name: 'Tracklet' };
+    const version = manifest.version || '1.3.7';
 
     // 1. Direct DOM markers on documentElement for instant zero-latency detection
     if (document.documentElement) {

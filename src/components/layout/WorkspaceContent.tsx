@@ -250,21 +250,8 @@ export function WorkspaceContent({ isLoading = false, activeQuota }: WorkspaceCo
       )}
 
       {activeTab === 'settings' && (
-        <div className="flex-1 overflow-y-auto p-6">
-          <SettingsView
-            settings={expirySettings}
-            onUpdateSettings={updateExpirySettings}
-            applications={applications}
-            contacts={contacts}
-            onSelectApplication={(id) => setSelectedAppId(id)}
-            onExportCSV={handleExportCSV}
-            onImportCSV={handleGuardedBatchImport}
-            onImportJSON={handleGuardedBatchImport}
-            onSeedDemoData={handleSeedDemoData}
-            onShowToast={addToast}
-            onAccountDeleted={handleAccountDeleted}
-            userId={user?.uid}
-          />
+        <div className="flex-1 overflow-y-auto bg-white p-4 sm:p-6 lg:p-8">
+          <SettingsView />
         </div>
       )}
     </main>

@@ -1,15 +1,46 @@
 import { Application, ApplicationTask, ExpiryNotificationSettings } from '../types';
 
 export const SETTINGS_STORAGE_KEY = 'tracklet_expiry_settings_v1';
+// Records which account first adopted the legacy un-scoped settings, so other
+// accounts on the same browser cannot inherit someone else's preferences.
+const SETTINGS_OWNER_KEY = 'tracklet_expiry_settings_owner_v1';
+
+export function getScopedExpiryKey(userId?: string): string {
+  if (userId) return `tracklet_u_${userId}_expiry_settings_v1`;
+  return SETTINGS_STORAGE_KEY;
+}
 
 export const DEFAULT_EXPIRY_SETTINGS: ExpiryNotificationSettings = {
   enabled: true,
   expiryThresholdHours: 48,
 };
 
-export function loadExpirySettings(): ExpiryNotificationSettings {
+/**
+ * Whether `userId` may adopt the legacy un-scoped settings stored under
+ * SETTINGS_STORAGE_KEY. Only the first account that loads settings on this
+ * browser is treated as the original owner; every other account leaves the
+ * fallback unset so its settings initialize from defaults.
+ */
+export function isLegacyExpirySettingsOwner(userId: string): boolean {
   try {
-    const saved = localStorage.getItem(SETTINGS_STORAGE_KEY);
+    const owner = localStorage.getItem(SETTINGS_OWNER_KEY);
+    if (owner) return owner === userId;
+    localStorage.setItem(SETTINGS_OWNER_KEY, userId);
+    return true;
+  } catch (err) {
+    console.warn('Could not verify legacy expiry settings owner', err);
+    return false;
+  }
+}
+
+export function loadExpirySettings(userId?: string): ExpiryNotificationSettings {
+  try {
+    const key = getScopedExpiryKey(userId);
+    let saved = localStorage.getItem(key);
+    if (!saved && userId && isLegacyExpirySettingsOwner(userId)) {
+      // Fallback to legacy un-scoped key, but only for the verified original owner
+      saved = localStorage.getItem(SETTINGS_STORAGE_KEY);
+    }
     if (saved) {
       const parsed = JSON.parse(saved);
       return {
@@ -25,9 +56,10 @@ export function loadExpirySettings(): ExpiryNotificationSettings {
   return DEFAULT_EXPIRY_SETTINGS;
 }
 
-export function saveExpirySettings(settings: ExpiryNotificationSettings): void {
+export function saveExpirySettings(settings: ExpiryNotificationSettings, userId?: string): void {
   try {
-    localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+    const key = getScopedExpiryKey(userId);
+    localStorage.setItem(key, JSON.stringify(settings));
   } catch (err) {
     console.error('Failed to save expiry settings', err);
   }

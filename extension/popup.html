@@ -745,7 +745,6 @@
             <!-- Links Chips -->
             <div class="profile-links-row" id="profile-links-row">
               <span class="profile-link-chip" id="chip-linkedin" style="display: none;">LinkedIn</span>
-              <span class="profile-link-chip" id="chip-github" style="display: none;">GitHub</span>
               <span class="profile-link-chip" id="chip-portfolio" style="display: none;">Portfolio</span>
             </div>
 
@@ -802,19 +801,17 @@
               </div>
             </div>
 
-            <div class="form-row">
-              <div class="form-group">
-                <label for="profile-edit-github"><span>GitHub Profile</span></label>
-                <div class="input-wrapper">
-                  <input type="url" id="profile-edit-github" placeholder="https://github.com/...">
-                </div>
+            <div class="form-group">
+              <label for="profile-edit-portfolio"><span>Portfolio Website</span></label>
+              <div class="input-wrapper">
+                <input type="url" id="profile-edit-portfolio" placeholder="https://...">
               </div>
-              <div class="form-group">
-                <label for="profile-edit-portfolio"><span>Portfolio Website</span></label>
-                <div class="input-wrapper">
-                  <input type="url" id="profile-edit-portfolio" placeholder="https://...">
-                </div>
-              </div>
+            </div>
+
+            <div class="form-group">
+              <label><span>Additional Links</span></label>
+              <div id="profile-edit-links-list" style="display: flex; flex-direction: column; gap: 6px;"></div>
+              <button type="button" class="btn-ghost-xs" id="profile-add-link-btn" style="margin-top: 6px;">+ Add Link</button>
             </div>
 
             <div class="profile-drawer-actions">

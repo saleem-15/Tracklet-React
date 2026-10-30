@@ -2,7 +2,41 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import React, { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { useExpirySettings, UseExpirySettingsReturn } from '../../src/hooks/useExpirySettings';
-import { SETTINGS_STORAGE_KEY, DEFAULT_EXPIRY_SETTINGS } from '../../src/lib/expiryUtils';
+import { SETTINGS_STORAGE_KEY, DEFAULT_EXPIRY_SETTINGS, getScopedExpiryKey } from '../../src/lib/expiryUtils';
+
+(globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
+
+let mockUser: any = null;
+
+vi.mock('../../src/context/AuthContext', () => ({
+  useAuth: () => ({
+    user: mockUser,
+    loading: false,
+    signOut: vi.fn(),
+  }),
+}));
+
+vi.mock('../../src/context/ToastContext', () => ({
+  useToastContext: () => ({
+    toasts: [],
+    addToast: vi.fn(),
+    dismissToast: vi.fn(),
+  }),
+}));
+
+const mockDoc = vi.fn((_db, ...pathSegments) => pathSegments.join('/'));
+const mockGetDoc = vi.fn();
+const mockSetDoc = vi.fn();
+
+vi.mock('firebase/firestore', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('firebase/firestore')>();
+  return {
+    ...actual,
+    doc: (...args: any[]) => (mockDoc as any)(...args),
+    getDoc: (...args: any[]) => (mockGetDoc as any)(...args),
+    setDoc: (...args: any[]) => (mockSetDoc as any)(...args),
+  };
+});
 
 let host: HTMLDivElement | null = null;
 let root: Root | null = null;
@@ -31,6 +65,12 @@ describe('useExpirySettings hook', () => {
   beforeEach(() => {
     localStorage.clear();
     vi.restoreAllMocks();
+    mockUser = null;
+    mockGetDoc.mockResolvedValue({
+      exists: () => false,
+      data: () => null,
+    });
+    mockSetDoc.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -78,5 +118,52 @@ describe('useExpirySettings hook', () => {
 
     expect(hookResult.expirySettings).toEqual(updated);
     expect(JSON.parse(localStorage.getItem(SETTINGS_STORAGE_KEY) || '{}')).toEqual(updated);
+  });
+
+  it('scopes local cache and syncs with Cloud Firestore when user is authenticated', async () => {
+    mockUser = { uid: 'user-cloud-123' };
+    const scopedKey = getScopedExpiryKey('user-cloud-123');
+
+    mockGetDoc.mockResolvedValue({
+      exists: () => true,
+      data: () => ({
+        expirySettings: {
+          enabled: false,
+          expiryThresholdHours: 96,
+        },
+      }),
+    });
+
+    await act(async () => {
+      mountHarness();
+    });
+
+    expect(hookResult.expirySettings).toEqual({
+      enabled: false,
+      expiryThresholdHours: 96,
+    });
+    expect(JSON.parse(localStorage.getItem(scopedKey) || '{}')).toEqual({
+      enabled: false,
+      expiryThresholdHours: 96,
+    });
+
+    // Verify saving updates cloud Firestore
+    await act(async () => {
+      hookResult.updateExpirySettings({
+        enabled: true,
+        expiryThresholdHours: 12,
+      });
+    });
+
+    expect(mockSetDoc).toHaveBeenCalledWith(
+      'users/user-cloud-123/preferences/settings',
+      expect.objectContaining({
+        expirySettings: {
+          enabled: true,
+          expiryThresholdHours: 12,
+        },
+      }),
+      { merge: true }
+    );
   });
 });

@@ -462,8 +462,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   const profileSummaryPhone = document.getElementById('profile-summary-phone');
   const profileSummaryLocation = document.getElementById('profile-summary-location');
   const profileSummaryWorkAuth = document.getElementById('profile-summary-work-auth');
+  const profileLinksRow = document.getElementById('profile-links-row');
   const chipLinkedIn = document.getElementById('chip-linkedin');
-  const chipGitHub = document.getElementById('chip-github');
   const chipPortfolio = document.getElementById('chip-portfolio');
   const profileOpenSettingsLink = document.getElementById('profile-open-settings-link');
   const profileEditName = document.getElementById('profile-edit-name');
@@ -472,8 +472,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   const profileEditLocation = document.getElementById('profile-edit-location');
   const profileEditWorkAuth = document.getElementById('profile-edit-work-auth');
   const profileEditLinkedIn = document.getElementById('profile-edit-linkedin');
-  const profileEditGitHub = document.getElementById('profile-edit-github');
   const profileEditPortfolio = document.getElementById('profile-edit-portfolio');
+  const profileEditLinksList = document.getElementById('profile-edit-links-list');
+  const profileAddLinkBtn = document.getElementById('profile-add-link-btn');
   const profileCancelBtn = document.getElementById('profile-cancel-btn');
   const profileSaveBtn = document.getElementById('profile-save-btn');
   const autofillChecklistCard = document.getElementById('autofill-checklist-card');
@@ -5153,6 +5154,123 @@ document.addEventListener('DOMContentLoaded', async () => {
     return typeof TrackletProfileStorage !== 'undefined' ? TrackletProfileStorage : null;
   }
 
+  const LINK_DOMAIN_LABELS = {
+    'dribbble.com': 'Dribbble',
+    'behance.net': 'Behance',
+    'artstation.com': 'ArtStation',
+    'github.com': 'GitHub',
+    'gitlab.com': 'GitLab',
+    'medium.com': 'Medium',
+    'substack.com': 'Substack',
+    'notion.so': 'Notion',
+    'notion.site': 'Notion',
+    'stackoverflow.com': 'Stack Overflow',
+    'scholar.google.com': 'Google Scholar',
+    'orcid.org': 'ORCID',
+    'researchgate.net': 'ResearchGate',
+    'kaggle.com': 'Kaggle',
+    'imdb.com': 'IMDb',
+    'youtube.com': 'YouTube',
+    'vimeo.com': 'Vimeo',
+    'x.com': 'X',
+    'twitter.com': 'X'
+  };
+
+  function inferLinkLabelFromUrl(url) {
+    const domain = getDomain(url);
+    if (!domain) return '';
+    for (const [key, label] of Object.entries(LINK_DOMAIN_LABELS)) {
+      if (domain === key || domain.endsWith(`.${key}`)) return label;
+    }
+    const first = domain.split('.')[0];
+    return first ? first.charAt(0).toUpperCase() + first.slice(1) : '';
+  }
+
+  function normalizeProfileUrl(value) {
+    const trimmed = (value || '').trim();
+    if (!trimmed) return '';
+    return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+  }
+
+  function createAdditionalLinkRow(link = {}) {
+    if (!profileEditLinksList) return;
+    if (profileEditLinksList.querySelectorAll('.profile-additional-link-row').length >= 8) return;
+
+    const row = document.createElement('div');
+    row.className = 'form-row profile-additional-link-row';
+    row.style.alignItems = 'flex-end';
+    row.style.gap = '6px';
+
+    const labelGroup = document.createElement('div');
+    labelGroup.className = 'form-group';
+    labelGroup.style.flex = '0 0 38%';
+    const labelWrapper = document.createElement('div');
+    labelWrapper.className = 'input-wrapper';
+    const labelInput = document.createElement('input');
+    labelInput.type = 'text';
+    labelInput.className = 'profile-link-label';
+    labelInput.placeholder = 'Label (e.g. Dribbble)';
+    labelInput.setAttribute('aria-label', 'Additional link label');
+    labelInput.value = link.label || '';
+    labelWrapper.appendChild(labelInput);
+    labelGroup.appendChild(labelWrapper);
+
+    const urlGroup = document.createElement('div');
+    urlGroup.className = 'form-group';
+    urlGroup.style.flex = '1';
+    const urlWrapper = document.createElement('div');
+    urlWrapper.className = 'input-wrapper';
+    const urlInput = document.createElement('input');
+    urlInput.type = 'url';
+    urlInput.className = 'profile-link-url';
+    urlInput.placeholder = 'https://dribbble.com/...';
+    urlInput.setAttribute('aria-label', 'Additional link URL');
+    urlInput.value = link.url || '';
+    urlInput.addEventListener('blur', () => {
+      const normalized = normalizeProfileUrl(urlInput.value);
+      if (normalized) urlInput.value = normalized;
+      if (!labelInput.value.trim() && normalized) {
+        labelInput.value = inferLinkLabelFromUrl(normalized);
+      }
+    });
+    urlWrapper.appendChild(urlInput);
+    urlGroup.appendChild(urlWrapper);
+
+    const removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.className = 'btn-ghost-xs';
+    removeBtn.setAttribute('aria-label', 'Remove additional link');
+    removeBtn.textContent = '✕';
+    removeBtn.style.marginBottom = '2px';
+    removeBtn.addEventListener('click', () => row.remove());
+
+    row.appendChild(labelGroup);
+    row.appendChild(urlGroup);
+    row.appendChild(removeBtn);
+    profileEditLinksList.appendChild(row);
+  }
+
+  function renderAdditionalLinks(links = []) {
+    if (!profileEditLinksList) return;
+    profileEditLinksList.innerHTML = '';
+    const list = Array.isArray(links) ? links.filter((link) => link && link.url) : [];
+    list.forEach((link) => createAdditionalLinkRow(link));
+    if (list.length === 0) createAdditionalLinkRow({});
+  }
+
+  function collectAdditionalLinks() {
+    if (!profileEditLinksList) return [];
+    return Array.from(profileEditLinksList.querySelectorAll('.profile-additional-link-row'))
+      .map((row) => {
+        const url = normalizeProfileUrl(row.querySelector('.profile-link-url')?.value || '');
+        if (!url) return null;
+        const label = (row.querySelector('.profile-link-label')?.value || '').trim();
+        return { label: label || inferLinkLabelFromUrl(url) || undefined, url };
+      })
+      .filter(Boolean)
+      .slice(0, 8);
+  }
+
   async function loadAndRenderCandidateProfile() {
     const storage = getProfileStorage();
     if (!storage) return;
@@ -5205,8 +5323,19 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Social / portfolio chips
     if (chipLinkedIn) chipLinkedIn.style.display = profile.linkedInUrl ? 'inline-block' : 'none';
-    if (chipGitHub) chipGitHub.style.display = profile.githubUrl ? 'inline-block' : 'none';
     if (chipPortfolio) chipPortfolio.style.display = profile.portfolioUrl ? 'inline-block' : 'none';
+
+    if (profileLinksRow) {
+      profileLinksRow.querySelectorAll('[data-additional-link]').forEach((chip) => chip.remove());
+      (Array.isArray(profile.additionalLinks) ? profile.additionalLinks : []).forEach((link) => {
+        if (!link || !link.url) return;
+        const chip = document.createElement('span');
+        chip.className = 'profile-link-chip';
+        chip.dataset.additionalLink = 'true';
+        chip.textContent = link.label || inferLinkLabelFromUrl(link.url) || 'Link';
+        profileLinksRow.appendChild(chip);
+      });
+    }
 
     // Populate edit drawer inputs
     if (profileEditName) profileEditName.value = profile.fullName || '';
@@ -5215,8 +5344,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (profileEditLocation) profileEditLocation.value = profile.location || '';
     if (profileEditWorkAuth) profileEditWorkAuth.value = profile.workAuthorization || '';
     if (profileEditLinkedIn) profileEditLinkedIn.value = profile.linkedInUrl || '';
-    if (profileEditGitHub) profileEditGitHub.value = profile.githubUrl || '';
     if (profileEditPortfolio) profileEditPortfolio.value = profile.portfolioUrl || '';
+    renderAdditionalLinks(profile.additionalLinks || []);
   }
 
   function setProfileEditMode(isOpen) {
@@ -5245,8 +5374,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       location: profileEditLocation ? profileEditLocation.value.trim() : '',
       workAuthorization: profileEditWorkAuth ? profileEditWorkAuth.value.trim() : '',
       linkedInUrl: profileEditLinkedIn ? profileEditLinkedIn.value.trim() : '',
-      githubUrl: profileEditGitHub ? profileEditGitHub.value.trim() : '',
-      portfolioUrl: profileEditPortfolio ? profileEditPortfolio.value.trim() : ''
+      portfolioUrl: profileEditPortfolio ? profileEditPortfolio.value.trim() : '',
+      additionalLinks: collectAdditionalLinks()
     };
 
     if (profileSaveBtn) {
@@ -5281,17 +5410,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     autofillChecklistCard.style.display = 'block';
     checklistItemsContainer.innerHTML = '';
 
-    const populatedKeys = new Set((populatedFields || []).map(p => p.candidateKey));
     const populatedMap = new Map((populatedFields || []).map(p => [p.candidateKey, p]));
 
+    // Extra flexible links filled outside the ATS field map still deserve a row.
+    const extraLinkFields = (populatedFields || [])
+      .filter((p) => p.candidateKey === 'additionalLink' && !fieldsMatched.some((f) => f.targetSelector === p.targetSelector))
+      .map((p) => ({ candidateKey: p.candidateKey, label: p.label, targetSelector: p.targetSelector }));
+    const displayFields = [...fieldsMatched, ...extraLinkFields];
+
     if (checklistCountBadge) {
-      const count = populatedFields.length > 0 ? `${populatedFields.length}/${fieldsMatched.length} filled` : `${fieldsMatched.length} mapped`;
+      const count = populatedFields.length > 0 ? `${populatedFields.length}/${displayFields.length} filled` : `${displayFields.length} mapped`;
       checklistCountBadge.textContent = count;
     }
 
-    fieldsMatched.forEach(field => {
-      const isPopulated = populatedKeys.has(field.candidateKey);
-      const popInfo = populatedMap.get(field.candidateKey);
+    displayFields.forEach(field => {
+      const popInfo = field.candidateKey === 'additionalLink'
+        ? (populatedFields || []).find((p) => p.targetSelector === field.targetSelector)
+        : populatedMap.get(field.candidateKey);
+      const isPopulated = Boolean(popInfo);
 
       const itemEl = document.createElement('div');
       itemEl.className = 'checklist-item';
@@ -5490,6 +5626,19 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if (profileSaveBtn) {
     profileSaveBtn.addEventListener('click', handleSaveCandidateProfile);
+  }
+
+  if (profileAddLinkBtn) {
+    profileAddLinkBtn.addEventListener('click', () => {
+      const rowCount = profileEditLinksList
+        ? profileEditLinksList.querySelectorAll('.profile-additional-link-row').length
+        : 0;
+      if (rowCount >= 8) {
+        showToast('Link limit reached', 'You can add up to 8 additional links.');
+        return;
+      }
+      createAdditionalLinkRow({});
+    });
   }
 
   if (profileOpenSettingsLink) {
