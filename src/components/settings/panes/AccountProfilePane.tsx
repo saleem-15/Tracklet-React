@@ -137,12 +137,12 @@ export const AccountProfilePane: React.FC = () => {
               <img
                 src={user.photoURL}
                 alt={user.displayName || 'User avatar'}
-                className="w-10 h-10 rounded-full object-cover border border-slate-200 shrink-0"
+                className="w-20 h-20 rounded-full object-cover border border-slate-200 shrink-0"
                 referrerPolicy="no-referrer"
               />
             ) : (
-              <span className="w-10 h-10 rounded-full bg-blue-50 border border-blue-100 text-blue-600 flex items-center justify-center shrink-0">
-                <User className="w-5 h-5" />
+              <span className="w-20 h-20 rounded-full bg-blue-50 border border-blue-100 text-blue-600 flex items-center justify-center shrink-0">
+                <User className="w-10 h-10" />
               </span>
             )}
             <span className="flex flex-col min-w-0">
@@ -229,7 +229,7 @@ export const AccountProfilePane: React.FC = () => {
         <button
           type="button"
           onClick={() => setIsDeleteModalOpen(true)}
-          className="px-3.5 py-2 rounded-xl text-xs font-semibold border border-rose-200 bg-white text-rose-700 hover:text-rose-800 hover:border-rose-300 hover:bg-rose-50 transition-colors shadow-2xs cursor-pointer shrink-0"
+          className="px-3.5 py-2 rounded-xl text-xs font-semibold border border-rose-600 bg-rose-600 text-white hover:bg-rose-700 hover:border-rose-700 transition-colors shadow-2xs cursor-pointer shrink-0"
         >
           Delete Account
         </button>
