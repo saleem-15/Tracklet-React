@@ -14,13 +14,15 @@ This guide provides step-by-step verification procedures to validate the impleme
    ```bash
    npm run dev
    ```
-3. Open `http://localhost:5173` in your browser.
+3. Open `http://localhost:3000` in your browser.
 
 ---
 
 ## 2. Verification Checklist
 
 ### Test Case 1: Split-Pane Master-Detail Navigation
+
+> **DEFERRED — temporarily disabled panes.** `SettingsHubView` currently renders only the Account pane; the Subscription & Billing, Workflow & Alerts, and additional panes are disabled. Re-enable this case when those panes return. The supported Account deep-link check below remains valid.
 - [ ] Open Settings by clicking the **Settings** item in the sidebar.
 - [ ] On a desktop screen ($\ge 1024\text{px}$), confirm the left vertical sub-navigation rail displays all 5 panes:
   1. `Account & Profile`
@@ -30,9 +32,12 @@ This guide provides step-by-step verification procedures to validate the impleme
   5. `Data & Governance`
 - [ ] Click each pane item. Confirm that pane switching is instantaneous (<16ms) with zero layout jump or scroll resets.
 - [ ] Resize the browser window to $<1024\text{px}$ (tablet) and $<640\text{px}$ (mobile). Confirm the navigation smoothly adapts to a horizontally scrollable segmented pill bar with $44\times 44\text{px}$ touch targets.
-- [ ] Test deep linking: navigate to `http://localhost:5173/?tab=settings&section=billing` in a new tab. Confirm the Subscription & Billing pane is automatically focused.
+- [ ] Test deep linking: navigate to `http://localhost:3000/?tab=settings&section=account` in a new tab. Confirm the supported Account pane is automatically focused. (Deep-linking to a disabled section such as `billing` falls back to the Account pane.)
 
 ### Test Case 2: Subscription & Entitlement Meters
+
+> **DEFERRED — temporarily disabled pane.** The Subscription & Billing pane is currently disabled in `SettingsHubView`. Re-enable this case when the pane returns.
+
 - [ ] Navigate to the **Subscription & Billing** pane.
 - [ ] Verify that all 4 SaaS entitlement dimensions are displayed with semantic progress bars:
   - Active Applications (Max 20 Free / Unlimited Pro)
@@ -53,6 +58,9 @@ This guide provides step-by-step verification procedures to validate the impleme
 - [ ] Open the Chrome Extension popup: verify the candidate profile fields reflect the values saved on the web app.
 
 ### Test Case 4: Workflow & Expiry Preferences (Cloud Persistence)
+
+> **DEFERRED — temporarily disabled pane.** The Workflow & Alerts pane is currently disabled in `SettingsHubView`. Re-enable this case when the pane returns.
+
 - [ ] Navigate to the **Workflow & Alerts** pane.
 - [ ] Toggle the "Soon to Expire Notification Indicator" switch.
 - [ ] Confirm the switch thumb transitions smoothly to **Command Blue (`bg-blue-600`)** when active (not amber!).
@@ -61,7 +69,7 @@ This guide provides step-by-step verification procedures to validate the impleme
 - [ ] Open an incognito browser window or log in on another device: confirm the setting loads as `72h` directly from Cloud Firestore.
 
 ### Test Case 5: Data Portability & Safety Covenants
-- [ ] Navigate to the **Data & Governance** pane.
+- [ ] Navigate to the **Account** pane (the Data Portability card lives there).
 - [ ] Click "Download JSON Backup". Confirm a complete 1:1 JSON file downloads immediately.
 - [ ] Click "Export Jobs (CSV)". Confirm the applications CSV file downloads cleanly.
 - [ ] Click "Export Contacts (CSV)". Confirm the contacts directory CSV downloads cleanly.

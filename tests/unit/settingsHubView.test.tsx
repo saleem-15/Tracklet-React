@@ -182,14 +182,14 @@ describe('SettingsHubView component', () => {
     }
   });
 
-  it('renders all 4 navigation tabs and defaults to Account & Security with consolidated Data Portability', () => {
+  it('renders the single Account navigation tab and defaults to the Account pane with consolidated Data Portability', () => {
     mount();
 
-    // Verify sub-nav items (exactly 4 streamlined tabs)
-    expect(host?.textContent).toContain('Account & Security');
-    expect(host?.textContent).toContain('ATS Autofill');
-    expect(host?.textContent).toContain('Subscription & Billing');
-    expect(host?.textContent).toContain('Workflow & Alerts');
+    // Only the Account pane is enabled; autofill/billing/workflow are disabled
+    expect(host?.textContent).toContain('Account');
+    expect(host?.textContent).not.toContain('ATS Autofill');
+    expect(host?.textContent).not.toContain('Billing');
+    expect(host?.textContent).not.toContain('Workflow');
 
     // Default pane header
     expect(host?.textContent).toContain('Antigravity Tester');
@@ -209,7 +209,8 @@ describe('SettingsHubView component', () => {
     expect(host?.textContent).not.toContain('Reload Sample Demo Data');
   });
 
-  it('switches to dedicated ATS Autofill pane and renders candidate career target form', () => {
+  // Skipped while the ATS Autofill pane is disabled in SettingsHubView
+  it.skip('switches to dedicated ATS Autofill pane and renders candidate career target form', () => {
     mount();
 
     const autofillTab = Array.from(host?.querySelectorAll('button') || []).find((b) =>
@@ -235,16 +236,23 @@ describe('SettingsHubView component', () => {
     const firstNameInput = host?.querySelector('#first-name') as HTMLInputElement;
     expect(firstNameInput?.value).toBe('Alex');
 
+    // Flexible online presence: free-form additional links replace hardcoded GitHub
+    expect(host?.textContent).toContain('Additional Links');
+    expect(host?.textContent).toContain('Add link');
+    expect(host?.textContent).toContain('Dribbble or Behance');
+    expect(host?.querySelector('#github-url')).toBeNull();
+
     // Verify removed badges and text
     expect(host?.textContent).not.toContain('1-Click ATS Sync');
     expect(host?.textContent).not.toContain('Encrypted at rest in Cloud Firestore. Never shared with third parties.');
   });
 
-  it('switches to Subscription & Billing pane and renders clean Upgrade to Pro button without star icon', () => {
+  // Skipped while the Billing pane is disabled in SettingsHubView
+  it.skip('switches to Subscription Billing pane and renders clean Upgrade to Pro button without star icon', () => {
     mount();
 
     const billingTab = Array.from(host?.querySelectorAll('button') || []).find((b) =>
-      b.textContent?.includes('Subscription & Billing')
+      b.textContent?.trim() === 'Billing'
     );
     expect(billingTab).toBeDefined();
 
@@ -265,11 +273,12 @@ describe('SettingsHubView component', () => {
     expect(upgradeBtn?.querySelector('svg')).toBeNull();
   });
 
-  it('switches to Workflow & Alerts pane and interacts with expiry controls', () => {
+  // Skipped while the Workflow pane is disabled in SettingsHubView
+  it.skip('switches to Workflow pane and interacts with expiry controls', () => {
     mount();
 
     const workflowTab = Array.from(host?.querySelectorAll('button') || []).find((b) =>
-      b.textContent?.includes('Workflow & Alerts')
+      b.textContent?.trim() === 'Workflow'
     );
     expect(workflowTab).toBeDefined();
 
@@ -277,7 +286,6 @@ describe('SettingsHubView component', () => {
       workflowTab?.click();
     });
 
-    expect(host?.textContent).toContain('Workflow & Alerts');
     expect(host?.textContent).toContain("'Soon to Expire' Task Notification Indicator");
     expect(host?.textContent).toContain('Application Staleness & Ghosting Rules');
   });
@@ -299,7 +307,8 @@ describe('SettingsHubView component', () => {
     expect(host?.textContent).not.toContain('Reload Sample Demo Data');
   });
 
-  it('respects initialPane prop and loads targeted pane directly', () => {
+  // Skipped while the autofill pane (the targeted pane) is disabled in SettingsHubView
+  it.skip('respects initialPane prop and loads targeted pane directly', () => {
     mount('autofill');
 
     expect(host?.textContent).toContain('Personal & Contact Information');

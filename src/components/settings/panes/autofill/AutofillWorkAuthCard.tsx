@@ -56,17 +56,18 @@ export const AutofillWorkAuthCard: React.FC<AutofillWorkAuthCardProps> = ({ data
         {/* Gate Question 1: Authorized without restriction */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl border border-slate-200/80 bg-slate-50/50">
           <div>
-            <span className="block text-sm font-semibold text-slate-900">
+            <span id="work-auth-q1" className="block text-sm font-semibold text-slate-900">
               Are you legally authorized to work in your target job country?
             </span>
             <span className="text-xs text-slate-500 font-sans block mt-0.5">
               Autofills the primary legal eligibility radio question on Greenhouse, Lever, and Workday.
             </span>
           </div>
-          <div className="flex items-center gap-1.5 shrink-0">
+          <div role="group" aria-labelledby="work-auth-q1" className="flex items-center gap-1.5 shrink-0">
             <button
               type="button"
               onClick={() => handleUpdateAuth(true, requiresSponsorship, currentStatus)}
+              aria-pressed={isAuthorized}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold border transition-colors cursor-pointer ${
                 isAuthorized
                   ? 'bg-blue-600 text-white border-blue-600 shadow-2xs'
@@ -78,6 +79,7 @@ export const AutofillWorkAuthCard: React.FC<AutofillWorkAuthCardProps> = ({ data
             <button
               type="button"
               onClick={() => handleUpdateAuth(false, requiresSponsorship, currentStatus)}
+              aria-pressed={!isAuthorized}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold border transition-colors cursor-pointer ${
                 !isAuthorized
                   ? 'bg-blue-600 text-white border-blue-600 shadow-2xs'
@@ -92,17 +94,18 @@ export const AutofillWorkAuthCard: React.FC<AutofillWorkAuthCardProps> = ({ data
         {/* Gate Question 2: Requires Visa Sponsorship */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl border border-slate-200/80 bg-slate-50/50">
           <div>
-            <span className="block text-sm font-semibold text-slate-900">
+            <span id="work-auth-q2" className="block text-sm font-semibold text-slate-900">
               Will you now or in the future require visa sponsorship?
             </span>
             <span className="text-xs text-slate-500 font-sans block mt-0.5">
               Autofills company immigration sponsorship screening questions.
             </span>
           </div>
-          <div className="flex items-center gap-1.5 shrink-0">
+          <div role="group" aria-labelledby="work-auth-q2" className="flex items-center gap-1.5 shrink-0">
             <button
               type="button"
               onClick={() => handleUpdateAuth(isAuthorized, true, currentStatus)}
+              aria-pressed={requiresSponsorship}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold border transition-colors cursor-pointer ${
                 requiresSponsorship
                   ? 'bg-blue-600 text-white border-blue-600 shadow-2xs'
@@ -114,6 +117,7 @@ export const AutofillWorkAuthCard: React.FC<AutofillWorkAuthCardProps> = ({ data
             <button
               type="button"
               onClick={() => handleUpdateAuth(isAuthorized, false, currentStatus)}
+              aria-pressed={!requiresSponsorship}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold border transition-colors cursor-pointer ${
                 !requiresSponsorship
                   ? 'bg-blue-600 text-white border-blue-600 shadow-2xs'
@@ -129,7 +133,7 @@ export const AutofillWorkAuthCard: React.FC<AutofillWorkAuthCardProps> = ({ data
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
           {/* Visa Status */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-700 flex items-center gap-1">
+            <label id="visa-status-label" className="text-xs font-semibold text-slate-700 flex items-center gap-1">
               <ShieldCheck className="w-3.5 h-3.5 text-slate-500" />
               <span>Current Status</span>
             </label>
@@ -137,13 +141,14 @@ export const AutofillWorkAuthCard: React.FC<AutofillWorkAuthCardProps> = ({ data
               value={currentStatus}
               onChange={(val) => handleUpdateAuth(isAuthorized, requiresSponsorship, val)}
               options={VISA_STATUS_OPTIONS}
+              ariaLabelledBy="visa-status-label"
               className="w-full"
             />
           </div>
 
           {/* Notice Period */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-700 flex items-center gap-1">
+            <label id="notice-period-label" className="text-xs font-semibold text-slate-700 flex items-center gap-1">
               <Clock className="w-3.5 h-3.5 text-slate-500" />
               <span>Notice Period</span>
             </label>
@@ -151,13 +156,14 @@ export const AutofillWorkAuthCard: React.FC<AutofillWorkAuthCardProps> = ({ data
               value={data.noticePeriod || '2_weeks'}
               onChange={(val) => onChange('noticePeriod', val)}
               options={NOTICE_PERIOD_OPTIONS}
+              ariaLabelledBy="notice-period-label"
               className="w-full"
             />
           </div>
 
           {/* Relocation Preference */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-700 flex items-center gap-1">
+            <label id="relocation-label" className="text-xs font-semibold text-slate-700 flex items-center gap-1">
               <MapPin className="w-3.5 h-3.5 text-slate-500" />
               <span>Relocation</span>
             </label>
@@ -165,6 +171,7 @@ export const AutofillWorkAuthCard: React.FC<AutofillWorkAuthCardProps> = ({ data
               value={data.relocationPreference || 'remote_only'}
               onChange={(val) => onChange('relocationPreference', val)}
               options={RELOCATION_OPTIONS}
+              ariaLabelledBy="relocation-label"
               className="w-full"
             />
           </div>

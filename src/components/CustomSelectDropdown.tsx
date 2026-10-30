@@ -20,6 +20,8 @@ interface CustomSelectDropdownProps<T = string | number> {
   className?: string;
   menuClassName?: string;
   disabled?: boolean;
+  /** Optional id of an external element that names the trigger (overrides the generated aria-label). */
+  ariaLabelledBy?: string;
 }
 
 export function CustomSelectDropdown<T extends string | number = string>({
@@ -34,6 +36,7 @@ export function CustomSelectDropdown<T extends string | number = string>({
   className = '',
   menuClassName = '',
   disabled = false,
+  ariaLabelledBy,
 }: CustomSelectDropdownProps<T>): React.ReactElement {
   const [isOpen, setIsOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState<number>(-1);
@@ -146,7 +149,8 @@ export function CustomSelectDropdown<T extends string | number = string>({
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         aria-controls={isOpen ? listboxId : undefined}
-        aria-label={accessibleLabel}
+        aria-label={ariaLabelledBy ? undefined : accessibleLabel}
+        aria-labelledby={ariaLabelledBy}
         onClick={() => !disabled && setIsOpen(!isOpen)}
         className={`w-full flex items-center justify-between gap-2 border font-sans transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 ${getButtonStyles()} ${getSizeStyles()}`}
       >

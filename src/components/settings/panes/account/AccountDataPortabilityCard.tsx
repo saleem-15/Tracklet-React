@@ -9,6 +9,9 @@ import {
 import { useApplicationsContext } from '../../../../context/ApplicationsContext';
 import { useContactsContext } from '../../../../context/ContactsContext';
 import { useToastContext } from '../../../../context/ToastContext';
+import { useEntitlementContext } from '../../../../context/EntitlementContext';
+import { ACTIVE_STATUSES } from '../../../../lib/constants';
+import { Application } from '../../../../types';
 import { SettingsCard } from '../../SettingsCard';
 import { exportApplicationsToJSON, validateAndParseJSONBackup } from '../../../../lib/backupJson';
 import { exportContactsToCSV } from '../../../../lib/exportCsv';
@@ -88,6 +91,7 @@ export const AccountDataPortabilityCard: React.FC = () => {
     handleExportCSV,
     handleBatchImportApplications
   } = useApplicationsContext();
+  const { activeCount, maxActiveQuota, openPaywall } = useEntitlementContext();
 
   const { contacts } = useContactsContext();
   const { addToast } = useToastContext();
@@ -124,6 +128,28 @@ export const AccountDataPortabilityCard: React.FC = () => {
     }
   };
 
+  /**
+   * Shared quota-guarded import used by both JSON restore and CSV import so
+   * activeQuota.current can never exceed activeQuota.max.
+   * Mirrors WorkspaceContent's handleGuardedBatchImport.
+   */
+  const handleGuardedImport = async (
+    newApps: Omit<Application, 'id' | 'userId' | 'createdAt' | 'updatedAt' | 'stageUpdatedAt'>[]
+  ): Promise<boolean> => {
+    const newActiveCount = newApps.filter((a) => a.status && ACTIVE_STATUSES.includes(a.status)).length;
+    if (Number.isFinite(maxActiveQuota) && newActiveCount > 0 && activeCount + newActiveCount > maxActiveQuota) {
+      addToast(
+        'warning',
+        'Pipeline Capacity Reached',
+        `Importing ${newActiveCount} active application${newActiveCount === 1 ? '' : 's'} would exceed your Free tier limit of ${maxActiveQuota}. Upgrade to Pro for unlimited applications.`
+      );
+      openPaywall('pipeline_cap');
+      return false;
+    }
+    await handleBatchImportApplications(newApps);
+    return true;
+  };
+
   const handleJSONFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -139,8 +165,10 @@ export const AccountDataPortabilityCard: React.FC = () => {
           addToast('error', 'Restore Failed', res.error || 'Invalid backup file.');
           return;
         }
-        await handleBatchImportApplications(res.applications);
-        addToast('success', 'Backup Restored', `Imported ${res.applications.length} applications from JSON backup.`);
+        const imported = await handleGuardedImport(res.applications);
+        if (imported) {
+          addToast('success', 'Backup Restored', `Imported ${res.applications.length} applications from JSON backup.`);
+        }
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : 'Could not read backup file.';
         addToast('error', 'Import Error', msg);
@@ -229,7 +257,7 @@ export const AccountDataPortabilityCard: React.FC = () => {
         isOpen={isImportModalOpen}
         onClose={() => setIsImportModalOpen(false)}
         onImport={async (newApps) => {
-          await handleBatchImportApplications(newApps);
+          await handleGuardedImport(newApps);
         }}
       />
     </>

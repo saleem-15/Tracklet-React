@@ -8,13 +8,10 @@ import {
 } from 'lucide-react';
 import { SettingsCard } from '../SettingsCard';
 import { AccountDataPortabilityCard } from './account/AccountDataPortabilityCard';
+import { useApplicationsContext } from '../../../context/ApplicationsContext';
 import { useAuth } from '../../../context/AuthContext';
 import { useToastContext } from '../../../context/ToastContext';
 import { DeleteAccountModal } from '../../account/DeleteAccountModal';
-
-export interface AccountProfilePaneProps {
-  handleAccountDeleted?: () => Promise<void>;
-}
 
 const VERIF_COOLDOWN_KEY = 'tracklet_verif_email_cooldown';
 
@@ -26,10 +23,9 @@ const VERIF_COOLDOWN_KEY = 'tracklet_verif_email_cooldown';
  * - Password reset & Sign out actions
  * - Calm-at-rest Danger Zone for full cloud data wipe & account deletion
  */
-export const AccountProfilePane: React.FC<AccountProfilePaneProps> = ({
-  handleAccountDeleted,
-}) => {
+export const AccountProfilePane: React.FC = () => {
   const { user, sendEmailVerification, reloadUserVerification, sendPasswordReset, signOut, deleteAccount } = useAuth();
+  const { handleAccountDeleted } = useApplicationsContext();
   const { addToast } = useToastContext();
 
   const [isSendingVerif, setIsSendingVerif] = useState(false);
@@ -118,10 +114,9 @@ export const AccountProfilePane: React.FC<AccountProfilePaneProps> = ({
   const handleConfirmDelete = async () => {
     setIsDeleting(true);
     try {
-      if (handleAccountDeleted) {
-        await handleAccountDeleted();
-      }
       await deleteAccount();
+      // Clear in-memory application state only after deletion succeeds.
+      handleAccountDeleted();
       setIsDeleteModalOpen(false);
       addToast('info', 'Account Deleted', 'Your account and personal cloud data have been removed.');
     } catch (err: unknown) {

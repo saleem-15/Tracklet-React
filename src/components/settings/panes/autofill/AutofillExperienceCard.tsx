@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Briefcase, Building, Award } from 'lucide-react';
 import { SettingsCard } from '../../SettingsCard';
 import { CandidateProfile } from '../../../../types';
@@ -13,6 +13,32 @@ export const AutofillExperienceCard: React.FC<AutofillExperienceCardProps> = ({ 
   const currentCompany = data.experience?.currentCompany || '';
   const yearsExp = data.experience?.yearsOfExperience !== undefined ? String(data.experience.yearsOfExperience) : '';
   const targetTitlesText = data.targetTitles?.join(', ') || '';
+
+  // Raw local input state so commas, trailing spaces, and multi-word titles
+  // stay editable while typing; the parsed array is committed on blur or enter.
+  const [targetTitlesInput, setTargetTitlesInput] = useState(targetTitlesText);
+  const lastCommittedTargetTitlesRef = useRef(targetTitlesText);
+
+  // Re-sync the displayed text when targetTitles changes externally
+  // (e.g. after profile load or save).
+  useEffect(() => {
+    const external: string = data.targetTitles?.join(', ') || '';
+    if (external !== lastCommittedTargetTitlesRef.current) {
+      lastCommittedTargetTitlesRef.current = external;
+      setTargetTitlesInput(external);
+    }
+  }, [data.targetTitles]);
+
+  const commitTargetTitles = () => {
+    const titles = targetTitlesInput
+      .split(',')
+      .map((t) => t.trim())
+      .filter(Boolean);
+    const committedText = titles.join(', ');
+    lastCommittedTargetTitlesRef.current = committedText;
+    setTargetTitlesInput(committedText);
+    onChange('targetTitles', titles);
+  };
 
   const handleUpdateExperience = (title: string, company: string, years?: number) => {
     onChange('experience', {
@@ -104,13 +130,14 @@ export const AutofillExperienceCard: React.FC<AutofillExperienceCardProps> = ({ 
           <input
             id="target-titles"
             type="text"
-            value={targetTitlesText}
-            onChange={(e) => {
-              const titles = e.target.value
-                .split(',')
-                .map((t) => t.trim())
-                .filter(Boolean);
-              onChange('targetTitles', titles);
+            value={targetTitlesInput}
+            onChange={(e) => setTargetTitlesInput(e.target.value)}
+            onBlur={commitTargetTitles}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                commitTargetTitles();
+              }
             }}
             placeholder="e.g. Senior Frontend Engineer, Staff UI Architect"
             className="w-full h-9 px-3 text-base sm:text-sm bg-slate-50 text-slate-900 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white transition-colors"
