@@ -23,7 +23,10 @@ When implementing a new feature in Tracklet, follow this step-by-step workflow:
 - Create pure, testable utility functions in `src/lib/` (e.g. `src/lib/<feature>Utils.ts`).
 
 ## Step 5: UI Layer
-- Build focused React components in `src/components/`.
+- Execute the **Step 0 Pre-Flight Component Discovery Protocol** (see `.agents/rules/component-registry.md` and `docs/COMPONENT_REGISTRY.md`).
+- Emit the Pre-Flight Discovery Manifest resolving UI intent to Tracklet's 8 canonical component classes.
+- Follow `.agents/skills/add-component/SKILL.md` when creating or modifying components.
+- Run `.agents/skills/anti-slop-craft/SKILL.md` to ensure zero AI slop (container depth ≤ 1, no icon clutter, no tag soup, no `transition-all`, strict `UI_TOKENS` consumption).
 - Keep component files under 300 lines.
 - Ensure all hooks are declared at the top before any early return statements.
 
@@ -31,5 +34,7 @@ When implementing a new feature in Tracklet, follow this step-by-step workflow:
 Run:
 ```bash
 npx tsc --noEmit
+npm test
 npm run build
 ```
+Verify zero modifications were made outside the intended scope and that all 6 Anti-Slop checks pass.
