@@ -20,3 +20,6 @@ public/tracklet-extension.zip
 public/version.json
 lighthouse-report*.html
 .claude/
+
+# Ephemeral multi-agent teamwork logs
+.agents/teamwork/
