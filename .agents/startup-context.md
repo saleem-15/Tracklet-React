@@ -33,8 +33,8 @@
   - **Monetization Reality:** Jobless cohort students are excellent design partners and feedback providers, but have **zero willingness/budget to pay**. Revenue must come from employed career transitioners / senior ICs or institutional coaching/bootcamp software licenses, NOT student cohorts.
 
 ## Business Model
-- **Revenue model:** Non-predatory consumer freemium + 6-month "Search Pass" or low-friction monthly subscription; future "Tracklet for Coaches" cohort license.
-- **Pricing:** Free Core (up to 20 active applications + Extension clipper + 10 contacts); $39 "Job Search Pass" (6 months active + lifetime read-only); $9/month flat.
+- **Revenue model:** Non-predatory consumer freemium + 3-month "Job Hunt Pass" prepaid bundle or low-friction monthly subscription; future "Tracklet for Coaches" cohort license.
+- **Pricing:** Free Core (up to 20 active applications + Extension clipper + 10 contacts); $29 "Job Hunt Pass" (3 months prepaid); $12/month subscription.
 - **Current MRR/ARR:** $0 (Pre-revenue)
 - **Key metrics:** Daily active usage, 30-day pipeline retention, extension clipping accuracy, Net Promoter Score (NPS)
 

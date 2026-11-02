@@ -505,10 +505,10 @@ In `src/components/IconButton.tsx` (lines 44–58), Tracklet resolves the tensio
 ```
 **Architectural Insight**: The visual footprint of the button remains ultra-compact (`p-1.5` or `p-2` with `w-3.5 h-3.5` icon), preserving high data density. However, the CSS pseudo-element `after:min-w-[44px] after:min-h-[44px]` invisibly expands the hit target to conform with Apple HIG and WCAG 2.5.5 accessibility standards.
 
-#### 3.4.2 `CustomSelectDropdown.tsx`: ARIA 1.2 Listbox vs. Native Select
-In `src/components/CustomSelectDropdown.tsx` (lines 140–198), Tracklet replaces un-themeable, accessible-poor native `<select>` elements with a full WAI-ARIA 1.2 listbox:
-- Complete keyboard navigation (`ArrowDown`, `ArrowUp`, `Home`, `End`, `Escape`, `Enter`).
-- Unique ID scoping via React 19's `useId()` for ARIA attribute binding (`aria-controls`, `aria-labelledby`, `aria-activedescendant`).
+#### 3.4.2 `CustomSelectDropdown.tsx`: ARIA Listbox vs. Native Select
+In `src/components/CustomSelectDropdown.tsx` (lines 140–198), Tracklet replaces un-themeable, accessible-poor native `<select>` elements with a custom accessible listbox:
+- Keyboard navigation (`ArrowDown`, `ArrowUp`, `Escape`, `Enter`, `Space`).
+- Unique ID scoping via React 19's `useId()` for ARIA attribute binding (`aria-controls`, `aria-labelledby`, `aria-haspopup`, `aria-expanded`).
 - Smooth, performant menu entrance via `animate-in fade-in zoom-in-95 duration-150`.
 - Automatic option scrolling (`scrollIntoView({ block: 'nearest' })`).
 

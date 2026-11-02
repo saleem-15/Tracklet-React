@@ -104,7 +104,7 @@ When users ask ChatGPT, Perplexity, Claude, or Google Gemini:
   - Personal contact info, portfolio/LinkedIn links, work authorization/sponsorship status, and demographic EEO fields.
   - Structured work experience arrays (title, company, dates, bullet points, tech stack).
   - Education arrays, categorized skills list, and raw PDF resume assets in Firebase Storage.
-* **Storage Safe Caching**: Cached in the extension via `chrome.storage.local` (bypassing the strict 8KB `chrome.storage.sync` item limit).
+* **Storage Safe Caching & Privacy Safeguards**: Caching the complete candidate profile in `chrome.storage.local` is strictly prohibited. Sensitive profile fields (demographic EEO attributes, work authorization details, and raw resume files) must remain server-side in Firestore and Firebase Storage. Any client-side extension caching must implement strict field minimization (only non-sensitive fields required for active ATS form autofill), explicit user consent, encryption at rest, and automated purge safeguards upon session logout or inactivity.
 
 ### 4.2 4-Tier Field Detection & React Setter Bypass
 1. **Tier 1 (Explicit ATS Selectors)**: Workday `[data-automation-id="..."]`, Greenhouse `input#first_name`, Lever `input[name="urls[LinkedIn]"]`.
@@ -206,7 +206,7 @@ Connects AI agents in **Claude Desktop, Cursor, VS Code, and Windsurf** directly
 ### 9.1 Reliable Cheap Scraping Pipeline
 * **Tier 1 (Client-Side Extension DOM)**: Runs locally in the user's authentic browser session at **$0.00 cost** and **100% immunity** against Cloudflare Turnstile and LinkedIn login walls.
 * **Tier 2 (Server-Side Fallback for Pasted URLs)**: Jina Reader API (`r.jina.ai/<url>`) at 10M free tokens/month.
-* **LLM Engine**: Upgrade `api/scrape-job.ts` from invalid model identifiers (`gemini-3.5-flash-lite`) to **Google Gemini 2.0 Flash** ($0.10/1M input tokens, 1,500 free requests/day, native `responseSchema` JSON enforcement).
+* **LLM Engine**: For serverless scraping in `api/scrape-job.ts`, verify and select a supported stable model with production quota availability, updating the primary and fallback configurations together to ensure resilient fallback handling.
 
 ### 9.2 Low-Cost Brand Infrastructure
 * **Domain**: Register on **Cloudflare Registrar** at wholesale cost ($10–$14/yr for `.app` or `.com`) with free WHOIS privacy, Anycast DNS, and Full (Strict) SSL.
@@ -221,7 +221,7 @@ Connects AI agents in **Claude Desktop, Cursor, VS Code, and Windsurf** directly
 ### 9.4 Security Audit Remediation
 1. **SEC-01 (High)**: Patch `firestore.rules` to prevent registered users from reading all tester feedback and diagnostic stack traces in `/tester_feedback/`.
 2. **SEC-02 (High)**: Enforce Firebase Auth ID token verification (`admin.auth().verifyIdToken(idToken)`) on `/api/scrape-job.ts`.
-3. **SEC-03 (High)**: Eliminate `https://*.vercel.app/*` wildcard from `extension/manifest.json` `externally_connectable` to prevent extension hijacking.
+3. **SEC-03 (High)**: Update `externally_connectable` in `extension/manifest.json` to use exact production origins rather than broad hosting-provider wildcards (`*.firebaseapp.com`, `*.web.app`, `*.netlify.app`), and validate sender origins and payloads in `SYNC_TRACKLET_AUTH`.
 4. **SEC-04 (Medium)**: Restrict CORS origins on `/api/report-issue.ts` to `tracklet.app`.
 
 ---
@@ -231,8 +231,8 @@ Connects AI agents in **Claude Desktop, Cursor, VS Code, and Windsurf** directly
 ```
 Sprint 1: Security, Domain, Email & Legal Foundation (Week 1)
   ├── Register domain on Cloudflare Registrar ($10-14/yr)
-  ├── Apply SEC-01 & SEC-03 patches (firestore.rules & manifest.json)
-  ├── Fix scrape-job.ts model identifier to gemini-2.0-flash
+  ├── Apply SEC-01 & SEC-03 patches (firestore.rules, manifest.json origin allowlist & SYNC_TRACKLET_AUTH validation)
+  ├── Verify and update scrape-job.ts primary and fallback model configuration
   ├── Integrate Resend free tier for branded auth emails
   └── Merge add_legal_trust_pages worktree (/privacy & /terms)
 

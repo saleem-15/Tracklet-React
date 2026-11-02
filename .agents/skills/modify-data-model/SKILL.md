@@ -29,10 +29,13 @@ Add realistic sample values for the new field in `INITIAL_SAMPLE_APPLICATIONS`.
 - **Export** (`src/lib/exportCsv.ts`): Add column header and escaping logic if the field should be exported.
 - **Import** (`src/lib/importCsv.ts`): Update header auto-detection and field mapping if the field should be imported from CSV.
 
-## Step 5: Update UI Components
+## Step 5: Update & Validate Firestore Rules (`firestore.rules`)
+When adding, modifying, or restricting fields on `Application`, `Contact`, `ApplicationTask`, or `EmailLog`, update the validation rules in `firestore.rules` to account for the new attributes and prevent unauthorized or schema-violating writes. Ensure rules syntax and permissions are thoroughly checked and validated.
+
+## Step 6: Update UI Components
 Update detail panels, table columns, board cards, or edit forms as needed.
 
-## Step 6: Verification
+## Step 7: Verification
 Run:
 ```bash
 npx tsc --noEmit
