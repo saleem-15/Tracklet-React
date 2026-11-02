@@ -84,3 +84,53 @@ This document establishes the mandatory interaction rules, visual standards, and
    - **Table View**: In the table toolbar / filter bar (`25 items`, or `3 of 25 items` when filtered).
    - **Kanban Board**: Above each individual column header (`Interview · 3`).
    - **Analytics**: In dedicated metric cards with historical trends and context.
+
+---
+
+## 8. Mandatory Component Discovery & Canonical Primitive Reuse
+**Rule**: Before writing inline UI elements or hand-rolling styles, you MUST consult `.agents/rules/component-registry.md` and `docs/COMPONENT_REGISTRY.md`.
+1. **Zero Native `<select>`**: NEVER generate raw HTML `<select>` elements. ALWAYS use `CustomSelectDropdown` (`src/components/CustomSelectDropdown.tsx`) or `StageSelectorDropdown` / `FilterSelectDropdown`.
+2. **Zero Raw `<textarea>` for Notes**: ALWAYS use `RichTextEditor` (`src/components/editor/RichTextEditor.tsx`) for notes, discussions, interview prep, or markdown. Plain multi-line inputs must use `<textarea className={UI_TOKENS.inputBase + " h-auto min-h-[80px] p-2.5 resize-y"}>` with `placeholder-slate-500`.
+3. **Canonical Action Buttons**: Use `IconButton` suite (`DeleteIconButton`, `CloseIconButton`, `CopyIconButton`, `EmailIconButton` from `src/components/IconButton.tsx`) or `UI_TOKENS.btnPrimary` / `btnSecondary`. Never hand-roll custom button styling strings.
+4. **Standard Badges & Tabs**: Use `StatusBadge` for stages, `JobTypeBadges` for work attributes, and `SegmentedTabs` for tabbed views.
+
+---
+
+## 9. Structural Container Flatness (Max Depth = 1)
+**Rule**: Prevent "divitis" and nested container syndrome.
+1. **Max Depth 1**: Page canvases contain cards or panels; cards must NEVER enclose inner bordered cards.
+2. **Flat by Default**: Use whitespace (`space-y-4`), semantic typography, or subtle dividers (`border-b border-slate-100`) rather than enclosing every sub-block in bordered containers.
+3. **No Redundant Wrappers**: Eliminate wrapper `<div>`s that do not provide flex, grid, or aria roles.
+
+---
+
+## 10. Decorative Icon Overload & Restraint
+**Rule**: Icons must serve a clear communicative purpose or interactive affordance.
+1. **Ban Icons on Self-Evident Labels**: Never pair an icon with text that already describes the data (e.g. no `<Calendar/>` next to a date string, no `<Building/>` next to a company name).
+2. **Ban Generic AI Garnish**: Never use decorative emojis or generic icons (`Sparkles`, `Wand2`, `Bot`) as badges on standard features.
+3. **Reserved Icon Usage**: Icons are strictly reserved for interactive action buttons (`IconButton`), primary navigation items, critical status alerts, and verified brand marks (`CompanyLogo`).
+
+---
+
+## 11. Static Metadata Chip & Tag Soup Elimination
+**Rule**: Do not wrap every secondary attribute in a pill container.
+1. **Single Status Badge**: Limit cards to at most 1 primary status badge (`StatusBadge`).
+2. **Typographic Demotion**: Secondary attributes (salary, platform, location, date) belong in clean typographic rhythm (`font-mono text-xs text-slate-500`) separated by subtle dots (`·` in `text-slate-300`) or slashes (`/`).
+
+---
+
+## 12. Copywriting & Typographic Discipline
+**Rule**: Tone must match an Executive Command Center—calm, confident, concise, and action-oriented.
+1. **Zero Filler Subtitles**: Operational views have no subtitles beneath primary headers.
+2. **Ban AI Buzzwords**: Eliminate words like *"seamlessly"*, *"elevate"*, *"streamline"*, *"delve"*, *"powerhouse"*.
+3. **Strict 3-Tier Font System**:
+   - Headings: `Outfit` (`font-heading font-bold text-slate-900 tracking-tight`).
+   - Body / Controls: `Plus Jakarta Sans` (`font-sans text-xs sm:text-sm text-slate-700`).
+   - Data / Monospace: `JetBrains Mono` (`font-mono text-xs text-slate-500`).
+
+---
+
+## 13. Pre-Flight Verification & Skill Integration
+**Rule**: Before submitting any UI pull request or task completion:
+1. Execute the **Step 0 Pre-Flight Discovery Protocol** defined in `.agents/rules/component-registry.md`.
+2. Verify all changes against the **6-Point Anti-Slop Verification Checklist** in `.agents/rules/anti-slop-standards.md` and `.agents/skills/anti-slop-craft/SKILL.md`.

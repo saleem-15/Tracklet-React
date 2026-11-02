@@ -1,17 +1,15 @@
 ---
 name: apple-design
 description: >
-  Cross-platform UI/UX design reviewer grounded in Apple's Human Interface Guidelines (123 pages
-  pulled from developer.apple.com, including 57 component pages) plus a design-craft lens for
-  distinctive, non-templated work. Use it to audit, review, critique, or improve any mobile app
-  (iOS, Flutter, React Native) or desktop app (macOS, Tauri, Electron) design: design review, UI
-  audit, HIG compliance, accessibility audit, dark mode, Liquid Glass or glassmorphism, navigation
-  structure, iPhone Duo or foldable layouts, Apple Pay buttons and marks, widgets and Live
-  Activities, onboarding, forms, app icons, generative AI UX, App Review rejections over design or
-  branding, or requests like "make this look less generic". Also use whenever the user shares
-  screenshots, mockups, wireframes, Figma exports, or UI code and wants feedback, even if they
-  only say "review my design" or "is this good UI", or asks to audit a codebase or pull request.
-  Works for SwiftUI, UIKit, AppKit, Flutter, React Native, Tauri, and Electron.
+  Cross-platform UI/UX design reviewer and craft engine grounded in Apple's Human Interface Guidelines (HIG 2026).
+  Autonomous Triggers: Use whenever the user asks to "make it feel native", "HIG compliance", "Apple HIG review",
+  "review touch targets", "smooth fluid spring animation", "feels clunky on mobile/Mac", "audit for iOS/macOS feel",
+  "44pt ergonomics", "liquid glass / blur", "dark mode contrast", or when auditing platform ergonomics, fluid springs,
+  SF Pro typography, or native gestures.
+  Enforces: 123 Apple HIG reference guides, Fluid Interfaces (WWDC Session 803 spring physics), two-layer material
+  discipline (content vs. glass), dynamic optical typography, 44x44pt touch targets, and non-templated craft.
+  Boundaries: Use for platform HIG fidelity, fluid touch ergonomics, and Apple design standards. For web-first
+  Tracklet anti-slop rules, use anti-slop-craft. For broad creative direction and mode selection, use impeccable.
 ---
 
 # Apple Design Skill

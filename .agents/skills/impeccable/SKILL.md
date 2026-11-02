@@ -1,6 +1,16 @@
 ---
 name: impeccable
-description: Use when the user wants to design, redesign, shape, critique, audit, polish, clarify, distill, harden, optimize, adapt, animate, colorize, extract, or otherwise improve a frontend interface. Covers websites, landing pages, dashboards, product UI, app shells, components, forms, settings, onboarding, and empty states. Handles UX review, visual hierarchy, information architecture, cognitive load, accessibility, performance, responsive behavior, theming, anti-patterns, typography, fonts, spacing, layout, alignment, color, motion, micro-interactions, UX copy, error states, edge cases, i18n, and reusable design systems or tokens. Also use for bland designs that need to become bolder or more delightful, loud designs that should become quieter, live browser iteration on UI elements, or ambitious visual effects that should feel technically extraordinary. Not for backend-only or non-UI tasks.
+description: >
+  High-craft aesthetic design direction, interface shaping, heuristic critique, and out-of-distribution UI polish.
+  Autonomous Triggers: Use whenever the user asks to "redesign this interface", "make this look bolder",
+  "make this quieter", "critique my design", "give design feedback", "polish the layout", "audit user experience",
+  "improve visual hierarchy", "elevate visual design", "shape this new surface", or expresses that the UI feels
+  "too bland", "generic", "boring", or "uninspired".
+  Enforces: Design director point of view, 4 visitor modes (Operate, Persuade, Read, Experience), 24 steering verbs,
+  squint tests, spatial rhythm, surface theming, craft floor baselines, and deliberate aesthetic distinctiveness.
+  Boundaries: Use for high-level creative direction, design system synthesis, and holistic UX/UI transformations.
+  For mechanical anti-slop cleaning (removing divitis, tag soup, extra icons) in Tracklet's specific code, use
+  anti-slop-craft. For Apple HIG compliance, use apple-design.
 version: 4.1.0
 ---
 

@@ -48,14 +48,19 @@ Tracklet is a **commercial, closed-source B2C SaaS web application and Chrome Ex
 4. Update CSV export (`src/lib/exportCsv.ts`) and CSV import (`src/lib/importCsv.ts`).
 
 ### B. Creating New React Components & Canonical Shared Primitives
+- **Mandatory Step 0 Pre-Flight Discovery Protocol**: Before generating or modifying any UI component or view, agents MUST emit the Pre-Flight Discovery Manifest defined in `.agents/rules/component-registry.md` mapping UI intent to canonical components. Writing inline HTML elements where a canonical primitive exists is strictly forbidden.
 - Keep components under **300 lines**. If a component exceeds 300 lines, extract logical sub-components.
 - Always define a clear `Props` TypeScript interface.
-- Never use inline raw hex colors; use Tailwind utility classes aligned with the design tokens in `DESIGN.md`.
-- **Mandatory Canonical Shared Components**:
-  1. **Notes & Markdown Editor**: ALWAYS use the shared `RichTextEditor` (`src/components/editor/RichTextEditor.tsx`) for notes, meeting logs, discussion surfaces, and prep notes. Raw HTML `<textarea>` for notes is strictly forbidden.
-  2. **Dropdowns & Selects**: ALWAYS use the shared `CustomSelectDropdown` (`src/components/CustomSelectDropdown.tsx`) for select menus. Raw HTML `<select>` elements are strictly forbidden.
-  3. **Modals & Drawers Dismissal**: ALL modals, slide-overs, drawers, and overlay dialogs MUST implement an `Escape` keydown listener (`e.key === 'Escape'`) to dismiss cleanly.
-  4. **Status & Stages**: ALWAYS use `StatusBadge` or `STAGE_CONFIG_MAP` from `src/lib/constants.ts`. Never hardcode status colors or labels.
+- Never use inline raw hex colors; use Tailwind utility classes aligned with the design tokens in `DESIGN.md` and `src/theme/tokens.ts` (`UI_TOKENS`).
+- **The 8 Mandatory Canonical Shared Component Classes** (see `docs/COMPONENT_REGISTRY.md` and `.agents/rules/component-registry.md`):
+  1. **Notes & Markdown Editor**: ALWAYS use `RichTextEditor` (`src/components/editor/RichTextEditor.tsx`) for notes, meeting logs, discussion surfaces, and prep notes. Raw HTML `<textarea>` for notes is strictly forbidden. For plain multi-line inputs, use tokenized `<textarea className={UI_TOKENS.inputBase + " h-auto min-h-[80px] p-2.5 resize-y"}>`.
+  2. **Dropdowns & Selects**: ALWAYS use `CustomSelectDropdown` (`src/components/CustomSelectDropdown.tsx`), `StageSelectorDropdown`, or `FilterSelectDropdown`. Raw HTML `<select>` elements are strictly forbidden.
+  3. **Icon & Utility Action Buttons**: ALWAYS use `IconButton`, `DeleteIconButton`, `CloseIconButton`, `CopyIconButton`, or `EmailIconButton` (`src/components/IconButton.tsx`). Raw inline `<button>` tags with hardcoded red delete styles are strictly forbidden.
+  4. **Status & Domain Badges**: ALWAYS use `StatusBadge` (`src/components/StatusBadge.tsx`) powered by `STAGE_CONFIG_MAP` from `src/lib/constants.ts`, and `JobTypeBadges` (`src/components/JobTypeBadges.tsx`). Never hardcode inline pill badges.
+  5. **Segmented Navigation**: ALWAYS use `SegmentedTabs` (`src/components/SegmentedTabs.tsx`) for tabbed navigation to prevent font-weight jitter.
+  6. **Company Logos**: ALWAYS use `CompanyLogo` (`src/components/CompanyLogo.tsx`) with frame-0 session caching. Never render unhandled raw `<img>` tags.
+  7. **Safe Links & Markdown**: ALWAYS use `LinkifiedText` (`src/components/LinkifiedText.tsx`) for user text with links to guarantee `target="_blank" rel="noopener noreferrer"`.
+  8. **State, Feedback & Overlay Dismissal**: ALWAYS use `EmptyState` (`src/components/EmptyState.tsx`), `Tooltip` (`src/components/Tooltip.tsx`), and register `useEscapeKey` (`src/lib/useEscapeKey.ts`) on all modals, drawers, and overlay dialogs to prevent multi-layer simultaneous closing.
 
 ### C. State Management
 - `App.tsx` holds top-level state (`applications`, `filter`, `sort`, `user`, `activeTab`, `selectedAppId`).
@@ -81,7 +86,7 @@ Tracklet is a **commercial, closed-source B2C SaaS web application and Chrome Ex
 2. **No Unprompted Commits**: NEVER run `git commit` or commit changes unless the user **explicitly asks/commands** you to do so in the prompt. Always leave modified files uncommitted in the working tree for the user to review.
 
 ### F. Universal UI/UX Standards
-All components must follow the formalized guidelines in `.agents/rules/ui-ux-standards.md`:
+All components must follow the formalized guidelines in `.agents/rules/ui-ux-standards.md`, `.agents/rules/anti-slop-standards.md`, and `.agents/rules/component-registry.md`:
 1. **Universal Outbound Links**: All `mailto:`, `tel:`, and external URLs MUST have `target="_blank" rel="noopener noreferrer"`. Never navigate the current tab away from Tracklet.
 2. **Universal Optimistic UI**: Modals/forms dismiss immediately on submit (`onClose()`), React state updates synchronously with a local optimistic ID, and background Firestore syncing executes with automatic rollback on error.
 3. **Standardized Destructive Palette**: Destructive actions (delete, discard, unlink) must use subtle rest and rose hover: `text-slate-500 hover:text-rose-600 hover:bg-rose-50 active:bg-rose-100 transition-colors`. Never use permanent alarming red for row or card buttons.
@@ -89,6 +94,7 @@ All components must follow the formalized guidelines in `.agents/rules/ui-ux-sta
 5. **Header Hierarchy**: Do not place dynamic record counts as subtitles directly under primary page or modal headings.
 6. **Micro-interaction Stability**: Use `transition-colors duration-150` instead of `transition-all`. Keep font-weights and borders constant across states to prevent layout shifts.
 7. **Action-Only Navigation Badges**: Persistent navigation tabs must remain calm and free of raw database tallies. Badges are strictly reserved for urgent/actionable events (e.g. pending follow-ups or expiring deadlines). Entity inventory counts belong in context within toolbars and column headers.
+8. **Anti-Slop Craft Standards**: Enforce max container depth of 1, ban decorative icons on self-evident labels, ban static metadata tag soup, and maintain 3-tier typography (Outfit / Plus Jakarta Sans / JetBrains Mono).
 
 ### G. Browser Extension Versioning & Distribution
 1. **Synchronized Versioning**: Whenever modifying files inside `extension/`, you MUST bump the `"version"` string in `extension/manifest.json` AND update `LATEST_EXTENSION_VERSION` in `src/lib/constants.ts` in lockstep.
@@ -102,3 +108,4 @@ Run these commands to verify code integrity before finalizing any task:
 1. `npx tsc --noEmit` — Type checks must pass with zero errors.
 2. `npm run build` — Production build must succeed cleanly.
 3. **Lighthouse Compliance**: Never use `text-slate-400` on white/light backgrounds for readable text (use `text-slate-500` minimum for WCAG AA compliance). Maintain zero console errors and clean meta tags (see `.agents/skills/lighthouse-audit/SKILL.md`).
+4. **Anti-Slop & Pre-Flight Audit**: Verify that the Pre-Flight Discovery Manifest was declared and all 6 Anti-Slop Standards (`.agents/rules/anti-slop-standards.md` and `.agents/skills/anti-slop-craft/SKILL.md`) pass: no nested bordered cards, no icon clutter, no tag soup, no `transition-all`, and strict adherence to `UI_TOKENS`.
