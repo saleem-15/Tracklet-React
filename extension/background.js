@@ -977,12 +977,55 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   return true;
 });
 
+function isApprovedExternalSender(sender) {
+  if (!sender) return false;
+  const rawUrl = sender.origin || sender.url;
+  if (!rawUrl) return false;
+  try {
+    const hostname = new URL(rawUrl).hostname.toLowerCase();
+    if (hostname === 'localhost' || hostname === '127.0.0.1') return true;
+    if (hostname === 'tracklet.app' || hostname.endsWith('.tracklet.app')) return true;
+    if (hostname === 'usetracklet.com' || hostname.endsWith('.usetracklet.com')) return true;
+    if (hostname === 'tracklet.pages.dev' || hostname.endsWith('.tracklet.pages.dev')) return true;
+    return false;
+  } catch {
+    return false;
+  }
+}
+
 // Listen for external auth synchronization messages from Tracklet Web App
 chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => {
   if (message && message.type === 'SYNC_TRACKLET_AUTH') {
+    if (!isApprovedExternalSender(sender)) {
+      sendResponse({ success: false, error: 'Unauthorized sender origin' });
+      return false;
+    }
+
+    const payload = message.payload;
+    if (!payload || typeof payload !== 'object') {
+      sendResponse({ success: false, error: 'Invalid payload' });
+      return false;
+    }
+
+    const user = payload.user;
+    if (user !== null && user !== undefined) {
+      if (typeof user !== 'object' || typeof user.uid !== 'string' || !user.uid.trim()) {
+        sendResponse({ success: false, error: 'Invalid user payload' });
+        return false;
+      }
+    }
+
+    const config = payload.config;
+    if (config !== null && config !== undefined) {
+      if (typeof config !== 'object' || typeof config.projectId !== 'string' || typeof config.apiKey !== 'string') {
+        sendResponse({ success: false, error: 'Invalid firebase configuration payload' });
+        return false;
+      }
+    }
+
     chrome.storage.local.set({
-      tracklet_user_session: message.payload?.user || null,
-      tracklet_firebase_config: message.payload?.config || null
+      tracklet_user_session: user || null,
+      tracklet_firebase_config: config || null
     }, () => {
       sendResponse({ success: true });
     });
