@@ -66,10 +66,16 @@ try {
     Write-Host "Mode: $(if ($Execute) { 'EXECUTE (Live Deletion)' } else { 'DRY RUN (Preview Only)' })" -ForegroundColor Yellow
     Write-Host ""
 
+    $operationFailed = $false
+
     # 1. Prune stale remote tracking branches
     if (-not $SkipRemotePrune) {
         Write-Host "[1/4] Pruning stale remote tracking references (git fetch --prune origin)..." -ForegroundColor Cyan
         git -C $repoRoot fetch --prune origin 2>$null
+        if ($LASTEXITCODE -ne 0) {
+            Write-Warning "git fetch --prune origin failed with exit code $LASTEXITCODE."
+            $operationFailed = $true
+        }
     }
 
     # Get origin/main SHA
@@ -78,15 +84,40 @@ try {
     # 2. Get GitHub PR merge history for squash-and-merge detection
     $mergedPrBranches = @{}
     try {
-        $prListJson = gh pr list --state merged --limit 100 --json headRefName,number,title 2>$null
+        $prListJson = gh pr list --state merged --limit 100 --json headRefName,headRefOid,number,title 2>$null
         if ($prListJson) {
             $prs = $prListJson | ConvertFrom-Json
             foreach ($pr in $prs) {
-                $mergedPrBranches[$pr.headRefName] = $pr
+                if (-not $mergedPrBranches.ContainsKey($pr.headRefName)) {
+                    $mergedPrBranches[$pr.headRefName] = @()
+                }
+                $mergedPrBranches[$pr.headRefName] += $pr
             }
         }
     } catch {
         Write-Warning "GitHub CLI (gh) query failed. Falling back to git commit ancestry checks."
+    }
+
+    function Find-VerifiedMergedPr {
+        param(
+            [string]$BranchName,
+            [string]$BranchSha
+        )
+        if (-not $BranchName -or -not $BranchSha) { return $null }
+        if (-not $mergedPrBranches.ContainsKey($BranchName)) { return $null }
+
+        $candidatePrs = $mergedPrBranches[$BranchName]
+        foreach ($pr in $candidatePrs) {
+            if (-not $pr.headRefOid) { continue }
+            if ($BranchSha -eq $pr.headRefOid) {
+                return $pr
+            }
+            git -C $repoRoot merge-base --is-ancestor $BranchSha $pr.headRefOid 2>$null
+            if ($LASTEXITCODE -eq 0) {
+                return $pr
+            }
+        }
+        return $null
     }
 
     # 3. Audit Worktrees
@@ -131,7 +162,8 @@ try {
         }
 
         # Check merge status
-        $hasMergedPr = $mergedPrBranches.ContainsKey($wt.Branch)
+        $matchedPr = if ($wt.Head) { Find-VerifiedMergedPr -BranchName $wt.Branch -BranchSha $wt.Head } else { $null }
+        $hasMergedPr = ($null -ne $matchedPr)
         $isDirectAncestor = $false
         if ($wt.Head) {
             git -C $repoRoot merge-base --is-ancestor $wt.Head origin/main 2>$null
@@ -156,7 +188,7 @@ try {
             $reason = "UNMERGED COMMITS (DO NOT DELETE)"
         } elseif ($hasMergedPr) {
             $decision = "DELETE"
-            $reason = "Merged via PR #$($mergedPrBranches[$wt.Branch].number) & working tree clean"
+            $reason = "Merged via PR #$($matchedPr.number) & working tree clean"
         } elseif ($isDirectAncestor) {
             $decision = "DELETE"
             $reason = "Merged into main (direct ancestry) & working tree clean"
@@ -181,7 +213,7 @@ try {
     # 4. Audit Local Branches
     Write-Host "`n[3/4] Auditing Local Branches..." -ForegroundColor Cyan
 
-    $localBranches = (git -C $repoRoot for-each-ref --format='%(refname:short)|%(objectname:short)' refs/heads/) -split "`n"
+    $localBranches = (git -C $repoRoot for-each-ref --format='%(refname:short)|%(objectname)|%(objectname:short)' refs/heads/) -split "`n"
     $branchActions = @()
     $worktreeBranches = $worktrees.Branch
 
@@ -191,11 +223,13 @@ try {
         $parts = $bLine.Split('|')
         $bName = $parts[0]
         $bSha = $parts[1]
+        $bShaShort = if ($parts.Length -gt 2) { $parts[2] } else { if ($bSha.Length -ge 7) { $bSha.Substring(0, 7) } else { $bSha } }
 
         $isMain = ($bName -in @("main", "master"))
         $hasWorktree = ($bName -in $worktreeBranches)
 
-        $hasMergedPr = $mergedPrBranches.ContainsKey($bName)
+        $matchedPr = Find-VerifiedMergedPr -BranchName $bName -BranchSha $bSha
+        $hasMergedPr = ($null -ne $matchedPr)
         $isDirectAncestor = $false
         git -C $repoRoot merge-base --is-ancestor $bSha origin/main 2>$null
         if ($LASTEXITCODE -eq 0) { $isDirectAncestor = $true }
@@ -213,7 +247,7 @@ try {
                 $reason = "Attached to preserved worktree ($($wtMatch.Reason))"
             } elseif ($hasMergedPr) {
                 $decision = "DELETE"
-                $reason = "Merged via PR #$($mergedPrBranches[$bName].number)"
+                $reason = "Merged via PR #$($matchedPr.number)"
             } elseif ($isDirectAncestor) {
                 $decision = "DELETE"
                 $reason = "Merged into main (direct ancestry)"
@@ -224,7 +258,7 @@ try {
             $reason = "UNMERGED COMMITS (DO NOT DELETE)"
         } elseif ($hasMergedPr) {
             $decision = "DELETE"
-            $reason = "Merged via PR #$($mergedPrBranches[$bName].number)"
+            $reason = "Merged via PR #$($matchedPr.number)"
         } elseif ($isDirectAncestor) {
             $decision = "DELETE"
             $reason = "Merged into main (direct ancestry)"
@@ -234,7 +268,7 @@ try {
 
         $branchActions += [PSCustomObject]@{
             Branch = $bName
-            Commit = $bSha
+            Commit = $bShaShort
             Status = $decision
             Reason = $reason
         }
@@ -269,29 +303,40 @@ try {
     # Perform Worktree Deletions
     foreach ($wtItem in $wtsToDelete) {
         Write-Host "Removing merged worktree: $($wtItem.Path)..." -ForegroundColor Yellow
-        try {
-            git -C $repoRoot worktree remove $wtItem.Path
+        git -C $repoRoot worktree remove $wtItem.Path
+        if ($LASTEXITCODE -eq 0) {
             Write-Host "Removed worktree successfully." -ForegroundColor Green
-        } catch {
-            Write-Warning "Could not remove worktree $($wtItem.Path): $_"
+        } else {
+            Write-Warning "Could not remove worktree $($wtItem.Path) (exit code: $LASTEXITCODE)."
+            $operationFailed = $true
         }
     }
 
     # Perform Branch Deletions
     foreach ($bItem in $branchesToDelete) {
         Write-Host "Deleting merged branch: $($bItem.Branch)..." -ForegroundColor Yellow
-        try {
-            git -C $repoRoot branch -D $bItem.Branch
+        git -C $repoRoot branch -D $bItem.Branch
+        if ($LASTEXITCODE -eq 0) {
             Write-Host "Deleted branch $($bItem.Branch) successfully." -ForegroundColor Green
-        } catch {
-            Write-Warning "Could not delete branch $($bItem.Branch): $_"
+        } else {
+            Write-Warning "Could not delete branch $($bItem.Branch) (exit code: $LASTEXITCODE)."
+            $operationFailed = $true
         }
     }
 
     # Final git worktree prune
     git -C $repoRoot worktree prune
+    if ($LASTEXITCODE -ne 0) {
+        Write-Warning "git worktree prune failed with exit code $LASTEXITCODE."
+        $operationFailed = $true
+    }
 
-    Write-Host "`n=== Prune Completed Successfully ===" -ForegroundColor Green
+    if ($operationFailed) {
+        Write-Error "One or more pruning operations failed."
+        exit 1
+    } else {
+        Write-Host "`n=== Prune Completed Successfully ===" -ForegroundColor Green
+    }
 } finally {
     Pop-Location
 }
