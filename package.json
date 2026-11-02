@@ -17,6 +17,8 @@
     "pages:preview": "npm run build && wrangler pages dev dist",
     "test": "vitest run",
     "test:watch": "vitest",
+    "mcp:agentation": "agentation-mcp server",
+    "mcp:doctor": "agentation-mcp doctor",
     "audit": "node --experimental-strip-types scripts/telemetry/runAudit.ts",
     "audit:firebase": "node --experimental-strip-types scripts/telemetry/extractFirebaseAdmin.ts"
   },
@@ -37,6 +39,8 @@
     "@types/node": "^22.14.0",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
+    "agentation": "^3.1.2",
+    "agentation-mcp": "^1.3.2",
     "autoprefixer": "^10.4.21",
     "eslint": "^9.39.5",
     "eslint-plugin-react": "^7.37.5",
