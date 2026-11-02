@@ -1,6 +1,17 @@
 ---
 name: anti-slop-craft
-description: Use whenever creating, modifying, reviewing, or refactoring frontend UI in Tracklet to eliminate AI slop and enforce canonical component reuse.
+description: >
+  Eliminates frontend AI slop and enforces canonical component reuse across Tracklet UI.
+  Autonomous Triggers: Use whenever the user asks to "make this look cleaner", "clean up the UI",
+  "audit UI", "remove AI slop", "polish this card", "too many boxes/icons", "tag soup", "why does
+  this look generated/cluttered", "fix button styles", or when creating/editing any JSX/TSX view.
+  Enforces Tracklet's 8 Canonical Component Classes (RichTextEditor, CustomSelectDropdown, IconButton,
+  StatusBadge, SegmentedTabs, CompanyLogo, LinkifiedText, EmptyState) and audits against the 6 Anti-Slop
+  Dimensions (container depth <= 1, decorative icon restraint, static badge demotion, robotic copy removal,
+  zero transition-all, UI_TOKENS consumption).
+  Boundaries: Use this skill for UI refinement, anti-slop auditing, and canonical component enforcement.
+  For greenfield component authoring from scratch with custom prop contracts, use add-component. For
+  high-level aesthetic direction and visitor mode scoping, use impeccable.
 ---
 
 # Anti-Slop Craft & Canonical Component Reuse Skill

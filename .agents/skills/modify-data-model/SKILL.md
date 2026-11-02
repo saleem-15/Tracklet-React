@@ -1,6 +1,15 @@
 ---
 name: modify-data-model
-description: Guidelines for updating the Application data model across the codebase cleanly and thoroughly.
+description: >
+  Safely updates, extends, or migrates Tracklet's data models across all persistence and serialization layers.
+  Autonomous Triggers: Use whenever the user asks to "add a field to jobs/applications/contacts", "update data model",
+  "add column to table/export", "store a new property on applications", "change the schema", "rename a field",
+  "add new contact attribute", or modifies Application, Contact, ApplicationTask, or EmailLog types.
+  Enforces: The mandatory 5-step synchronization pipeline (1. src/types.ts -> 2. src/lib/applicationRepository.ts
+  -> 3. src/lib/sampleData.ts -> 4. src/lib/exportCsv.ts & src/lib/importCsv.ts -> 5. firestore.rules),
+  preventing silent Firestore security rejections and CSV roundtrip data loss.
+  Boundaries: Use this skill whenever domain entities or persistence shapes are created or altered. For adding UI
+  components that consume the model, follow with add-component or anti-slop-craft.
 ---
 
 # Skill: Modifying the Data Model in Tracklet

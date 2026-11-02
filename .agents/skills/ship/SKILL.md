@@ -1,6 +1,13 @@
 ---
 name: ship
-description: End-to-end workflow to verify code integrity, commit changes atomically (using the commit skill), push to remote, and create or open a Pull Request with the title and description already filled in inside GitHub (zero manual copy-pasting). Triggers on /ship, "ship this", "ship", "make a pr", "push and pr", /pr.
+description: >
+  Autonomous end-to-end shipping workflow to rebase against trunk, verify code, stage atomic commits, push branch, and open a pre-filled GitHub Pull Request.
+  Autonomous Triggers: Use whenever the user asks to "ship this", "make a PR", "push and open PR", "create a pull request",
+  "ready to merge", "open PR on github", "ship changes", "submit PR", or runs /ship or /pr.
+  Enforces: Mandatory trunk rebase (git fetch origin main && git rebase origin/main), quality gate verification
+  (npx tsc --noEmit && npm test && npm run build), atomic Conventional Commits (type(scope): subject with Why/What/Verification),
+  remote branch push, and automated Pull Request creation with zero manual copy-pasting into GitHub.
+  Boundaries: Use when feature or fix implementation is complete and ready for review/merge. Never commit without user authorization.
 ---
 
 # Skill: End-to-End Shipping & Pull Request Workflow (`/ship`)

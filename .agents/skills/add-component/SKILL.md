@@ -1,6 +1,16 @@
 ---
 name: add-component
-description: Guidelines for building React components in Tracklet to maintain UI quality and clean code standards.
+description: >
+  Builds, structures, and exports new React 19 UI components in Tracklet adhering to architectural standards.
+  Autonomous Triggers: Use whenever the user asks to "create a new component", "build a modal/drawer/card",
+  "extract this into a reusable component", "add a UI widget", "make a component for X", or when scaffolding
+  a new .tsx file in src/components/.
+  Enforces: Pre-flight component discovery manifest, strict Rules of Hooks (all hooks at top, early returns
+  strictly after), explicit TypeScript Props interface, under-300-lines modularity limit, canonical primitive reuse
+  (from docs/COMPONENT_REGISTRY.md), UI_TOKENS design tokens, and Happy-DOM test fixture readiness.
+  Boundaries: Use this skill for architecting and implementing new component files. For reviewing or decluttering
+  existing UI against AI slop, use anti-slop-craft. For full end-to-end features touching persistence, routes,
+  and state, use add-feature.
 ---
 
 # Skill: Adding a React Component to Tracklet
