@@ -1,2 +1,2 @@
-/api/*  /.netlify/functions/:splat  200
+# Cloudflare Pages Universal SPA Routing Fallback
 /*      /index.html                 200
