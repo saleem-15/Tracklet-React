@@ -37,7 +37,10 @@ param(
     [string]$RepoPath = ""
 )
 
-$ErrorActionPreference = "Stop"
+$ErrorActionPreference = "Continue"
+if (Get-Variable -Name "PSNativeCommandUseErrorActionPreference" -ErrorAction SilentlyContinue) {
+    $PSNativeCommandUseErrorActionPreference = $false
+}
 
 if (-not $RepoPath) {
     try {
@@ -340,3 +343,4 @@ try {
 } finally {
     Pop-Location
 }
+
