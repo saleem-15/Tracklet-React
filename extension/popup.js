@@ -995,19 +995,19 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   function updateUserBadge(session) {
     if (session && session.uid) {
-      userAccountDot.classList.add('connected');
+      if (userAccountDot) userAccountDot.classList.add('connected');
       // Subscriptions disabled during experimental preview
       const tierLabel = 'Experimental';
       if (userAccountBadge) {
         userAccountBadge.title = `Connected: ${session.email || session.uid} (${tierLabel} Tier)`;
       }
-      userAccountEmail.textContent = `${tierLabel} Tier`;
+      if (userAccountEmail) userAccountEmail.textContent = `${tierLabel} Tier`;
     } else {
-      userAccountDot.classList.remove('connected');
+      if (userAccountDot) userAccountDot.classList.remove('connected');
       if (userAccountBadge) {
         userAccountBadge.title = 'Not signed in. Click to sign in on Tracklet Web.';
       }
-      userAccountEmail.textContent = 'Sign In';
+      if (userAccountEmail) userAccountEmail.textContent = 'Sign In';
     }
   }
 

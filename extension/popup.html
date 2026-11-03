@@ -10,18 +10,11 @@
   <div class="container" id="main-container">
     <!-- Streamlined Header matching Tracklet Brand -->
     <div class="header">
-      <div class="brand">
-        <img src="icons/logo.svg" alt="Tracklet" class="brand-logo-img" width="22" height="22">
-      </div>
-      <!-- Header Right Group: Context Chip + Sync Pill -->
-      <div class="header-right">
+      <!-- Context Chip & Live Sync Status -->
+      <div class="header-left">
         <div class="header-mode-chip" id="header-mode-chip" style="display: none;">
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
           <span id="header-mode-text">Gmail</span>
-        </div>
-        <div class="header-status-chip" id="user-account-badge" title="Sign in to Tracklet">
-          <span class="user-account-dot" id="user-account-dot"></span>
-          <span class="user-account-label" id="user-account-email">Sign In</span>
         </div>
       </div>
     </div>
@@ -386,7 +379,6 @@
         </div>
         <button type="button" class="btn-primary" id="save-btn">
           <span>Save Application</span>
-          <kbd class="btn-shortcut-hint">Ctrl+↵</kbd>
         </button>
       </div>
     </div>
@@ -912,14 +904,6 @@
       </div>
     </div>
 
-    <!-- Companion Micro-Footer with Trust & Legal Links -->
-    <div class="companion-footer" id="companion-footer" style="padding: 10px 16px 14px; text-align: center; border-top: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 11px; color: #64748b;">
-      <span>Tracklet Cloud Sync</span>
-      <span>•</span>
-      <button type="button" id="extension-privacy-link" class="btn-text-link" style="font-size: 11px; color: #64748b; text-decoration: underline; background: none; border: none; cursor: pointer; padding: 0;">Privacy Policy</button>
-      <span>•</span>
-      <button type="button" id="extension-terms-link" class="btn-text-link" style="font-size: 11px; color: #64748b; text-decoration: underline; background: none; border: none; cursor: pointer; padding: 0;">Terms</button>
-    </div>
   </div>
 
   <!-- Success View -->
