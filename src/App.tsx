@@ -1,4 +1,8 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, lazy, Suspense } from 'react';
+// Lazy-load Agentation strictly in development to prevent it from ever being bundled in production
+const DevAgentation = import.meta.env.DEV
+  ? lazy(() => import('agentation').then((mod) => ({ default: mod.Agentation })))
+  : null;
 import { Sidebar } from './components/Sidebar';
 import { TopBar } from './components/TopBar';
 import { ToastContainer } from './components/Toast';
@@ -178,5 +182,14 @@ function TrackletAppContent() {
 }
 
 export default function App() {
-  return <AppProviders><TrackletAppContent /></AppProviders>;
+  return (
+    <AppProviders>
+      <TrackletAppContent />
+      {import.meta.env.DEV && DevAgentation && (
+        <Suspense fallback={null}>
+          <DevAgentation endpoint="http://localhost:4747" />
+        </Suspense>
+      )}
+    </AppProviders>
+  );
 }
