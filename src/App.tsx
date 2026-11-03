@@ -187,7 +187,7 @@ export default function App() {
       <TrackletAppContent />
       {import.meta.env.DEV && DevAgentation && (
         <Suspense fallback={null}>
-          <DevAgentation endpoint="http://localhost:4747" />
+          <DevAgentation endpoint={import.meta.env.VITE_AGENTATION_ENDPOINT || 'http://localhost:4747'} />
         </Suspense>
       )}
     </AppProviders>
