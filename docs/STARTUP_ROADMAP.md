@@ -221,7 +221,7 @@ Connects AI agents in **Claude Desktop, Cursor, VS Code, and Windsurf** directly
 ### 9.4 Security Audit Remediation
 1. **SEC-01 (High)**: Patch `firestore.rules` to prevent registered users from reading all tester feedback and diagnostic stack traces in `/tester_feedback/`.
 2. **SEC-02 (High)**: Enforce Firebase Auth ID token verification (`admin.auth().verifyIdToken(idToken)`) on `/api/scrape-job.ts`.
-3. **SEC-03 (High)**: Update `externally_connectable` in `extension/manifest.json` to use exact production origins rather than broad hosting-provider wildcards (`*.firebaseapp.com`, `*.web.app`, `*.netlify.app`), and validate sender origins and payloads in `SYNC_TRACKLET_AUTH`.
+3. **SEC-03 (High)**: Update `externally_connectable` in `extension/manifest.json` to use exact production origins rather than broad hosting-provider wildcards (`*.firebaseapp.com`, `*.web.app`; Netlify decommissioned), and validate sender origins and payloads in `SYNC_TRACKLET_AUTH`.
 4. **SEC-04 (Medium)**: Restrict CORS origins on `/api/report-issue.ts` to `tracklet.app`.
 
 ---
