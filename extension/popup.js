@@ -5057,7 +5057,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (hostname === 'tracklet.app' || hostname.endsWith('.tracklet.app')) return true;
       if (hostname === 'usetracklet.com' || hostname.endsWith('.usetracklet.com')) return true;
       if (hostname === 'tracklet.pages.dev' || hostname.endsWith('.tracklet.pages.dev')) return true;
-      if (/^([a-z0-9-]+--)?(use)?tracklet\.netlify\.app$/.test(hostname)) return true;
       if (/^(use)?tracklet(-[a-z0-9-]+)?\.web\.app$/.test(hostname)) return true;
       if (/^(use)?tracklet(-[a-z0-9-]+)?\.firebaseapp\.com$/.test(hostname)) return true;
       return false;

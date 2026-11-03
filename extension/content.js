@@ -5581,7 +5581,6 @@ function isTrackletOrigin() {
     if (hostname === 'tracklet.app' || hostname.endsWith('.tracklet.app')) return true;
     if (hostname === 'usetracklet.com' || hostname.endsWith('.usetracklet.com')) return true;
     if (hostname === 'tracklet.pages.dev' || hostname.endsWith('.tracklet.pages.dev')) return true;
-    if (/^([a-z0-9-]+--)?(use)?tracklet\.netlify\.app$/.test(hostname)) return true;
     if (/^(use)?tracklet(-[a-z0-9-]+)?\.web\.app$/.test(hostname)) return true;
     if (/^(use)?tracklet(-[a-z0-9-]+)?\.firebaseapp\.com$/.test(hostname)) return true;
     return false;
@@ -5596,8 +5595,8 @@ function announceTrackletPresence() {
   try {
     const manifest = (typeof chrome !== 'undefined' && chrome.runtime?.getManifest)
       ? chrome.runtime.getManifest()
-      : { version: '1.3.8', name: 'Tracklet' };
-    const version = manifest.version || '1.3.8';
+      : { version: '1.3.9', name: 'Tracklet' };
+    const version = manifest.version || '1.3.9';
 
     // 1. Direct DOM markers on documentElement for instant zero-latency detection
     if (document.documentElement) {
