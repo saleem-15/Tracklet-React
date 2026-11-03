@@ -1,26 +1,19 @@
 # Netlify Configuration for Tracklet
-# High-clarity Job Application Tracker
+# Cloud-native Freemium/Pro SaaS on Cloudflare Pages (tracklet.pages.dev)
+# Netlify routes client requests to SPA shell where LegacyMigrationScreen prompts the permanent move
 
 [build]
   command = "npm run build"
   publish = "dist"
 
-[build.environment]
-  NODE_VERSION = "22"
-  SECRETS_SCAN_OMIT_KEYS = "GITHUB_REPO,VITE_POSTHOG_HOST,VITE_FIREBASE_PROJECT_ID,VITE_APP_VERSION,VITE_FIREBASE_AUTH_DOMAIN,VITE_FIREBASE_STORAGE_BUCKET,VITE_FIREBASE_MESSAGING_SENDER_ID,VITE_FIREBASE_APP_ID,VITE_FIREBASE_MEASUREMENT_ID,VITE_FIREBASE_API_KEY,VITE_SENTRY_DSN,VITE_POSTHOG_KEY"
-
-[functions]
-  directory = "api"
-  node_bundler = "esbuild"
-
-# 1. Serverless Functions API route rewrite
-# Proxies /api/* to /.netlify/functions/* preserving paths and query strings
+# 1. API routes 308 Permanent Redirect (preserves HTTP method & request body for extensions/clients)
 [[redirects]]
   from = "/api/*"
-  to = "/.netlify/functions/:splat"
-  status = 200
+  to = "https://tracklet.pages.dev/api/:splat"
+  status = 308
+  force = true
 
-# 2. Client-side Single Page Application (SPA) routing fallback
+# 2. SPA client route fallback
 [[redirects]]
   from = "/*"
   to = "/index.html"
@@ -35,16 +28,3 @@
     Referrer-Policy = "strict-origin-when-cross-origin"
     Permissions-Policy = "camera=(), microphone=(), geolocation=()"
     Strict-Transport-Security = "max-age=63072000; includeSubDomains; preload"
-
-# 4. Long-term immutable caching for Vite build assets
-[[headers]]
-  for = "/assets/*"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-
-# 5. Packaged Chrome Extension distribution zip
-[[headers]]
-  for = "/tracklet-extension.zip"
-  [headers.values]
-    Content-Type = "application/zip"
-    Cache-Control = "public, max-age=0, must-revalidate"

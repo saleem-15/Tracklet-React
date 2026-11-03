@@ -1,5 +1,5 @@
 // Platform-Agnostic Firebase Auth ID Token Verification for Serverless Runtimes
-// Compatible with Node.js, Cloudflare Pages, and Netlify Functions.
+// Compatible with Node.js and Cloudflare Pages Functions.
 
 import crypto from 'crypto';
 import { Buffer } from 'buffer';

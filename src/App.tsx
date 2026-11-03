@@ -1,4 +1,4 @@
-import { useEffect, useCallback, lazy, Suspense } from 'react';
+import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 // Lazy-load Agentation strictly in development to prevent it from ever being bundled in production
 const DevAgentation = import.meta.env.DEV
   ? lazy(() => import('agentation').then((mod) => ({ default: mod.Agentation })))
@@ -6,7 +6,7 @@ const DevAgentation = import.meta.env.DEV
 import { Sidebar } from './components/Sidebar';
 import { TopBar } from './components/TopBar';
 import { ToastContainer } from './components/Toast';
-import { DomainMigrationBanner } from './components/DomainMigrationBanner';
+import { LegacyMigrationScreen } from './components/LegacyMigrationScreen';
 import { AuthGate, WorkspaceContent, AppSlideOvers, AppModals } from './components/layout';
 import {
   AppProviders, useAuth, useNavigation, useToastContext,
@@ -33,6 +33,20 @@ function TrackletAppContent() {
   const { applications, setApplications, applicationsRef } = useApplicationsContext();
   const entitlement = useEntitlementContext();
   const { contacts, setContacts, handleAddContact, handleLinkContact, setSelectedContactId } = useContactsContext();
+
+  const [isDemoNetlify] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    const params = new URLSearchParams(window.location.search);
+    return params.get('demo') === 'netlify' || params.get('demo') === 'legacy';
+  });
+
+  const isNetlifyOrigin = (() => {
+    if (typeof window === 'undefined') return false;
+    const hostname = window.location.hostname.toLowerCase();
+    const legacyHost = import.meta.env.VITE_LEGACY_HOST;
+    if (legacyHost && hostname === legacyHost) return true;
+    return hostname.includes('netlify.app');
+  })();
 
   const { dataLoading, loadData } = useDataLoader({
     user, authLoading, setApplications, setContacts, addToast,
@@ -147,12 +161,16 @@ function TrackletAppContent() {
     } catch (err) { console.error('Sign-out failed:', err); }
   }, [signOut, setSelectedAppId, setSelectedContactId, addToast]);
 
+  // Force visitors arriving at legacy Netlify origin to view the migration gate (with local demo simulation)
+  if (isNetlifyOrigin || isDemoNetlify) {
+    return <LegacyMigrationScreen />;
+  }
+
   return (
     <AuthGate onReloadData={loadData}>
       <div className="flex h-screen w-screen bg-slate-50 text-slate-900 font-sans overflow-hidden antialiased select-none">
         <Sidebar onSignOut={handleSignOut} />
         <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
-          <DomainMigrationBanner />
           {(activeTab === 'all' || activeTab === 'pipeline') && !isNotFound && <TopBar />}
           <WorkspaceContent 
             isLoading={authLoading || dataLoading}

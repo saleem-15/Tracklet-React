@@ -21,13 +21,14 @@ describe('Extension Version Synchronization', () => {
     expect(contentJs).toContain(`manifest.version || '${LATEST_EXTENSION_VERSION}'`);
   });
 
-  it('ensures externally_connectable is strictly scoped in manifest.json without overly broad wildcards', () => {
+  it('ensures externally_connectable is strictly scoped in manifest.json without overly broad wildcards or deprecated hosts', () => {
     const manifestPath = path.resolve(__dirname, '../../extension/manifest.json');
     const manifestContent = fs.readFileSync(manifestPath, 'utf8');
     const manifest = JSON.parse(manifestContent);
 
     const matches: string[] = manifest.externally_connectable?.matches || [];
     expect(matches).not.toContain('https://*.pages.dev/*');
+    expect(matches).not.toContain('https://*.netlify.app/*');
     expect(matches).toContain('https://tracklet.pages.dev/*');
     expect(matches).toContain('https://*.tracklet.pages.dev/*');
   });
@@ -36,9 +37,8 @@ describe('Extension Version Synchronization', () => {
     const contentJsPath = path.resolve(__dirname, '../../extension/content.js');
     const contentJs = fs.readFileSync(contentJsPath, 'utf8');
 
-    // Ensure loose substring checks were removed
-    expect(contentJs).not.toContain("hostname.endsWith('.pages.dev') && hostname.includes('tracklet')");
-    expect(contentJs).not.toContain("hostname.endsWith('.netlify.app') && hostname.includes('tracklet')");
+    // Ensure deprecated Netlify origins were removed
+    expect(contentJs).not.toContain('netlify.app');
 
     // Replicate isTrackletOrigin logic as implemented in content.js and popup.js
     const isTrackletHostname = (hostname: string) => {
@@ -47,7 +47,6 @@ describe('Extension Version Synchronization', () => {
       if (h === 'tracklet.app' || h.endsWith('.tracklet.app')) return true;
       if (h === 'usetracklet.com' || h.endsWith('.usetracklet.com')) return true;
       if (h === 'tracklet.pages.dev' || h.endsWith('.tracklet.pages.dev')) return true;
-      if (/^([a-z0-9-]+--)?(use)?tracklet\.netlify\.app$/.test(h)) return true;
       if (/^(use)?tracklet(-[a-z0-9-]+)?\.web\.app$/.test(h)) return true;
       if (/^(use)?tracklet(-[a-z0-9-]+)?\.firebaseapp\.com$/.test(h)) return true;
       return false;
@@ -62,12 +61,14 @@ describe('Extension Version Synchronization', () => {
     expect(isTrackletHostname('tracklet.pages.dev')).toBe(true);
     expect(isTrackletHostname('feature.tracklet.pages.dev')).toBe(true);
     expect(isTrackletHostname('pr-42.tracklet.pages.dev')).toBe(true);
-    expect(isTrackletHostname('usetracklet.netlify.app')).toBe(true);
-    expect(isTrackletHostname('tracklet.netlify.app')).toBe(true);
-    expect(isTrackletHostname('deploy-preview-123--usetracklet.netlify.app')).toBe(true);
     expect(isTrackletHostname('tracklet.web.app')).toBe(true);
     expect(isTrackletHostname('tracklet-staging.web.app')).toBe(true);
     expect(isTrackletHostname('tracklet.firebaseapp.com')).toBe(true);
+
+    // Deprecated Netlify origins MUST be rejected
+    expect(isTrackletHostname('usetracklet.netlify.app')).toBe(false);
+    expect(isTrackletHostname('tracklet.netlify.app')).toBe(false);
+    expect(isTrackletHostname('deploy-preview-123--usetracklet.netlify.app')).toBe(false);
 
     // Lookalikes and unauthorized domains that MUST be rejected
     expect(isTrackletHostname('attacker-tracklet.pages.dev')).toBe(false);

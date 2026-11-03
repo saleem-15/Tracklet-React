@@ -29,7 +29,7 @@ Raise Tracklet's browser extension job-scraping accuracy from ~55–65% to **95%
 
 **Testing**: Vitest (`tests/unit/extensionAutoScrape.test.ts`, `tests/unit/extensionTabContext.test.ts`)
 
-**Target Platform**: Chromium browsers (Chrome, Edge, Brave) MV3 + Cloudflare Pages / Netlify Functions
+**Target Platform**: Chromium browsers (Chrome, Edge, Brave) MV3 + Cloudflare Pages Functions
 
 **Performance Goals**:
 - Layer 1 (Deterministic): `< 50ms` execution time, `0` network calls
