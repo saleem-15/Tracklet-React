@@ -630,13 +630,13 @@
     "semantic_hash": "0fd3b7d80b312442d8b9b0a82a9dfa61"
   },
   "package.json": {
-    "mtime": 1793633850.6698792,
-    "ast_hash": "5bcf55b3ecee91e2a2610ecba9a7f821",
+    "mtime": 1793701908.3138049,
+    "ast_hash": "12890ea79afa77e2916efa0fdf2c8d86",
     "semantic_hash": ""
   },
   "src/App.tsx": {
-    "mtime": 1793633850.6698792,
-    "ast_hash": "c45939f3c7aa69100683a4def7a2b79b",
+    "mtime": 1793701908.3148954,
+    "ast_hash": "700c72a025a014e2df077131ade3a554",
     "semantic_hash": ""
   },
   "src/components/AccountSettingsCard.tsx": {
@@ -4215,8 +4215,8 @@
     "semantic_hash": ""
   },
   ".agents/skills/prune-merged-worktrees/scripts/prune.ps1": {
-    "mtime": 1793633838.7753475,
-    "ast_hash": "6187fb32477381313e3cbcb593988c79",
+    "mtime": 1793701899.995541,
+    "ast_hash": "d97eb7add8e4c36fffe02f9e16386015",
     "semantic_hash": ""
   },
   ".lintstagedrc.json": {
@@ -4327,6 +4327,16 @@
   "public/Tracklet-Market-Positioning-Report.pdf": {
     "mtime": 1793633838.9278848,
     "ast_hash": "eca1654886bb6c95cd847642bb19bbbb",
+    "semantic_hash": ""
+  },
+  ".agents/skills/run-dev-server/scripts/manage-worktree-servers.cjs": {
+    "mtime": 1793701908.440625,
+    "ast_hash": "6cf2d1c2d969ef3261d55e8724e0b89d",
+    "semantic_hash": ""
+  },
+  ".agents/skills/run-dev-server/SKILL.md": {
+    "mtime": 1793701908.4388554,
+    "ast_hash": "d36df914b9bdb26692b064d98f64e6fb",
     "semantic_hash": ""
   }
 }
