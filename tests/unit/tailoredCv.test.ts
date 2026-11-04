@@ -17,10 +17,11 @@ describe('Tailored CV Metadata, Validation & Storage (US5 / T030)', () => {
   describe('File Size & Extension Limits', () => {
     it('enforces maximum 2MB size limit constant', () => {
       expect(MAX_RESUME_SIZE_BYTES).toBe(2 * 1024 * 1024);
+      expect(MAX_RESUME_SIZE_BYTES).toBe(2 * 1024 * 1024);
       expect(ALLOWED_RESUME_EXTENSIONS).toContain('.pdf');
       expect(ALLOWED_RESUME_EXTENSIONS).toContain('.docx');
       expect(ALLOWED_RESUME_EXTENSIONS).toContain('.doc');
-      expect(ALLOWED_RESUME_EXTENSIONS).toContain('.txt');
+      expect(ALLOWED_RESUME_EXTENSIONS).not.toContain('.txt');
     });
 
     it('formats file sizes accurately for display', () => {
@@ -42,7 +43,7 @@ describe('Tailored CV Metadata, Validation & Storage (US5 / T030)', () => {
       expect(sanitized.endsWith('.pdf')).toBe(true);
     });
 
-    it('validates and accepts valid PDF, Word, and text resumes within 2MB', () => {
+    it('validates and accepts valid PDF and Word resumes within 2MB', () => {
       const validPdf = { name: 'Saleem_Senior_Frontend_CV.pdf', size: 350 * 1024, type: 'application/pdf' };
       const res = validateResumeFile(validPdf);
       expect(res.valid).toBe(true);
@@ -51,9 +52,6 @@ describe('Tailored CV Metadata, Validation & Storage (US5 / T030)', () => {
 
       const validDocx = { name: 'resume_google_tailored.docx', size: 1.2 * 1024 * 1024, type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' };
       expect(validateResumeFile(validDocx).valid).toBe(true);
-
-      const validTxt = { name: 'plain_cv.txt', size: 12 * 1024, type: 'text/plain' };
-      expect(validateResumeFile(validTxt).valid).toBe(true);
     });
 
     it('rejects files exceeding the 2MB limit with a friendly error', () => {
@@ -75,7 +73,10 @@ describe('Tailored CV Metadata, Validation & Storage (US5 / T030)', () => {
       expect(res.error).toContain('empty');
     });
 
-    it('rejects unsupported file formats (executable, images, archives)', () => {
+    it('rejects unsupported file formats (text, executable, images, archives)', () => {
+      const txtFile = { name: 'plain_cv.txt', size: 12 * 1024, type: 'text/plain' };
+      expect(validateResumeFile(txtFile).valid).toBe(false);
+
       const exeFile = { name: 'virus.exe', size: 50000, type: 'application/x-msdownload' };
       expect(validateResumeFile(exeFile).valid).toBe(false);
 
