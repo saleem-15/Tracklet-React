@@ -17,6 +17,28 @@
           <span id="header-mode-text">Gmail</span>
         </div>
       </div>
+      <div class="header-right">
+        <div class="header-status-chip" id="user-account-badge" title="Sign in to Tracklet" role="button" tabindex="0">
+          <span class="user-account-dot" id="user-account-dot"></span>
+          <span class="user-account-label" id="user-account-email">Sign In</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Calm Auth Gate Banner (Prompting 1-click web sign-in when unauthenticated) -->
+    <div class="auth-gate-banner" id="auth-gate-banner" style="display: none;">
+      <div class="auth-gate-content">
+        <div class="auth-gate-icon">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+        </div>
+        <div class="auth-gate-text">
+          <span class="auth-gate-title">Sign in to sync applications</span>
+          <span class="auth-gate-desc">Connect with Tracklet to save jobs and contacts.</span>
+        </div>
+      </div>
+      <button type="button" class="btn-utility-clean primary" id="auth-gate-signin-btn">
+        <span>Sign In</span>
+      </button>
     </div>
 
     <!-- Update Alert Banner (Shown when a newer version of the extension is detected) -->
@@ -53,6 +75,35 @@
 
     <!-- Main Application Form View (Job Clipper) -->
     <div id="main-form-view" role="tabpanel" aria-labelledby="tab-job">
+      <!-- Canonical Job Empty State (Shown when no active job posting is detected) -->
+      <div class="empty-state-card" id="job-empty-state" style="display: none;">
+        <div class="empty-state-badge warning">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/><path d="m8 11 6 0"/></svg>
+        </div>
+        <h3 class="empty-state-title">No job detected on this page</h3>
+        <p class="empty-state-description">
+          Navigate to a job posting on LinkedIn, Indeed, Greenhouse, or any ATS to clip automatically, or fill in the details manually.
+        </p>
+        <div class="empty-state-actions">
+          <button type="button" class="btn-utility-clean" id="btn-manual-job-entry">
+            <span>Manual Entry</span>
+          </button>
+          <button type="button" class="btn-utility-clean primary" id="btn-retry-job-detect">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
+            <span>Re-scan Page</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Resilient Inline Error Alert -->
+      <div class="inline-error-alert" id="job-inline-error" style="display: none;" role="alert">
+        <div class="inline-error-content">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <span class="inline-error-message" id="job-inline-error-text">Extraction failed.</span>
+        </div>
+        <button type="button" class="btn-error-retry" id="job-inline-error-retry">Retry</button>
+      </div>
+
       <div class="form-layout">
         <!-- Duplicate Info Banner (Shown when job is already saved) -->
         <div class="duplicate-banner" id="duplicate-banner" style="display: none;">
@@ -63,12 +114,13 @@
           <button type="button" class="btn-text-link" id="duplicate-open-link">Open</button>
         </div>
 
-        <!-- Micro-Card 1: Job Essentials -->
-        <div class="form-card">
-          <div class="form-card-header">
-            <span class="form-card-title">Job Essentials</span>
-            <button type="button" class="btn-ghost-xs" id="btn-ai-boost-job" title="AI Fallback &amp; Boost: Extract missing job details with AI">
-              <span>✨ AI Boost</span>
+        <!-- Single Flat Form Canvas (Flattened Container Hierarchy) -->
+        <div class="flat-form-canvas">
+          <div class="canvas-header-row">
+            <span class="canvas-section-label">Job Essentials</span>
+            <button type="button" class="btn-utility-clean" id="btn-ai-boost-job" title="AI Fallback &amp; Boost: Extract missing job details with AI">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m13 2-2 10h5L11 22l2-10H8Z"/></svg>
+              <span>AI Boost</span>
             </button>
           </div>
 
@@ -97,35 +149,7 @@
             </div>
           </div>
 
-          <!-- Company Website & Location Row -->
-          <div class="form-row">
-            <div class="form-group">
-              <label for="companyDomain">
-                <span>Company Website</span>
-              </label>
-              <div class="input-wrapper">
-                <input type="text" id="companyDomain" placeholder="e.g. stripe.com" autocomplete="off">
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label for="location">
-                <span>Location</span>
-              </label>
-              <div class="input-wrapper">
-                <input type="text" id="location" placeholder="e.g. San Francisco, CA" autocomplete="off">
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Micro-Card 2: Classification & Pipeline -->
-        <div class="form-card">
-          <div class="form-card-header">
-            <span class="form-card-title">Classification &amp; Pipeline</span>
-          </div>
-
-          <!-- Row 1: Pipeline Stage & Date Applied -->
+          <!-- Stage & Location Row -->
           <div class="form-row">
             <div class="form-group" id="stage-form-group">
               <label>
@@ -167,216 +191,238 @@
               </div>
             </div>
 
-            <!-- Date Applied -->
             <div class="form-group">
-              <label for="dateApplied">
-                <span>Date Applied</span>
+              <label for="location">
+                <span>Location</span>
               </label>
               <div class="input-wrapper">
-                <input type="date" id="dateApplied" required>
+                <input type="text" id="location" placeholder="e.g. San Francisco, CA" autocomplete="off">
               </div>
             </div>
           </div>
 
-          <!-- Row 2: Workplace & Employment Type (Paired Custom Select Dropdowns) -->
-          <div class="form-row">
-            <div class="form-group">
-              <label>
-                <span>Workplace</span>
-              </label>
-              <div class="custom-select-container" id="workplace-select-container">
-                <button type="button" class="custom-select-trigger" id="workplace-trigger">
-                  <span class="custom-select-value" id="workplace-value-text">Select Workplace</span>
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
-                </button>
-                <div class="custom-select-dropdown" id="workplace-dropdown">
-                  <div class="custom-select-option selected" data-value="">Not Specified</div>
-                  <div class="custom-select-option" data-value="Remote">Remote</div>
-                  <div class="custom-select-option" data-value="Hybrid">Hybrid</div>
-                  <div class="custom-select-option" data-value="Onsite">On-site</div>
-                </div>
-              </div>
-            </div>
+          <!-- Subtle Divider -->
+          <div class="canvas-divider"></div>
 
-            <div class="form-group">
-              <label>
-                <span>Employment Type</span>
-              </label>
-              <div class="custom-select-container" id="employment-type-select-container">
-                <button type="button" class="custom-select-trigger" id="employment-type-trigger">
-                  <span class="custom-select-value" id="employment-type-value-text">Select Type</span>
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
-                </button>
-                <div class="custom-select-dropdown" id="employment-type-dropdown">
-                  <div class="custom-select-option selected" data-value="">Not Specified</div>
-                  <div class="custom-select-option" data-value="Full-time">Full-time</div>
-                  <div class="custom-select-option" data-value="Part-time">Part-time</div>
-                  <div class="custom-select-option" data-value="Contract">Contract</div>
-                  <div class="custom-select-option" data-value="Internship">Internship</div>
-                </div>
-              </div>
-            </div>
-          </div>
+          <!-- Progressive Disclosure Toggle Trigger -->
+          <button type="button" class="disclosure-toggle-btn" id="disclosure-toggle-btn" aria-expanded="false" aria-controls="job-additional-details">
+            <svg class="disclosure-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+            <span id="disclosure-toggle-text">+ Add Details &amp; Notes</span>
+          </button>
 
-          <!-- Row 3: Platform (Full Width with Expandable Custom Input) -->
-          <div class="form-group">
-            <label id="platform-label">
-              <span>Platform</span>
-            </label>
-            <div class="custom-select-container" id="platform-select-container">
-              <button type="button" class="custom-select-trigger" id="platform-trigger" aria-labelledby="platform-label platform-trigger">
-                <span class="custom-select-value" id="platform-value-text">LinkedIn</span>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
-              </button>
-              <div class="custom-select-dropdown" id="platform-dropdown">
-                <div class="custom-select-option selected" data-value="LinkedIn">LinkedIn</div>
-                <div class="custom-select-option" data-value="Indeed">Indeed</div>
-                <div class="custom-select-option" data-value="Bayt">Bayt</div>
-                <div class="custom-select-option" data-value="Lever">Lever</div>
-                <div class="custom-select-option" data-value="Greenhouse">Greenhouse</div>
-                <div class="custom-select-option" data-value="Otta">Otta</div>
-                <div class="custom-select-option" data-value="Wellfound">Wellfound</div>
-                <div class="custom-select-option" data-value="Company Site">Company Site</div>
-                <div class="custom-select-option" data-value="Referral">Referral</div>
-                <div class="custom-select-option" data-value="Other">Other (Custom)</div>
-              </div>
-            </div>
-            <input type="text" id="custom-platform-input" class="custom-platform-input" placeholder="Type custom platform name..." style="display: none; margin-top: 6px;">
-          </div>
-
-          <!-- Row 4: Job URL (Full Width) -->
-          <div class="form-group">
-            <label for="jobLink">
-              <span>Job URL</span>
-            </label>
-            <div class="input-wrapper">
-              <input type="text" id="jobLink" placeholder="https://..." autocomplete="off">
-            </div>
-          </div>
-        </div>
-
-        <!-- Micro-Card 3: Context & Notes -->
-        <div class="form-card">
-          <div class="form-card-header">
-            <span class="form-card-title">Context &amp; Notes</span>
-          </div>
-
-          <!-- Hiring Contact Card (shown if detected) (US3) -->
-          <div class="recruiter-contact-card" id="recruiter-contact-card" style="display: none;">
-            <div class="recruiter-card-top">
-              <div class="recruiter-avatar-box" id="recruiter-avatar-box">
-                <img id="recruiter-avatar-img" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'/%3E" alt="Avatar" style="display: none; width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
-                <span id="recruiter-avatar-initials"></span>
-              </div>
-              <div class="recruiter-card-info">
-                <div class="recruiter-name-row">
-                  <span class="recruiter-name" id="recruiter-name"></span>
-                  <span class="recruiter-badge" id="recruiter-badge">Recruiter</span>
-                  <span class="recruiter-existing-badge" id="recruiter-existing-badge" style="display: none;">✓ In Contacts Hub</span>
-                </div>
-                <div class="recruiter-title" id="recruiter-title"></div>
-              </div>
-            </div>
-            <div class="recruiter-opt-in-row">
-              <label class="recruiter-checkbox-label">
-                <input type="checkbox" id="add-recruiter-contact-checkbox" checked>
-                <span id="add-recruiter-checkbox-text">Add to Contacts Hub &amp; link to job</span>
-              </label>
-              <button type="button" class="recruiter-view-details-btn" id="recruiter-view-details-btn" title="View or edit in Contact Clipper">View Details →</button>
-            </div>
-          </div>
-
-          <!-- Tailored CV / Resume Attachment Dropzone (US5 / T031) -->
-          <div class="form-group cv-upload-group" id="cv-upload-group">
-            <div class="form-label-row">
-              <label for="cv-file-input">
-                <span>Tailored Resume</span>
-                <span class="cv-label-optional">Optional</span>
-              </label>
-            </div>
-
-            <!-- Upload Dropzone -->
-            <div class="cv-dropzone" id="cv-dropzone" tabindex="0" role="button" aria-label="Upload tailored CV">
-              <input type="file" id="cv-file-input" accept=".pdf,.docx,.doc" style="display: none;" aria-label="Upload Tailored CV">
-              
-              <div class="cv-empty-state" id="cv-empty-state">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="cv-icon"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
-                <div class="cv-empty-text">
-                  <span>Drop tailored CV here or click to upload</span>
-                </div>
-                <span class="cv-format-hint">PDF, DOCX, or DOC · Max 2 MB</span>
-              </div>
-
-              <!-- Active Attachment Chip -->
-              <div class="cv-attachment-chip" id="cv-attachment-chip" style="display: none;">
-                <div class="cv-chip-left">
-                  <div class="cv-chip-badge" id="cv-chip-badge">PDF</div>
-                  <div class="cv-chip-details">
-                    <span class="cv-chip-name" id="cv-chip-name">Resume.pdf</span>
-                    <span class="cv-chip-size" id="cv-chip-size">245 KB</span>
+          <!-- Collapsible Additional Details Section (Fluid Spring Easing) -->
+          <div class="disclosure-section" id="job-additional-details">
+            <div class="disclosure-inner">
+              <!-- Date Applied & Company Website Row -->
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="dateApplied">
+                    <span>Date Applied</span>
+                  </label>
+                  <div class="input-wrapper">
+                    <input type="date" id="dateApplied" required>
                   </div>
                 </div>
-                <div class="cv-chip-actions">
-                  <button type="button" class="cv-action-btn" id="cv-download-btn" title="Download attached CV" aria-label="Download CV">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                  </button>
-                  <button type="button" class="cv-action-btn cv-remove-btn" id="cv-remove-btn" title="Remove attached CV" aria-label="Remove CV">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                  </button>
+
+                <div class="form-group">
+                  <label for="companyDomain">
+                    <span>Company Website</span>
+                  </label>
+                  <div class="input-wrapper">
+                    <input type="text" id="companyDomain" placeholder="e.g. stripe.com" autocomplete="off">
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <!-- CV Upload Error Alert -->
-            <div class="cv-error-alert" id="cv-error-alert" style="display: none;" role="alert">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-              <span id="cv-error-text">File exceeds 2MB limit.</span>
-            </div>
-          </div>
+              <!-- Workplace & Employment Type Row -->
+              <div class="form-row">
+                <div class="form-group">
+                  <label>
+                    <span>Workplace</span>
+                  </label>
+                  <div class="custom-select-container" id="workplace-select-container">
+                    <button type="button" class="custom-select-trigger" id="workplace-trigger">
+                      <span class="custom-select-value" id="workplace-value-text">Select Workplace</span>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
+                    </button>
+                    <div class="custom-select-dropdown" id="workplace-dropdown">
+                      <div class="custom-select-option selected" data-value="">Not Specified</div>
+                      <div class="custom-select-option" data-value="Remote">Remote</div>
+                      <div class="custom-select-option" data-value="Hybrid">Hybrid</div>
+                      <div class="custom-select-option" data-value="Onsite">On-site</div>
+                    </div>
+                  </div>
+                </div>
 
-          <!-- Notes / Highlights -->
-          <div class="form-group">
-            <div class="form-label-row">
-              <label for="notes-editor">
-                <span>Notes &amp; Description</span>
-              </label>
-              <div class="notes-header-actions">
-                <button type="button" class="btn-ghost-xs" id="btn-toggle-md" title="Toggle markdown view">
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-                  <span id="toggle-md-label">Markdown</span>
-                </button>
-                <button type="button" class="btn-ghost-xs" id="btn-clear-notes" title="Clear notes">Clear</button>
+                <div class="form-group">
+                  <label>
+                    <span>Employment Type</span>
+                  </label>
+                  <div class="custom-select-container" id="employment-type-select-container">
+                    <button type="button" class="custom-select-trigger" id="employment-type-trigger">
+                      <span class="custom-select-value" id="employment-type-value-text">Select Type</span>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
+                    </button>
+                    <div class="custom-select-dropdown" id="employment-type-dropdown">
+                      <div class="custom-select-option selected" data-value="">Not Specified</div>
+                      <div class="custom-select-option" data-value="Full-time">Full-time</div>
+                      <div class="custom-select-option" data-value="Part-time">Part-time</div>
+                      <div class="custom-select-option" data-value="Contract">Contract</div>
+                      <div class="custom-select-option" data-value="Internship">Internship</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Platform Row -->
+              <div class="form-group">
+                <label id="platform-label">
+                  <span>Platform</span>
+                </label>
+                <div class="custom-select-container" id="platform-select-container">
+                  <button type="button" class="custom-select-trigger" id="platform-trigger" aria-labelledby="platform-label platform-trigger">
+                    <span class="custom-select-value" id="platform-value-text">LinkedIn</span>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
+                  </button>
+                  <div class="custom-select-dropdown" id="platform-dropdown">
+                    <div class="custom-select-option selected" data-value="LinkedIn">LinkedIn</div>
+                    <div class="custom-select-option" data-value="Indeed">Indeed</div>
+                    <div class="custom-select-option" data-value="Bayt">Bayt</div>
+                    <div class="custom-select-option" data-value="Lever">Lever</div>
+                    <div class="custom-select-option" data-value="Greenhouse">Greenhouse</div>
+                    <div class="custom-select-option" data-value="Otta">Otta</div>
+                    <div class="custom-select-option" data-value="Wellfound">Wellfound</div>
+                    <div class="custom-select-option" data-value="Company Site">Company Site</div>
+                    <div class="custom-select-option" data-value="Referral">Referral</div>
+                    <div class="custom-select-option" data-value="Other">Other (Custom)</div>
+                  </div>
+                </div>
+                <input type="text" id="custom-platform-input" class="custom-platform-input" placeholder="Type custom platform name..." style="display: none; margin-top: 6px;">
+              </div>
+
+              <!-- Job URL Row -->
+              <div class="form-group">
+                <label for="jobLink">
+                  <span>Job URL</span>
+                </label>
+                <div class="input-wrapper">
+                  <input type="text" id="jobLink" placeholder="https://..." autocomplete="off">
+                </div>
+              </div>
+
+              <!-- Hiring Contact Card (shown if detected) (US3) -->
+              <div class="recruiter-contact-card" id="recruiter-contact-card" style="display: none;">
+                <div class="recruiter-card-top">
+                  <div class="recruiter-avatar-box" id="recruiter-avatar-box">
+                    <img id="recruiter-avatar-img" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'/%3E" alt="Avatar" style="display: none; width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+                    <span id="recruiter-avatar-initials"></span>
+                  </div>
+                  <div class="recruiter-card-info">
+                    <div class="recruiter-name-row">
+                      <span class="recruiter-name" id="recruiter-name"></span>
+                      <span class="recruiter-badge" id="recruiter-badge">Recruiter</span>
+                      <span class="recruiter-existing-badge" id="recruiter-existing-badge" style="display: none;">✓ In Contacts Hub</span>
+                    </div>
+                    <div class="recruiter-title" id="recruiter-title"></div>
+                  </div>
+                </div>
+                <div class="recruiter-opt-in-row">
+                  <label class="recruiter-checkbox-label">
+                    <input type="checkbox" id="add-recruiter-contact-checkbox" checked>
+                    <span id="add-recruiter-checkbox-text">Add to Contacts Hub &amp; link to job</span>
+                  </label>
+                  <button type="button" class="recruiter-view-details-btn" id="recruiter-view-details-btn" title="View or edit in Contact Clipper">View Details →</button>
+                </div>
+              </div>
+
+              <!-- Tailored CV / Resume Attachment Dropzone (US5 / T031) -->
+              <div class="form-group cv-upload-group" id="cv-upload-group">
+                <div class="form-label-row">
+                  <label for="cv-file-input">
+                    <span>Tailored Resume</span>
+                  </label>
+                </div>
+
+                <!-- Upload Dropzone -->
+                <div class="cv-dropzone" id="cv-dropzone" tabindex="0" role="button" aria-label="Upload tailored CV">
+                  <input type="file" id="cv-file-input" accept=".pdf,.docx,.doc" style="display: none;" aria-label="Upload Tailored CV">
+                  
+                  <div class="cv-empty-state" id="cv-empty-state">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="cv-icon"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+                    <div class="cv-empty-text">
+                      <span>Drop tailored CV here or click to upload</span>
+                    </div>
+                    <span class="cv-format-hint">PDF, DOCX, or DOC · Max 2 MB</span>
+                  </div>
+
+                  <!-- Active Attachment Chip -->
+                  <div class="cv-attachment-chip" id="cv-attachment-chip" style="display: none;">
+                    <div class="cv-chip-left">
+                      <div class="cv-chip-badge" id="cv-chip-badge">PDF</div>
+                      <div class="cv-chip-details">
+                        <span class="cv-chip-name" id="cv-chip-name">Resume.pdf</span>
+                        <span class="cv-chip-size" id="cv-chip-size">245 KB</span>
+                      </div>
+                    </div>
+                    <div class="cv-chip-actions">
+                      <button type="button" class="cv-action-btn" id="cv-download-btn" title="Download attached CV" aria-label="Download CV">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                      </button>
+                      <button type="button" class="cv-action-btn cv-remove-btn" id="cv-remove-btn" title="Remove attached CV" aria-label="Remove CV">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- CV Upload Error Alert -->
+                <div class="cv-error-alert" id="cv-error-alert" style="display: none;" role="alert">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                  <span id="cv-error-text">File exceeds 2MB limit.</span>
+                </div>
+              </div>
+
+              <!-- Notes / Highlights (100% INTACT PRESERVED INVARIANT) -->
+              <div class="form-group">
+                <div class="form-label-row">
+                  <label for="notes-editor">
+                    <span>Notes &amp; Description</span>
+                  </label>
+                  <div class="notes-header-actions">
+                    <button type="button" class="btn-ghost-xs" id="btn-toggle-md" title="Toggle markdown view">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                      <span id="toggle-md-label">Markdown</span>
+                    </button>
+                    <button type="button" class="btn-ghost-xs" id="btn-clear-notes" title="Clear notes">Clear</button>
+                  </div>
+                </div>
+                <div class="rich-notes-container" id="notes-rich-container">
+                  <div class="rich-notes-toolbar" id="notes-toolbar">
+                    <button type="button" class="toolbar-btn" data-cmd="bold" tabindex="-1" title="Bold (Ctrl+B)" aria-label="Bold">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 12h9a4 4 0 0 1 0 8H6v-8zm0 0V4h8a4 4 0 0 1 0 8H6z"/></svg>
+                    </button>
+                    <button type="button" class="toolbar-btn" data-cmd="italic" tabindex="-1" title="Italic (Ctrl+I)" aria-label="Italic">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="4" x2="10" y2="4"/><line x1="14" y1="20" x2="5" y2="20"/><line x1="15" y1="4" x2="9" y2="20"/></svg>
+                    </button>
+                    <button type="button" class="toolbar-btn" data-cmd="h3" tabindex="-1" title="Heading" aria-label="Heading">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 12h16"/><path d="M4 18V6"/><path d="M20 18V6"/></svg>
+                    </button>
+                    <button type="button" class="toolbar-btn" data-cmd="bullet" tabindex="-1" title="Bullet List" aria-label="Bullet List">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/><circle cx="4" cy="6" r="1.5" fill="currentColor"/><circle cx="4" cy="12" r="1.5" fill="currentColor"/><circle cx="4" cy="18" r="1.5" fill="currentColor"/></svg>
+                    </button>
+                  </div>
+                  <div id="notes-editor" class="notes-contenteditable" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Notes" spellcheck="true" data-placeholder="Job description, key requirements, interview notes..."></div>
+                  <textarea id="notes-raw" class="notes-raw-textarea" rows="6" style="display: none;" aria-label="Raw Markdown Notes"></textarea>
+                </div>
+                <input type="hidden" id="notes" name="notes">
               </div>
             </div>
-            <div class="rich-notes-container" id="notes-rich-container">
-              <div class="rich-notes-toolbar" id="notes-toolbar">
-                <button type="button" class="toolbar-btn" data-cmd="bold" tabindex="-1" title="Bold (Ctrl+B)" aria-label="Bold">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 12h9a4 4 0 0 1 0 8H6v-8zm0 0V4h8a4 4 0 0 1 0 8H6z"/></svg>
-                </button>
-                <button type="button" class="toolbar-btn" data-cmd="italic" tabindex="-1" title="Italic (Ctrl+I)" aria-label="Italic">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="4" x2="10" y2="4"/><line x1="14" y1="20" x2="5" y2="20"/><line x1="15" y1="4" x2="9" y2="20"/></svg>
-                </button>
-                <button type="button" class="toolbar-btn" data-cmd="h3" tabindex="-1" title="Heading" aria-label="Heading">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 12h16"/><path d="M4 18V6"/><path d="M20 18V6"/></svg>
-                </button>
-                <button type="button" class="toolbar-btn" data-cmd="bullet" tabindex="-1" title="Bullet List" aria-label="Bullet List">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/><circle cx="4" cy="6" r="1.5" fill="currentColor"/><circle cx="4" cy="12" r="1.5" fill="currentColor"/><circle cx="4" cy="18" r="1.5" fill="currentColor"/></svg>
-                </button>
-              </div>
-              <div id="notes-editor" class="notes-contenteditable" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Notes" spellcheck="true" data-placeholder="Job description, key requirements, interview notes..."></div>
-              <textarea id="notes-raw" class="notes-raw-textarea" rows="6" style="display: none;" aria-label="Raw Markdown Notes"></textarea>
-            </div>
-            <input type="hidden" id="notes" name="notes">
           </div>
         </div>
       </div>
 
       <!-- Sticky Action Bar for Job Form -->
       <div class="sticky-action-bar" id="sticky-action-bar">
-        <div class="sticky-action-meta" id="sticky-stage-indicator">
-          <span class="stage-dot" id="sticky-stage-dot" style="background-color: var(--stage-saved-dot);"></span>
-          <span class="sticky-stage-label" id="sticky-stage-label">Saved</span>
-        </div>
         <button type="button" class="btn-primary" id="save-btn">
           <span>Save Application</span>
         </button>
@@ -385,6 +431,26 @@
 
     <!-- Contact Clipper View (LinkedIn Contact Clipper) -->
     <div id="contact-clip-view" role="tabpanel" aria-labelledby="tab-contact" style="display: none;">
+      <!-- Canonical Contact Empty State (Shown when no contact profile is detected) -->
+      <div class="empty-state-card" id="contact-empty-state" style="display: none;">
+        <div class="empty-state-badge warning">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><line x1="8" y1="11" x2="16" y2="11"/></svg>
+        </div>
+        <h3 class="empty-state-title">No contact profile detected</h3>
+        <p class="empty-state-description">
+          Open a person's profile on LinkedIn to extract contact details, or enter recruiter info manually.
+        </p>
+        <div class="empty-state-actions">
+          <button type="button" class="btn-utility-clean" id="btn-manual-contact-entry">
+            <span>Manual Entry</span>
+          </button>
+          <button type="button" class="btn-utility-clean primary" id="btn-retry-contact-detect">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
+            <span>Re-scan Profile</span>
+          </button>
+        </div>
+      </div>
+
       <div class="form-layout">
         <!-- Contact Status Banner (Deduplication / Diffing) -->
         <div class="duplicate-banner" id="contact-status-banner" style="display: none;">
@@ -400,8 +466,9 @@
           <div class="form-card-header">
             <span class="form-card-title">Contact Details</span>
             <div style="display: flex; align-items: center; gap: 6px;">
-              <button type="button" class="btn-ghost-xs" id="btn-ai-boost-contact" title="AI Fallback &amp; Boost: Extract latest experience &amp; contact details with AI">
-                <span>✨ AI Boost</span>
+              <button type="button" class="btn-utility-clean" id="btn-ai-boost-contact" title="AI Fallback &amp; Boost: Extract latest experience &amp; contact details with AI">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m13 2-2 10h5L11 22l2-10H8Z"/></svg>
+                <span>AI Boost</span>
               </button>
               <span class="category-indicator-badge" id="contact-category-indicator">Recruiter</span>
             </div>
@@ -522,13 +589,28 @@
         </button>
         <button type="button" class="btn-primary" id="save-contact-btn">
           <span>Save Contact</span>
-          <kbd class="btn-shortcut-hint">Ctrl+↵</kbd>
         </button>
       </div>
     </div>
 
     <!-- Email Log View (Webmail Companion Mode) -->
     <div id="email-log-view" role="tabpanel" aria-labelledby="tab-email" style="display: none;">
+      <!-- Canonical Email Empty State (Shown when no email thread is detected) -->
+      <div class="empty-state-card" id="email-empty-state" style="display: none;">
+        <div class="empty-state-badge warning">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/><line x1="9" y1="12" x2="15" y2="12"/></svg>
+        </div>
+        <h3 class="empty-state-title">No email thread detected</h3>
+        <p class="empty-state-description">
+          Open an email thread in Gmail or Outlook to log recruiter correspondence directly to your application.
+        </p>
+        <div class="empty-state-actions">
+          <button type="button" class="btn-utility-clean" id="btn-manual-email-entry">
+            <span>Manual Entry</span>
+          </button>
+        </div>
+      </div>
+
       <!-- Duplicate Email Warning Banner -->
       <div class="duplicate-banner" id="email-duplicate-banner" style="display: none;">
         <div class="duplicate-banner-content">
@@ -674,7 +756,6 @@
         </button>
         <button type="button" class="btn-primary" id="log-email-btn">
           <span>Log Email</span>
-          <kbd class="btn-shortcut-hint">Ctrl+↵</kbd>
         </button>
       </div>
     </div>
@@ -741,7 +822,7 @@
             </div>
 
             <div class="profile-footer-links">
-              <a href="#" class="btn-text-link" id="profile-open-settings-link" style="font-size: 11px;">
+              <a href="#" class="btn-text-link" id="profile-open-settings-link" target="_blank" rel="noopener noreferrer" style="font-size: 11px;">
                 Open full profile in Tracklet settings →
               </a>
             </div>
@@ -847,7 +928,6 @@
         </div>
         <button type="button" class="btn-primary" id="autofill-trigger-btn" disabled>
           <span id="autofill-btn-text">Auto-Fill Application</span>
-          <kbd class="btn-shortcut-hint">Ctrl+↵</kbd>
         </button>
       </div>
     </div>
@@ -906,21 +986,6 @@
 
   </div>
 
-  <!-- Success View -->
-  <div class="container success-view" id="success-view">
-    <div class="success-badge">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-    </div>
-    <div class="success-title" id="success-title">Application Saved!</div>
-    <div class="success-subtitle" id="success-subtitle">Added directly to your Tracklet workspace.</div>
-    <a href="#" class="open-dashboard-btn" id="open-tracklet-link">
-      <span>Open Tracklet Workspace</span>
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-    </a>
-    <div class="progress-bar">
-      <div class="progress-fill"></div>
-    </div>
-  </div>
 
   <script src="jobBoardRegistry.js"></script>
   <script src="indexedDbResumeStorage.js"></script>

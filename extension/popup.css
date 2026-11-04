@@ -221,7 +221,8 @@ body {
   width: 6.5px;
   height: 6.5px;
   border-radius: 50%;
-  background-color: var(--neutral-subtle);
+  background-color: #f59e0b;
+  box-shadow: 0 0 4px rgba(245, 158, 11, 0.35);
   flex-shrink: 0;
   transition: background-color 0.2s ease, box-shadow 0.2s ease;
 }
@@ -238,6 +239,64 @@ body {
   color: var(--neutral-body);
   white-space: nowrap;
 }
+
+/* ==========================================================================
+   Calm Auth Gate Banner (F1)
+   ========================================================================== */
+
+.auth-gate-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 12px;
+  background-color: var(--primary-subtle);
+  border: 1px solid var(--primary-border);
+  border-radius: 10px;
+  margin-bottom: 2px;
+  box-shadow: var(--shadow-2xs);
+}
+
+.auth-gate-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.auth-gate-icon {
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.auth-gate-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.auth-gate-title {
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--neutral-dark);
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+}
+
+.auth-gate-desc {
+  font-family: var(--font-body);
+  font-size: 10px;
+  color: var(--neutral-muted);
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 
 /* ==========================================================================
    Update Alert Banner
@@ -314,11 +373,11 @@ body {
   align-items: center;
   background: #f1f5f9;
   padding: 3px;
-  border-radius: 10px;
+  border-radius: 11px;
   border: 1px solid var(--neutral-border);
   gap: 2px;
   margin-top: 2px;
-  margin-bottom: 2px;
+  margin-bottom: 4px;
 }
 
 .companion-tab {
@@ -333,8 +392,8 @@ body {
   color: var(--neutral-muted);
   font-family: var(--font-body);
   font-size: 11.5px;
-  font-weight: 600;
-  border-radius: 7px;
+  font-weight: 500;
+  border-radius: 8px;
   cursor: pointer;
   transition: color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
   user-select: none;
@@ -347,9 +406,14 @@ body {
 
 .companion-tab.active {
   background: var(--surface);
-  color: var(--primary);
+  color: #0f172a;
   font-weight: 700;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.companion-tab:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: -1px;
 }
 
 .companion-tab svg {
@@ -415,7 +479,7 @@ body {
 }
 
 /* ==========================================================================
-   Form Cards & Layout Architecture
+   Form Cards & Flat Canvas Architecture (F3)
    ========================================================================== */
 
 .form-layout {
@@ -424,37 +488,78 @@ body {
   gap: 10px;
 }
 
-.form-card {
+/* Single Flat Form Canvas (Flattened Container Hierarchy - F3) */
+.flat-form-canvas {
   background: var(--surface);
-  border: 1px solid var(--neutral-border);
+  border: 1px solid rgba(226, 232, 240, 0.9);
   border-radius: 12px;
-  padding: 12px;
+  padding: 13px 14px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
-  transition: border-color 0.15s ease;
+  gap: 12px;
+  box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.03), 0 1px 2px -1px rgba(15, 23, 42, 0.02);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.flat-form-canvas:hover {
+  border-color: #cbd5e1;
+}
+
+.canvas-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 7px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.canvas-section-label {
+  font-family: var(--font-display);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #475569;
+}
+
+.canvas-divider {
+  height: 1px;
+  background-color: #f1f5f9;
+  margin: 2px 0;
+}
+
+.form-card {
+  background: var(--surface);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 12px;
+  padding: 13px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.03), 0 1px 2px -1px rgba(15, 23, 42, 0.02);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .form-card:hover {
-  border-color: var(--neutral-border-hover);
+  border-color: #cbd5e1;
+  box-shadow: 0 2px 6px 0 rgba(15, 23, 42, 0.04), 0 1px 2px -1px rgba(15, 23, 42, 0.02);
 }
 
 .form-card-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-bottom: 6px;
+  padding-bottom: 7px;
   border-bottom: 1px solid #f1f5f9;
 }
 
 .form-card-title {
   font-family: var(--font-display);
-  font-size: 10.5px;
+  font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--neutral-muted);
+  letter-spacing: 0.06em;
+  color: #475569;
 }
 
 .btn-ghost-xs {
@@ -477,7 +582,47 @@ body {
   background-color: var(--primary-subtle);
 }
 
-/* AI Boost Micro-Buttons */
+/* ==========================================================================
+   Clean Utility Buttons (Anti-Slop Craft - F3)
+   ========================================================================== */
+
+.btn-utility-clean {
+  height: 26px;
+  padding: 0 9px;
+  border-radius: 6px;
+  background-color: var(--surface);
+  border: 1px solid var(--neutral-border);
+  color: var(--neutral-body);
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow: var(--shadow-2xs);
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  user-select: none;
+}
+
+.btn-utility-clean:hover {
+  background-color: var(--neutral-bg);
+  border-color: var(--neutral-border-hover);
+  color: var(--neutral-dark);
+}
+
+.btn-utility-clean.primary {
+  background-color: var(--primary);
+  border-color: var(--primary);
+  color: #ffffff;
+}
+
+.btn-utility-clean.primary:hover {
+  background-color: var(--primary-hover);
+  border-color: var(--primary-hover);
+}
+
+/* AI Boost Micro-Buttons (Tracklet Token Conformance - No Gradient Slop) */
 #btn-ai-boost-job,
 #btn-ai-boost-contact {
   background-color: var(--primary-subtle);
@@ -485,16 +630,208 @@ body {
   color: var(--primary);
   border-radius: 6px;
   font-weight: 600;
-  padding: 2px 7px;
+  padding: 2.5px 8px;
   font-size: 10.5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow: var(--shadow-2xs);
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  cursor: pointer;
 }
 
 #btn-ai-boost-job:hover,
 #btn-ai-boost-contact:hover {
   background-color: #dbeafe;
   border-color: #93c5fd;
-  color: var(--primary-hover);
+  color: #1d4ed8;
 }
+
+/* ==========================================================================
+   Progressive Disclosure & Fluid Spring Animation (F4)
+   ========================================================================== */
+
+.disclosure-toggle-btn {
+  background: var(--surface);
+  border: 1px dashed var(--neutral-border);
+  border-radius: 8px;
+  color: var(--neutral-body);
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 6px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  user-select: none;
+}
+
+.disclosure-toggle-btn:hover {
+  background: var(--neutral-bg);
+  border-color: var(--primary-border);
+  color: var(--primary);
+}
+
+.disclosure-chevron {
+  transition: transform 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.disclosure-toggle-btn[aria-expanded="true"] .disclosure-chevron {
+  transform: rotate(180deg);
+}
+
+.disclosure-section {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+}
+
+.disclosure-section.expanded {
+  grid-template-rows: 1fr;
+}
+
+.disclosure-inner {
+  min-height: 0;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity 0.2s ease-out 0.04s, transform 0.2s cubic-bezier(0.16, 1, 0.3, 1) 0.04s;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  padding-top: 6px;
+}
+
+.disclosure-section.expanded .disclosure-inner {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .disclosure-section,
+  .disclosure-inner,
+  .disclosure-chevron {
+    transition: none !important;
+  }
+}
+
+/* ==========================================================================
+   Canonical EmptyState & Resilient Alerts (F5)
+   ========================================================================== */
+
+.empty-state-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 22px 16px;
+  background-color: var(--surface);
+  border: 1px dashed var(--neutral-border);
+  border-radius: 12px;
+  margin: 6px 0 10px;
+  animation: emptyStateFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes emptyStateFadeIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.empty-state-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+  background-color: var(--primary-subtle);
+  color: var(--primary);
+  border: 1px solid var(--primary-border);
+  box-shadow: var(--shadow-2xs);
+}
+
+.empty-state-badge.warning {
+  background-color: #fffbeb;
+  color: #b45309;
+  border-color: #fde68a;
+}
+
+.empty-state-title {
+  font-family: var(--font-display);
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--neutral-dark);
+  margin-bottom: 4px;
+  letter-spacing: -0.02em;
+}
+
+.empty-state-description {
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--neutral-muted);
+  line-height: 1.45;
+  max-width: 280px;
+  margin-bottom: 12px;
+}
+
+.empty-state-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.inline-error-alert {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 11px;
+  background-color: #fff1f2;
+  border: 1px solid #fecdd3;
+  border-radius: 8px;
+  font-size: 11.5px;
+  color: #be123c;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.inline-error-content {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.inline-error-message {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.btn-error-retry {
+  background-color: transparent;
+  border: 1px solid #f43f5e;
+  color: #be123c;
+  border-radius: 5px;
+  padding: 2px 8px;
+  font-size: 10.5px;
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.btn-error-retry:hover {
+  background-color: #f43f5e;
+  color: #ffffff;
+}
+
 
 /* ==========================================================================
    Inputs, Labels & Form Groups
@@ -546,8 +883,7 @@ label svg {
   margin-left: 1px;
 }
 
-.label-hint-optional,
-.cv-label-optional {
+.label-hint-optional {
   font-family: var(--font-body);
   font-size: 9.5px;
   font-weight: 600;
@@ -593,8 +929,8 @@ textarea::placeholder {
   width: 36px;
   height: 36px;
   border-radius: 10px;
-  background-color: var(--neutral-dark);
-  color: white;
+  background-color: #f8fafc;
+  color: #64748b;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -604,7 +940,14 @@ textarea::placeholder {
   flex-shrink: 0;
   overflow: hidden;
   border: 1px solid var(--neutral-border);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.03);
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.company-avatar-box:hover,
+.contact-avatar-box:hover {
+  border-color: var(--neutral-border-hover);
+  background-color: #f1f5f9;
 }
 
 .company-avatar-box img,
@@ -753,6 +1096,13 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
   border-color: var(--neutral-border-hover);
 }
 
+.custom-select-trigger:focus-visible {
+  outline: none;
+  background-color: var(--surface);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
+}
+
 .custom-select-value {
   display: flex;
   align-items: center;
@@ -849,6 +1199,12 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
 
 .stage-trigger-btn:hover {
   transform: translateY(-0.5px);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.stage-trigger-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
 }
 
 .stage-trigger-left {
@@ -862,6 +1218,7 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
   height: 7px;
   border-radius: 50%;
   flex-shrink: 0;
+  box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.85);
 }
 
 .stage-dropdown-menu {
@@ -1096,12 +1453,12 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
 }
 
 .cv-dropzone {
-  border: 1.5px dashed var(--neutral-border-hover);
+  border: 1.5px dashed #cbd5e1;
   border-radius: 10px;
-  background-color: #fafafa;
-  padding: 12px;
+  background-color: #f8fafc;
+  padding: 13px;
   text-align: center;
-  transition: border-color 0.15s ease, background-color 0.15s ease;
+  transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
   cursor: pointer;
   position: relative;
 }
@@ -1115,7 +1472,7 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
 .cv-dropzone:focus-visible {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
 }
 
 .cv-empty-state {
@@ -1433,7 +1790,7 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
   background: #f3e8ff;
   color: #7e22ce;
   border: 1px solid #e9d5ff;
-  transition: all 0.15s ease;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
 .category-pills-grid {
@@ -1453,7 +1810,7 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
   color: var(--neutral-body);
   cursor: pointer;
   text-align: center;
-  transition: all 0.15s ease;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
   user-select: none;
   white-space: nowrap;
   overflow: hidden;
@@ -2115,12 +2472,25 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  background: rgba(255, 255, 255, 0.92);
+  background: rgba(255, 255, 255, 0.94);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border-top: 1px solid rgba(226, 232, 240, 0.85);
-  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.03);
+  border-top: 1px solid rgba(226, 232, 240, 0.88);
+  box-shadow: 0 -3px 12px rgba(15, 23, 42, 0.04);
   z-index: 40;
+}
+
+/* Job bar only: stage status chip is gone in the footer, so center the save action */
+#sticky-action-bar {
+  justify-content: center;
+}
+
+/* Job bar only: enlarged primary action */
+#sticky-action-bar .btn-primary {
+  height: 40px;
+  padding: 0 40px;
+  font-size: 14px;
+  border-radius: 11px;
 }
 
 .sticky-action-meta {
@@ -2147,7 +2517,7 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
   width: auto;
   height: 36px;
   margin-top: 0;
-  padding: 0 15px;
+  padding: 0 16px;
   font-family: var(--font-display);
   font-size: 13px;
   font-weight: 700;
@@ -2162,13 +2532,14 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
   color: #ffffff;
   border: none;
   cursor: pointer;
-  box-shadow: 0 1px 3px rgba(37, 99, 235, 0.25);
+  box-shadow: 0 1px 3px rgba(37, 99, 235, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.15);
   transition: background-color 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
 }
 
 .btn-primary:hover {
   background-color: var(--primary-hover);
-  box-shadow: 0 3px 8px rgba(37, 99, 235, 0.35);
+  box-shadow: 0 3px 10px rgba(37, 99, 235, 0.38);
+  transform: translateY(-0.5px);
 }
 
 .btn-primary:active {
@@ -2311,7 +2682,7 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
   padding: 4px 10px;
   border-radius: 6px;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
 .companion-toast-btn:hover {
@@ -2441,91 +2812,8 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
   text-align: center;
 }
 
-/* ==========================================================================
-   Success Celebration View
-   ========================================================================== */
 
-.success-view {
-  display: none;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 32px 20px;
-  gap: 14px;
-}
 
-.success-view.visible {
-  display: flex;
-}
-
-.success-badge {
-  width: 52px;
-  height: 52px;
-  background-color: #ecfdf5;
-  color: #059669;
-  border: 1px solid #a7f3d0;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
-}
-
-.success-title {
-  font-family: var(--font-display);
-  font-weight: 800;
-  font-size: 18px;
-  color: var(--neutral-dark);
-  letter-spacing: -0.02em;
-}
-
-.success-subtitle {
-  font-size: 12.5px;
-  color: var(--neutral-muted);
-  line-height: 1.4;
-}
-
-.open-dashboard-btn {
-  font-family: var(--font-display);
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--primary);
-  background-color: var(--primary-subtle);
-  border: 1px solid var(--primary-border);
-  padding: 8px 14px;
-  border-radius: 10px;
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  transition: all 0.15s ease;
-}
-
-.open-dashboard-btn:hover {
-  background-color: #dbeafe;
-}
-
-.progress-bar {
-  width: 100%;
-  height: 4px;
-  background-color: var(--neutral-border);
-  border-radius: 9999px;
-  overflow: hidden;
-  margin-top: 10px;
-}
-
-.progress-fill {
-  height: 100%;
-  background-color: #10b981;
-  width: 100%;
-  animation: countdown 3.2s linear forwards;
-}
-
-@keyframes countdown {
-  from { width: 100%; }
-  to { width: 0%; }
-}
 
 
 /* ==========================================================================
