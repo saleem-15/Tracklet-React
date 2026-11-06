@@ -23,7 +23,8 @@
     "mcp:agentation": "agentation-mcp server",
     "mcp:doctor": "agentation-mcp doctor",
     "audit": "node --experimental-strip-types scripts/telemetry/runAudit.ts",
-    "audit:firebase": "node --experimental-strip-types scripts/telemetry/extractFirebaseAdmin.ts"
+    "audit:firebase": "node --experimental-strip-types scripts/telemetry/extractFirebaseAdmin.ts",
+    "context": "node scripts/check-context.js"
   },
   "dependencies": {
     "@sentry/react": "^10.70.0",
