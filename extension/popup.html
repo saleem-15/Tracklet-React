@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Tracklet</title>
   <link rel="stylesheet" href="popup.css">
+  <link rel="stylesheet" href="tooltip.css">
 </head>
 <body>
   <div class="container" id="main-container">
@@ -423,7 +424,7 @@
 
       <!-- Sticky Action Bar for Job Form -->
       <div class="sticky-action-bar" id="sticky-action-bar">
-        <button type="button" class="btn-primary" id="save-btn">
+        <button type="button" class="btn-primary" id="save-btn" data-tooltip="Save to your pipeline" data-tooltip-shortcut="Ctrl+↵">
           <span>Save Application</span>
         </button>
       </div>
@@ -990,6 +991,7 @@
   <script src="jobBoardRegistry.js"></script>
   <script src="indexedDbResumeStorage.js"></script>
   <script src="profileStorage.js"></script>
+  <script src="tooltip.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>
