@@ -160,12 +160,11 @@
   }
 
   const MAX_RESUME_SIZE_BYTES = 2 * 1024 * 1024; // 2MB
-  const ALLOWED_RESUME_EXTENSIONS = ['.pdf', '.docx', '.doc', '.txt'];
+  const ALLOWED_RESUME_EXTENSIONS = ['.pdf', '.docx', '.doc'];
   const ALLOWED_RESUME_MIME_TYPES = [
     'application/pdf',
     'application/msword',
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    'text/plain',
     'application/octet-stream'
   ];
 
@@ -227,7 +226,7 @@
     if (!ALLOWED_RESUME_EXTENSIONS.includes(ext)) {
       return {
         valid: false,
-        error: `Unsupported file type (${ext || 'unknown'}). Please upload a PDF, DOCX, DOC, or TXT file.`
+        error: `Unsupported file type (${ext || 'unknown'}). Please upload a PDF, DOCX, or DOC file.`
       };
     }
 

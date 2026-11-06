@@ -1,0 +1,87 @@
+/* ==========================================================================
+   Tooltip — shared styled island
+   Ported from the web app Tooltip.tsx so the extension matches the dashboard:
+   dark blurred slate card, subtle ring + shadow, 2px directional drift,
+   100ms ease-out open / 60ms ease-in close (mirrors app timing exactly).
+   ========================================================================== */
+
+.tl-tooltip {
+  position: fixed;
+  top: -9999px;
+  left: -9999px;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 320px;
+  padding: 4px 10px;
+  background-color: rgba(2, 6, 23, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: #f8fafc;
+  font-family: var(--font-body);
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: -0.011em;
+  line-height: 1.35;
+  border-radius: 6px;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.1),
+    0 2px 4px rgba(0, 0, 0, 0.3),
+    0 8px 18px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+  user-select: none;
+  opacity: 0;
+  transition: opacity 60ms ease-in;
+  transform: translate(0, 0);
+}
+
+/* Whisper-settling micro-motion: 2px drift toward the resting position */
+.tl-tooltip--top:not(.tl-tooltip--visible) {
+  transform: translateY(2px);
+}
+.tl-tooltip--bottom:not(.tl-tooltip--visible) {
+  transform: translateY(-2px);
+}
+.tl-tooltip--left:not(.tl-tooltip--visible) {
+  transform: translateX(2px);
+}
+.tl-tooltip--right:not(.tl-tooltip--visible) {
+  transform: translateX(-2px);
+}
+
+.tl-tooltip--visible {
+  opacity: 1;
+  transition: opacity 100ms ease-out;
+}
+
+.tl-tooltip-label {
+  white-space: nowrap;
+}
+
+.tl-tooltip-label--wrap {
+  white-space: normal;
+}
+
+.tl-tooltip-kbd {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 500;
+  text-transform: uppercase;
+  border-radius: 4px;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.15),
+    inset 0 1px 1px rgba(255, 255, 255, 0.12);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tl-tooltip {
+    transition: none;
+    transform: translate(0, 0);
+  }
+}

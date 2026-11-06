@@ -48,6 +48,7 @@ Tracklet is a **commercial, closed-source B2C SaaS web application and Chrome Ex
 4. Update CSV export (`src/lib/exportCsv.ts`) and CSV import (`src/lib/importCsv.ts`).
 
 ### B. Creating New React Components & Canonical Shared Primitives
+- **Mandatory UI Component Lifecycle Workflow**: Follow `.agents/workflows/ui-component-lifecycle.md` for both component creation and review. Execute Phase 1 (Product Shaping & Edge Cases), Phase 2 (Canonical Scaffolding), Phase 3 (Optical Math & `src/theme/motion.ts`), and Phase 4 (Verification).
 - **Mandatory Step 0 Pre-Flight Discovery Protocol**: Before generating or modifying any UI component or view, agents MUST emit the Pre-Flight Discovery Manifest defined in `.agents/rules/component-registry.md` mapping UI intent to canonical components. Writing inline HTML elements where a canonical primitive exists is strictly forbidden.
 - Keep components under **300 lines**. If a component exceeds 300 lines, extract logical sub-components.
 - Always define a clear `Props` TypeScript interface.
@@ -92,7 +93,7 @@ All components must follow the formalized guidelines in `.agents/rules/ui-ux-sta
 3. **Standardized Destructive Palette**: Destructive actions (delete, discard, unlink) must use subtle rest and rose hover: `text-slate-500 hover:text-rose-600 hover:bg-rose-50 active:bg-rose-100 transition-colors`. Never use permanent alarming red for row or card buttons.
 4. **Resilient Form Validation**: Always include `noValidate` on forms, auto-trim strings, and use permissive RFC-compliant regex with inline error messaging.
 5. **Header Hierarchy**: Do not place dynamic record counts as subtitles directly under primary page or modal headings.
-6. **Micro-interaction Stability**: Use `transition-colors duration-150` instead of `transition-all`. Keep font-weights and borders constant across states to prevent layout shifts.
+6. **Micro-interaction & Motion Stability**: Follow `MOTION_TOKENS` from `src/theme/motion.ts`. Strictly ban `transition-all` in favor of targeted transitions (`transition-colors duration-150`). Durations must be <= 200ms. Springs must be critically damped (stiffness 400, damping 35, zero bounce). Instant 0ms on prefers-reduced-motion.
 7. **Action-Only Navigation Badges**: Persistent navigation tabs must remain calm and free of raw database tallies. Badges are strictly reserved for urgent/actionable events (e.g. pending follow-ups or expiring deadlines). Entity inventory counts belong in context within toolbars and column headers.
 8. **Anti-Slop Craft Standards**: Enforce max container depth of 1, ban decorative icons on self-evident labels, ban static metadata tag soup, and maintain 3-tier typography (Outfit / Plus Jakarta Sans / JetBrains Mono).
 

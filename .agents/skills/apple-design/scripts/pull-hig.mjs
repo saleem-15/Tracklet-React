@@ -202,7 +202,18 @@ function prettyPlatforms(platforms) {
   return platforms.map((p) => PLATFORM_NAMES[p] ?? p).join(', ');
 }
 
+const KEPT_SLUGS = new Set([
+  'accessibility', 'action-sheets', 'alerts', 'buttons', 'collections',
+  'color', 'context-menus', 'dark-mode', 'design-principles', 'entering-data',
+  'feedback', 'focus-and-selection', 'icons', 'keyboards', 'labels',
+  'layout', 'lists-and-tables', 'loading', 'menus', 'modality',
+  'motion', 'pickers', 'pointing-devices', 'popovers', 'progress-indicators',
+  'scroll-views', 'search-fields', 'searching', 'sidebars', 'split-views',
+  'tab-bars', 'text-fields', 'toggles', 'toolbars', 'typography', 'writing'
+]);
+
 function omissionReason(slug, platforms) {
+  if (!KEPT_SLUGS.has(slug)) return 'Omitted in distilled edition (irrelevant to desktop SaaS and web applications)';
   if (OMITTED_PAGES[slug]) return OMITTED_PAGES[slug];
   if (platforms && !platforms.some((p) => KEPT_PLATFORMS.has(p))) {
     return `Only applies to ${prettyPlatforms(platforms)}`;

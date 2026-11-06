@@ -134,3 +134,40 @@ This document establishes the mandatory interaction rules, visual standards, and
 **Rule**: Before submitting any UI pull request or task completion:
 1. Execute the **Step 0 Pre-Flight Discovery Protocol** defined in `.agents/rules/component-registry.md`.
 2. Verify all changes against the **6-Point Anti-Slop Verification Checklist** in `.agents/rules/anti-slop-standards.md` and `.agents/skills/anti-slop-craft/SKILL.md`.
+
+---
+
+## 14. Product Shaping, Journey Context & Edge-Case Architecture
+**Rule**: Before building or modifying any component, determine what should be displayed by understanding the user journey and modeling all edge cases. Follow `.agents/workflows/ui-component-lifecycle.md`.
+
+1. **User Entry Point & Mental Model**:
+   - **From Kanban Board (`ActivePipelineBoard.tsx`)**: User is in fast triage mode. Prioritize next action, interview time, recruiter touchpoint.
+   - **From Table View (`AllApplicationsTable.tsx`)**: User is in audit mode. Prioritize salary, stage history, structured notes.
+   - **From Extension Popup (`extension/popup.html`)**: User is in 1-click capture mode. Minimum input, pre-filled ATS data.
+2. **Mandatory 4 States**:
+   - **Loading**: Use Skeletons matching exact row height/pitch for predictable layouts (zero CLS). Use Inline Spinners inside mounted buttons for in-place actions.
+   - **Empty**: Always render canonical `EmptyState` with context explanation and 1-click recovery CTA (never bare "No items").
+   - **Error**: Non-blocking toast/banner with human explanation, retry button, and form state preservation (never wipe user input).
+   - **Boundary Values**: Handle 60+ char titles (truncate + Tooltip), null salaries, missing dates with clean fallback tokens (`"—"`).
+
+---
+
+## 15. Optical Math & Motion Invariants (Distilled Craft)
+**Rule**: Apply the mathematical precision of Stageshow and Apple HIG without bloat.
+
+1. **Concentric Radii ($R = r + p$)**: Outer container radius equals inner radius plus padding. Shared curvature centers eliminate visual bulging.
+2. **In-Place Mutation**: A button transitioning states (Save -> Saving -> Saved) MUST morph on itself. Never unmount and pop in a separate element.
+3. **No Near-Tangents**: Gaps between edges must be flush ($0$px) or separated by at least $8$px (`gap-2`). Never leave accidental 1-3px gaps.
+4. **Anchored Numbers**: Hang currency/unit marks; animate only changing digits (`24` -> `25` only rolls the `5`).
+5. **Visible Ink Alignment**: Trim line-boxes (`text-box: trim-both cap alphabetic`); center icons to cap-height, not bounding box.
+6. **Motion Tokens**: All transitions must use `MOTION_TOKENS` from `src/theme/motion.ts` (100ms instant, 150ms snappy, 200ms drawer). Max duration 250ms. Critically damped springs only (stiffness 400, damping 35, 0% bounce). Instant 0ms on `prefers-reduced-motion`.
+7. **44px Hit Targets**: All interactive icon buttons must maintain a minimum 44x44px clickable target.
+
+---
+
+## 16. Universal Craft Routing Map
+If deep architectural or guideline context is needed, consult the distilled repository libraries:
+- **Accessibility & Touch Ergonomics (44px, focus, contrast)**: `.agents/skills/apple-design/references/hig/accessibility.md`
+- **Optical Geometry & Layout Precision ($R = r + p$, ink alignment)**: `~/.agents/skills/stageshow/references/craft.md`
+- **Motion Durations & Physics Curves**: `src/theme/motion.ts` & `~/.agents/skills/stageshow/references/motion.md`
+- **Design Tokens & Canonical Shared Components**: `src/theme/tokens.ts` & `docs/COMPONENT_REGISTRY.md`
