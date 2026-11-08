@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import type { FormattingAction } from './editorActions';
 
 export interface SelectionBubbleProps {
@@ -87,9 +88,9 @@ const SelectionBubble: React.FC<SelectionBubbleProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [actions, editorRef]);
 
-  if (!position) return null;
+  if (!position || typeof document === 'undefined') return null;
 
-  return (
+  return createPortal(
     <div
       role="toolbar"
       aria-label="Format selection"
@@ -119,7 +120,8 @@ const SelectionBubble: React.FC<SelectionBubbleProps> = ({
           );
         })
       )}
-    </div>
+    </div>,
+    document.body
   );
 };
 

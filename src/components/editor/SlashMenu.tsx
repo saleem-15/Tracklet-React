@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import type { FormattingAction } from './editorActions';
 
 export interface SlashMenuProps {
@@ -32,7 +33,7 @@ const SlashMenu: React.FC<SlashMenuProps> = ({
     }
   }, [selectedIndex, open]);
 
-  if (!open || items.length === 0) return null;
+  if (!open || items.length === 0 || typeof document === 'undefined') return null;
 
   const menuHeight = 240; // max-h-60 is 240px
   const menuWidth = 224; // w-56 is 224px
@@ -59,13 +60,14 @@ const SlashMenu: React.FC<SlashMenuProps> = ({
   const maxLeft = Math.max(12, viewportWidth - menuWidth - 12);
   const left = Math.max(12, Math.min(rawLeft, maxLeft));
 
-  return (
+  return createPortal(
     <div
       role="listbox"
       aria-label="Formatting commands"
       aria-activedescendant={`slash-option-${items[selectedIndex]?.id ?? ''}`}
+      data-slash-menu="true"
       tabIndex={-1}
-      className="fixed z-[60] w-56 max-w-[calc(100vw-24px)] max-h-60 overflow-y-auto bg-white border border-slate-200/90 rounded-[12px] shadow-xl p-1.5 animate-in fade-in zoom-in-95 duration-150"
+      className="fixed z-[100] w-56 max-w-[calc(100vw-24px)] max-h-60 overflow-y-auto bg-white border border-slate-200/90 rounded-[12px] shadow-2xl p-1.5 animate-in fade-in zoom-in-95 duration-150"
       style={{ top, left }}
     >
       {items.map((action, index) => {
@@ -81,8 +83,11 @@ const SlashMenu: React.FC<SlashMenuProps> = ({
             role="option"
             aria-selected={selected}
             type="button"
-            // Keep editor selection intact while picking with the mouse
-            onMouseDown={(e) => e.preventDefault()}
+            // Keep editor selection intact while picking with the mouse; stop propagation to avoid closing
+            onMouseDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
             onClick={() => onSelect(action)}
             onMouseEnter={() => onHover(index)}
             className={`w-full text-left px-3 py-1.5 rounded-[8px] text-xs font-medium flex items-center justify-between transition-colors cursor-pointer ${
@@ -103,7 +108,8 @@ const SlashMenu: React.FC<SlashMenuProps> = ({
           </button>
         );
       })}
-    </div>
+    </div>,
+    document.body
   );
 };
 

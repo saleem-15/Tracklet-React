@@ -1,4 +1,5 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Trash2 } from 'lucide-react';
 
 export interface LinkPopoverProps {
@@ -85,7 +86,7 @@ export const LinkPopover: React.FC<LinkPopoverProps> = ({
     return () => document.removeEventListener('keydown', onKey);
   }, [open, onClose]);
 
-  if (!open || !pos || !rect) return null;
+  if (!open || !pos || !rect || typeof document === 'undefined') return null;
 
   const handleRemove = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -95,7 +96,7 @@ export const LinkPopover: React.FC<LinkPopoverProps> = ({
     onApply('');
   };
 
-  return (
+  return createPortal(
     <div
       ref={rootRef}
       role="dialog"
@@ -149,7 +150,8 @@ export const LinkPopover: React.FC<LinkPopoverProps> = ({
           </button>
         </>
       )}
-    </div>
+    </div>,
+    document.body
   );
 };
 
