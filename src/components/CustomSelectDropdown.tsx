@@ -18,6 +18,7 @@ interface CustomSelectDropdownProps<T = string | number> {
   variant?: 'default' | 'filter' | 'subtle';
   isActive?: boolean;
   className?: string;
+  buttonClassName?: string;
   menuClassName?: string;
   disabled?: boolean;
   /** Optional id of an external element that names the trigger (overrides the generated aria-label). */
@@ -34,6 +35,7 @@ export function CustomSelectDropdown<T extends string | number = string>({
   variant = 'default',
   isActive = false,
   className = '',
+  buttonClassName = '',
   menuClassName = '',
   disabled = false,
   ariaLabelledBy,
@@ -146,13 +148,16 @@ export function CustomSelectDropdown<T extends string | number = string>({
         id={buttonId}
         type="button"
         disabled={disabled}
+        data-open={isOpen}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         aria-controls={isOpen ? listboxId : undefined}
         aria-label={ariaLabelledBy ? undefined : accessibleLabel}
         aria-labelledby={ariaLabelledBy}
         onClick={() => !disabled && setIsOpen(!isOpen)}
-        className={`w-full flex items-center justify-between gap-2 border font-sans transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 ${getButtonStyles()} ${getSizeStyles()}`}
+        className={`w-full flex items-center justify-between gap-2 border font-sans transition-[color,background-color,border-color,box-shadow] duration-150 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 ${
+          isOpen ? 'border-blue-400 ring-2 ring-blue-500/20 bg-slate-50/80' : ''
+        } ${getButtonStyles()} ${getSizeStyles()} ${buttonClassName}`}
       >
         <span className="truncate flex items-center gap-1.5">
           {selectedOption?.icon}

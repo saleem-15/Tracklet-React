@@ -262,7 +262,10 @@ function useEffectWrapper(
   React.useEffect(() => {
     if (!open) return;
     const onDown = (e: MouseEvent) => {
-      if (!wrapper?.contains(e.target as Node)) close();
+      const target = e.target as HTMLElement | null;
+      if (!wrapper?.contains(target as Node) && !target?.closest('[data-slash-menu="true"]')) {
+        close();
+      }
     };
     document.addEventListener('mousedown', onDown);
     return () => document.removeEventListener('mousedown', onDown);
