@@ -30,6 +30,10 @@ function mount(overrides?: Partial<Parameters<typeof LinkPopover>[0]>) {
   return props;
 }
 
+const queryPopover = <T extends Element = HTMLElement>(selector: string): T | null => {
+  return (host?.querySelector(selector) || document.body.querySelector(selector)) as T | null;
+};
+
 afterEach(() => {
   if (root) act(() => root.unmount());
   root = null;
@@ -40,20 +44,20 @@ afterEach(() => {
 describe('LinkPopover (floating link UX)', () => {
   it('renders input without Apply button when open, nothing when closed', () => {
     mount();
-    expect(host!.querySelector('input')).not.toBeNull();
-    expect(host!.textContent).not.toContain('Apply');
+    expect(queryPopover('input')).not.toBeNull();
+    expect(queryPopover('[role="dialog"]')?.textContent).not.toContain('Apply');
 
     const closed = mount({ open: false });
     void closed;
-    expect(host!.querySelector('input')).toBeNull();
+    expect(queryPopover('input')).toBeNull();
   });
 
   it('shows the Remove button only for existing links', () => {
     mount({ editingExisting: true });
-    expect(host!.querySelector('button[aria-label="Remove link"]')).not.toBeNull();
+    expect(queryPopover('button[aria-label="Remove link"]')).not.toBeNull();
 
     mount({ editingExisting: false });
-    expect(host!.querySelector('button[aria-label="Remove link"]')).toBeNull();
+    expect(queryPopover('button[aria-label="Remove link"]')).toBeNull();
   });
 
   it('auto-saves on pointer press outside its root for valid URL', () => {
@@ -72,8 +76,7 @@ describe('LinkPopover (floating link UX)', () => {
   it('does NOT close when pressing inside the popover', () => {
     const props = mount();
     act(() => {
-      host!
-        .querySelector('input')!
+      queryPopover('input')!
         .dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
     });
     expect(props.onClose).not.toHaveBeenCalled();
@@ -102,8 +105,7 @@ describe('LinkPopover (floating link UX)', () => {
 
     const fresh = mount({ open: true, url: 'https://github.com' });
     act(() => {
-      host!
-        .querySelector('input')!
+      queryPopover('input')!
         .dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
     });
     expect(fresh.onApply).toHaveBeenCalledTimes(1);

@@ -115,7 +115,8 @@ describe('RichTextEditor mount (contracts §1)', () => {
       editable.dispatchEvent(new Event('input', { bubbles: true }));
     });
 
-    expect(host!.querySelector('[role="listbox"]')).not.toBeNull();
-    expect(host!.querySelectorAll('[role="option"]').length).toBeGreaterThan(0);
+    const listbox = host!.querySelector('[role="listbox"]') || document.body.querySelector('[role="listbox"]');
+    expect(listbox).not.toBeNull();
+    expect((host!.querySelector('[role="listbox"]') || document.body).querySelectorAll('[role="option"]').length).toBeGreaterThan(0);
   });
 });
