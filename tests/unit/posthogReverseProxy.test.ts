@@ -1,3 +1,5 @@
+import fs from 'fs';
+import path from 'path';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { handlePosthogProxy } from '../../api/ingest';
 import { onRequest as onRequestIngest } from '../../functions/ingest/[[path]]';
@@ -5,6 +7,16 @@ import { onRequest as onRequestIngest } from '../../functions/ingest/[[path]]';
 describe('PostHog Edge Reverse Proxy', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+  });
+
+  describe('Cloudflare Routing Configuration (_routes.json)', () => {
+    it('includes /ingest/* in public/_routes.json so Cloudflare Pages delegates traffic to Functions', () => {
+      const routesJsonPath = path.resolve(__dirname, '../../public/_routes.json');
+      expect(fs.existsSync(routesJsonPath)).toBe(true);
+      const routes = JSON.parse(fs.readFileSync(routesJsonPath, 'utf8'));
+      expect(routes.include).toContain('/ingest/*');
+      expect(routes.include).toContain('/api/*');
+    });
   });
 
   describe('CORS & Preflight handling', () => {
