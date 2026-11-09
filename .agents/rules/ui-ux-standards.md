@@ -171,3 +171,33 @@ If deep architectural or guideline context is needed, consult the distilled repo
 - **Optical Geometry & Layout Precision ($R = r + p$, ink alignment)**: `~/.agents/skills/stageshow/references/craft.md`
 - **Motion Durations & Physics Curves**: `src/theme/motion.ts` & `~/.agents/skills/stageshow/references/motion.md`
 - **Design Tokens & Canonical Shared Components**: `src/theme/tokens.ts` & `docs/COMPONENT_REGISTRY.md`
+
+
+---
+
+## 17. Staged Dissolve Loading & Deterministic Skeleton Standard (CLS = 0)
+**Rule**: Loading experiences must feel calm, instantaneous, deterministic, and purposeful. Generic circular spinners on blank viewports, conversational cheerleading, and raw text fallbacks are strictly forbidden.
+
+1. **Two-Stage Loading Architecture (`WorkspaceLoadingState`)**:
+   - **Stage A: Cold Boot Monolith (`fullScreen`)**: Used exclusively in `AuthGate.tsx`. 
+     - Rendered on a zero-flash `bg-slate-50` canvas matching the app shell.
+     - 1.5px top precision vitality rail (`.hairline-progress`) running across the top edge.
+     - Monochromatic brand mark with 300ms gentle entry fade (`animate-in fade-in duration-300`).
+     - Status text (`loading ...`) reveals **only after a 300ms dwell** via `transitions.dev` staggered text reveal tokens (`.t-stagger.is-shown`). If data arrives within 300ms, text is never shown, preventing flicker.
+   - **Stage B: In-Place Workspace Dissolve (Embedded)**: Used in `WorkspaceContent.tsx`.
+     - Replaces view contents in-place while keeping Sidebar and TopBar navigation stable.
+     - Discreet 28px monospace telemetry footer (`WORKSPACE SYNC`).
+
+2. **Deterministic Geometry & Zero CLS (Cumulative Layout Shift = 0)**:
+   - Skeletons must match the exact pixel geometry of destination production views:
+     - **Applications Table**: `h-[38px]` rows.
+     - **Applications Pipeline**: `h-[37px]` column bar + `min-h-[96px]` cards.
+     - **Contacts**: Self-contained header, category chips, and automatic layout adaptation (`min-h-[170px]` grid or `h-[38px]` table) matching stored `localStorage` preference.
+     - **Analytics**: `AnalyticsFilterBar` silhouette, 4 executive KPI cards (`min-h-[148px]`), and 2-column intelligence grid (`min-h-[290px]`, `min-h-[240px]`).
+     - **Settings**: Flat white canvas (`bg-white`), sub-nav tabs with active Account underline, credentials card, and Danger Zone.
+
+3. **Strict Negative Constraints**:
+   - NO circular spinners (`animate-spin` on Lucide icons) on full screens or view canvasses.
+   - NO AI cheerleading copy (e.g. no "Getting things ready ✨").
+   - NO `transition-all` (use targeted `transition-opacity duration-150`).
+   - Skeletons must reside in modular sub-components in `src/components/layout/skeletons/` to keep all files under 300 lines.

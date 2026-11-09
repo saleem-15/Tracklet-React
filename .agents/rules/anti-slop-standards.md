@@ -211,3 +211,23 @@ Introducing arbitrary Tailwind bracket styles (`bg-[#2563eb]`, `rounded-[14px]`,
 ### Audit Questions:
 1. Are there bracketed arbitrary values (`#[...]`) in the file?
 2. Does any readable text or placeholder use `text-slate-400` on a light background?
+
+
+---
+
+## Dimension 7: Generic Circular Spinners & Destructive Layout Shifts
+
+### The Anti-Pattern
+Dropping an `<Loader2 className="animate-spin" />` in the middle of a blank canvas, rendering raw text fallbacks (`"Loading workspace..."`), or popping elements abruptly into the layout causing Cumulative Layout Shift (CLS).
+
+### The Rule
+- **Strict Ban on Full-Screen Spinners**: Never render standalone circular spinners or spinning Lucide icons on view canvasses.
+- **Use `WorkspaceLoadingState` & Skeletons**: 
+  - For cold boot: Use the Staged Dissolve monolith (`fullScreen`) with the 1.5px top vitality rail, logo entry fade, and 300ms delayed text reveal via `transitions.dev`.
+  - For in-workspace tabs: Use deterministic skeletons from `src/components/layout/skeletons/` matching exact production row/card heights (`h-[38px]`, `min-h-[96px]`, `min-h-[170px]`, `min-h-[148px]`).
+- **Zero AI Cheerleading Copy**: Never render conversational fluff like *"Preparing your dashboard... ✨"*. Use calm, technical status labels (`loading ...`, `WORKSPACE SYNC`).
+- **Inline Spinners Only on Action Buttons**: The ONLY acceptable use of a spinning icon is inside a mounted button executing an in-place asynchronous action (e.g. `isSaving ? <Loader2 className="animate-spin" /> : "Save"`).
+
+### Audit Questions:
+1. Does any loading view render a circular spinner or raw unstyled text?
+2. Does the view suffer Cumulative Layout Shift (CLS > 0) when transitioning from loading to mounted state?
