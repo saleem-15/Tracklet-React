@@ -35,7 +35,7 @@ export interface NavigationContextType {
   closeShortcutsModal: () => void;
 }
 
-const NavigationContext = createContext<NavigationContextType | null>(null);
+export const NavigationContext = createContext<NavigationContextType | null>(null);
 
 /**
  * NavigationProvider

@@ -1,4 +1,5 @@
 import { AlertTriangle, X } from 'lucide-react';
+import { WorkspaceLoadingState } from './WorkspaceLoadingState';
 import { AllApplicationsTable } from '../AllApplicationsTable';
 import { ActivePipelineBoard, ActiveQuotaInfo } from '../ActivePipelineBoard';
 import { ACTIVE_STATUSES, TERMINAL_STATUSES } from '../../lib/constants';
@@ -154,11 +155,7 @@ export function WorkspaceContent({ isLoading = false, activeQuota }: WorkspaceCo
   }
 
   if (isLoading) {
-    return (
-      <div className="flex-1 flex items-center justify-center font-mono text-xs text-slate-500">
-        Loading Tracklet workspace...
-      </div>
-    );
+    return <WorkspaceLoadingState />;
   }
 
   return (
