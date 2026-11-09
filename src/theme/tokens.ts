@@ -32,4 +32,14 @@ export const UI_TOKENS = {
   btnOutline: 'h-[34px] px-3 rounded-[10px] bg-white hover:bg-slate-100 text-slate-700 font-medium border border-slate-200 shadow-2xs text-xs cursor-pointer flex items-center justify-center gap-1.5 transition-[color,background-color,border-color,box-shadow,transform] duration-150 ease-out',
   btnGhost: 'h-8 px-2 rounded-[10px] bg-transparent hover:bg-slate-100 text-slate-600 hover:text-slate-900 text-xs transition-colors cursor-pointer',
   inputBase: 'h-[34px] bg-slate-50 text-slate-900 placeholder-slate-500 rounded-[10px] border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white text-xs transition-[color,background-color,border-color,box-shadow] duration-150 ease-out shadow-2xs',
+
+  // Skeleton & Calm Loading State Tokens
+  skeleton: {
+    base: 'animate-pulse bg-slate-200/60 rounded motion-reduce:animate-none',
+    subtle: 'animate-pulse bg-slate-200/40 rounded motion-reduce:animate-none',
+    card: 'bg-white border border-slate-200/80 rounded-xl p-3.5 shadow-2xs',
+    tableRow: 'h-[38px] border-b border-slate-100/80',
+    topBar: 'h-13 bg-white/95 border-b border-slate-200/80 px-3 sm:px-4 backdrop-blur-xs',
+    statusBadge: 'font-mono text-[11px] text-slate-500',
+  },
 };

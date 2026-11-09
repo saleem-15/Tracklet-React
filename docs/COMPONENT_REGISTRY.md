@@ -32,6 +32,7 @@ Use this quick-lookup decision matrix to select the appropriate canonical compon
 | **Company logo or brand avatar** | `CompanyLogo` | `src/components/CompanyLogo.tsx` | Raw `<img src="...">` without fallback and caching |
 | **Safe text with markdown links & auto-linking** | `LinkifiedText` | `src/components/LinkifiedText.tsx` | Raw `<a>` missing `target="_blank" rel="noopener noreferrer"` |
 | **Zero-data or filtered empty states** | `EmptyState` / `OnboardingEmptyState` | `src/components/EmptyState.tsx` | Ad-hoc "No data found" unstyled text divs |
+| **Initial app boot & in-workspace loading state** | `WorkspaceLoadingState` | `src/components/layout/WorkspaceLoadingState.tsx` | Circular spinning icons, wireframe scaffolding on cold boot, raw "Loading..." text |
 | **Hover tooltips with keyboard shortcuts** | `Tooltip` / `useTooltip` | `src/components/Tooltip.tsx` | Browser default `title="..."` attributes alone |
 | **Modal / Drawer / Dialog dismissal** | `useEscapeKey` | `src/lib/useEscapeKey.ts` | Manual keydown listeners that close multiple layers simultaneously |
 | **Standard buttons (Primary, Secondary, Outline, Ghost)** | `UI_TOKENS.btnPrimary`, `btnSecondary`, `btnOutline`, `btnGhost` | `src/theme/tokens.ts` | Hand-rolled inline button Tailwind utility strings |
@@ -362,12 +363,14 @@ export const DescriptionSnippet: React.FC<{ rawText: string }> = ({ rawText }) =
 1. `EmptyState` (`src/components/EmptyState.tsx`)
 2. `Tooltip` / `TooltipProvider` / `useTooltip` (`src/components/Tooltip.tsx`)
 3. `useEscapeKey` (`src/lib/useEscapeKey.ts`)
+4. `WorkspaceLoadingState` (`src/components/layout/WorkspaceLoadingState.tsx`)
 
-- **When to Use**: Zero-data screens, filter empty states, contextual tooltips with keyboard shortcuts, and modal dismissal.
+- **When to Use**: Zero-data screens, filter empty states, contextual tooltips with keyboard shortcuts, modal dismissal, and initial cold boot or in-workspace loading.
 - **Key Capabilities**:
   - `EmptyState`: Visually distinguishes initial zero-state from filtered search empty-state; uses standardized `UI_TOKENS` action buttons.
   - `Tooltip`: Portal-based rendering, warm-up delay tracking (zero delay on subsequent hovers), viewport collision avoidance, and shortcut hints.
   - `useEscapeKey`: Global LIFO stack that dismisses **only** the topmost overlay, preventing multi-layered drawers/modals from simultaneously closing on Escape.
+  - `WorkspaceLoadingState`: Executive Linear-grade loading experience implementing the Staged Dissolve architecture (`fullScreen` cold boot monolith with 1.5px hairline progress rail and "Texts reveal" transition from transitions.dev revealing "loading ..." after 300ms, plus in-workspace deterministic skeletons for all 5 workspace views: Table, Board, Contacts, Analytics, and Settings with 0 Cumulative Layout Shift). Organized via modular sub-skeletons in `src/components/layout/skeletons/`.
 
 #### Code Examples:
 ```tsx
