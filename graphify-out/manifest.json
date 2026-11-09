@@ -1520,8 +1520,8 @@
     "semantic_hash": ""
   },
   ".agents/rules/ui-ux-standards.md": {
-    "mtime": 1794221872.4375536,
-    "ast_hash": "b90624003bbeb73ff006255eee63cb54",
+    "mtime": 1794232445.703755,
+    "ast_hash": "9bbe4442a4a00f17c1f3f0385e095c5c",
     "semantic_hash": ""
   },
   ".agents/skills/add-component/SKILL.md": {
@@ -3805,8 +3805,8 @@
     "semantic_hash": ""
   },
   ".agents/rules/anti-slop-standards.md": {
-    "mtime": 1794221872.4357102,
-    "ast_hash": "b21e458819899dc89c8081f591db46b2",
+    "mtime": 1794232545.4071727,
+    "ast_hash": "d15307346af4324aba27dfd726ff3d66",
     "semantic_hash": ""
   },
   ".agents/rules/component-registry.md": {
@@ -3840,8 +3840,8 @@
     "semantic_hash": ""
   },
   "docs/COMPONENT_REGISTRY.md": {
-    "mtime": 1794222169.6072168,
-    "ast_hash": "60d9c19c2c47156fcca66cf265d1dbca",
+    "mtime": 1794227599.1471372,
+    "ast_hash": "acfff04bc19777dc2932c5671107ed03",
     "semantic_hash": ""
   },
   "docs/STARTUP_ROADMAP.md": {
