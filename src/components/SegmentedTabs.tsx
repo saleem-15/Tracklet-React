@@ -1,10 +1,14 @@
-import React, { useRef } from 'react';
+import React, { useRef, useId } from 'react';
+import { motion, useReducedMotion } from 'motion/react';
 
 export interface TabOption<T extends string = string> {
   id: T;
-  label: string;
+  label?: string;
   icon?: React.ReactNode;
   badge?: string | number;
+  title?: string;
+  'aria-label'?: string;
+  className?: string;
 }
 
 export interface SegmentedTabsProps<T extends string = string> {
@@ -12,8 +16,19 @@ export interface SegmentedTabsProps<T extends string = string> {
   activeTab: T;
   onChange: (tabId: T) => void;
   className?: string;
-  size?: 'sm' | 'md' | 'lg';
+  tabClassName?: string;
+  size?: 'xs' | 'sm' | 'md' | 'lg';
   fullWidth?: boolean;
+  prefix?: React.ReactNode;
+  layoutId?: string;
+  activeColor?: 'default' | 'blue';
+  hasBorder?: boolean;
+  pillBorder?: boolean;
+  gap?: boolean;
+  inactiveWeight?: 'medium' | 'semibold';
+  activeWeight?: 'semibold' | 'bold';
+  rounded?: string;
+  pillRadius?: string;
 }
 
 export function SegmentedTabs<T extends string = string>({
@@ -21,32 +36,60 @@ export function SegmentedTabs<T extends string = string>({
   activeTab,
   onChange,
   className = '',
+  tabClassName = '',
   size = 'md',
   fullWidth = true,
+  prefix,
+  layoutId,
+  activeColor = 'default',
+  hasBorder = false,
+  pillBorder = false,
+  gap = false,
+  inactiveWeight = 'medium',
+  activeWeight = 'semibold',
+  rounded,
+  pillRadius,
 }: SegmentedTabsProps<T>) {
-  const activeIndex = Math.max(0, tabs.findIndex((t) => t.id === activeTab));
-  const tabCount = tabs.length;
+  const generatedId = useId();
+  const activeLayoutId = layoutId || `segmented-pill-${generatedId}`;
+  const prefersReducedMotion = useReducedMotion();
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const tabCount = tabs.length;
 
   const sizeConfig = {
+    xs: {
+      container: 'p-0.5 text-[11px] h-7',
+      containerRadius: 'rounded-lg',
+      pillRadius: 'rounded-[6px]',
+      buttonText: 'px-2 py-0.5 text-[11px]',
+      buttonIcon: 'p-1 aspect-square',
+    },
     sm: {
-      container: 'p-0.5 rounded-lg text-[11px] h-7',
-      pill: 'top-0.5 bottom-0.5 left-0.5 rounded-[6px]',
-      insetPx: 2,
+      container: 'p-0.5 text-xs h-8',
+      containerRadius: 'rounded-xl',
+      pillRadius: 'rounded-lg',
+      buttonText: 'px-3 py-1 text-xs',
+      buttonIcon: 'p-1.5 aspect-square',
     },
     md: {
-      container: 'p-1 rounded-xl text-xs h-10',
-      pill: 'top-1 bottom-1 left-1 rounded-lg',
-      insetPx: 4,
+      container: 'p-1 text-xs h-9.5',
+      containerRadius: 'rounded-xl',
+      pillRadius: 'rounded-lg',
+      buttonText: 'px-3 py-1.5 text-xs',
+      buttonIcon: 'p-2 aspect-square',
     },
     lg: {
-      container: 'p-1.5 rounded-2xl text-sm h-11',
-      pill: 'top-1.5 bottom-1.5 left-1.5 rounded-xl',
-      insetPx: 6,
+      container: 'p-1.5 text-sm h-11',
+      containerRadius: 'rounded-2xl',
+      pillRadius: 'rounded-xl',
+      buttonText: 'px-3.5 py-2 text-sm',
+      buttonIcon: 'p-2.5 aspect-square',
     },
   };
 
-  const config = sizeConfig[size as 'sm' | 'md' | 'lg'] || sizeConfig.md;
+  const config = sizeConfig[size as keyof typeof sizeConfig] || sizeConfig.md;
+  const effectivePillRadius = pillRadius || config.pillRadius;
+  const effectiveContainerRadius = rounded || config.containerRadius;
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>, currentIndex: number) => {
     if (tabCount <= 1) return;
@@ -83,29 +126,39 @@ export function SegmentedTabs<T extends string = string>({
     }
   };
 
+  const activeWeightClass = activeWeight === 'bold' ? 'font-bold' : 'font-semibold';
+  const inactiveWeightClass = inactiveWeight === 'medium' ? 'font-medium' : 'font-semibold';
+
+  const activeTextColor =
+    activeColor === 'blue'
+      ? `text-blue-700 ${activeWeightClass}`
+      : `text-slate-900 ${activeWeightClass}`;
+
+  const inactiveTextColor = `text-slate-600 hover:text-slate-900 ${inactiveWeightClass}`;
+
   return (
     <div
       role="tablist"
       aria-orientation="horizontal"
-      className={`relative flex items-center bg-slate-100/90 border border-slate-200/80 select-none ${config.container} ${
+      className={`relative flex items-center select-none ${
+        hasBorder ? 'border border-slate-200/80' : ''
+      } ${gap ? 'gap-1' : ''} ${config.container} ${effectiveContainerRadius} ${
         fullWidth ? 'w-full' : 'inline-flex'
       } ${className}`}
     >
-      {/* Smooth Sliding Pill Indicator with exact 4-side margin */}
-      {tabCount > 0 && (
-        <div
-          aria-hidden="true"
-          className={`absolute bg-white shadow-xs border border-slate-200/90 pointer-events-none transition-transform duration-200 ease-out motion-reduce:transition-none ${config.pill}`}
-          style={{
-            width: `calc((100% - ${config.insetPx * 2}px) / ${tabCount})`,
-            transform: `translateX(${activeIndex * 100}%)`,
-          }}
-        />
+      {prefix && (
+        <div className="shrink-0 flex items-center select-none" aria-hidden="true">
+          {prefix}
+        </div>
       )}
 
-      {/* Tab Buttons */}
       {tabs.map((tab, idx) => {
         const isActive = tab.id === activeTab;
+        const isIconOnly = !tab.label && !!tab.icon;
+        const accessibleLabel =
+          tab['aria-label'] || tab.title || (typeof tab.label === 'string' ? tab.label : undefined);
+        const buttonPaddingClass = isIconOnly ? config.buttonIcon : config.buttonText;
+
         return (
           <button
             key={tab.id}
@@ -116,29 +169,65 @@ export function SegmentedTabs<T extends string = string>({
             role="tab"
             aria-selected={isActive}
             tabIndex={isActive ? 0 : -1}
+            title={tab.title || (typeof tab.label === 'string' ? tab.label : undefined)}
+            aria-label={accessibleLabel}
+            data-tooltip={tab.title}
             onClick={() => onChange(tab.id)}
             onKeyDown={(e) => handleKeyDown(e, idx)}
-            className={`relative z-10 flex-1 flex items-center justify-center gap-1.5 font-bold transition-colors duration-150 motion-reduce:transition-none cursor-pointer h-full px-2.5 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 ${
-              isActive ? 'text-slate-900 font-semibold' : 'text-slate-500 hover:text-slate-800'
-            }`}
+            className={`relative flex items-center justify-center transition-colors duration-150 cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 ${effectivePillRadius} h-full ${
+              fullWidth ? 'flex-1' : 'shrink-0'
+            } ${buttonPaddingClass} ${
+              isActive ? activeTextColor : inactiveTextColor
+            } ${tabClassName} ${tab.className || ''}`}
           >
-            {tab.icon && <span className="shrink-0">{tab.icon}</span>}
-            <span className="truncate">{tab.label}</span>
-            {tab.badge !== undefined && (
-              <span
-                className={`text-[11px] font-mono font-bold px-1.5 py-0.5 rounded-full ${
-                  isActive
-                    ? 'bg-blue-50 text-blue-600 border border-blue-200/60'
-                    : 'bg-slate-200 text-slate-600'
-                }`}
-              >
-                {tab.badge}
-              </span>
-            )}
+            {/* Sliding Pill Indicator */}
+            {isActive &&
+              (prefersReducedMotion ? (
+                <span
+                  aria-hidden="true"
+                  className={`absolute inset-0 bg-white shadow-2xs pointer-events-none ${effectivePillRadius} ${
+                    pillBorder ? 'border border-slate-200/90' : ''
+                  }`}
+                />
+              ) : (
+                <motion.span
+                  layoutId={activeLayoutId}
+                  aria-hidden="true"
+                  className={`absolute inset-0 bg-white shadow-2xs pointer-events-none ${effectivePillRadius} ${
+                    pillBorder ? 'border border-slate-200/90' : ''
+                  }`}
+                  transition={{
+                    type: 'spring',
+                    stiffness: 500,
+                    damping: 38,
+                    mass: 0.8,
+                  }}
+                />
+              ))}
+
+            {/* Tab Content (relative z-10 ensures it stays above the sliding pill) */}
+            <span className="relative z-10 flex items-center justify-center gap-1.5 leading-none">
+              {tab.icon && (
+                <span className="shrink-0 flex items-center justify-center">
+                  {tab.icon}
+                </span>
+              )}
+              {tab.label && <span className="truncate">{tab.label}</span>}
+              {tab.badge !== undefined && (
+                <span
+                  className={`text-[11px] font-mono font-bold px-1.5 py-0.5 rounded-full transition-colors ${
+                    isActive
+                      ? 'bg-blue-50 text-blue-600 border border-blue-200/60'
+                      : 'bg-slate-200 text-slate-600'
+                  }`}
+                >
+                  {tab.badge}
+                </span>
+              )}
+            </span>
           </button>
         );
       })}
     </div>
   );
 }
-
