@@ -58,14 +58,19 @@ export const useTooltip = (): TooltipContextType => {
 export const TooltipProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [active, setActive] = useState<ActiveTooltipState | null>(null);
   const [coords, setCoords] = useState<TooltipCoordinates | null>(null);
+  const [travelDelta, setTravelDelta] = useState<{ x: number; y: number } | null>(null);
   const [isVisible, setIsVisible] = useState(false);
 
   const activeRef = useRef<ActiveTooltipState | null>(null);
   activeRef.current = active;
 
+  const isVisibleRef = useRef<boolean>(false);
+  isVisibleRef.current = isVisible;
+
   const tooltipRef = useRef<HTMLDivElement | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastClosedTimeRef = useRef<number>(0);
+  const lastCoordsRef = useRef<TooltipCoordinates | null>(null);
   const isWarmRef = useRef<boolean>(false);
   const tooltipUniqueId = useId();
 
@@ -77,14 +82,20 @@ export const TooltipProvider: React.FC<{ children: ReactNode }> = ({ children })
   }, []);
 
   const hideTooltip = useCallback(
-    (target?: HTMLElement) => {
+    (target?: HTMLElement, immediate = false) => {
       clearTimer();
       setActive((prev) => {
         if (!prev) return null;
         if (target && prev.target !== target) return prev;
-        lastClosedTimeRef.current = Date.now();
+        if (immediate) {
+          lastClosedTimeRef.current = 0;
+          lastCoordsRef.current = null;
+        } else {
+          lastClosedTimeRef.current = Date.now();
+        }
         setIsVisible(false);
         setCoords(null);
+        setTravelDelta(null);
         return null;
       });
     },
@@ -94,9 +105,14 @@ export const TooltipProvider: React.FC<{ children: ReactNode }> = ({ children })
   const showTooltip = useCallback(
     (state: ActiveTooltipState) => {
       clearTimer();
-      const isWarm = Date.now() - lastClosedTimeRef.current < 350;
+      // If already active on the same target, ignore redundant trigger
+      if (activeRef.current?.target === state.target) {
+        return;
+      }
+
+      const isWarm = isVisibleRef.current || (Date.now() - lastClosedTimeRef.current < 450);
       isWarmRef.current = isWarm;
-      const delay = isWarm ? 0 : state.delay ?? 220;
+      const delay = isWarm ? 0 : state.delay ?? 100;
 
       timerRef.current = setTimeout(() => {
         setActive({ ...state, isWarm });
@@ -106,12 +122,44 @@ export const TooltipProvider: React.FC<{ children: ReactNode }> = ({ children })
     [clearTimer]
   );
 
-  // Position calculation for floating island (8px gap)
+  // Position calculation for floating island (8px gap) with traveling motion interpolation
   useEffect(() => {
     if (!active || !tooltipRef.current) return;
     const targetRect = active.target.getBoundingClientRect();
-    const tooltipRect = tooltipRef.current.getBoundingClientRect();
+    const tooltipEl = tooltipRef.current;
+    const tooltipRect = {
+      width: tooltipEl.offsetWidth || tooltipEl.getBoundingClientRect().width,
+      height: tooltipEl.offsetHeight || tooltipEl.getBoundingClientRect().height,
+      top: 0,
+      left: 0,
+      bottom: 0,
+      right: 0,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    } as DOMRect;
+
     const calculated = calculateTooltipPosition(targetRect, tooltipRect, active.placement, 8);
+
+    if (active.isWarm && lastCoordsRef.current) {
+      const prev = lastCoordsRef.current;
+      const dx = Math.round(prev.left - calculated.left);
+      const dy = Math.round(prev.top - calculated.top);
+      const dist = Math.hypot(dx, dy);
+
+      // Walking glide threshold: adjacent triggers within 240px and matching placement orientation
+      if (dist <= 240 && (dx !== 0 || dy !== 0) && prev.placement === calculated.placement) {
+        const clampedX = Math.max(-140, Math.min(140, dx));
+        const clampedY = Math.max(-60, Math.min(60, dy));
+        setTravelDelta({ x: clampedX, y: clampedY });
+      } else {
+        setTravelDelta(null);
+      }
+    } else {
+      setTravelDelta(null);
+    }
+
+    lastCoordsRef.current = calculated;
     setCoords(calculated);
   }, [active]);
 
@@ -210,9 +258,9 @@ export const TooltipProvider: React.FC<{ children: ReactNode }> = ({ children })
       }
     };
 
-    const handleDismissImmediate = () => hideTooltip();
+    const handleDismissImmediate = () => hideTooltip(undefined, true);
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') hideTooltip();
+      if (e.key === 'Escape') hideTooltip(undefined, true);
     };
 
     document.addEventListener('pointerover', handlePointerOver, { capture: true, passive: true });
@@ -243,25 +291,38 @@ export const TooltipProvider: React.FC<{ children: ReactNode }> = ({ children })
   const currentPlacement = coords?.placement ?? active?.placement ?? 'top';
   const isWarm = active?.isWarm ?? false;
 
-  // Whisper-settling micro-motion (1.5px spatial drift without scale distortion)
-  const getDirectionalTransform = () => {
-    if (isVisible && coords) {
-      return 'translate-x-0 translate-y-0 opacity-100';
+  // Transitions.dev — Tooltip open/close pop-in motion with directional anchor
+  const getTransformOrigin = () => {
+    switch (currentPlacement) {
+      case 'top':
+        return 'origin-bottom';
+      case 'bottom':
+        return 'origin-top';
+      case 'left':
+        return 'origin-right';
+      case 'right':
+        return 'origin-left';
+      default:
+        return 'origin-bottom';
     }
-    if (isWarm) {
-      return 'opacity-0';
+  };
+
+  const getAnimationClass = () => {
+    if (!isVisible || !coords) return 'opacity-0 pointer-events-none';
+    if (travelDelta) {
+      return 'animate-[tooltipTravel_160ms_cubic-bezier(0.16,1,0.3,1)_forwards]';
     }
     switch (currentPlacement) {
       case 'top':
-        return 'translate-y-0.5 opacity-0';
+        return 'animate-[tooltipInTop_160ms_cubic-bezier(0.16,1,0.3,1)_forwards]';
       case 'bottom':
-        return '-translate-y-0.5 opacity-0';
+        return 'animate-[tooltipInBottom_160ms_cubic-bezier(0.16,1,0.3,1)_forwards]';
       case 'left':
-        return 'translate-x-0.5 opacity-0';
+        return 'animate-[tooltipInLeft_160ms_cubic-bezier(0.16,1,0.3,1)_forwards]';
       case 'right':
-        return '-translate-x-0.5 opacity-0';
+        return 'animate-[tooltipInRight_160ms_cubic-bezier(0.16,1,0.3,1)_forwards]';
       default:
-        return 'opacity-0';
+        return 'animate-[tooltipInTop_160ms_cubic-bezier(0.16,1,0.3,1)_forwards]';
     }
   };
 
@@ -273,6 +334,13 @@ export const TooltipProvider: React.FC<{ children: ReactNode }> = ({ children })
         active &&
         createPortal(
           <div
+            key={
+              active
+                ? `${typeof active.content === 'string' ? active.content : tooltipUniqueId}-${
+                    travelDelta ? `${travelDelta.x}_${travelDelta.y}` : 'cold'
+                  }`
+                : tooltipUniqueId
+            }
             ref={tooltipRef}
             role="tooltip"
             id={tooltipUniqueId}
@@ -281,15 +349,25 @@ export const TooltipProvider: React.FC<{ children: ReactNode }> = ({ children })
               top: `${coords?.top ?? -9999}px`,
               left: `${coords?.left ?? -9999}px`,
               zIndex: 9999,
+              visibility: coords ? 'visible' : 'hidden',
+              ...(travelDelta
+                ? {
+                    ['--tt-travel-x' as string]: `${travelDelta.x}px`,
+                    ['--tt-travel-y' as string]: `${travelDelta.y}px`,
+                    ['--tt-content-drift' as string]: `${
+                      travelDelta.x < 0 ? -6 : travelDelta.x > 0 ? 6 : 0
+                    }px`,
+                  }
+                : {}),
             }}
-            className={`pointer-events-none select-none flex items-center gap-1.5 max-w-xs transition-[opacity,transform] ${
-              isVisible && coords
-                ? 'duration-100 ease-out'
-                : 'duration-60 ease-in'
-            } motion-reduce:transition-none motion-reduce:transform-none ${getDirectionalTransform()} px-2.5 py-1 bg-slate-950/92 backdrop-blur-md text-slate-50 text-[11.5px] font-sans font-medium tracking-tight rounded-md ring-1 ring-inset ring-white/10 shadow-[0_2px_4px_rgba(0,0,0,0.3),0_8px_18px_rgba(0,0,0,0.4)]`}
+            className={`pointer-events-none select-none flex items-center gap-1.5 max-w-xs will-change-[transform,opacity] ${getTransformOrigin()} ${getAnimationClass()} motion-reduce:animate-none motion-reduce:opacity-100 motion-reduce:transform-none px-2.5 py-1 bg-slate-950/92 backdrop-blur-md text-slate-50 text-[11.5px] font-sans font-medium tracking-tight rounded-md ring-1 ring-inset ring-white/10 shadow-[0_2px_4px_rgba(0,0,0,0.3),0_8px_18px_rgba(0,0,0,0.4)]`}
           >
             {parsed ? (
-              <>
+              <div
+                className={`flex items-center gap-1.5 ${
+                  travelDelta ? 'animate-[tooltipContentIn_140ms_cubic-bezier(0.16,1,0.3,1)_forwards]' : ''
+                }`}
+              >
                 <span className={parsed.label.length > 50 ? 'whitespace-normal' : 'whitespace-nowrap'}>
                   {parsed.label}
                 </span>
@@ -298,9 +376,17 @@ export const TooltipProvider: React.FC<{ children: ReactNode }> = ({ children })
                     {formatShortcutForPlatform(parsed.shortcut)}
                   </kbd>
                 )}
-              </>
+              </div>
             ) : (
-              active.content
+              <div
+                className={
+                  travelDelta
+                    ? 'animate-[tooltipContentIn_140ms_cubic-bezier(0.16,1,0.3,1)_forwards]'
+                    : undefined
+                }
+              >
+                {active.content}
+              </div>
             )}
           </div>,
           document.body

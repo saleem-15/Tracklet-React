@@ -139,6 +139,30 @@ export const dropdownVariants: Variants = {
 };
 
 /**
+ * Origin-aware floating tooltip variant with transitions.dev pop-in curve
+ */
+export const tooltipVariants: Variants = {
+  closed: {
+    opacity: 0,
+    scale: 0.96,
+    y: 4,
+    transition: {
+      duration: 0.05,
+      ease: MOTION_EASE.exit,
+    },
+  },
+  open: {
+    opacity: 1,
+    scale: 1,
+    y: 0,
+    transition: {
+      duration: 0.15,
+      ease: MOTION_EASE.command,
+    },
+  },
+};
+
+/**
  * Slide-over Drawer variant (e.g. ApplicationDetailPanel)
  */
 export const drawerVariants: Variants = {

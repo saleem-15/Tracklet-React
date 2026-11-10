@@ -296,6 +296,81 @@ code[dir="ltr"] {
   --stagger-stagger: 40ms;
   --stagger-blur: 3px;
   --stagger-ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* Transitions.dev — Tooltip open/close */
+  --tt-in-dur: 180ms;
+  --tt-out-dur: 50ms;
+  --tt-scale: 0.94;
+  --tt-distance: 8px;
+  --tt-in-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --tt-out-ease: cubic-bezier(0.4, 0, 1, 1);
+}
+
+@keyframes tooltipInTop {
+  0% {
+    opacity: 0;
+    transform: translateY(var(--tt-distance, 8px)) scale(var(--tt-scale, 0.94));
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes tooltipInBottom {
+  0% {
+    opacity: 0;
+    transform: translateY(calc(-1 * var(--tt-distance, 8px))) scale(var(--tt-scale, 0.94));
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes tooltipInRight {
+  0% {
+    opacity: 0;
+    transform: translateX(calc(-1 * var(--tt-distance, 8px))) scale(var(--tt-scale, 0.94));
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes tooltipInLeft {
+  0% {
+    opacity: 0;
+    transform: translateX(var(--tt-distance, 8px)) scale(var(--tt-scale, 0.94));
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+/* Transitions.dev — Traveling / Walking Tooltip Between Adjacent Triggers */
+@keyframes tooltipTravel {
+  0% {
+    opacity: 0.88;
+    transform: translate3d(var(--tt-travel-x, 0px), var(--tt-travel-y, 0px), 0) scale(1);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes tooltipContentIn {
+  0% {
+    opacity: 0.35;
+    transform: translateX(var(--tt-content-drift, 0px));
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 .t-stagger-line {

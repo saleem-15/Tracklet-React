@@ -305,9 +305,8 @@ export const Sidebar: React.FC<SidebarProps> = (props) => {
               onClick={() => handleTabClick(item.id)}
               title={item.label}
               aria-current={isActive ? 'page' : undefined}
-              data-tooltip={isSectionTooltipDisabled ? undefined : item.label}
+              data-tooltip={isMobileView ? undefined : item.label}
               data-tooltip-placement="right"
-              data-no-tooltip={isSectionTooltipDisabled ? '' : undefined}
               className={`relative w-full flex items-center ${
                 isMobileView
                   ? 'justify-between px-3.5 py-3 min-h-[44px]'
@@ -743,9 +742,8 @@ export const Sidebar: React.FC<SidebarProps> = (props) => {
             type="button"
             onClick={() => setIsAccountMenuOpen((prev) => !prev)}
             title={user.displayName ? `${user.displayName} (${user.email})` : (user.email || 'User Account')}
-            data-tooltip={isSectionTooltipDisabled ? undefined : (user.displayName ? `${user.displayName} (${user.email})` : user.email || 'User Account')}
+            data-tooltip={isMobileView ? undefined : (user.displayName ? `${user.displayName} (${user.email})` : user.email || 'User Account')}
             data-tooltip-placement="right"
-            data-no-tooltip={isSectionTooltipDisabled ? '' : undefined}
             aria-expanded={isAccountMenuOpen}
             aria-haspopup="menu"
             className={`w-full flex items-center ${
@@ -801,9 +799,8 @@ export const Sidebar: React.FC<SidebarProps> = (props) => {
           type="button"
           onClick={handleMobileSignIn}
           title="Sign In / Register"
-          data-tooltip={isSectionTooltipDisabled ? undefined : 'Sign In / Register'}
+          data-tooltip={isMobileView ? undefined : 'Sign In / Register'}
           data-tooltip-placement="right"
-          data-no-tooltip={isSectionTooltipDisabled ? '' : undefined}
           className={`w-full flex items-center ${
             isMobileView ? 'px-3 py-2.5 min-h-[44px] justify-center gap-2' : 'h-9 px-2'
           } rounded-[10px] bg-white hover:bg-slate-100/80 text-slate-900 border border-slate-200 transition-colors font-semibold text-xs shadow-2xs hover:shadow-xs active:scale-[0.99] cursor-pointer`}
@@ -848,7 +845,7 @@ export const Sidebar: React.FC<SidebarProps> = (props) => {
                 type="button"
                 onClick={toggleSidebar}
                 title={isCollapsed ? 'Expand sidebar (Ctrl+B)' : 'Collapse sidebar (Ctrl+B)'}
-                data-tooltip={isCollapsed ? 'Expand sidebar (Ctrl+B)' : undefined}
+                data-tooltip={isCollapsed ? 'Expand sidebar (Ctrl+B)' : 'Collapse sidebar (Ctrl+B)'}
                 data-tooltip-placement="right"
                 aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
                 className="w-9 h-9 shrink-0 flex items-center justify-center rounded-lg hover:bg-slate-200/60 transition-colors cursor-pointer group"
@@ -892,6 +889,8 @@ export const Sidebar: React.FC<SidebarProps> = (props) => {
                 type="button"
                 onClick={toggleSidebar}
                 title="Collapse sidebar (Ctrl+B)"
+                data-tooltip="Collapse sidebar (Ctrl+B)"
+                data-tooltip-placement="bottom"
                 aria-label="Collapse sidebar"
                 className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-colors cursor-pointer flex items-center justify-center"
               >
