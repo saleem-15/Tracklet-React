@@ -22,6 +22,7 @@ import { ContactCardGrid } from './contacts/ContactCardGrid';
 import { ContactTable } from './contacts/ContactTable';
 import { ContactEmptyState } from './contacts/ContactEmptyState';
 import { ContactModal } from './contacts/ContactModal';
+import { SegmentedTabs } from './SegmentedTabs';
 
 interface ContactsViewProps {
   contacts: Contact[];
@@ -153,34 +154,29 @@ export const ContactsView: React.FC<ContactsViewProps> = ({
 
           <div className="flex items-center gap-2 shrink-0">
             {/* View Layout Toggle */}
-            <div className="inline-flex rounded-xl p-0.5 bg-slate-100 border border-slate-200/80 text-slate-500">
-              <button
-                type="button"
-                onClick={() => handleToggleLayout('grid')}
-                title="Grid layout"
-                aria-label="Grid layout"
-                className={`p-1.5 rounded-lg transition-all cursor-pointer ${
-                  viewLayout === 'grid'
-                    ? 'bg-white text-slate-900 shadow-2xs font-semibold'
-                    : 'hover:text-slate-900'
-                }`}
-              >
-                <LayoutGrid className="w-4 h-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => handleToggleLayout('table')}
-                title="Table layout"
-                aria-label="Table layout"
-                className={`p-1.5 rounded-lg transition-all cursor-pointer ${
-                  viewLayout === 'table'
-                    ? 'bg-white text-slate-900 shadow-2xs font-semibold'
-                    : 'hover:text-slate-900'
-                }`}
-              >
-                <List className="w-4 h-4" />
-              </button>
-            </div>
+            <SegmentedTabs<'grid' | 'table'>
+              tabs={[
+                {
+                  id: 'grid',
+                  icon: <LayoutGrid className="w-4 h-4" />,
+                  title: 'Grid layout',
+                  'aria-label': 'Grid layout',
+                },
+                {
+                  id: 'table',
+                  icon: <List className="w-4 h-4" />,
+                  title: 'Table layout',
+                  'aria-label': 'Table layout',
+                },
+              ]}
+              activeTab={viewLayout}
+              onChange={handleToggleLayout}
+              size="sm"
+              fullWidth={false}
+              hasBorder={true}
+              pillBorder={false}
+              className="bg-slate-100 text-slate-500 rounded-xl p-0.5"
+            />
 
             {/* Add Contact Button */}
             <button

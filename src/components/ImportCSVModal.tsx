@@ -17,6 +17,7 @@ import {
 import { Application, ApplicationStatus, JobPlatform } from '../types';
 import { CustomSelectDropdown, SelectOption } from './CustomSelectDropdown';
 import { CloseIconButton } from './IconButton';
+import { SegmentedTabs } from './SegmentedTabs';
 import { UI_TOKENS } from '../theme/tokens';
 import { useEscapeKey } from '../lib/useEscapeKey';
 import { 
@@ -349,32 +350,31 @@ export const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
           {step === 'upload' && (
             <div className="space-y-4">
               {/* Toggle Switch: Upload File vs Paste Text */}
-              <div className="flex items-center justify-between bg-slate-100 p-1 rounded-[10px]">
-                <button
-                  type="button"
-                  onClick={() => setPasteMode(false)}
-                  className={`flex-1 py-1.5 px-3 rounded-[8px] text-xs font-semibold transition-all cursor-pointer flex items-center justify-center gap-2 ${
-                    !pasteMode
-                      ? 'bg-white text-slate-900 shadow-2xs font-bold'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  <Upload className="w-3.5 h-3.5 text-blue-600" />
-                  <span>Upload CSV File</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPasteMode(true)}
-                  className={`flex-1 py-1.5 px-3 rounded-[8px] text-xs font-semibold transition-all cursor-pointer flex items-center justify-center gap-2 ${
-                    pasteMode
-                      ? 'bg-white text-slate-900 shadow-2xs font-bold'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  <FileText className="w-3.5 h-3.5 text-blue-600" />
-                  <span>Paste CSV Text</span>
-                </button>
-              </div>
+              <SegmentedTabs<'file' | 'paste'>
+                tabs={[
+                  {
+                    id: 'file',
+                    label: 'Upload CSV File',
+                    icon: <Upload className="w-3.5 h-3.5 text-blue-600 shrink-0" />,
+                  },
+                  {
+                    id: 'paste',
+                    label: 'Paste CSV Text',
+                    icon: <FileText className="w-3.5 h-3.5 text-blue-600 shrink-0" />,
+                  },
+                ]}
+                activeTab={pasteMode ? 'paste' : 'file'}
+                onChange={(mode) => setPasteMode(mode === 'paste')}
+                size="md"
+                fullWidth={true}
+                hasBorder={false}
+                pillBorder={false}
+                activeWeight="bold"
+                inactiveWeight="semibold"
+                className="bg-slate-100 p-1 rounded-[10px]"
+                tabClassName="py-1.5 px-3 rounded-[8px]"
+                pillRadius="rounded-[8px]"
+              />
 
               {!pasteMode ? (
                 /* Drag and drop box */
