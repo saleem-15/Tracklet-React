@@ -1,4 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { motion } from 'motion/react';
+import { modalVariants } from '../lib/motion';
+import { ErrorShakeContainer } from './ActionFeedback';
 import { JobPlatform, WorkLocation, EmploymentType, ApplicationStatus, Application, Contact, ApplicationTask } from '../types';
 import { AddApplicationHeader } from './add-modal/AddApplicationHeader';
 import { AddApplicationCoreForm } from './add-modal/AddApplicationCoreForm';
@@ -42,6 +45,7 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [tasks, setTasks] = useState<ApplicationTask[]>([]);
   const [showUnsavedPrompt, setShowUnsavedPrompt] = useState(false);
+  const [hasValidationError, setHasValidationError] = useState(false);
 
   const isDirty =
     company.trim() !== '' ||
@@ -180,7 +184,11 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!company.trim() || !role.trim()) return;
+    if (!company.trim() || !role.trim()) {
+      setHasValidationError(true);
+      setTimeout(() => setHasValidationError(false), 400);
+      return;
+    }
 
     let formattedJobLink = jobLink.trim();
     if (formattedJobLink && !formattedJobLink.startsWith('http://') && !formattedJobLink.startsWith('https://')) {
@@ -239,12 +247,16 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
       className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 md:p-6 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200 overflow-y-auto"
       onClick={handleRequestClose}
     >
-      <div
+      <motion.div
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-label="Add Job Application"
-        className="w-full max-w-4xl max-h-[92vh] bg-white border border-slate-200/90 rounded-2xl flex flex-col shadow-2xl text-slate-900 animate-in zoom-in-95 duration-200 overflow-hidden my-auto"
+        variants={modalVariants}
+        initial="closed"
+        animate="open"
+        exit="closed"
+        className="w-full max-w-4xl max-h-[92vh] bg-white border border-slate-200/90 rounded-2xl flex flex-col shadow-2xl text-slate-900 overflow-hidden my-auto will-change-transform"
         onClick={(e) => e.stopPropagation()}
       >
         <AddApplicationHeader
@@ -262,18 +274,20 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
               {/* Left Column */}
               <div className="lg:col-span-7 space-y-5">
-                <AddApplicationCoreForm
-                  company={company}
-                  onCompanyChange={setCompany}
-                  companyDomain={companyDomain}
-                  onCompanyDomainChange={setCompanyDomain}
-                  role={role}
-                  onRoleChange={setRole}
-                  jobLink={jobLink}
-                  onJobLinkChange={setJobLink}
-                  emailThreadUrl={emailThreadUrl}
-                  onEmailThreadUrlChange={setEmailThreadUrl}
-                />
+                <ErrorShakeContainer isError={hasValidationError}>
+                  <AddApplicationCoreForm
+                    company={company}
+                    onCompanyChange={setCompany}
+                    companyDomain={companyDomain}
+                    onCompanyDomainChange={setCompanyDomain}
+                    role={role}
+                    onRoleChange={setRole}
+                    jobLink={jobLink}
+                    onJobLinkChange={setJobLink}
+                    emailThreadUrl={emailThreadUrl}
+                    onEmailThreadUrlChange={setEmailThreadUrl}
+                  />
+                </ErrorShakeContainer>
 
                 <AddApplicationTasksSection
                   tasks={tasks}
@@ -317,7 +331,7 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
             isSubmitDisabled={!company.trim() || !role.trim()}
           />
         </form>
-      </div>
+      </motion.div>
 
       {showUnsavedPrompt && (
         <UnsavedChangesPrompt

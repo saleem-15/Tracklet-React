@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect, useId } from 'react';
 import { ChevronDown, Check } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { dropdownVariants } from '../lib/motion';
 import { UI_TOKENS } from '../theme/tokens';
 
 export interface SelectOption<T = string | number> {
@@ -176,14 +178,20 @@ export function CustomSelectDropdown<T extends string | number = string>({
         />
       </button>
 
-      {isOpen && (
-        <div
-          id={listboxId}
-          role="listbox"
-          aria-label={labelPrefix || placeholder}
-          tabIndex={-1}
-          className={`absolute top-full left-0 mt-1.5 z-50 min-w-[160px] max-h-60 overflow-y-auto bg-white border border-slate-200/90 rounded-[12px] shadow-xl p-1.5 animate-in fade-in zoom-in-95 duration-150 ${menuClassName}`}
-        >
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            id={listboxId}
+            role="listbox"
+            aria-label={labelPrefix || placeholder}
+            tabIndex={-1}
+            variants={dropdownVariants}
+            initial="closed"
+            animate="open"
+            exit="closed"
+            style={{ transformOrigin: 'top left' }}
+            className={`absolute top-full left-0 mt-1.5 z-50 min-w-[160px] max-h-60 overflow-y-auto bg-white border border-slate-200/90 rounded-[12px] shadow-xl p-1.5 will-change-transform ${menuClassName}`}
+          >
           {options.map((opt, idx) => {
             const isSelected = opt.value === value;
             const isHighlighted = idx === highlightedIndex;
@@ -214,8 +222,9 @@ export function CustomSelectDropdown<T extends string | number = string>({
               </button>
             );
           })}
-        </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

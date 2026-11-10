@@ -1,7 +1,10 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { CheckCircle2, AlertCircle, AlertTriangle, Info, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { AlertCircle, AlertTriangle, Info, X } from 'lucide-react';
 import { ApplicationStatus } from '../types';
 import { STAGE_CONFIG_MAP } from '../lib/constants';
+import { MOTION_TIMING, MOTION_EASE } from '../lib/motion';
+import { ActionSuccessCheck } from './ActionFeedback';
 
 export interface ToastMessage {
   id: string;
@@ -22,8 +25,6 @@ interface ToastProps {
 }
 
 export const ToastContainer: React.FC<ToastProps> = ({ toasts, onDismiss }) => {
-  if (toasts.length === 0) return null;
-
   // Limit max visible toasts to 3 to prevent cluttering the board
   const visibleToasts = toasts.slice(-3);
 
@@ -32,9 +33,11 @@ export const ToastContainer: React.FC<ToastProps> = ({ toasts, onDismiss }) => {
       aria-label="Notifications"
       className="fixed bottom-4 sm:bottom-5 right-4 sm:right-5 z-50 flex flex-col gap-2 max-w-[calc(100vw-2rem)] sm:max-w-md w-auto pointer-events-none select-none items-end"
     >
-      {visibleToasts.map((toast) => (
-        <ToastItem key={toast.id} toast={toast} onDismiss={onDismiss} />
-      ))}
+      <AnimatePresence mode="popLayout">
+        {visibleToasts.map((toast) => (
+          <ToastItem key={toast.id} toast={toast} onDismiss={onDismiss} />
+        ))}
+      </AnimatePresence>
     </div>
   );
 };
@@ -73,12 +76,32 @@ const ToastItem: React.FC<{ toast: ToastMessage; onDismiss: (id: string) => void
   const stageConfig = toast.stage ? STAGE_CONFIG_MAP[toast.stage] : null;
 
   return (
-    <div
+    <motion.div
+      layout
       role={toast.type === 'error' ? 'alert' : 'status'}
       aria-live={toast.type === 'error' ? 'assertive' : 'polite'}
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
-      className={`pointer-events-auto flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-2xl border shadow-2xl backdrop-blur-md text-xs font-sans transition-all duration-200 animate-in fade-in slide-in-from-bottom-3 min-w-[280px] max-w-full sm:max-w-md ${
+      initial={{ opacity: 0, y: 14, scale: 0.96 }}
+      animate={{
+        opacity: 1,
+        y: 0,
+        scale: 1,
+        transition: {
+          duration: MOTION_TIMING.snappy,
+          ease: MOTION_EASE.command,
+        },
+      }}
+      exit={{
+        opacity: 0,
+        x: 24,
+        scale: 0.96,
+        transition: {
+          duration: 0.14,
+          ease: MOTION_EASE.exit,
+        },
+      }}
+      className={`pointer-events-auto flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-2xl border shadow-2xl backdrop-blur-md text-xs font-sans min-w-[280px] max-w-full sm:max-w-md will-change-transform ${
         toast.type === 'error'
           ? 'bg-slate-900/95 border-rose-800/80 text-slate-100 shadow-rose-950/30'
           : toast.type === 'warning'
@@ -90,7 +113,7 @@ const ToastItem: React.FC<{ toast: ToastMessage; onDismiss: (id: string) => void
       <div className="flex items-center gap-2.5 min-w-0 flex-1">
         <div className="shrink-0 flex items-center justify-center">
           {toast.type === 'success' ? (
-            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+            <ActionSuccessCheck size={16} className="text-emerald-400" />
           ) : toast.type === 'error' ? (
             <AlertCircle className="w-4 h-4 text-rose-400" />
           ) : toast.type === 'warning' ? (
@@ -132,7 +155,7 @@ const ToastItem: React.FC<{ toast: ToastMessage; onDismiss: (id: string) => void
               toast.action?.onClick();
               onDismiss(toast.id);
             }}
-            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 active:scale-95 text-amber-300 hover:text-amber-200 font-semibold text-[11px] border border-slate-700 transition-all cursor-pointer shadow-2xs"
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 active:scale-95 text-amber-300 hover:text-amber-200 font-semibold text-[11px] border border-slate-700 transition-colors duration-150 cursor-pointer shadow-2xs"
           >
             {toast.action.label}
           </button>
@@ -147,6 +170,6 @@ const ToastItem: React.FC<{ toast: ToastMessage; onDismiss: (id: string) => void
           <X className="w-3.5 h-3.5" />
         </button>
       </div>
-    </div>
+    </motion.div>
   );
 };

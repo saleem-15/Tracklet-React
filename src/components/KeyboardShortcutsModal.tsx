@@ -1,6 +1,8 @@
 import React, { useState, useMemo } from 'react';
+import { motion } from 'motion/react';
 import { X, Keyboard, Search } from 'lucide-react';
 import { useEscapeKey } from '../lib/useEscapeKey';
+import { modalVariants } from '../lib/motion';
 
 export interface KeyboardShortcutsModalProps {
   isOpen: boolean;
@@ -216,11 +218,15 @@ export function KeyboardShortcutsModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="keyboard-shortcuts-title"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs"
       onClick={onClose}
     >
-      <div
-        className="relative w-full max-w-xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-200"
+      <motion.div
+        variants={modalVariants}
+        initial="closed"
+        animate="open"
+        exit="closed"
+        className="relative w-full max-w-xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[85vh] will-change-transform"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header: Title on left, Close button on right */}
@@ -319,7 +325,7 @@ export function KeyboardShortcutsModal({
             ))
           )}
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }
