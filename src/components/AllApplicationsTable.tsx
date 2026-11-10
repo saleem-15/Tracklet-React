@@ -423,6 +423,7 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
                     <OnboardingEmptyState
                       onOpenAddModal={onOpenAddModal}
                       onSeedDemoData={onSeedDemoData}
+                      applicationsCount={totalAppCount ?? applications.length}
                     />
                   ) : (
                     <EmptyState

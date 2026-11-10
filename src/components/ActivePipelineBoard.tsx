@@ -251,6 +251,7 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
               <OnboardingEmptyState
                 onOpenAddModal={onOpenAddModal}
                 onSeedDemoData={onSeedDemoData}
+                applicationsCount={totalAppCount ?? applications.length}
               />
             ) : (
               <EmptyState

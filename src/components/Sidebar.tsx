@@ -22,7 +22,8 @@ import {
   HelpCircle,
   FileText,
   Shield,
-  ExternalLink
+  ExternalLink,
+  Compass
 } from 'lucide-react';
 import { ChromeIcon } from './icons/ChromeIcon';
 import { ActiveTab, Application, Contact, ExpiryNotificationSettings } from '../types';
@@ -594,6 +595,28 @@ export const Sidebar: React.FC<SidebarProps> = (props) => {
                           v{extensionState.installedVersion}
                         </span>
                       )}
+                    </button>
+
+                    {/* Welcome Tour */}
+                    <button
+                      type="button"
+                      onMouseEnter={() => {
+                        if (!isMobileView) setActiveSubmenu('none');
+                      }}
+                      onClick={() => {
+                        setIsAccountMenuOpen(false);
+                        if (isMobileView && onCloseMobile) onCloseMobile();
+                        nav.openOnboardingModal(1);
+                      }}
+                      className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-slate-700 hover:text-slate-900 hover:bg-slate-100/80 transition-colors text-xs font-medium cursor-pointer"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <Compass className="w-4 h-4 text-slate-500 shrink-0" />
+                        <span>Welcome Tour</span>
+                      </div>
+                      <span className="text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">
+                        Guide
+                      </span>
                     </button>
 
                     {/* Help (opens sub-menu) */}
