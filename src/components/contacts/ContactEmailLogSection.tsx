@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Mail, Plus, ArrowDownLeft, ArrowUpRight } from 'lucide-react';
+import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { Contact, EmailLog, Application } from '../../types';
 import { EmailLogCard } from '../detail/EmailLogCard';
 import { EmailLogForm } from '../detail/EmailLogForm';
@@ -26,6 +27,7 @@ export const ContactEmailLogSection: React.FC<ContactEmailLogSectionProps> = ({
   onDeleteEmailLog,
   onNavigateToApplication,
 }) => {
+  const shouldReduceMotion = useReducedMotion();
   const [showAddEmail, setShowAddEmail] = useState(false);
   const [editingEmailId, setEditingEmailId] = useState<string | null>(null);
 
@@ -134,25 +136,43 @@ export const ContactEmailLogSection: React.FC<ContactEmailLogSectionProps> = ({
         </div>
       </div>
 
-      {/* Log / Edit Form */}
-      {showAddEmail && (
-        <EmailLogForm
-          key={editingEmailId || 'new'}
-          initialEmail={editingEmail}
-          defaultCounterparty={defaultParty}
-          quickFillOptions={quickFillOptions}
-          applicationOptions={applicationOptions.length > 1 ? applicationOptions : undefined}
-          defaultApplicationId={editingEmail?.applicationId}
-          currentUserEmail={currentUserEmail}
-          onSubmit={handleFormSubmit}
-          onCancel={() => {
-            setShowAddEmail(false);
-            setEditingEmailId(null);
-          }}
-        />
-      )}
+      {/* Log / Edit Form Drawer with Smooth Animation */}
+      <AnimatePresence initial={false}>
+        {showAddEmail && (
+          <motion.div
+            key="contact-email-form-drawer"
+            initial={shouldReduceMotion ? { opacity: 0 } : { height: 0, opacity: 0 }}
+            animate={shouldReduceMotion ? { opacity: 1 } : { height: 'auto', opacity: 1 }}
+            exit={shouldReduceMotion ? { opacity: 0 } : { height: 0, opacity: 0 }}
+            transition={
+              shouldReduceMotion
+                ? { duration: 0 }
+                : {
+                    height: { duration: 0.24, ease: [0.16, 1, 0.3, 1] },
+                    opacity: { duration: 0.18, ease: [0.2, 0, 0, 1] },
+                  }
+            }
+            style={{ overflow: 'hidden' }}
+          >
+            <EmailLogForm
+              key={editingEmailId || 'new'}
+              initialEmail={editingEmail}
+              defaultCounterparty={defaultParty}
+              quickFillOptions={quickFillOptions}
+              applicationOptions={applicationOptions.length > 1 ? applicationOptions : undefined}
+              defaultApplicationId={editingEmail?.applicationId}
+              currentUserEmail={currentUserEmail}
+              onSubmit={handleFormSubmit}
+              onCancel={() => {
+                setShowAddEmail(false);
+                setEditingEmailId(null);
+              }}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      {/* Timeline Emails List */}
+      {/* Timeline Emails List (Pure DOM flow for buttery 60/120fps reflow) */}
       {sortedEmails.length > 0 ? (
         <div className="relative space-y-3 pt-1">
           {/* Continuous vertical timeline spine: anchored at 10px */}

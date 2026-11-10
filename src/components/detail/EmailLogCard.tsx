@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
   ExternalLink,
   ChevronDown,
-  ChevronUp,
   Pencil,
   Trash2,
   MoreHorizontal,
@@ -10,6 +9,7 @@ import {
   Check,
   Briefcase,
 } from 'lucide-react';
+import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { Contact, EmailLog, Application } from '../../types';
 import { FormattedEmailBody } from './FormattedEmailBody';
 import { formatEmailDateTime } from '../../lib/dateUtils';
@@ -34,6 +34,7 @@ export const EmailLogCard: React.FC<EmailLogCardProps> = ({
   onDelete,
   onNavigateToApplication,
 }) => {
+  const shouldReduceMotion = useReducedMotion();
   const [isExpanded, setIsExpanded] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
@@ -99,13 +100,14 @@ export const EmailLogCard: React.FC<EmailLogCardProps> = ({
   const hasAnyActions = Boolean(onEdit || onDelete || email.emailUrl || isLong || contentText);
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200/80 p-3 shadow-2xs hover:shadow-xs transition-shadow relative">
-      {/* Top Row: Full-Width Clean Subject (Max 2 lines when collapsed, unconstrained when expanded) */}
+    <div
+      data-testid={`email-log-card-${email.id}`}
+      className="bg-white rounded-xl border border-slate-200/80 p-3 shadow-2xs hover:shadow-xs transition-[box-shadow,border-color] duration-150 relative"
+    >
+      {/* Top Row: Full-Width Clean Subject */}
       <h4
         dir="auto"
-        className={`text-[13px] font-semibold text-slate-900 leading-snug break-words select-text text-start ${
-          isExpanded ? '' : 'line-clamp-2'
-        }`}
+        className="text-[13px] font-semibold text-slate-900 leading-snug break-words select-text text-start line-clamp-2"
         title={email.subject}
       >
         {email.subject}
@@ -158,13 +160,28 @@ export const EmailLogCard: React.FC<EmailLogCardProps> = ({
         </div>
       )}
 
-      {/* Unboxed Content Snippet (clean formatted text, full horizontal width) */}
+      {/* Unboxed Content Snippet with Smooth Card Resize Animation (Zero Text Dancing) */}
       {contentText && (
-        <div className="mt-1.5">
-          {isExpanded ? (
+        <div className="mt-1.5 relative">
+          <motion.div
+            id={`email-body-expanded-${email.id}`}
+            initial={false}
+            animate={{
+              height: isLong && !isExpanded ? 46 : 'auto',
+            }}
+            transition={
+              shouldReduceMotion
+                ? { duration: 0 }
+                : {
+                    height: { duration: 0.24, ease: [0.16, 1, 0.3, 1] },
+                  }
+            }
+            style={{ overflow: 'hidden' }}
+          >
             <FormattedEmailBody text={contentText} />
-          ) : (
-            <FormattedEmailBody text={contentText} isCollapsed />
+          </motion.div>
+          {isLong && !isExpanded && (
+            <div className="pointer-events-none absolute bottom-0 inset-x-0 h-4 bg-gradient-to-t from-white to-transparent" />
           )}
         </div>
       )}
@@ -177,14 +194,17 @@ export const EmailLogCard: React.FC<EmailLogCardProps> = ({
             <button
               type="button"
               onClick={() => setIsExpanded(!isExpanded)}
-              className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors cursor-pointer"
+              aria-expanded={isExpanded}
+              aria-controls={`email-body-expanded-${email.id}`}
+              className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors cursor-pointer select-none"
             >
               <span>{isExpanded ? 'Show less' : 'Read full email'}</span>
-              {isExpanded ? (
-                <ChevronUp className="w-3 h-3" />
-              ) : (
-                <ChevronDown className="w-3 h-3" />
-              )}
+              <ChevronDown
+                className={`w-3 h-3 transition-transform duration-240 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none ${
+                  isExpanded ? 'rotate-180' : 'rotate-0'
+                }`}
+                aria-hidden="true"
+              />
             </button>
           ) : (
             <div />
@@ -212,7 +232,6 @@ export const EmailLogCard: React.FC<EmailLogCardProps> = ({
                 role="menu"
                 className="absolute right-0 bottom-full mb-1.5 w-36 bg-white rounded-xl shadow-lg border border-slate-200/90 py-1 z-30 animate-in fade-in zoom-in-95 duration-100"
               >
-
                 {email.emailUrl && (
                   <a
                     href={email.emailUrl}
