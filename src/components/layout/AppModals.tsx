@@ -62,17 +62,24 @@ export function AppModals({ paywall }: AppModalsProps = {}) {
   } = useApplicationsContext();
   const { contacts, handleAddContact } = useContactsContext();
   const { addToast } = useToastContext();
-  const { extensionState } = useExtensionContext();
+  const extensionState = useExtensionContext();
 
-  const handleGuardedAdd = (app: Parameters<typeof handleAddApplication>[0]) => {
-    if (paywall) {
-      const activeCount = applications.filter(a => (ACTIVE_STATUSES as readonly string[]).includes(a.status)).length;
-      if (activeCount >= paywall.maxQuota) {
-        paywall.onUpgradeClick();
-        return;
-      }
+  const handleGuardedAdd = async (newApp: Parameters<typeof handleAddApplication>[0]) => {
+    if (
+      paywall &&
+      (ACTIVE_STATUSES as readonly string[]).includes(newApp.status) &&
+      paywall.currentUsage >= paywall.maxQuota
+    ) {
+      addToast(
+        'warning',
+        'Pipeline Capacity Reached',
+        `Free accounts can track up to ${paywall.maxQuota} active applications. Upgrade to Pro to track more applications.`
+      );
+      closeAddModal();
+      paywall.onUpgradeClick();
+      return;
     }
-    handleAddApplication(app);
+    return handleAddApplication(newApp);
   };
 
   return (
@@ -81,8 +88,7 @@ export function AppModals({ paywall }: AppModalsProps = {}) {
       <AddApplicationModal
         isOpen={isAddModalOpen}
         onClose={closeAddModal}
-        existingApplications={applications}
-        existingContacts={contacts}
+        allContacts={contacts}
         onAdd={handleGuardedAdd}
         onCreateContact={handleAddContact}
       />

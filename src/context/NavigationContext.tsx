@@ -1,15 +1,15 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { useUrlNavigation } from '../hooks/useUrlNavigation';
-import { ApplicationFilter, NavigationTab, LegalDocType } from '../types';
-import { navigateToRoute, getPathForLegalDoc } from '../lib/routeUtils';
+import { ActiveTab, FilterState } from '../types';
+import { LegalDocType, navigateToRoute, getPathForLegalDoc } from '../lib/routeUtils';
 
 export interface NavigationContextType {
-  activeTab: NavigationTab;
-  setActiveTab: (tab: NavigationTab) => void;
+  activeTab: ActiveTab;
+  setActiveTab: (tab: ActiveTab) => void;
   isNotFound: boolean;
   navigateToLegal: (doc?: LegalDocType) => void;
-  filter: ApplicationFilter;
-  setFilter: React.Dispatch<React.SetStateAction<ApplicationFilter>>;
+  filter: FilterState;
+  setFilter: React.Dispatch<React.SetStateAction<FilterState>>;
   resetFilters: () => void;
   selectedAppId: string | null;
   setSelectedAppId: (id: string | null) => void;
