@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { motion } from 'motion/react';
 import { X, Mail, Lock, MailCheck, AlertCircle, Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { AuthViewMode } from '../types';
@@ -6,6 +7,7 @@ import { getFriendlyAuthErrorMessage } from '../lib/authErrors';
 import { SegmentedTabs } from './SegmentedTabs';
 import { AuthTextField } from './auth/AuthTextField';
 import { useEscapeKey } from '../lib/useEscapeKey';
+import { modalVariants } from '../lib/motion';
 
 interface AuthModalProps {
   onShowToast?: (type: 'success' | 'error' | 'info' | 'warning', title: string, message?: string) => void;
@@ -236,15 +238,19 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onShowToast }) => {
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4"
       onClick={closeAuthModal}
     >
-      <div
+      <motion.div
         ref={modalRef}
         role="dialog"
         aria-modal="true"
         aria-label={authModalMode === 'signin' ? 'Sign In' : authModalMode === 'signup' ? 'Sign Up' : 'Reset Password'}
-        className="relative w-full max-w-md bg-white rounded-2xl border border-slate-200/90 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
+        variants={modalVariants}
+        initial="closed"
+        animate="open"
+        exit="closed"
+        className="relative w-full max-w-md bg-white rounded-2xl border border-slate-200/90 shadow-2xl overflow-hidden will-change-transform"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
@@ -476,7 +482,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onShowToast }) => {
             </div>
           )}
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 };
