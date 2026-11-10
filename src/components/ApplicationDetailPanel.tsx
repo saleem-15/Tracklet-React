@@ -59,24 +59,46 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
   onShowToast,
 }) => {
   // Retain the last active application during exit animation so unmounting never throws null refs
-  const [cachedApp, setCachedApp] = useState<Application | null>(app);
+  const lastAppRef = React.useRef<Application | null>(app);
+  if (app) {
+    lastAppRef.current = app;
+  }
+  const activeApp = app || lastAppRef.current;
 
-  useEffect(() => {
-    if (app) {
-      setCachedApp(app);
+  // Compute initial note restoration synchronously on mount to eliminate frame drops during entrance animation
+  const initialNoteData = React.useMemo(() => {
+    if (!activeApp) return { text: '', restored: false };
+    const resolution = resolveDraftOnOpen(activeApp.id, activeApp.notes || '', activeApp.updatedAt);
+    if ('restore' in resolution && resolution.restore) {
+      return { text: resolution.restore.markdown, restored: true };
     }
-  }, [app]);
+    return { text: activeApp.notes || '', restored: false };
+  }, [activeApp?.id]);
 
-  const activeApp = app || cachedApp;
-
-  const [notes, setNotes] = useState(app?.notes || '');
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'unsaved' | 'saving' | 'saved'>('idle');
+  const [notes, setNotes] = useState(initialNoteData.text);
+  const [draftNoticeVisible, setDraftNoticeVisible] = useState(initialNoteData.restored);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'unsaved' | 'saving' | 'saved'>(() =>
+    initialNoteData.text !== (activeApp?.notes || '') ? 'unsaved' : 'idle'
+  );
   const [isSavingNotes, setIsSavingNotes] = useState(false);
-  const [hasUnsavedNotes, setHasUnsavedNotes] = useState(false);
+  const [hasUnsavedNotes, setHasUnsavedNotes] = useState(
+    () => initialNoteData.text !== (activeApp?.notes || '')
+  );
   const [showSavedToast, setShowSavedToast] = useState(false);
   const [isEditingInfo, setIsEditingInfo] = useState(false);
   const [showUnsavedPrompt, setShowUnsavedPrompt] = useState(false);
-  const [draftNoticeVisible, setDraftNoticeVisible] = useState(false);
+
+  // Synchronously adjust state if active record ID changes without queuing post-paint render storms
+  const prevAppIdRef = React.useRef<string | undefined>(activeApp?.id);
+  if (activeApp && activeApp.id !== prevAppIdRef.current) {
+    prevAppIdRef.current = activeApp.id;
+    setNotes(initialNoteData.text);
+    setDraftNoticeVisible(initialNoteData.restored);
+    const dirty = initialNoteData.text !== (activeApp.notes || '');
+    setHasUnsavedNotes(dirty);
+    setSaveStatus(dirty ? 'unsaved' : 'idle');
+    setIsEditingInfo(false);
+  }
 
   // Follow-up engine state
   const [templates, setTemplates] = useState<FollowUpTemplate[]>(() =>
@@ -125,40 +147,22 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
 
   // Refs for tracking debounced auto-save state and flush on close
   const saveTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
-  const latestNotesRef = React.useRef<string>(app?.notes || '');
-  const lastSavedNotesRef = React.useRef<string>(app?.notes || '');
-  const appIdRef = React.useRef<string | undefined>(app?.id);
+  const latestNotesRef = React.useRef<string>(initialNoteData.text);
+  const lastSavedNotesRef = React.useRef<string>(activeApp?.notes || '');
+  const appIdRef = React.useRef<string | undefined>(activeApp?.id);
   const inFlightSaveRef = React.useRef<Promise<void> | null>(null);
   const saveSeqRef = React.useRef(0);
 
-  // Resync editor state ONLY when the target record changes (FR-003) —
-  // never as a side-effect of our own saves echoing back through activeApp.notes.
+  // Clear debounce timer and keep refs current on ID change
   useEffect(() => {
     appIdRef.current = activeApp?.id;
-    if (!activeApp) return;
+    latestNotesRef.current = initialNoteData.text;
+    lastSavedNotesRef.current = activeApp?.notes || '';
     if (saveTimerRef.current) {
       clearTimeout(saveTimerRef.current);
       saveTimerRef.current = null;
     }
-
-    // Crash-recovery decision (FR-018/019): restore fresher device drafts
-    const resolution = resolveDraftOnOpen(activeApp.id, activeApp.notes || '', activeApp.updatedAt);
-    let initialNotes = activeApp.notes || '';
-    let restored = false;
-    if ('restore' in resolution && resolution.restore) {
-      initialNotes = resolution.restore.markdown;
-      restored = true;
-    }
-    setDraftNoticeVisible(restored);
-
-    setNotes(initialNotes);
-    latestNotesRef.current = initialNotes;
-    lastSavedNotesRef.current = activeApp.notes || '';
-    const dirtyOnLoad = initialNotes !== lastSavedNotesRef.current;
-    setHasUnsavedNotes(dirtyOnLoad);
-    setSaveStatus(dirtyOnLoad ? 'unsaved' : 'idle');
-    setIsEditingInfo(false);
-  }, [activeApp?.id]);
+  }, [activeApp?.id, initialNoteData.text]);
 
   // Clean up timer on unmount
   useEffect(() => {
@@ -653,7 +657,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
         className="max-h-[92vh] flex flex-col"
         closeOnEscape={!showUnsavedPrompt}
         onExitComplete={() => {
-          setCachedApp(null);
+          lastAppRef.current = null;
         }}
       >
         <ApplicationDetailHeader
