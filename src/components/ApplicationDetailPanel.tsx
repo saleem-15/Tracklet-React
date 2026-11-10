@@ -656,6 +656,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
         maxWidthClassName="max-w-5xl"
         className="max-h-[92vh] flex flex-col"
         closeOnEscape={!showUnsavedPrompt}
+        autoFocus={false}
         onExitComplete={() => {
           lastAppRef.current = null;
         }}

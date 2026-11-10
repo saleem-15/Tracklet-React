@@ -40,6 +40,8 @@ export interface ModalProps {
   closeOnEscape?: boolean;
   /** Optional ref to focus when modal opens (overrides default auto-focus) */
   initialFocusRef?: React.RefObject<HTMLElement | null>;
+  /** Whether to automatically focus the first interactive element on open (default: true). Set to false so no child component receives focus. */
+  autoFocus?: boolean;
   /** Whether to lock document body scroll while open (default: true) */
   lockScroll?: boolean;
   /** Children rendered inside the dialog card */
@@ -74,6 +76,7 @@ export const Modal: React.FC<ModalProps> = ({
   closeOnBackdropClick = true,
   closeOnEscape = true,
   initialFocusRef,
+  autoFocus = true,
   lockScroll = true,
   children,
 }) => {
@@ -105,6 +108,12 @@ export const Modal: React.FC<ModalProps> = ({
       previousFocusRef.current = document.activeElement as HTMLElement | null;
 
       const timer = setTimeout(() => {
+        if (!autoFocus) {
+          // Keep keyboard events and screen reader scope bounded to the dialog panel without focusing any child component
+          dialogRef.current?.focus({ preventScroll: true });
+          return;
+        }
+
         if (initialFocusRef?.current) {
           initialFocusRef.current.focus();
         } else if (dialogRef.current) {
@@ -142,7 +151,7 @@ export const Modal: React.FC<ModalProps> = ({
         previousFocusRef.current.focus();
       }
     }
-  }, [isOpen, initialFocusRef]);
+  }, [isOpen, initialFocusRef, autoFocus]);
 
   // Cycle focus on Tab / Shift+Tab within modal bounds
   const handleKeyDown = (e: React.KeyboardEvent) => {

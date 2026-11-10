@@ -217,5 +217,29 @@ describe('Universal Modal Component & Motion Architecture', () => {
       expect(shiftTabEvent.defaultPrevented).toBe(true);
       expect(document.activeElement).toBe(lastBtn);
     });
+
+    it('suppresses auto-focus on child components when autoFocus is false', async () => {
+      vi.useFakeTimers();
+      renderModal({
+        isOpen: true,
+        autoFocus: false,
+        children: (
+          <div>
+            <input id="task-input" type="text" placeholder="Add a task..." />
+            <button id="task-btn">Submit</button>
+          </div>
+        ),
+      });
+
+      act(() => {
+        vi.advanceTimersByTime(60);
+      });
+
+      const taskInput = host!.querySelector('#task-input');
+      const panel = host!.querySelector('[data-testid="modal-panel"]');
+      expect(document.activeElement).not.toBe(taskInput);
+      expect(document.activeElement).toBe(panel);
+      vi.useRealTimers();
+    });
   });
 });

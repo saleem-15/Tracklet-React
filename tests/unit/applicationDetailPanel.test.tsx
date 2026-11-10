@@ -229,5 +229,24 @@ describe('ApplicationDetailPanel note persistence', () => {
       expect(updates.status).toBe('Screening');
       expect(updates.stageUpdatedAt).toBe(new Date('2026-09-20T10:00').toISOString());
     });
+
+    it('does not auto-focus any child component when the modal opens', async () => {
+      vi.useFakeTimers();
+      const onUpdateApp = vi.fn().mockResolvedValue(undefined);
+      mountPanel(makeApp(), onUpdateApp);
+
+      act(() => {
+        vi.advanceTimersByTime(60);
+      });
+
+      const taskInput = host!.querySelector('input[placeholder*="task"], input[placeholder*="Task"]');
+      if (taskInput) {
+        expect(document.activeElement).not.toBe(taskInput);
+      }
+      // Document activeElement should not be any input or textarea
+      expect(document.activeElement?.tagName).not.toBe('INPUT');
+      expect(document.activeElement?.tagName).not.toBe('TEXTAREA');
+      vi.useRealTimers();
+    });
   });
 });
