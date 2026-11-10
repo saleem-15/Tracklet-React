@@ -181,4 +181,21 @@ describe('ContactModal Refactored Lifecycle & Entry Points', () => {
 
     expect(mockClose).toHaveBeenCalledTimes(1);
   });
+
+  it('focuses the name input field automatically when opened, not the header close button', async () => {
+    vi.useFakeTimers();
+    renderModal();
+
+    const nameInput = host!.querySelector('input[placeholder="Jane Doe"]') as HTMLInputElement;
+    const closeBtn = host!.querySelector('button[aria-label="Close (Esc)"]') as HTMLButtonElement;
+
+    // Advance 50ms modal autofocus timer
+    act(() => {
+      vi.advanceTimersByTime(60);
+    });
+
+    expect(document.activeElement).toBe(nameInput);
+    expect(document.activeElement).not.toBe(closeBtn);
+    vi.useRealTimers();
+  });
 });

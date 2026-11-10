@@ -108,6 +108,23 @@ export const Modal: React.FC<ModalProps> = ({
         if (initialFocusRef?.current) {
           initialFocusRef.current.focus();
         } else if (dialogRef.current) {
+          // 1. Explicit [autofocus] element inside dialog
+          const autoFocusEl = dialogRef.current.querySelector<HTMLElement>('[autofocus]:not([disabled])');
+          if (autoFocusEl) {
+            autoFocusEl.focus();
+            return;
+          }
+
+          // 2. First form input field (prevents focus jumping to header Close button in form modals)
+          const firstInput = dialogRef.current.querySelector<HTMLElement>(
+            'input:not([disabled]):not([type="hidden"]), textarea:not([disabled]), select:not([disabled])'
+          );
+          if (firstInput) {
+            firstInput.focus();
+            return;
+          }
+
+          // 3. Fallback to any focusable element (e.g. action buttons in confirmation dialogs)
           const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
             'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
           );

@@ -44,6 +44,7 @@ export const ContactModal: React.FC<ContactModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [duplicateContact, setDuplicateContact] = useState<Contact | null>(null);
+  const nameInputRef = React.useRef<HTMLInputElement>(null);
 
   // Resolved contextual application for pre-binding
   const contextualApp = useMemo(() => {
@@ -152,6 +153,7 @@ export const ContactModal: React.FC<ContactModalProps> = ({
       ariaLabel={editingContact ? 'Edit Contact' : 'New Contact'}
       maxWidthClassName="max-w-lg"
       className="flex flex-col max-h-[85vh]"
+      initialFocusRef={nameInputRef}
     >
       {/* Fixed Header */}
       <ContactModalHeader
@@ -181,6 +183,7 @@ export const ContactModal: React.FC<ContactModalProps> = ({
           )}
 
           <ContactFormFields
+            nameInputRef={nameInputRef}
             name={name}
             setName={setName}
             category={category}
