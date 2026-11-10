@@ -199,8 +199,25 @@ Remove-Item -Path ".git/pr-description.md" -Force -ErrorAction SilentlyContinue
 
 ---
 
-### Step 6: User Reporting
-Present a concise receipt to the user containing:
-1. Branch name and commit hashes pushed.
-2. Direct clickable link to the PR (or pre-filled GitHub page).
-3. A 2-3 bullet highlight of what was shipped.
+### Step 6: User Reporting & Fast-Forward Root Worktree
+1. Present a concise receipt to the user containing:
+   - Branch name and commit hashes pushed.
+   - Direct clickable link to the PR (or pre-filled GitHub page).
+   - A 2-3 bullet highlight of what was shipped.
+
+---
+
+### Step 7: Fast-Forward Root `main` Worktree (Worktree AI Desync Prevention)
+**Why**: When developing with AI agents across isolated Git worktrees, the user typically asks agents to branch new features directly from the local root `main` worktree (e.g. `D:/Programming/Tracklet`). If the root `main` worktree is left behind after remote PRs merge, subsequent agents will unwittingly branch from stale history, creating merge conflicts and accidental regressions.
+
+**Standard Command**:
+Whenever a PR is opened, merged, or when syncing worktrees, fast-forward the root `main` worktree using `--ff-only`:
+```bash
+# Resolve root repository directory from git common-dir or parent
+$rootRepo = (git rev-parse --show-toplevel) # or D:/Programming/Tracklet
+
+# Fast-forward local root main cleanly (0 risk of merge conflicts)
+git -C "$rootRepo" fetch origin main
+git -C "$rootRepo" pull --ff-only origin main
+```
+This guarantees that any new worktree created by AI agents starts from 100% of the latest merged tokens, schemas, and components.
