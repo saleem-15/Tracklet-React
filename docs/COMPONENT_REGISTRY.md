@@ -34,6 +34,7 @@ Use this quick-lookup decision matrix to select the appropriate canonical compon
 | **Zero-data or filtered empty states** | `EmptyState` / `OnboardingEmptyState` | `src/components/EmptyState.tsx` | Ad-hoc "No data found" unstyled text divs |
 | **Initial app boot & in-workspace loading state** | `WorkspaceLoadingState` | `src/components/layout/WorkspaceLoadingState.tsx` | Circular spinning icons, wireframe scaffolding on cold boot, raw "Loading..." text |
 | **Hover tooltips with keyboard shortcuts** | `Tooltip` / `useTooltip` | `src/components/Tooltip.tsx` | Browser default `title="..."` attributes alone |
+| **Universal Modal / Dialog with Animated Motion** | `Modal` | `src/components/Modal.tsx` | Raw `<div className="fixed inset-0...">`, ad-hoc dialogs |
 | **Modal / Drawer / Dialog dismissal** | `useEscapeKey` | `src/lib/useEscapeKey.ts` | Manual keydown listeners that close multiple layers simultaneously |
 | **Standard buttons (Primary, Secondary, Outline, Ghost)** | `UI_TOKENS.btnPrimary`, `btnSecondary`, `btnOutline`, `btnGhost` | `src/theme/tokens.ts` | Hand-rolled inline button Tailwind utility strings |
 | **Standard form text input** | `UI_TOKENS.inputBase` | `src/theme/tokens.ts` | Arbitrary borders, unstyled inputs, `placeholder-slate-400` |
@@ -361,20 +362,37 @@ export const DescriptionSnippet: React.FC<{ rawText: string }> = ({ rawText }) =
 
 #### Canonical Components:
 1. `EmptyState` (`src/components/EmptyState.tsx`)
-2. `Tooltip` / `TooltipProvider` / `useTooltip` (`src/components/Tooltip.tsx`)
-3. `useEscapeKey` (`src/lib/useEscapeKey.ts`)
-4. `WorkspaceLoadingState` (`src/components/layout/WorkspaceLoadingState.tsx`)
+2. `Modal` (`src/components/Modal.tsx`)
+3. `Tooltip` / `TooltipProvider` / `useTooltip` (`src/components/Tooltip.tsx`)
+4. `useEscapeKey` (`src/lib/useEscapeKey.ts`)
+5. `WorkspaceLoadingState` (`src/components/layout/WorkspaceLoadingState.tsx`)
 
-- **When to Use**: Zero-data screens, filter empty states, contextual tooltips with keyboard shortcuts, modal dismissal, and initial cold boot or in-workspace loading.
+- **When to Use**: Zero-data screens, filter empty states, animated modal dialogs, contextual tooltips with keyboard shortcuts, modal dismissal, and initial cold boot or in-workspace loading.
 - **Key Capabilities**:
   - `EmptyState`: Visually distinguishes initial zero-state from filtered search empty-state; uses standardized `UI_TOKENS` action buttons.
+  - `Modal`: Universal executive modal dialog primitive. Features 160ms entrance and 100ms exit motion via `AnimatePresence`, WAI-ARIA 1.2 focus trapping and restoration, intelligent auto-focus (`autoFocus?: boolean`, default `true`; set `false` for detail panels so no inner child receives focus), `initialFocusRef` support, stack-aware Escape dismissal via `useEscapeKey`, backdrop press/release origin validation (drags across modal borders do not dismiss), and clean utility class override handling (`rounded-*` and `border-*`).
   - `Tooltip`: Portal-based rendering, warm-up delay tracking (zero delay on subsequent hovers), viewport collision avoidance, and shortcut hints.
   - `useEscapeKey`: Global LIFO stack that dismisses **only** the topmost overlay, preventing multi-layered drawers/modals from simultaneously closing on Escape.
   - `WorkspaceLoadingState`: Executive Linear-grade loading experience implementing the Staged Dissolve architecture (`fullScreen` cold boot monolith with 1.5px hairline progress rail and "Texts reveal" transition from transitions.dev revealing "loading ..." after 300ms, plus in-workspace deterministic skeletons for all 5 workspace views: Table, Board, Contacts, Analytics, and Settings with 0 Cumulative Layout Shift). Organized via modular sub-skeletons in `src/components/layout/skeletons/`.
 
 #### Code Examples:
 ```tsx
-// 1. EmptyState
+// 1. Modal (Universal Animated Dialog)
+import { Modal } from '../components/Modal';
+
+export const MyDialog: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, onClose }) => (
+  <Modal
+    isOpen={isOpen}
+    onClose={onClose}
+    title="Edit Profile"
+    maxWidthClassName="max-w-md"
+    autoFocus={true} // Default: true for forms, set false for read-only / detail panels
+  >
+    <div className="p-6">Dialog content</div>
+  </Modal>
+);
+
+// 2. EmptyState
 import { EmptyState } from '../components/EmptyState';
 
 export const ApplicationListEmpty: React.FC<{ isFiltered: boolean; onClear: () => void }> = ({

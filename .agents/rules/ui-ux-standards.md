@@ -232,5 +232,18 @@ If deep architectural or guideline context is needed, consult the distilled repo
    - Modals and drawers must register `Escape` instantly and unmount via `<AnimatePresence mode="popLayout" initial={false}>`.
    - Rapid user interruptions (clicking backdrop or pressing Escape mid-flight) must never leave orphaned DOM nodes or stuck pointer-events.
 
-6. **WCAG 2.2 AAA Reduced Motion Invariant**:
+6. **The Retained-Model Pattern for Animated Exits**:
+   - In React with `AnimatePresence`, when parent state sets `selectedItem = null`, child components stay mounted during the exit animation transition (e.g. 100ms dismissal).
+   - If children access properties directly (e.g. `item.platform`), the app crashes with `TypeError: Cannot read properties of null`.
+   - **Mandatory Pattern**: Always retain the previous non-null entity in a ref during rendering (`lastItemRef.current = item; const activeItem = item || lastItemRef.current;`) and only release the ref inside `<Modal onExitComplete={() => { lastItemRef.current = null; }}>`.
+
+7. **Synchronous Render Derivation (Zero Entrance Stutter)**:
+   - Never chain post-paint `useEffect` calls to synchronize drafts or reset inputs when a modal opens. Cascading `setState` triggers 3–4 re-renders during the first 50ms of the animation curve, resulting in dropped frames.
+   - Derive initial modal values synchronously with `useMemo` or render-time `useState` adjustment (`if (id !== prevId) { setPrevId(id); resetState(); }`).
+
+8. **Two-Tier Modal Auto-Focus Discipline (WAI-ARIA 1.2)**:
+   - **Form / Action Modals** (`AddApplicationModal`, `ContactModal`): Must focus the first input or explicit `initialFocusRef` so users can begin typing immediately.
+   - **Review / Detail Modals** (`ApplicationDetailPanel`): Must set `autoFocus={false}` on `<Modal>`. The modal card receives focus (`tabIndex={-1}`, `outline-none`) to preserve screen reader and keyboard bounds without highlighting inner inputs or showing intrusive blinking cursors.
+
+9. **WCAG 2.2 AAA Reduced Motion Invariant**:
    - Under `@media (prefers-reduced-motion: reduce)`, all transitions immediately collapse to `0.001ms !important`, preserving instant keyboard focus management and screen reader updates.
