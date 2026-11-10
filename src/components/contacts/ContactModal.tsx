@@ -3,25 +3,42 @@ import { findDuplicateContact } from '../../lib/contactUtils';
 import { Contact, ContactCategory, Application } from '../../types';
 import { ApplicationSearchPicker } from '../ApplicationSearchPicker';
 import { RichTextEditor } from '../editor';
-import { useEscapeKey } from '../../lib/useEscapeKey';
+import { Modal } from '../Modal';
 import { UI_TOKENS } from '../../theme/tokens';
-import { MOTION_TOKENS } from '../../theme/motion';
 import { ContactDuplicateBanner } from './ContactDuplicateBanner';
 import { ContactFormFields } from './ContactFormFields';
 import { ContactModalHeader } from './ContactModalHeader';
 import { ContactModalFooter } from './ContactModalFooter';
 
+/**
+ * Props for the ContactModal component.
+ */
 export interface ContactModalProps {
+  /** Whether the contact modal is currently open */
   isOpen: boolean;
+  /** Existing contact record being edited, or null when creating a new contact */
   editingContact?: Contact | null;
+  /** Existing workspace contacts for client-side duplicate detection */
   contacts?: Contact[];
+  /** Applications available for associating with this contact */
   applications?: Application[];
+  /** Application ID to pre-select when opened in the context of a job record */
   initialApplicationId?: string;
+  /** Callback invoked when the modal is closed */
   onClose: () => void;
+  /** Callback to navigate to an existing duplicate contact if detected */
   onSelectContact?: (contactId: string) => void;
+  /** Async callback to save new or modified contact details */
   onSave: (contactData: Omit<Contact, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => Promise<void>;
 }
 
+/**
+ * ContactModal Component
+ *
+ * Creation and editing modal for professional network contacts.
+ * Features automated duplicate detection, application linking, and rich text notes.
+ * Managed within the universal animated Modal shell.
+ */
 export const ContactModal: React.FC<ContactModalProps> = ({
   isOpen,
   editingContact = null,
@@ -45,9 +62,7 @@ export const ContactModal: React.FC<ContactModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [duplicateContact, setDuplicateContact] = useState<Contact | null>(null);
-
-  // Stack-aware Escape key dismissal
-  useEscapeKey(onClose, isOpen);
+  const nameInputRef = React.useRef<HTMLInputElement>(null);
 
   // Resolved contextual application for pre-binding
   const contextualApp = useMemo(() => {
@@ -73,8 +88,6 @@ export const ContactModal: React.FC<ContactModalProps> = ({
       setIsSubmitting(false);
     }
   }, [isOpen, editingContact, initialApplicationId, contextualApp]);
-
-  if (!isOpen) return null;
 
   const executeSave = () => {
     const trimmedName = name.trim();
@@ -152,117 +165,113 @@ export const ContactModal: React.FC<ContactModalProps> = ({
   };
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label={editingContact ? 'Edit Contact' : 'New Contact'}
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200"
-      onClick={onClose}
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      ariaLabel={editingContact ? 'Edit Contact' : 'New Contact'}
+      maxWidthClassName="max-w-lg"
+      className="flex flex-col max-h-[85vh]"
+      initialFocusRef={nameInputRef}
     >
-      <div
-        className="w-full max-w-lg bg-white rounded-2xl border border-slate-200/90 shadow-2xl overflow-hidden my-auto animate-in zoom-in-[0.98] slide-in-from-bottom-3 duration-200 flex flex-col max-h-[85vh] will-change-transform"
-        style={{ animationTimingFunction: MOTION_TOKENS.easing.decelerate }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Fixed Header */}
-        <ContactModalHeader
-          editingContact={editingContact}
-          name={name}
-          contextualCompany={contextualApp?.company}
-          onClose={onClose}
-        />
+      {/* Fixed Header */}
+      <ContactModalHeader
+        editingContact={editingContact}
+        name={name}
+        contextualCompany={contextualApp?.company}
+        onClose={onClose}
+      />
 
-        {/* Form Container with Scrollable Body and Pinned Footer */}
-        <form noValidate onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
-          {/* Scrollable Body */}
-          <div className="px-5 pt-3.5 pb-5 space-y-3.5 flex-1 overflow-y-auto min-h-0">
-            {error && (
-              <div role="alert" className="p-2.5 rounded-[10px] bg-rose-50 border border-rose-200 text-rose-700 text-xs animate-in fade-in duration-150">
-                {error}
-              </div>
-            )}
+      {/* Form Container with Scrollable Body and Pinned Footer */}
+      <form noValidate onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+        {/* Scrollable Body */}
+        <div className="px-5 pt-3.5 pb-5 space-y-3.5 flex-1 overflow-y-auto min-h-0">
+          {error && (
+            <div role="alert" className="p-2.5 rounded-[10px] bg-rose-50 border border-rose-200 text-rose-700 text-xs animate-in fade-in duration-150">
+              {error}
+            </div>
+          )}
 
-            {duplicateContact && (
-              <ContactDuplicateBanner
-                duplicateContact={duplicateContact}
-                onSelectContact={onSelectContact}
-                onClose={onClose}
-                onForceSave={executeSave}
-              />
-            )}
-
-            <ContactFormFields
-              name={name}
-              setName={setName}
-              category={category}
-              setCategory={setCategory}
-              role={role}
-              setRole={setRole}
-              organization={organization}
-              setOrganization={setOrganization}
-              email={email}
-              setEmail={setEmail}
-              phone={phone}
-              setPhone={setPhone}
-              linkedIn={linkedIn}
-              setLinkedIn={setLinkedIn}
-              autoFocus={!editingContact}
-              onClearDuplicate={handleClearDuplicate}
+          {duplicateContact && (
+            <ContactDuplicateBanner
+              duplicateContact={duplicateContact}
+              onSelectContact={onSelectContact}
+              onClose={onClose}
+              onForceSave={executeSave}
             />
+          )}
 
-            {/* Next Follow-up Due */}
-            <div className="space-y-1">
-              <label className="block text-xs font-semibold text-slate-700">
-                Next Follow-up Due
-              </label>
-              <input
-                type="date"
-                value={nextFollowUpDate}
-                onChange={(e) => setNextFollowUpDate(e.target.value)}
-                className="w-full sm:w-1/2 bg-slate-50/70 hover:bg-slate-50 focus:bg-white text-slate-900 placeholder-slate-500 px-3 h-[36px] rounded-[10px] border border-slate-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-xs font-mono transition-[background-color,border-color,box-shadow] duration-150 cursor-pointer"
-              />
-            </div>
+          <ContactFormFields
+            nameInputRef={nameInputRef}
+            name={name}
+            setName={setName}
+            category={category}
+            setCategory={setCategory}
+            role={role}
+            setRole={setRole}
+            organization={organization}
+            setOrganization={setOrganization}
+            email={email}
+            setEmail={setEmail}
+            phone={phone}
+            setPhone={setPhone}
+            linkedIn={linkedIn}
+            setLinkedIn={setLinkedIn}
+            autoFocus={!editingContact}
+            onClearDuplicate={handleClearDuplicate}
+          />
 
-            {/* Linked Applications with Search Picker */}
-            {applications.length > 0 && (
-              <div className="space-y-1.5">
-                <label className="block text-xs font-semibold text-slate-700">
-                  Linked Applications {selectedAppIds.length > 0 && <span className="text-slate-500 font-normal">({selectedAppIds.length})</span>}
-                </label>
-                <ApplicationSearchPicker
-                  applications={applications}
-                  selectedAppIds={selectedAppIds}
-                  onToggleApp={toggleApplicationLink}
-                />
-              </div>
-            )}
-
-            {/* Notes using canonical RichTextEditor */}
-            <div className="space-y-1">
-              <label className="block text-xs font-semibold text-slate-700">
-                Notes & Discussion
-              </label>
-              <div className="rounded-[10px] border border-slate-200 overflow-hidden focus-within:border-blue-300 focus-within:ring-2 focus-within:ring-blue-100 transition-colors duration-150">
-                <RichTextEditor
-                  value={notes}
-                  onChange={setNotes}
-                  ariaLabel="Contact Notes"
-                  minRows={3}
-                  placeholder="Meeting notes, referral details, or conversation log..."
-                />
-              </div>
-            </div>
+          {/* Next Follow-up Due */}
+          <div className="space-y-1">
+            <label className="block text-xs font-semibold text-slate-700">
+              Next Follow-up Due
+            </label>
+            <input
+              type="date"
+              value={nextFollowUpDate}
+              onChange={(e) => setNextFollowUpDate(e.target.value)}
+              className="w-full sm:w-1/2 bg-slate-50/70 hover:bg-slate-50 focus:bg-white text-slate-900 placeholder-slate-500 px-3 h-[36px] rounded-[10px] border border-slate-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-xs font-mono transition-[background-color,border-color,box-shadow] duration-150 cursor-pointer"
+            />
           </div>
 
-          {/* Pinned Sticky Footer */}
-          <ContactModalFooter
-            onClose={onClose}
-            isSubmitting={isSubmitting}
-            canSubmit={Boolean(name.trim())}
-            isEditing={Boolean(editingContact)}
-          />
-        </form>
-      </div>
-    </div>
+          {/* Linked Applications with Search Picker */}
+          {applications.length > 0 && (
+            <div className="space-y-1.5">
+              <label className="block text-xs font-semibold text-slate-700">
+                Linked Applications {selectedAppIds.length > 0 && <span className="text-slate-500 font-normal">({selectedAppIds.length})</span>}
+              </label>
+              <ApplicationSearchPicker
+                applications={applications}
+                selectedAppIds={selectedAppIds}
+                onToggleApp={toggleApplicationLink}
+              />
+            </div>
+          )}
+
+          {/* Notes using canonical RichTextEditor */}
+          <div className="space-y-1">
+            <label className="block text-xs font-semibold text-slate-700">
+              Notes & Discussion
+            </label>
+            <div className="rounded-[10px] border border-slate-200 overflow-hidden focus-within:border-blue-300 focus-within:ring-2 focus-within:ring-blue-100 transition-colors duration-150">
+              <RichTextEditor
+                value={notes}
+                onChange={setNotes}
+                ariaLabel="Contact Notes"
+                minRows={3}
+                placeholder="Meeting notes, referral details, or conversation log..."
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Pinned Sticky Footer */}
+        <ContactModalFooter
+          onClose={onClose}
+          isSubmitting={isSubmitting}
+          canSubmit={Boolean(name.trim())}
+          isEditing={Boolean(editingContact)}
+        />
+      </form>
+    </Modal>
   );
 };

@@ -19,6 +19,7 @@ export interface ContactFormFieldsProps {
   linkedIn: string;
   setLinkedIn: (val: string) => void;
   autoFocus?: boolean;
+  nameInputRef?: React.RefObject<HTMLInputElement | null>;
   onClearDuplicate?: () => void;
 }
 
@@ -43,6 +44,7 @@ export const ContactFormFields: React.FC<ContactFormFieldsProps> = ({
   linkedIn,
   setLinkedIn,
   autoFocus = false,
+  nameInputRef,
   onClearDuplicate,
 }) => {
   const textInputClass =
@@ -60,6 +62,7 @@ export const ContactFormFields: React.FC<ContactFormFieldsProps> = ({
             Name <span className="text-rose-500">*</span>
           </label>
           <input
+            ref={nameInputRef}
             type="text"
             required
             autoFocus={autoFocus}

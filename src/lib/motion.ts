@@ -77,6 +77,44 @@ export const modalVariants: Variants = {
 };
 
 /**
+ * Backdrop fade variant for modal overlays
+ */
+export const modalBackdropVariants: Variants = {
+  closed: {
+    opacity: 0,
+    transition: {
+      duration: MOTION_TIMING.instant,
+      ease: MOTION_EASE.exit,
+    },
+  },
+  open: {
+    opacity: 1,
+    transition: {
+      duration: MOTION_TIMING.snappy,
+      ease: MOTION_EASE.command,
+    },
+  },
+};
+
+/**
+ * Accessible reduced-motion variants for WCAG 2.2 AAA compliance
+ */
+export const modalReducedVariants: Variants = {
+  closed: {
+    opacity: 0,
+    transition: {
+      duration: 0,
+    },
+  },
+  open: {
+    opacity: 1,
+    transition: {
+      duration: 0,
+    },
+  },
+};
+
+/**
  * Origin-aware dropdown menu variant
  */
 export const dropdownVariants: Variants = {
