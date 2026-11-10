@@ -5,7 +5,7 @@ description: Safe cleanup workflow to audit, prune, and delete verified merged G
 
 # Skill: Prune Merged Worktrees & Branches (`/prune-merged-worktrees`)
 
-This skill safely audits, prunes, and deletes completed Git worktrees and merged branches across Tracklet. It enforces an absolute non-destructive safety contract so that **no active, uncommitted, freshly created, or unmerged work is ever deleted**.
+This skill safely audits, prunes, and deletes completed Git worktrees, merged branches, and Antigravity IDE project environments across Tracklet. It enforces an absolute non-destructive safety contract so that **no active, uncommitted, freshly created, or unmerged work is ever deleted**.
 
 ---
 
@@ -32,6 +32,14 @@ This skill safely audits, prunes, and deletes completed Git worktrees and merged
 - **Rule**: Never delete `main`, `master`, or the worktree hosting the current running session / IDE workspace.
 - **The "Why"**: Deleting the active execution directory on Windows triggers `Permission denied` file lock errors and invalidates the session's current working directory.
 
+### Invariant 5: Antigravity IDE Memory Synchronization & Explicit User Consent
+- **Rule**: Never modify or remove entries from Antigravity's project memory file (`~/.gemini/config/projects/<id>.json`) without **explicit user consent**.
+- **The "Why"**: Antigravity maintains its own registry of worktree "environments" inside `~/.gemini/config/projects/<project-id>.json`. Removing a worktree via Git (`git worktree remove`) deletes it from Git's tree, but Antigravity's UI dropdown will continue to show it indefinitely as a ghost environment unless pruned from the project's JSON configuration. Because modifying application-level configuration alters Antigravity's internal state, the AI agent must always ask the user for confirmation first.
+
+### Invariant 6: Residual Untracked Files Cleanup
+- **Rule**: When removing a worktree from disk, check for and clean up residual directories containing ignored untracked files (e.g. symlinked `node_modules` or `.next`).
+- **The "Why"**: `git worktree remove` deletes Git-tracked files, but leaves directories behind if untracked files exist. This creates empty ghost directories that clutter `~/.gemini/antigravity/worktrees/`.
+
 ---
 
 ## 2. Step-by-Step Procedure
@@ -49,31 +57,48 @@ The script will:
 4. Audit all local branches and categorize each into:
    - `PRESERVE`: Protected (`main`), dirty worktree, unmerged commits, or freshly branched trunk.
    - `DELETE`: Verified merged PR & clean worktree.
-5. Output a colorized audit table with explicit reasons for each decision.
+5. Audit Antigravity project memory in `~/.gemini/config/projects/*.json` for linked environments and orphaned ghosts.
+6. Output a colorized audit table with explicit reasons for each decision.
 
-### Step 2: Review Categories with the User
-Present the audit results clearly to the user:
-- **Eligible for Deletion**: Merged branches and clean worktrees whose PRs have closed into `main`.
+### Step 2: Review Categories and Ask the User
+
+Present the audit summary clearly:
+- **Eligible for Deletion (Git)**: Merged branches and clean worktrees whose PRs have closed into `main`.
 - **Preserved (Active/Dirty)**: Worktrees with uncommitted files, branches with unmerged commits, or fresh pending branches.
+- **Antigravity Environments**: Worktree entries registered in Antigravity's project memory file that are either scheduled for deletion or are orphaned ghosts.
 
-If any ambiguous branches exist (e.g., an abandoned unmerged spike or dirty worktree the user might want to abandon), use `ask_question` to let the user decide whether to preserve or force-discard.
+#### Mandatory AI Agent Interaction:
+> [!IMPORTANT]
+> If any worktrees are marked for deletion OR if ghost environments exist in Antigravity's project memory:
+> **The AI agent MUST prompt the user via `ask_question`:**
+> 
+> ```json
+> {
+>   "questions": [
+>     {
+>       "question": "Do you want to delete the pruned worktree(s) from Antigravity's project memory (~/.gemini/config/projects/<id>.json) as well?",
+>       "options": [
+>         "(Recommended) Yes, prune from Antigravity memory and remove ghost folders",
+>         "No, keep Antigravity memory untouched (Git-only cleanup)"
+>       ],
+>       "is_multi_select": false
+>     }
+>   ]
+> }
+> ```
 
 ### Step 3: Execute Deletion (When Authorized)
-When the user confirms or requests live execution:
+
+#### Case A: User consented to Antigravity memory synchronization
+Execute with both `-Execute` and `-PruneAntigravityConfig`:
 ```powershell
-powershell -ExecutionPolicy Bypass -File .agents/skills/prune-merged-worktrees/scripts/prune.ps1 -Execute
+powershell -ExecutionPolicy Bypass -File .agents/skills/prune-merged-worktrees/scripts/prune.ps1 -Execute -PruneAntigravityConfig
 ```
 
-Or manually perform the verified operations:
-```bash
-# 1. Remove verified clean, merged worktree
-git worktree remove <worktree-path>
-
-# 2. Delete corresponding local merged branch
-git branch -D <branch-name>
-
-# 3. Prune internal git worktree administrative refs
-git worktree prune
+#### Case B: User chose Git-only cleanup
+Execute with `-Execute` only:
+```powershell
+powershell -ExecutionPolicy Bypass -File .agents/skills/prune-merged-worktrees/scripts/prune.ps1 -Execute
 ```
 
 ---
@@ -85,6 +110,7 @@ The automated audit and prune script is located at:
 
 Options:
 - `.\prune.ps1`: Default safe audit / dry run.
-- `.\prune.ps1 -Execute`: Performs deletions on verified merged items only.
+- `.\prune.ps1 -Execute`: Performs deletions on verified merged Git items only.
+- `.\prune.ps1 -Execute -PruneAntigravityConfig`: Performs deletions on Git items AND prunes Antigravity project JSON memory.
 - `.\prune.ps1 -SkipRemotePrune`: Skips remote prune step.
 - `.\prune.ps1 -RepoPath <path>`: Explicit repository root override.

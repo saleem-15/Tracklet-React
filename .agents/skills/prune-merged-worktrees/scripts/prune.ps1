@@ -1,19 +1,30 @@
 <#
 .SYNOPSIS
-    Safely prune and delete merged Git worktrees and branches in Tracklet.
+    Safely prune and delete merged Git worktrees, branches, and Antigravity IDE environments in Tracklet.
 
 .DESCRIPTION
-    Scans all local branches and Git worktrees, cross-references GitHub PR merge
-    status and git commit ancestor graphs, and deletes ONLY verified merged
-    worktrees and branches. Strictly preserves:
+    Scans all local branches, Git worktrees, and Antigravity project environments.
+    Cross-references GitHub PR merge status and git commit ancestor graphs, and deletes
+    ONLY verified merged worktrees and branches.
+    
+    Strictly preserves:
     - Protected branches (main, master)
     - Worktrees with uncommitted/unstaged changes or untracked files
     - Unmerged branches (branches with commits not yet integrated into main)
     - Freshly created branches pointing to trunk (new tasks / pending work)
     - Active execution worktrees (current working directory)
 
+    Optional Antigravity IDE Synchronization (-PruneAntigravityConfig):
+    - Synchronizes Antigravity project memory (~/.gemini/config/projects/<id>.json)
+    - Prunes ghost environments and removed worktrees from the Antigravity UI dropdown
+    - Removes residual untracked folders (e.g. leftover node_modules) left behind by git
+
 .PARAMETER Execute
     Perform actual deletion. If omitted, runs in DryRun mode.
+
+.PARAMETER PruneAntigravityConfig
+    Synchronize and remove deleted/ghost worktree entries from Antigravity's project memory
+    (~/.gemini/config/projects/<id>.json). Always prompts in agentic workflows.
 
 .PARAMETER SkipRemotePrune
     Skip pruning stale remote tracking refs via 'git fetch --prune origin'.
@@ -23,16 +34,21 @@
 
 .EXAMPLE
     .\prune.ps1
-    # Runs safe preview (DryRun)
+    # Runs safe preview (DryRun) including Git and Antigravity memory audits
 
 .EXAMPLE
     .\prune.ps1 -Execute
-    # Deletes verified merged worktrees and branches
+    # Deletes verified merged worktrees and branches in Git only
+
+.EXAMPLE
+    .\prune.ps1 -Execute -PruneAntigravityConfig
+    # Deletes verified merged worktrees/branches in Git AND prunes Antigravity project memory
 #>
 
 [CmdletBinding()]
 param(
     [switch]$Execute,
+    [switch]$PruneAntigravityConfig,
     [switch]$SkipRemotePrune,
     [string]$RepoPath = ""
 )
@@ -66,14 +82,51 @@ Push-Location $repoRoot
 try {
     Write-Host "=== Git Prune: Merged Worktrees & Branches Audit ===" -ForegroundColor Cyan
     Write-Host "Repository root: $repoRoot" -ForegroundColor Gray
-    Write-Host "Mode: $(if ($Execute) { 'EXECUTE (Live Deletion)' } else { 'DRY RUN (Preview Only)' })" -ForegroundColor Yellow
+    Write-Host "Execution Mode: $(if ($Execute) { 'EXECUTE (Live Deletion)' } else { 'DRY RUN (Preview Only)' })" -ForegroundColor Yellow
+    Write-Host "Antigravity Sync: $(if ($PruneAntigravityConfig) { 'ENABLED' } else { 'DISABLED (Git only)' })" -ForegroundColor $(if ($PruneAntigravityConfig) { 'Green' } else { 'Gray' })
     Write-Host ""
 
     $operationFailed = $false
 
+    # -------------------------------------------------------------------------
+    # Helper: Find Antigravity Project Configuration
+    # -------------------------------------------------------------------------
+    function Get-AntigravityProjectConfig {
+        param([string]$TargetRepoPath)
+
+        $projectsDir = Join-Path $env:USERPROFILE ".gemini\config\projects"
+        if (-not (Test-Path $projectsDir)) { return $null }
+
+        $targetNorm = $TargetRepoPath.Replace('\', '/').TrimEnd('/').ToLower()
+
+        foreach ($file in (Get-ChildItem $projectsDir -Filter "*.json" -File)) {
+            try {
+                $raw = Get-Content $file.FullName -Raw -Encoding utf8
+                $proj = $raw | ConvertFrom-Json
+                $resources = $proj.projectResources.resources
+                foreach ($r in $resources) {
+                    if ($r.gitFolder -and $r.gitFolder.folderUri) {
+                        $uri = $r.gitFolder.folderUri
+                        $decoded = [System.Uri]::UnescapeDataString($uri).Replace("file:///", "").Replace('\', '/').TrimEnd('/').ToLower()
+                        if ($decoded -eq $targetNorm) {
+                            return [PSCustomObject]@{
+                                FilePath  = $file.FullName
+                                Data      = $proj
+                                Raw       = $raw
+                                ProjectId = $proj.id
+                                Name      = $proj.name
+                            }
+                        }
+                    }
+                }
+            } catch {}
+        }
+        return $null
+    }
+
     # 1. Prune stale remote tracking branches
     if (-not $SkipRemotePrune) {
-        Write-Host "[1/4] Pruning stale remote tracking references (git fetch --prune origin)..." -ForegroundColor Cyan
+        Write-Host "[1/5] Pruning stale remote tracking references (git fetch --prune origin)..." -ForegroundColor Cyan
         git -C $repoRoot fetch --prune origin 2>$null
         if ($LASTEXITCODE -ne 0) {
             Write-Warning "git fetch --prune origin failed with exit code $LASTEXITCODE."
@@ -87,7 +140,7 @@ try {
     # 2. Get GitHub PR merge history for squash-and-merge detection
     $mergedPrBranches = @{}
     try {
-        $prListJson = gh pr list --state merged --limit 100 --json headRefName,headRefOid,number,title 2>$null
+        $prListJson = gh pr list --state merged --limit 200 --json headRefName,headRefOid,number,title 2>$null
         if ($prListJson) {
             $prs = $prListJson | ConvertFrom-Json
             foreach ($pr in $prs) {
@@ -124,7 +177,7 @@ try {
     }
 
     # 3. Audit Worktrees
-    Write-Host "`n[2/4] Auditing Git Worktrees..." -ForegroundColor Cyan
+    Write-Host "`n[2/5] Auditing Git Worktrees..." -ForegroundColor Cyan
 
     $worktreeRaw = git -C $repoRoot worktree list --porcelain
     $worktrees = @()
@@ -214,7 +267,7 @@ try {
     }
 
     # 4. Audit Local Branches
-    Write-Host "`n[3/4] Auditing Local Branches..." -ForegroundColor Cyan
+    Write-Host "`n[3/5] Auditing Local Branches..." -ForegroundColor Cyan
 
     $localBranches = (git -C $repoRoot for-each-ref --format='%(refname:short)|%(objectname)|%(objectname:short)' refs/heads/) -split "`n"
     $branchActions = @()
@@ -283,22 +336,95 @@ try {
         Write-Host ("       Reason: {0}" -f $bItem.Reason) -ForegroundColor Gray
     }
 
-    # 5. Execution or Dry Run Summary
-    Write-Host "`n[4/4] Execution Plan" -ForegroundColor Cyan
+    # 5. Audit Antigravity Project Memory (~/.gemini/config/projects/*.json)
+    Write-Host "`n[4/5] Auditing Antigravity Project Memory..." -ForegroundColor Cyan
 
     $wtsToDelete = @($worktreeActions | Where-Object { $_.Status -eq "DELETE" })
     $branchesToDelete = @($branchActions | Where-Object { $_.Status -eq "DELETE" })
 
-    Write-Host "Worktrees eligible for deletion: $($wtsToDelete.Count)" -ForegroundColor $(if ($wtsToDelete.Count -gt 0) { 'Green' } else { 'Gray' })
-    Write-Host "Branches eligible for deletion:  $($branchesToDelete.Count)" -ForegroundColor $(if ($branchesToDelete.Count -gt 0) { 'Green' } else { 'Gray' })
+    $antigravityConfig = Get-AntigravityProjectConfig -TargetRepoPath $repoRoot
+    $envActions = @()
+
+    if ($antigravityConfig) {
+        Write-Host "Found project config: $($antigravityConfig.Name) ($($antigravityConfig.FilePath))" -ForegroundColor Gray
+        $wtsToDeletePathsNorm = @($wtsToDelete | ForEach-Object { $_.Path.Replace('\', '/').TrimEnd('/').ToLower() })
+
+        if ($antigravityConfig.Data.environments -and $antigravityConfig.Data.environments.environments) {
+            foreach ($envItem in $antigravityConfig.Data.environments.environments) {
+                $eName = $envItem.name
+                $eUri = ""
+                $eLocalPath = ""
+                if ($envItem.resources -and $envItem.resources.resources -and $envItem.resources.resources.Count -gt 0) {
+                    $eUri = $envItem.resources.resources[0].folderUri
+                    if ($eUri -and $eUri.StartsWith("file:///")) {
+                        $eLocalPath = [System.Uri]::UnescapeDataString($eUri.Substring(8)).Replace('/', '\')
+                    }
+                }
+
+                $eLocalNorm = if ($eLocalPath) { $eLocalPath.Replace('\', '/').TrimEnd('/').ToLower() } else { "" }
+
+                $matchesDeletedWt = ($eLocalNorm -and ($eLocalNorm -in $wtsToDeletePathsNorm))
+                $isGhost = $false
+                if ($eLocalPath) {
+                    if (-not (Test-Path $eLocalPath) -or -not (Test-Path (Join-Path $eLocalPath ".git"))) {
+                        $isGhost = $true
+                    }
+                }
+
+                $decision = "PRESERVE"
+                $reason = ""
+
+                if ($matchesDeletedWt) {
+                    $decision = "DELETE"
+                    $reason = "Matches Git worktree scheduled for deletion"
+                } elseif ($isGhost) {
+                    $decision = "DELETE"
+                    $reason = "Ghost environment (directory missing or has no .git on disk)"
+                } else {
+                    $reason = "Active linked worktree on disk"
+                }
+
+                $envActions += [PSCustomObject]@{
+                    Id        = $envItem.id
+                    Name      = $eName
+                    LocalPath = $eLocalPath
+                    Status    = $decision
+                    Reason    = $reason
+                    EnvObject = $envItem
+                }
+            }
+        }
+
+        if ($envActions.Count -gt 0) {
+            foreach ($eItem in $envActions) {
+                $color = if ($eItem.Status -eq "DELETE") { "Red" } else { "Green" }
+                Write-Host ("[{0}] Environment: {1} ({2})" -f $eItem.Status, $eItem.Name, $eItem.LocalPath) -ForegroundColor $color
+                Write-Host ("       Reason: {0}" -f $eItem.Reason) -ForegroundColor Gray
+            }
+        } else {
+            Write-Host "[OK] No environments registered in Antigravity project memory." -ForegroundColor Green
+        }
+    } else {
+        Write-Host "[INFO] No matching Antigravity project configuration found in ~/.gemini/config/projects/." -ForegroundColor Gray
+    }
+
+    $envsToDelete = @($envActions | Where-Object { $_.Status -eq "DELETE" })
+
+    # 6. Execution or Dry Run Summary
+    Write-Host "`n[5/5] Execution Plan Summary" -ForegroundColor Cyan
+
+    Write-Host "Worktrees eligible for deletion:   $($wtsToDelete.Count)" -ForegroundColor $(if ($wtsToDelete.Count -gt 0) { 'Green' } else { 'Gray' })
+    Write-Host "Branches eligible for deletion:    $($branchesToDelete.Count)" -ForegroundColor $(if ($branchesToDelete.Count -gt 0) { 'Green' } else { 'Gray' })
+    Write-Host "Antigravity environments to prune: $($envsToDelete.Count)" -ForegroundColor $(if ($envsToDelete.Count -gt 0) { 'Green' } else { 'Gray' })
 
     if (-not $Execute) {
         Write-Host "`n[DRY RUN COMPLETE] Zero changes were made." -ForegroundColor Yellow
-        Write-Host "To execute deletion of verified merged items, rerun with: .\prune.ps1 -Execute" -ForegroundColor Yellow
+        Write-Host "To execute deletion of verified merged items in Git:    .\prune.ps1 -Execute" -ForegroundColor Yellow
+        Write-Host "To also prune deleted entries from Antigravity memory:  .\prune.ps1 -Execute -PruneAntigravityConfig" -ForegroundColor Yellow
         return
     }
 
-    if ($wtsToDelete.Count -eq 0 -and $branchesToDelete.Count -eq 0) {
+    if ($wtsToDelete.Count -eq 0 -and $branchesToDelete.Count -eq 0 -and ($envsToDelete.Count -eq 0 -or -not $PruneAntigravityConfig)) {
         Write-Host "`nEverything is already clean! Nothing to delete." -ForegroundColor Green
         return
     }
@@ -308,10 +434,19 @@ try {
         Write-Host "Removing merged worktree: $($wtItem.Path)..." -ForegroundColor Yellow
         git -C $repoRoot worktree remove $wtItem.Path
         if ($LASTEXITCODE -eq 0) {
-            Write-Host "Removed worktree successfully." -ForegroundColor Green
+            Write-Host "Removed worktree from Git successfully." -ForegroundColor Green
         } else {
-            Write-Warning "Could not remove worktree $($wtItem.Path) (exit code: $LASTEXITCODE)."
+            Write-Warning "Could not remove worktree $($wtItem.Path) with git worktree remove (exit code: $LASTEXITCODE)."
             $operationFailed = $true
+        }
+
+        # Clean residual folder if git left untracked artifacts behind (e.g. node_modules)
+        if (Test-Path $wtItem.Path) {
+            $hasRemainingGit = Test-Path (Join-Path $wtItem.Path ".git")
+            if (-not $hasRemainingGit) {
+                Write-Host "Cleaning residual directory: $($wtItem.Path)..." -ForegroundColor Yellow
+                Remove-Item -Path $wtItem.Path -Recurse -Force -ErrorAction SilentlyContinue
+            }
         }
     }
 
@@ -334,6 +469,33 @@ try {
         $operationFailed = $true
     }
 
+    # Perform Antigravity Memory Pruning (When requested)
+    if ($PruneAntigravityConfig) {
+        if ($antigravityConfig -and $envsToDelete.Count -gt 0) {
+            Write-Host "`nPruning Antigravity project memory ($($antigravityConfig.FilePath))..." -ForegroundColor Yellow
+
+            # Create safety backup
+            Copy-Item -Path $antigravityConfig.FilePath -Destination "$($antigravityConfig.FilePath).bak" -Force
+            Write-Host "Backup created: $($antigravityConfig.FilePath).bak" -ForegroundColor Gray
+
+            $survivingEnvs = @($envActions | Where-Object { $_.Status -eq "PRESERVE" } | ForEach-Object { $_.EnvObject })
+            $antigravityConfig.Data.environments.environments = $survivingEnvs
+
+            # Cleanly save JSON
+            $updatedJson = $antigravityConfig.Data | ConvertTo-Json -Depth 20
+            [System.IO.File]::WriteAllText($antigravityConfig.FilePath, $updatedJson, [System.Text.Encoding]::UTF8)
+
+            Write-Host "Pruned $($envsToDelete.Count) environment(s) from Antigravity memory successfully." -ForegroundColor Green
+        } elseif ($envsToDelete.Count -eq 0) {
+            Write-Host "`nAntigravity project memory is already clean." -ForegroundColor Green
+        }
+    } else {
+        if ($envsToDelete.Count -gt 0) {
+            Write-Host "`n[INFO] Antigravity project memory was NOT modified ($($envsToDelete.Count) environment(s) eligible)." -ForegroundColor Gray
+            Write-Host "To remove them from Antigravity's UI dropdown, rerun with: -PruneAntigravityConfig" -ForegroundColor Gray
+        }
+    }
+
     if ($operationFailed) {
         Write-Error "One or more pruning operations failed."
         exit 1
@@ -343,4 +505,3 @@ try {
 } finally {
     Pop-Location
 }
-
