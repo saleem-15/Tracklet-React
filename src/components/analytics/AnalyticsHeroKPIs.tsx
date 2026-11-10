@@ -1,5 +1,7 @@
 import React from 'react';
 import { ExecutiveKpis } from '../../lib/analyticsUtils';
+
+import { MetricRoller } from '../MetricRoller';
 import { 
   Activity, 
   TrendingUp, 
@@ -51,7 +53,7 @@ export const AnalyticsHeroKPIs: React.FC<AnalyticsHeroKPIsProps> = ({
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {/* 1. Active Pipeline */}
       <div 
-        className="bg-white border border-slate-200/80 p-5 rounded-2xl shadow-2xs hover:border-slate-300 transition-all flex flex-col justify-between"
+        className="bg-white border border-slate-200/80 p-5 rounded-2xl shadow-2xs hover:border-slate-300 transition-[border-color,box-shadow] duration-150 flex flex-col justify-between"
         title="Active Pipeline: Total open applications currently in Saved, Applied, Screening, Interview, or Offer stages"
       >
         <div className="flex items-center justify-between">
@@ -65,9 +67,7 @@ export const AnalyticsHeroKPIs: React.FC<AnalyticsHeroKPIsProps> = ({
 
         <div className="my-3">
           <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-slate-900 tracking-tight">
-              {activePipelineCount}
-            </span>
+            <MetricRoller value={activePipelineCount} className="text-3xl font-bold tracking-tight font-heading" valueClassName="text-slate-900" />
             <span className="text-xs text-slate-500 font-medium">
               of {totalApplications} total
             </span>
@@ -88,7 +88,7 @@ export const AnalyticsHeroKPIs: React.FC<AnalyticsHeroKPIsProps> = ({
 
       {/* 2. Progression Yield (Screening Rate) */}
       <div 
-        className="bg-white border border-slate-200/80 p-5 rounded-2xl shadow-2xs hover:border-slate-300 transition-all flex flex-col justify-between"
+        className="bg-white border border-slate-200/80 p-5 rounded-2xl shadow-2xs hover:border-slate-300 transition-[border-color,box-shadow] duration-150 flex flex-col justify-between"
         title="Screening Yield: Percentage of submitted applications that successfully progressed to recruiter screening calls"
       >
         <div className="flex items-center justify-between">
@@ -102,9 +102,7 @@ export const AnalyticsHeroKPIs: React.FC<AnalyticsHeroKPIsProps> = ({
 
         <div className="my-3">
           <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-slate-900 tracking-tight">
-              {interviewProgressionPct}%
-            </span>
+            <MetricRoller value={interviewProgressionPct} suffix="%" className="text-3xl font-bold tracking-tight font-heading" valueClassName="text-slate-900" />
             <span className="text-xs text-emerald-600 font-medium flex items-center gap-0.5">
               <ArrowUpRight className="w-3.5 h-3.5" />
               {interviewProgressionCount} {interviewProgressionCount === 1 ? 'call' : 'calls'}
@@ -126,7 +124,7 @@ export const AnalyticsHeroKPIs: React.FC<AnalyticsHeroKPIsProps> = ({
 
       {/* 3. Offers & Loops */}
       <div 
-        className="bg-white border border-slate-200/80 p-5 rounded-2xl shadow-2xs hover:border-slate-300 transition-all flex flex-col justify-between"
+        className="bg-white border border-slate-200/80 p-5 rounded-2xl shadow-2xs hover:border-slate-300 transition-[border-color,box-shadow] duration-150 flex flex-col justify-between"
         title="Offers & Loops: Offers received relative to completed or ongoing interview loops"
       >
         <div className="flex items-center justify-between">
@@ -141,9 +139,7 @@ export const AnalyticsHeroKPIs: React.FC<AnalyticsHeroKPIsProps> = ({
         <div className="my-3">
           <div className="flex items-baseline justify-between">
             <div className="flex items-baseline gap-1.5">
-              <span className="text-3xl font-bold text-slate-900 tracking-tight">
-                {offerCount}
-              </span>
+              <MetricRoller value={offerCount} className="text-3xl font-bold tracking-tight font-heading" valueClassName="text-slate-900" />
               <span className="text-xs font-semibold text-indigo-600 uppercase">
                 {offerCount === 1 ? 'Offer' : 'Offers'}
               </span>
@@ -205,9 +201,7 @@ export const AnalyticsHeroKPIs: React.FC<AnalyticsHeroKPIsProps> = ({
 
         <div className="my-3">
           <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-slate-900 tracking-tight">
-              {ghostedCount}
-            </span>
+            <MetricRoller value={ghostedCount} className="text-3xl font-bold tracking-tight font-heading" valueClassName="text-slate-900" />
             <span className={`text-xs font-medium ${ghostedCount > 0 ? 'text-amber-800' : 'text-emerald-700'}`}>
               {ghostedCount === 1 ? 'stale app' : 'stale apps'} (&gt;14d)
             </span>

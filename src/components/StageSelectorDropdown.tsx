@@ -3,6 +3,8 @@ import { ApplicationStatus } from '../types';
 import { ChevronDown, Check } from 'lucide-react';
 import { UI_TOKENS } from '../theme/tokens';
 import { STAGE_CONFIG_MAP, APPLICATION_STATUSES } from '../lib/constants';
+import { motion, AnimatePresence } from 'motion/react';
+import { dropdownVariants } from '../lib/motion';
 
 export interface StageSelectorDropdownProps {
   currentStatus: ApplicationStatus;
@@ -121,14 +123,20 @@ export const StageSelectorDropdown: React.FC<StageSelectorDropdownProps> = ({
       </button>
 
       {/* Floating Menu */}
-      {isOpen && (
-        <div
-          id={listboxId}
-          role="listbox"
-          aria-label="Application Stage"
-          tabIndex={-1}
-          className="absolute right-0 sm:left-0 mt-1.5 w-44 rounded-[12px] bg-white/95 backdrop-blur-md border border-slate-200/90 shadow-xl z-50 p-1.5 space-y-0.5 animate-in fade-in zoom-in-95 duration-150 motion-reduce:animate-none"
-        >
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            id={listboxId}
+            role="listbox"
+            aria-label="Application Stage"
+            tabIndex={-1}
+            variants={dropdownVariants}
+            initial="closed"
+            animate="open"
+            exit="closed"
+            style={{ transformOrigin: 'top right' }}
+            className="absolute right-0 sm:left-0 mt-1.5 w-44 rounded-[12px] bg-white/95 backdrop-blur-md border border-slate-200/90 shadow-xl z-50 p-1.5 space-y-0.5 will-change-transform"
+          >
           <div className="px-2 py-1 text-[11px] font-mono font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-100 mb-1">
             Advance Stage
           </div>
@@ -147,7 +155,7 @@ export const StageSelectorDropdown: React.FC<StageSelectorDropdownProps> = ({
                 type="button"
                 onClick={(e) => handleSelect(status, e)}
                 onMouseEnter={() => setHighlightedIndex(idx)}
-                className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-[8px] text-xs font-semibold transition-all cursor-pointer ${
+                className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-[8px] text-xs font-semibold transition-colors duration-150 cursor-pointer ${
                   isSelected
                     ? `${config.bg} ${config.text} font-bold ring-1 ring-slate-900/10`
                     : isHighlighted
@@ -163,8 +171,9 @@ export const StageSelectorDropdown: React.FC<StageSelectorDropdownProps> = ({
               </button>
             );
           })}
-        </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

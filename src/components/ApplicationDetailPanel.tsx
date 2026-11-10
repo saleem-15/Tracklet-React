@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { motion } from 'motion/react';
+import { modalVariants } from '../lib/motion';
 import { Application, ApplicationStatus, Contact, ApplicationTask, FollowUpTemplate, EmailLog } from '../types';
 import { calculateDaysInStage } from '../lib/sampleData';
 import { ApplicationDetailHeader } from './detail/ApplicationDetailHeader';
@@ -626,7 +628,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
       role="dialog"
       aria-modal="true"
       aria-label={app ? `Application Details - ${app.company}` : 'Application Details'}
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 md:p-6 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200 overflow-y-auto"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 md:p-6 bg-slate-900/60 backdrop-blur-sm overflow-y-auto"
       onClick={handleRequestClose}
     >
       {showUnsavedPrompt && (
@@ -639,8 +641,12 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
         />
       )}
 
-      <div
-        className="w-full max-w-5xl max-h-[92vh] bg-white border border-slate-200/90 rounded-2xl flex flex-col shadow-2xl text-slate-900 animate-in zoom-in-95 duration-200 overflow-hidden my-auto"
+      <motion.div
+        variants={modalVariants}
+        initial="closed"
+        animate="open"
+        exit="closed"
+        className="w-full max-w-5xl max-h-[92vh] bg-white border border-slate-200/90 rounded-2xl flex flex-col shadow-2xl text-slate-900 overflow-hidden my-auto will-change-transform"
         onClick={(e) => e.stopPropagation()}
       >
         <ApplicationDetailHeader
@@ -751,7 +757,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
           isSaving={isSavingNotes}
           showSavedToast={showSavedToast}
         />
-      </div>
+      </motion.div>
 
       {isFollowUpModalOpen && (
         <FollowUpModal

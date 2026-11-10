@@ -201,3 +201,36 @@ If deep architectural or guideline context is needed, consult the distilled repo
    - NO AI cheerleading copy (e.g. no "Getting things ready ✨").
    - NO `transition-all` (use targeted `transition-opacity duration-150`).
    - Skeletons must reside in modular sub-components in `src/components/layout/skeletons/` to keep all files under 300 lines.
+
+
+---
+
+## 18. Executive Motion & Micro-Interaction Governance Standard (Tool, Not a Toy)
+
+**Philosophy**: Tracklet is an Executive Command Center. Motion is an informative tactile feedback mechanism, never decorative cartoon entertainment. Every transition must respect user velocity and hardware budgets.
+
+1. **Precision Timing Tokens & Duration Upper Bounds**:
+   - `--duration-instant: 100ms`: Button presses, checkboxes, toggle switches, and focus rings.
+   - `--duration-snappy: 160ms`: Context menus, dropdown listboxes, modal dialogs, and error shakes.
+   - `--duration-panel: 220ms`: Slide-over drawers (`ApplicationDetailPanel`) and layout sheets.
+   - **Hard Rule**: No UI transition within Tracklet may exceed **220ms**.
+
+2. **Strict Critically Damped Easing (Zero Overshoot)**:
+   - **Command Decel (`cubic-bezier(0.16, 1, 0.3, 1)`)**: Used for all entrances and expansions.
+   - **Sharp Exit (`cubic-bezier(0.4, 0, 1, 1)`)**: Used for prompt dismissals.
+   - **Negative Invariant**: Bouncy spring physics (overshoots $> 1.0$) are strictly banned. Transitions must never rebound.
+
+3. **100% GPU Layer Composition (Zero Reflow Thrashing)**:
+   - Animations must be confined to `transform` and `opacity`.
+   - Never animate layout geometry properties (`width`, `height`, `top`, `left`, `margin`, `padding`). Use the FLIP technique via `motion/react` `layout` or `layoutId`.
+   - Never use `transition-all`. Use explicit properties (e.g. `transition-[border-color,box-shadow] duration-150`).
+
+4. **Data Grid Zero-Latency Invariant**:
+   - `AllApplicationsTable.tsx`: Filtering, sorting, and pagination MUST execute at **0ms** latency. Staggered row fades and layout transitions during search/filter queries are strictly prohibited.
+
+5. **Instant Escape & Interruption Semantics**:
+   - Modals and drawers must register `Escape` instantly and unmount via `<AnimatePresence mode="popLayout" initial={false}>`.
+   - Rapid user interruptions (clicking backdrop or pressing Escape mid-flight) must never leave orphaned DOM nodes or stuck pointer-events.
+
+6. **WCAG 2.2 AAA Reduced Motion Invariant**:
+   - Under `@media (prefers-reduced-motion: reduce)`, all transitions immediately collapse to `0.001ms !important`, preserving instant keyboard focus management and screen reader updates.
