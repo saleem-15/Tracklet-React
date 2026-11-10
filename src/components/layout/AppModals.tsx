@@ -12,6 +12,8 @@ import { useAuth } from '../../context/AuthContext';
 import { TesterReportModal } from '../feedback/TesterReportModal';
 import { ExtensionModal } from '../extension/ExtensionModal';
 import { KeyboardShortcutsModal } from '../KeyboardShortcutsModal';
+import { OnboardingModal } from '../onboarding/OnboardingModal';
+import { ImportCSVModal } from '../ImportCSVModal';
 import { useExtensionContext } from '../../context/ExtensionContext';
 
 export interface AppModalsProps {
@@ -43,41 +45,44 @@ export function AppModals({ paywall }: AppModalsProps = {}) {
     closeExtensionModal,
     isShortcutsModalOpen,
     closeShortcutsModal,
+    isOnboardingModalOpen,
+    closeOnboardingModal,
+    onboardingInitialStep,
+    isImportModalOpen,
+    closeImportModal,
+    openImportModal,
     activeTab 
   } = useNavigation();
   const { user } = useAuth();
-  const { handleAddApplication } = useApplicationsContext();
+  const { 
+    applications,
+    handleAddApplication, 
+    handleSeedDemoData, 
+    handleBatchImportApplications 
+  } = useApplicationsContext();
   const { contacts, handleAddContact } = useContactsContext();
   const { addToast } = useToastContext();
-  const extensionState = useExtensionContext();
+  const { extensionState } = useExtensionContext();
 
-  const handleGuardedAdd = async (
-    newApp: Parameters<typeof handleAddApplication>[0]
-  ) => {
-    if (
-      paywall &&
-      ACTIVE_STATUSES.includes(newApp.status as any) &&
-      paywall.currentUsage >= paywall.maxQuota
-    ) {
-      addToast(
-        'warning',
-        'Pipeline Capacity Reached',
-        `Free accounts can track up to ${paywall.maxQuota} active applications. Upgrade to Pro to track more applications.`
-      );
-      closeAddModal();
-      paywall.onUpgradeClick();
-      return;
+  const handleGuardedAdd = (app: Parameters<typeof handleAddApplication>[0]) => {
+    if (paywall) {
+      const activeCount = applications.filter(a => (ACTIVE_STATUSES as readonly string[]).includes(a.status)).length;
+      if (activeCount >= paywall.maxQuota) {
+        paywall.onUpgradeClick();
+        return;
+      }
     }
-    return handleAddApplication(newApp);
+    handleAddApplication(app);
   };
 
   return (
     <>
-      {/* Add Application Modal */}
+      {/* Primary New Application Intake Modal */}
       <AddApplicationModal
         isOpen={isAddModalOpen}
-        allContacts={contacts}
         onClose={closeAddModal}
+        existingApplications={applications}
+        existingContacts={contacts}
         onAdd={handleGuardedAdd}
         onCreateContact={handleAddContact}
       />
@@ -105,6 +110,25 @@ export function AppModals({ paywall }: AppModalsProps = {}) {
       <KeyboardShortcutsModal
         isOpen={isShortcutsModalOpen}
         onClose={closeShortcutsModal}
+      />
+
+      {/* Interactive User Onboarding Modal */}
+      <OnboardingModal
+        isOpen={isOnboardingModalOpen}
+        initialStep={onboardingInitialStep}
+        onClose={closeOnboardingModal}
+        onImportCSV={openImportModal}
+        onImportJSON={handleBatchImportApplications}
+        onSeedDemoData={handleSeedDemoData}
+        onShowToast={addToast}
+        totalAppCount={applications.length}
+      />
+
+      {/* CSV Spreadsheet Import Modal */}
+      <ImportCSVModal
+        isOpen={isImportModalOpen}
+        onClose={closeImportModal}
+        onImport={handleBatchImportApplications}
       />
 
       {/* SaaS Entitlement Upgrade Modal */}

@@ -323,6 +323,19 @@ export interface UserQuotas {
   quotaResetAt: string; // ISO 8601 string e.g. "2026-11-01T00:00:00.000Z"
 }
 
+
+// --- User Onboarding State ---
+export type OnboardingIntent = 'migrator' | 'hunter' | 'explorer';
+
+export interface UserOnboardingState {
+  completed: boolean;
+  completedAt?: string | null;
+  dismissed: boolean;
+  dismissedAt?: string | null;
+  intent?: OnboardingIntent | null;
+  lastStepViewed?: number;
+}
+
 export interface UserEntitlementProfile {
   uid: string;
   email: string | null;
@@ -332,6 +345,7 @@ export interface UserEntitlementProfile {
   currentPeriodEnd?: string | null;
   stripeCustomerId?: string | null;
   quotas: UserQuotas;
+  onboarding?: UserOnboardingState;
   createdAt: string;
   updatedAt: string;
 }

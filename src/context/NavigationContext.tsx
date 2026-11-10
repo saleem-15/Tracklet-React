@@ -1,18 +1,18 @@
-import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
-import { ActiveTab, FilterState } from '../types';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { useUrlNavigation } from '../hooks/useUrlNavigation';
-import { LegalDocType, getPathForLegalDoc, navigateToRoute } from '../lib/routeUtils';
+import { ApplicationFilter, NavigationTab, LegalDocType } from '../types';
+import { navigateToRoute, getPathForLegalDoc } from '../lib/routeUtils';
 
 export interface NavigationContextType {
-  activeTab: ActiveTab;
-  setActiveTab: (tab: ActiveTab) => void;
+  activeTab: NavigationTab;
+  setActiveTab: (tab: NavigationTab) => void;
   isNotFound: boolean;
   navigateToLegal: (doc?: LegalDocType) => void;
-  filter: FilterState;
-  setFilter: React.Dispatch<React.SetStateAction<FilterState>>;
+  filter: ApplicationFilter;
+  setFilter: React.Dispatch<React.SetStateAction<ApplicationFilter>>;
   resetFilters: () => void;
   selectedAppId: string | null;
-  setSelectedAppId: (appId: string | null) => void;
+  setSelectedAppId: (id: string | null) => void;
   isAddModalOpen: boolean;
   setIsAddModalOpen: (open: boolean) => void;
   openAddModal: () => void;
@@ -33,6 +33,15 @@ export interface NavigationContextType {
   setIsShortcutsModalOpen: (open: boolean) => void;
   openShortcutsModal: () => void;
   closeShortcutsModal: () => void;
+  isOnboardingModalOpen: boolean;
+  setIsOnboardingModalOpen: (open: boolean) => void;
+  onboardingInitialStep: number;
+  openOnboardingModal: (initialStep?: number) => void;
+  closeOnboardingModal: () => void;
+  isImportModalOpen: boolean;
+  setIsImportModalOpen: (open: boolean) => void;
+  openImportModal: () => void;
+  closeImportModal: () => void;
 }
 
 export const NavigationContext = createContext<NavigationContextType | null>(null);
@@ -67,6 +76,9 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
   const [isShortcutsModalOpen, setIsShortcutsModalOpen] = useState(false);
+  const [isOnboardingModalOpen, setIsOnboardingModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [onboardingInitialStep, setOnboardingInitialStep] = useState(1);
   const [isExtensionModalOpen, setIsExtensionModalOpen] = useState(() => {
     try {
       const params = new URLSearchParams(window.location.search);
@@ -111,6 +123,18 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     navigateToRoute(getPathForLegalDoc(doc));
   }, []);
 
+  const openOnboardingModal = useCallback((initialStep: number = 1) => {
+    setOnboardingInitialStep(initialStep);
+    setIsOnboardingModalOpen(true);
+  }, []);
+
+  const closeOnboardingModal = useCallback(() => {
+    setIsOnboardingModalOpen(false);
+  }, []);
+
+  const openImportModal = useCallback(() => setIsImportModalOpen(true), []);
+  const closeImportModal = useCallback(() => setIsImportModalOpen(false), []);
+
   const value = useMemo<NavigationContextType>(() => ({
     activeTab,
     setActiveTab,
@@ -141,6 +165,15 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     setIsShortcutsModalOpen,
     openShortcutsModal,
     closeShortcutsModal,
+    isOnboardingModalOpen,
+    setIsOnboardingModalOpen,
+    onboardingInitialStep,
+    openOnboardingModal,
+    closeOnboardingModal,
+    isImportModalOpen,
+    setIsImportModalOpen,
+    openImportModal,
+    closeImportModal,
   }), [
     activeTab,
     setActiveTab,
@@ -167,6 +200,13 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     isShortcutsModalOpen,
     openShortcutsModal,
     closeShortcutsModal,
+    isOnboardingModalOpen,
+    onboardingInitialStep,
+    openOnboardingModal,
+    closeOnboardingModal,
+    isImportModalOpen,
+    openImportModal,
+    closeImportModal,
   ]);
 
   return (

@@ -159,6 +159,8 @@ export const LOCAL_STORAGE_KEYS = {
   HISTORY_PREFIX: 'tracklet_history_',
   AUTH_PENDING_EMAIL: 'tracklet_auth_pending_email',
   EMAIL_RESEND_COOLDOWN: 'tracklet_email_resend_cooldown',
+  ONBOARDING_COMPLETED_PREFIX: 'tracklet_onboarding_completed_',
+  ONBOARDING_SUPPRESSED_SESSION_PREFIX: 'tracklet_onboarding_suppressed_',
 };
 
 // Subscriptions & pricing: disabled during experimental preview

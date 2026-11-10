@@ -13,6 +13,8 @@ import { useContactsContext } from '../../context/ContactsContext';
 import { useSettings } from '../../context/SettingsContext';
 import { useAuth } from '../../context/AuthContext';
 import { useToastContext } from '../../context/ToastContext';
+import { useEntitlementContext } from '../../context/EntitlementContext';
+import { useOnboardingTrigger } from '../../hooks/useOnboardingTrigger';
 
 export interface WorkspaceContentProps {
   isLoading?: boolean;
@@ -44,6 +46,7 @@ export function WorkspaceContent({ isLoading = false, activeQuota }: WorkspaceCo
     openAddModal,
     resetFilters,
     openMobileSidebar,
+    openOnboardingModal,
   } = useNavigation();
 
   const {
@@ -77,6 +80,17 @@ export function WorkspaceContent({ isLoading = false, activeQuota }: WorkspaceCo
     updateExpirySettings,
     expiryThresholdHours,
   } = useSettings();
+
+  const entitlement = useEntitlementContext();
+
+  // Evaluates safe auto-trigger for email-verified new users
+  useOnboardingTrigger({
+    isLoading,
+    user,
+    profile: entitlement.profile,
+    totalAppCount: applications.length,
+    openOnboardingModal,
+  });
 
   const handleGuardedPipelineStatusUpdate = (id: string, newStatus: string) => {
     const targetApp = applications.find((a) => a.id === id);

@@ -5,7 +5,7 @@ import {
   setDoc, 
   updateDoc 
 } from './firebase';
-import { UserEntitlementProfile, UserQuotas } from '../types';
+import { UserEntitlementProfile, UserQuotas, UserOnboardingState } from '../types';
 import { SAAS_LIMITS, DEFAULT_USER_QUOTAS } from './constants';
 
 function getNextMonthResetDate(): string {
@@ -46,6 +46,14 @@ export class EntitlementRepository {
             autofillsUsedThisMonth: raw.quotas?.autofillsUsedThisMonth ?? 0,
             quotaResetAt: raw.quotas?.quotaResetAt ?? getNextMonthResetDate(),
           },
+          onboarding: raw.onboarding ? {
+            completed: Boolean(raw.onboarding.completed),
+            completedAt: raw.onboarding.completedAt ?? null,
+            dismissed: Boolean(raw.onboarding.dismissed),
+            dismissedAt: raw.onboarding.dismissedAt ?? null,
+            intent: raw.onboarding.intent ?? null,
+            lastStepViewed: raw.onboarding.lastStepViewed ?? 1,
+          } : undefined,
           createdAt: raw.createdAt ?? new Date().toISOString(),
           updatedAt: raw.updatedAt ?? new Date().toISOString(),
         };
@@ -133,6 +141,14 @@ export class EntitlementRepository {
           autofillsUsedThisMonth: raw.quotas?.autofillsUsedThisMonth ?? 0,
           quotaResetAt: raw.quotas?.quotaResetAt ?? getNextMonthResetDate(),
         },
+        onboarding: raw.onboarding ? {
+          completed: Boolean(raw.onboarding.completed),
+          completedAt: raw.onboarding.completedAt ?? null,
+          dismissed: Boolean(raw.onboarding.dismissed),
+          dismissedAt: raw.onboarding.dismissedAt ?? null,
+          intent: raw.onboarding.intent ?? null,
+          lastStepViewed: raw.onboarding.lastStepViewed ?? 1,
+        } : undefined,
         createdAt: raw.createdAt ?? new Date().toISOString(),
         updatedAt: raw.updatedAt ?? new Date().toISOString(),
       };
@@ -188,6 +204,30 @@ export class EntitlementRepository {
     } catch (err) {
       console.warn('Could not increment scrape usage in Firestore:', err);
       return 0;
+    }
+  }
+
+  /**
+   * Persists onboarding state changes to Firestore at /users/{userId}.
+   */
+  static async updateOnboardingState(
+    userId: string,
+    onboarding: Partial<UserOnboardingState>
+  ): Promise<void> {
+    if (!userId) return;
+    try {
+      const userRef = doc(db, 'users', userId);
+      const now = new Date().toISOString();
+      await setDoc(
+        userRef,
+        {
+          onboarding,
+          updatedAt: now,
+        },
+        { merge: true }
+      );
+    } catch (err) {
+      console.error('Failed to update onboarding state in Firestore:', err);
     }
   }
 }
