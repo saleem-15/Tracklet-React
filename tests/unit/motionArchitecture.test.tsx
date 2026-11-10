@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import React, { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import { MOTION_TIMING, MOTION_EASE, transitionCommand, transitionPanel } from '../../src/lib/motion';
+import { MOTION_TIMING, MOTION_EASE, transitionCommand, transitionPanel, tooltipVariants } from '../../src/lib/motion';
 import { MetricRoller } from '../../src/components/MetricRoller';
 import { ActionSuccessCheck, ErrorShakeContainer } from '../../src/components/ActionFeedback';
 import { CustomSelectDropdown } from '../../src/components/CustomSelectDropdown';
@@ -43,6 +43,15 @@ describe('Tracklet Motion Architecture & Standards', () => {
     it('provides valid transition configurations', () => {
       expect(transitionCommand.duration).toBe(MOTION_TIMING.snappy);
       expect(transitionPanel.duration).toBe(MOTION_TIMING.panel);
+    });
+
+    it('enforces tooltip variants adhere to snappy timing and zero overshoot', () => {
+      expect(tooltipVariants.open).toBeDefined();
+      expect(tooltipVariants.closed).toBeDefined();
+      const openTransition = tooltipVariants.open as { transition: { duration: number; ease: [number, number, number, number] } };
+      expect(openTransition.transition.duration).toBeLessThanOrEqual(MOTION_TIMING.snappy);
+      expect(openTransition.transition.ease[1]).toBeLessThanOrEqual(1.0);
+      expect(openTransition.transition.ease[3]).toBeLessThanOrEqual(1.0);
     });
   });
 

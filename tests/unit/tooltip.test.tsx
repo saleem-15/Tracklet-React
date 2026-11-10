@@ -509,6 +509,114 @@ describe('Tooltip Component & Global TooltipProvider', () => {
 
     expect(document.querySelector('[role="tooltip"]')).toBeNull();
   });
+
+  it('applies directional walking glide animation and travel delta when moving between adjacent triggers in warm state', () => {
+    act(() => {
+      root!.render(
+        <TooltipProvider>
+          <div className="flex gap-4">
+            <button id="btn-copy" type="button" data-tooltip="Copy link">
+              Copy
+            </button>
+            <button id="btn-share" type="button" data-tooltip="Share with team">
+              Share
+            </button>
+          </div>
+        </TooltipProvider>
+      );
+    });
+
+    const copyBtn = host!.querySelector('#btn-copy') as HTMLElement;
+    const shareBtn = host!.querySelector('#btn-share') as HTMLElement;
+
+    // Mock bounding client rects for copy (left: 100) and share (left: 180)
+    vi.spyOn(copyBtn, 'getBoundingClientRect').mockReturnValue({
+      top: 200,
+      left: 100,
+      width: 60,
+      height: 36,
+      bottom: 236,
+      right: 160,
+      x: 100,
+      y: 200,
+      toJSON: () => ({}),
+    } as DOMRect);
+
+    vi.spyOn(shareBtn, 'getBoundingClientRect').mockReturnValue({
+      top: 200,
+      left: 180,
+      width: 60,
+      height: 36,
+      bottom: 236,
+      right: 240,
+      x: 180,
+      y: 200,
+      toJSON: () => ({}),
+    } as DOMRect);
+
+    // 1. Initial hover over Copy (cold start)
+    act(() => {
+      copyBtn.dispatchEvent(
+        new PointerEvent('pointerover', { bubbles: true, cancelable: true, pointerType: 'mouse' })
+      );
+    });
+    act(() => {
+      vi.advanceTimersByTime(260);
+    });
+
+    const firstTooltip = document.querySelector('[role="tooltip"]') as HTMLElement;
+    expect(firstTooltip).not.toBeNull();
+    expect(firstTooltip.textContent).toContain('Copy link');
+    // Cold start uses directional pop-in (not travel)
+    expect(firstTooltip.className).toContain('animate-[tooltipInTop_160ms_cubic-bezier(0.16,1,0.3,1)_forwards]');
+
+    // 2. Move directly from Copy to Share (warm transition: left to right)
+    act(() => {
+      copyBtn.dispatchEvent(
+        new PointerEvent('pointerout', { bubbles: true, cancelable: true, pointerType: 'mouse' })
+      );
+    });
+    act(() => {
+      shareBtn.dispatchEvent(
+        new PointerEvent('pointerover', { bubbles: true, cancelable: true, pointerType: 'mouse' })
+      );
+    });
+    act(() => {
+      vi.advanceTimersByTime(10);
+    });
+
+    const travelingTooltip = document.querySelector('[role="tooltip"]') as HTMLElement;
+    expect(travelingTooltip).not.toBeNull();
+    expect(travelingTooltip.textContent).toContain('Share with team');
+    // Warm adjacent transition triggers the walking/traveling animation!
+    expect(travelingTooltip.className).toContain('animate-[tooltipTravel_160ms_cubic-bezier(0.16,1,0.3,1)_forwards]');
+    // deltaX: previous left (130) - new left (210) = -80px (enters from the left direction where cursor came from!)
+    expect(travelingTooltip.style.getPropertyValue('--tt-travel-x')).toBe('-80px');
+    expect(travelingTooltip.style.getPropertyValue('--tt-content-drift')).toBe('-6px');
+
+    // 3. Move backwards from Share to Copy (warm transition: right to left)
+    act(() => {
+      shareBtn.dispatchEvent(
+        new PointerEvent('pointerout', { bubbles: true, cancelable: true, pointerType: 'mouse' })
+      );
+    });
+    act(() => {
+      copyBtn.dispatchEvent(
+        new PointerEvent('pointerover', { bubbles: true, cancelable: true, pointerType: 'mouse' })
+      );
+    });
+    act(() => {
+      vi.advanceTimersByTime(10);
+    });
+
+    const returnTooltip = document.querySelector('[role="tooltip"]') as HTMLElement;
+    expect(returnTooltip).not.toBeNull();
+    expect(returnTooltip.textContent).toContain('Copy link');
+    expect(returnTooltip.className).toContain('animate-[tooltipTravel_160ms_cubic-bezier(0.16,1,0.3,1)_forwards]');
+    // deltaX: previous left (210) - new left (130) = +80px (enters from the right direction where cursor came from!)
+    expect(returnTooltip.style.getPropertyValue('--tt-travel-x')).toBe('80px');
+    expect(returnTooltip.style.getPropertyValue('--tt-content-drift')).toBe('6px');
+  });
 });
 
 describe('formatShortcutForPlatform', () => {
