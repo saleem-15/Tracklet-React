@@ -10,17 +10,35 @@ import { ContactFormFields } from './ContactFormFields';
 import { ContactModalHeader } from './ContactModalHeader';
 import { ContactModalFooter } from './ContactModalFooter';
 
+/**
+ * Props for the ContactModal component.
+ */
 export interface ContactModalProps {
+  /** Whether the contact modal is currently open */
   isOpen: boolean;
+  /** Existing contact record being edited, or null when creating a new contact */
   editingContact?: Contact | null;
+  /** Existing workspace contacts for client-side duplicate detection */
   contacts?: Contact[];
+  /** Applications available for associating with this contact */
   applications?: Application[];
+  /** Application ID to pre-select when opened in the context of a job record */
   initialApplicationId?: string;
+  /** Callback invoked when the modal is closed */
   onClose: () => void;
+  /** Callback to navigate to an existing duplicate contact if detected */
   onSelectContact?: (contactId: string) => void;
+  /** Async callback to save new or modified contact details */
   onSave: (contactData: Omit<Contact, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => Promise<void>;
 }
 
+/**
+ * ContactModal Component
+ *
+ * Creation and editing modal for professional network contacts.
+ * Features automated duplicate detection, application linking, and rich text notes.
+ * Managed within the universal animated Modal shell.
+ */
 export const ContactModal: React.FC<ContactModalProps> = ({
   isOpen,
   editingContact = null,

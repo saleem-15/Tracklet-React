@@ -26,6 +26,7 @@ describe('Universal Modal Component & Motion Architecture', () => {
       host = null;
     }
     document.body.style.overflow = '';
+    vi.useRealTimers();
     vi.restoreAllMocks();
   });
 
@@ -174,7 +175,23 @@ describe('Universal Modal Component & Motion Architecture', () => {
       expect(document.body.style.overflow).toBe('');
     });
 
+    it('does not trigger onClose when pointer press originates inside dialog panel and releases on backdrop', () => {
+      const onClose = vi.fn();
+      renderModal({ isOpen: true, onClose, closeOnBackdropClick: true });
+
+      const panel = host!.querySelector('[data-testid="modal-panel"]') as HTMLElement;
+      const backdrop = host!.querySelector('[data-testid="modal-backdrop"]') as HTMLElement;
+
+      act(() => {
+        panel.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+        backdrop.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      });
+
+      expect(onClose).not.toHaveBeenCalled();
+    });
+
     it('restores focus to previously focused element upon dismissal', () => {
+      vi.useFakeTimers();
       const externalButton = document.createElement('button');
       externalButton.id = 'external-trigger-btn';
       document.body.appendChild(externalButton);
@@ -182,6 +199,13 @@ describe('Universal Modal Component & Motion Architecture', () => {
       expect(document.activeElement).toBe(externalButton);
 
       renderModal({ isOpen: true });
+
+      // Advance past 50ms auto-focus delay and verify focus entered the dialog
+      act(() => {
+        vi.advanceTimersByTime(60);
+      });
+      const panel = host!.querySelector('[data-testid="modal-panel"]');
+      expect(panel?.contains(document.activeElement)).toBe(true);
 
       // Dismiss modal
       act(() => {
@@ -218,6 +242,25 @@ describe('Universal Modal Component & Motion Architecture', () => {
       expect(document.activeElement).toBe(lastBtn);
     });
 
+    it('moves focus to the last focusable element when Shift+Tab is pressed on the panel itself', () => {
+      renderModal({ isOpen: true });
+
+      const lastBtn = host!.querySelector('#last-btn') as HTMLElement;
+      const panel = host!.querySelector('[data-testid="modal-panel"]') as HTMLElement;
+      const rootDiv = host!.querySelector('[data-testid="modal-portal-root"]') as HTMLElement;
+
+      // Focus panel itself (boundary condition)
+      panel.focus();
+      expect(document.activeElement).toBe(panel);
+
+      const shiftTabEvent = new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true, cancelable: true });
+      act(() => {
+        rootDiv.dispatchEvent(shiftTabEvent);
+      });
+      expect(shiftTabEvent.defaultPrevented).toBe(true);
+      expect(document.activeElement).toBe(lastBtn);
+    });
+
     it('suppresses auto-focus on child components when autoFocus is false', async () => {
       vi.useFakeTimers();
       renderModal({
@@ -239,7 +282,6 @@ describe('Universal Modal Component & Motion Architecture', () => {
       const panel = host!.querySelector('[data-testid="modal-panel"]');
       expect(document.activeElement).not.toBe(taskInput);
       expect(document.activeElement).toBe(panel);
-      vi.useRealTimers();
     });
   });
 });

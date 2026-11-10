@@ -5,6 +5,13 @@ import { AddApplicationModal } from '../../src/components/AddApplicationModal';
 
 (globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
 
+function changeInput(input: HTMLInputElement, value: string) {
+  const nativeSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set;
+  nativeSetter?.call(input, value);
+  input.dispatchEvent(new Event('input', { bubbles: true }));
+  input.dispatchEvent(new Event('change', { bubbles: true }));
+}
+
 describe('AddApplicationModal Animated Motion & Lifecycle', () => {
   let host: HTMLDivElement | null = null;
   let root: Root | null = null;
@@ -100,5 +107,121 @@ describe('AddApplicationModal Animated Motion & Lifecycle', () => {
     });
 
     expect(host!.querySelector('[role="dialog"]')).toBeNull();
+  });
+
+  it('resets form state after submission and exit animation completion', async () => {
+    const onClose = vi.fn();
+    const onAdd = vi.fn().mockResolvedValue(undefined);
+    await renderModal({ isOpen: true, onClose, onAdd });
+
+    const companyInput = host!.querySelector('input[placeholder="Linear, Stripe"]') as HTMLInputElement;
+    const roleInput = host!.querySelector('input[placeholder="Software Engineer"]') as HTMLInputElement;
+
+    await act(async () => {
+      changeInput(companyInput, 'Acme Corp');
+      changeInput(roleInput, 'Senior Frontend Engineer');
+    });
+
+    expect(companyInput.value).toBe('Acme Corp');
+    expect(roleInput.value).toBe('Senior Frontend Engineer');
+
+    // Submit form
+    const submitBtn = host!.querySelector('button[type="submit"]') as HTMLButtonElement;
+    await act(async () => {
+      submitBtn.click();
+    });
+
+    expect(onAdd).toHaveBeenCalledWith(
+      expect.objectContaining({
+        company: 'Acme Corp',
+        role: 'Senior Frontend Engineer',
+      })
+    );
+    expect(onClose).toHaveBeenCalled();
+
+    // Re-render as closed (triggering exit motion and onExitComplete)
+    await act(async () => {
+      root!.render(<AddApplicationModal isOpen={false} onClose={onClose} onAdd={onAdd} />);
+    });
+
+    // Re-open modal
+    await act(async () => {
+      root!.render(<AddApplicationModal isOpen={true} onClose={onClose} onAdd={onAdd} />);
+    });
+
+    const newCompanyInput = host!.querySelector('input[placeholder="Linear, Stripe"]') as HTMLInputElement;
+    const newRoleInput = host!.querySelector('input[placeholder="Software Engineer"]') as HTMLInputElement;
+    expect(newCompanyInput.value).toBe('');
+    expect(newRoleInput.value).toBe('');
+  });
+
+  it('resets form state after clicking Discard & Exit in unsaved changes prompt', async () => {
+    const onClose = vi.fn();
+    const onAdd = vi.fn().mockResolvedValue(undefined);
+    await renderModal({ isOpen: true, onClose, onAdd });
+
+    const companyInput = host!.querySelector('input[placeholder="Linear, Stripe"]') as HTMLInputElement;
+    await act(async () => {
+      changeInput(companyInput, 'Stripe');
+    });
+
+    // Request close while dirty
+    const closeBtn = host!.querySelector('button[title="Close modal (Esc)"]') as HTMLButtonElement;
+    await act(async () => {
+      closeBtn.click();
+    });
+
+    // Unsaved changes prompt should appear
+    expect(host!.textContent).toContain('Discard unsaved changes?');
+    const discardBtn = Array.from(host!.querySelectorAll('button')).find((btn) =>
+      btn.textContent?.includes('Discard & Exit')
+    );
+    expect(discardBtn).toBeDefined();
+
+    await act(async () => {
+      discardBtn!.click();
+    });
+
+    expect(onClose).toHaveBeenCalled();
+
+    // Re-render as closed then open again
+    await act(async () => {
+      root!.render(<AddApplicationModal isOpen={false} onClose={onClose} onAdd={onAdd} />);
+    });
+    await act(async () => {
+      root!.render(<AddApplicationModal isOpen={true} onClose={onClose} onAdd={onAdd} />);
+    });
+
+    const newCompanyInput = host!.querySelector('input[placeholder="Linear, Stripe"]') as HTMLInputElement;
+    expect(newCompanyInput.value).toBe('');
+  });
+
+  it('dismisses unsaved changes prompt and keeps modal open when Escape is pressed while prompt is visible', async () => {
+    const onClose = vi.fn();
+    await renderModal({ isOpen: true, onClose });
+
+    const companyInput = host!.querySelector('input[placeholder="Linear, Stripe"]') as HTMLInputElement;
+    await act(async () => {
+      changeInput(companyInput, 'Vercel');
+    });
+
+    // Trigger unsaved prompt via close button
+    const closeBtn = host!.querySelector('button[title="Close modal (Esc)"]') as HTMLButtonElement;
+    await act(async () => {
+      closeBtn.click();
+    });
+
+    expect(host!.textContent).toContain('Discard unsaved changes?');
+
+    // Press Escape while prompt is shown
+    await act(async () => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    });
+
+    // Prompt is dismissed, but modal is still open and onClose was NOT called
+    expect(host!.textContent).not.toContain('Discard unsaved changes?');
+    expect(host!.querySelector('[role="dialog"]')).not.toBeNull();
+    expect(onClose).not.toHaveBeenCalled();
+    expect((host!.querySelector('input[placeholder="Linear, Stripe"]') as HTMLInputElement).value).toBe('Vercel');
   });
 });

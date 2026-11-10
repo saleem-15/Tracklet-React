@@ -2,13 +2,27 @@ import React, { useState, useEffect } from 'react';
 import { Trash2, X } from 'lucide-react';
 import { Modal } from '../Modal';
 
+/**
+ * Props for DeleteAccountModal.
+ */
 export interface DeleteAccountModalProps {
+  /** Whether the confirmation dialog is currently visible */
   isOpen: boolean;
+  /** Callback to close the dialog without deleting */
   onClose: () => void;
+  /** Async callback to perform permanent account purge */
   onConfirmDelete: () => Promise<void>;
+  /** Whether the account deletion operation is currently processing */
   isDeleting: boolean;
 }
 
+/**
+ * DeleteAccountModal Component
+ *
+ * High-friction confirmation modal for permanent account deletion.
+ * Enforces typing "DELETE" to prevent accidental data purge.
+ * Prevents dismissal via Escape or backdrop click while deletion is in progress.
+ */
 export const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({
   isOpen,
   onClose,
@@ -31,6 +45,8 @@ export const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({
       ariaLabelledBy="delete-account-title"
       maxWidthClassName="max-w-md"
       className="rounded-3xl border-rose-200 p-6 space-y-4"
+      closeOnBackdropClick={!isDeleting}
+      closeOnEscape={!isDeleting}
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 text-rose-600 font-bold text-base" id="delete-account-title">
@@ -39,9 +55,10 @@ export const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({
         </div>
         <button
           type="button"
-          onClick={onClose}
+          onClick={isDeleting ? undefined : onClose}
+          disabled={isDeleting}
           aria-label="Close"
-          className="text-slate-500 hover:text-slate-700 p-1 cursor-pointer transition-colors"
+          className="text-slate-500 hover:text-slate-700 p-1 cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <X className="w-4 h-4" />
         </button>

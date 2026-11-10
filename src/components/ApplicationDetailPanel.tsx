@@ -21,19 +21,35 @@ import { useEscapeKey } from '../lib/useEscapeKey';
 import { updateStatusHistoryEntry, deleteStatusHistoryEntry } from '../lib/statusHistoryUtils';
 import { parseCounterpartyString } from '../lib/emailCounterpartyUtils';
 
+/**
+ * Props for the ApplicationDetailPanel component.
+ */
 export interface ApplicationDetailPanelProps {
+  /** The application record currently being inspected, or null if closed */
   app: Application | null;
+  /** Complete list of contacts available across the workspace */
   allContacts?: Contact[];
+  /** Email address of the authenticated user */
   currentUserEmail?: string;
+  /** Callback invoked when the modal panel is dismissed */
   onClose: () => void;
+  /** Async persistence callback when the application fields are mutated */
   onUpdateApp: (id: string, updates: Partial<Application>) => Promise<void>;
+  /** Async persistence callback when the application record is permanently deleted */
   onDeleteApp: (id: string) => Promise<void>;
+  /** Optional handler to associate an existing contact with this application */
   onLinkContact?: (contactId: string, appId: string) => Promise<void>;
+  /** Optional handler to dissociate a contact from this application */
   onUnlinkContact?: (contactId: string, appId: string) => Promise<void>;
+  /** Optional handler to create and link a contact simultaneously */
   onCreateAndLinkContact?: (contactData: Omit<Contact, 'id' | 'userId' | 'createdAt' | 'updatedAt'>, appId: string) => Promise<void>;
+  /** Optional handler to persist edits to a linked contact */
   onUpdateContact?: (id: string, updates: Partial<Contact>) => Promise<void>;
+  /** Optional handler to navigate to a contact's dedicated view */
   onSelectContact?: (contactId: string) => void;
+  /** Optional handler to initiate editing of a contact */
   onEditContact?: (contact: Contact) => void;
+  /** Central toast notification dispatcher */
   onShowToast?: (
     type: 'success' | 'error' | 'info' | 'warning',
     title: string,
@@ -43,6 +59,13 @@ export interface ApplicationDetailPanelProps {
   ) => void;
 }
 
+/**
+ * ApplicationDetailPanel Component
+ *
+ * Primary executive detail drawer for job application records.
+ * Presents application metadata, interview history, notes, tasks, contacts, and email correspondence.
+ * Utilizes universal Modal container with smooth entrance/exit orchestration.
+ */
 export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
   app,
   allContacts = [],
@@ -66,6 +89,8 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
   const activeApp = app || lastAppRef.current;
 
   // Compute initial note restoration synchronously on mount to eliminate frame drops during entrance animation
+  // Note: The [activeApp?.id] dependency is intentional: the note state is resolved once per record open,
+  // even though the resolver reads notes and updatedAt. This prevents external prop re-renders from clobbering in-progress user typing.
   const initialNoteData = React.useMemo(() => {
     if (!activeApp) return { text: '', restored: false };
     const resolution = resolveDraftOnOpen(activeApp.id, activeApp.notes || '', activeApp.updatedAt);
@@ -88,10 +113,11 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
   const [isEditingInfo, setIsEditingInfo] = useState(false);
   const [showUnsavedPrompt, setShowUnsavedPrompt] = useState(false);
 
-  // Synchronously adjust state if active record ID changes without queuing post-paint render storms
-  const prevAppIdRef = React.useRef<string | undefined>(activeApp?.id);
-  if (activeApp && activeApp.id !== prevAppIdRef.current) {
-    prevAppIdRef.current = activeApp.id;
+  // Synchronously adjust state if active record ID changes during rendering before resetting notes,
+  // allowing React to track and replay or discard the state adjustment consistently.
+  const [prevAppId, setPrevAppId] = useState<string | undefined>(activeApp?.id);
+  if (activeApp && activeApp.id !== prevAppId) {
+    setPrevAppId(activeApp.id);
     setNotes(initialNoteData.text);
     setDraftNoticeVisible(initialNoteData.restored);
     const dirty = initialNoteData.text !== (activeApp.notes || '');
@@ -381,8 +407,9 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
       onShowToast?.('info', `Task deleted (${deletedTask.title})`, undefined, {
         label: 'Undo',
         onClick: async () => {
+          const currentTasks = app?.tasks ?? lastAppRef.current?.tasks ?? [];
           await onUpdateApp(activeApp.id, {
-            tasks: [...(activeApp.tasks || []), deletedTask],
+            tasks: [...currentTasks, deletedTask],
             updatedAt: new Date().toISOString(),
           });
           onShowToast?.('success', 'Restored task');
@@ -430,8 +457,9 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
       onShowToast?.('info', `Contact deleted (${deletedContact.name})`, undefined, {
         label: 'Undo',
         onClick: async () => {
+          const currentContacts = app?.contacts ?? lastAppRef.current?.contacts ?? [];
           await onUpdateApp(activeApp.id, {
-            contacts: [...(activeApp.contacts || []), deletedContact],
+            contacts: [...currentContacts, deletedContact],
             updatedAt: new Date().toISOString(),
           });
           onShowToast?.('success', `Restored ${deletedContact.name}`);

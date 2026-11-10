@@ -10,14 +10,29 @@ import { AddApplicationFooter } from './add-modal/AddApplicationFooter';
 import { UnsavedChangesPrompt } from './detail/UnsavedChangesPrompt';
 import { Modal } from './Modal';
 
+/**
+ * Props for the AddApplicationModal component.
+ */
 export interface AddApplicationModalProps {
+  /** Whether the modal dialog is currently open */
   isOpen: boolean;
+  /** Available contacts across the workspace for autocomplete and linking */
   allContacts?: Contact[];
+  /** Callback to close the modal */
   onClose: () => void;
+  /** Async callback to create a new application record */
   onAdd: (newApp: Omit<Application, 'id' | 'userId' | 'createdAt' | 'updatedAt' | 'stageUpdatedAt'>) => Promise<void>;
+  /** Optional handler to create a new contact from within the modal */
   onCreateContact?: (contactData: Omit<Contact, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => Promise<Contact>;
 }
 
+/**
+ * AddApplicationModal Component
+ *
+ * Creation dialog for adding a new job application to the user's pipeline.
+ * Captures company, role, status, links, contacts, tasks, and initial notes.
+ * Enforces dirty-checking with UnsavedChangesPrompt before closing.
+ */
 export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
   isOpen,
   allContacts = [],
@@ -266,18 +281,18 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
             isSubmitDisabled={!company.trim() || !role.trim()}
           />
         </form>
-      </Modal>
 
-      {showUnsavedPrompt && (
-        <UnsavedChangesPrompt
-          onKeepEditing={() => setShowUnsavedPrompt(false)}
-          onDiscardAndExit={() => {
-            setShowUnsavedPrompt(false);
-            resetForm();
-            onClose();
-          }}
-        />
-      )}
+        {showUnsavedPrompt && (
+          <UnsavedChangesPrompt
+            onKeepEditing={() => setShowUnsavedPrompt(false)}
+            onDiscardAndExit={() => {
+              setShowUnsavedPrompt(false);
+              resetForm();
+              onClose();
+            }}
+          />
+        )}
+      </Modal>
     </>
   );
 };

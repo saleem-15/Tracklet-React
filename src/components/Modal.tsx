@@ -86,7 +86,10 @@ export const Modal: React.FC<ModalProps> = ({
   const prefersReduced = useReducedMotion();
   const shouldReduceMotion = prefersReduced || isTest;
   const dialogRef = useRef<HTMLDivElement>(null);
+  const backdropRef = useRef<HTMLDivElement>(null);
+  const portalRootRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
+  const pressTargetRef = useRef<EventTarget | null>(null);
 
   // Stack-aware Escape dismissal (LIFO order ensures top-most dialog handles Escape)
   useEscapeKey(onClose, isOpen && closeOnEscape);
@@ -102,55 +105,63 @@ export const Modal: React.FC<ModalProps> = ({
     };
   }, [isOpen, lockScroll]);
 
-  // Focus trap & focus restoration lifecycle
+  // Focus capture and restoration lifecycle keyed strictly on isOpen
   useEffect(() => {
-    if (isOpen) {
-      previousFocusRef.current = document.activeElement as HTMLElement | null;
+    if (!isOpen) return;
 
-      const timer = setTimeout(() => {
-        if (!autoFocus) {
-          // Keep keyboard events and screen reader scope bounded to the dialog panel without focusing any child component
-          dialogRef.current?.focus({ preventScroll: true });
-          return;
-        }
+    previousFocusRef.current = document.activeElement as HTMLElement | null;
 
-        if (initialFocusRef?.current) {
-          initialFocusRef.current.focus();
-        } else if (dialogRef.current) {
-          // 1. Explicit [autofocus] element inside dialog
-          const autoFocusEl = dialogRef.current.querySelector<HTMLElement>('[autofocus]:not([disabled])');
-          if (autoFocusEl) {
-            autoFocusEl.focus();
-            return;
-          }
-
-          // 2. First form input field (prevents focus jumping to header Close button in form modals)
-          const firstInput = dialogRef.current.querySelector<HTMLElement>(
-            'input:not([disabled]):not([type="hidden"]), textarea:not([disabled]), select:not([disabled])'
-          );
-          if (firstInput) {
-            firstInput.focus();
-            return;
-          }
-
-          // 3. Fallback to any focusable element (e.g. action buttons in confirmation dialogs)
-          const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
-            'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-          );
-          if (focusable.length > 0) {
-            focusable[0].focus();
-          } else {
-            dialogRef.current.focus();
-          }
-        }
-      }, 50);
-
-      return () => clearTimeout(timer);
-    } else {
+    return () => {
       if (previousFocusRef.current && document.body.contains(previousFocusRef.current)) {
         previousFocusRef.current.focus();
       }
-    }
+      previousFocusRef.current = null;
+    };
+  }, [isOpen]);
+
+  // Dialog auto-focus lifecycle keyed on isOpen, initialFocusRef, and autoFocus
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const timer = setTimeout(() => {
+      if (!autoFocus) {
+        // Keep keyboard events and screen reader scope bounded to the dialog panel without focusing any child component
+        dialogRef.current?.focus({ preventScroll: true });
+        return;
+      }
+
+      if (initialFocusRef?.current) {
+        initialFocusRef.current.focus();
+      } else if (dialogRef.current) {
+        // 1. Explicit [autofocus] element inside dialog
+        const autoFocusEl = dialogRef.current.querySelector<HTMLElement>('[autofocus]:not([disabled])');
+        if (autoFocusEl) {
+          autoFocusEl.focus();
+          return;
+        }
+
+        // 2. First form input field (prevents focus jumping to header Close button in form modals)
+        const firstInput = dialogRef.current.querySelector<HTMLElement>(
+          'input:not([disabled]):not([type="hidden"]), textarea:not([disabled]), select:not([disabled])'
+        );
+        if (firstInput) {
+          firstInput.focus();
+          return;
+        }
+
+        // 3. Fallback to any focusable element (e.g. action buttons in confirmation dialogs)
+        const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusable.length > 0) {
+          focusable[0].focus();
+        } else {
+          dialogRef.current.focus();
+        }
+      }
+    }, 50);
+
+    return () => clearTimeout(timer);
   }, [isOpen, initialFocusRef, autoFocus]);
 
   // Cycle focus on Tab / Shift+Tab within modal bounds
@@ -159,19 +170,38 @@ export const Modal: React.FC<ModalProps> = ({
       const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
         'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
       );
-      if (focusable.length === 0) return;
+      if (focusable.length === 0) {
+        e.preventDefault();
+        dialogRef.current.focus();
+        return;
+      }
 
       const first = focusable[0];
       const last = focusable[focusable.length - 1];
+      const activeEl = document.activeElement;
+      const isOutsideOrOnPanel = !activeEl || activeEl === dialogRef.current || !dialogRef.current.contains(activeEl);
 
-      if (e.shiftKey && document.activeElement === first) {
+      if (isOutsideOrOnPanel) {
+        e.preventDefault();
+        if (e.shiftKey) {
+          last.focus();
+        } else {
+          first.focus();
+        }
+      } else if (e.shiftKey && activeEl === first) {
         e.preventDefault();
         last.focus();
-      } else if (!e.shiftKey && document.activeElement === last) {
+      } else if (!e.shiftKey && activeEl === last) {
         e.preventDefault();
         first.focus();
       }
     }
+  };
+
+  const isBackdropTarget = (target: EventTarget | null) => {
+    if (!target) return false;
+    if (target === backdropRef.current || target === portalRootRef.current) return true;
+    return !dialogRef.current?.contains(target as Node);
   };
 
   const activePanelVariants = shouldReduceMotion ? modalReducedVariants : modalVariants;
@@ -179,20 +209,45 @@ export const Modal: React.FC<ModalProps> = ({
 
   const resolvedAriaLabel = ariaLabel || (!ariaLabelledBy ? title : undefined);
 
+  const hasCustomRounded = /(^|\s)rounded(-|\b)/.test(className);
+  const hasCustomBorderColor = /(^|\s)border-[a-z]/.test(className);
+  const defaultRounded = hasCustomRounded ? '' : 'rounded-2xl';
+  const defaultBorder = hasCustomBorderColor
+    ? (/(^|\s)border(\s|$)/.test(className) ? '' : 'border')
+    : 'border border-slate-200/90';
+
+  const panelClassName = [
+    'relative z-10 w-full',
+    maxWidthClassName,
+    'bg-white',
+    defaultRounded,
+    defaultBorder,
+    'shadow-2xl overflow-hidden my-auto will-change-transform outline-none',
+    className,
+  ].filter(Boolean).join(' ');
+
   return (
     <AnimatePresence onExitComplete={onExitComplete}>
       {isOpen && (
         <motion.div
+          ref={portalRootRef}
           key="modal-portal-root"
           data-testid="modal-portal-root"
           className={`fixed inset-0 z-50 flex ${
             align === 'top' ? 'items-start pt-16 sm:pt-24' : 'items-center'
           } justify-center p-3 sm:p-4 md:p-6 overflow-y-auto ${containerClassName}`}
           onKeyDown={handleKeyDown}
+          onMouseDown={(e) => {
+            pressTargetRef.current = e.target;
+          }}
           onClick={
             closeOnBackdropClick
               ? (e) => {
-                  if (e.target === e.currentTarget) {
+                  const pressTarget = pressTargetRef.current;
+                  pressTargetRef.current = null;
+                  const isPressOnBackdrop = pressTarget === null ? isBackdropTarget(e.target) : isBackdropTarget(pressTarget);
+                  const isReleaseOnBackdrop = isBackdropTarget(e.target);
+                  if (isPressOnBackdrop && isReleaseOnBackdrop) {
                     onClose();
                   }
                 }
@@ -201,20 +256,13 @@ export const Modal: React.FC<ModalProps> = ({
         >
           {/* Backdrop overlay */}
           <motion.div
+            ref={backdropRef}
             data-testid="modal-backdrop"
             variants={activeBackdropVariants}
             initial="closed"
             animate="open"
             exit="closed"
             className={`fixed inset-0 bg-slate-900/60 backdrop-blur-xs ${backdropClassName}`}
-            onClick={
-              closeOnBackdropClick
-                ? (e) => {
-                    e.stopPropagation();
-                    onClose();
-                  }
-                : undefined
-            }
             aria-hidden="true"
           />
 
@@ -233,7 +281,7 @@ export const Modal: React.FC<ModalProps> = ({
             animate="open"
             exit="closed"
             style={{ transformOrigin: align === 'top' ? 'top center' : 'center center' }}
-            className={`relative z-10 w-full ${maxWidthClassName} bg-white rounded-2xl border border-slate-200/90 shadow-2xl overflow-hidden my-auto will-change-transform outline-none ${className}`}
+            className={panelClassName}
             onClick={(e) => e.stopPropagation()}
           >
             {children}
