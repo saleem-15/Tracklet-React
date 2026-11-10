@@ -2,8 +2,9 @@ import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 // Lazy-load Agentation strictly in development to prevent it from ever being bundled in production
 const DevAgentation = import.meta.env.DEV
   ? lazy(() =>
+      // @ts-expect-error Optional dev-only dependency that may not be present in all environments
       import('agentation')
-        .then((mod) => ({ default: mod.Agentation }))
+        .then((mod) => ({ default: mod.Agentation as React.ComponentType<{ endpoint?: string }> }))
         .catch((err) => {
           console.warn('[Agentation] Optional dev toolbar failed to initialize:', err);
           return { default: (_props: { endpoint?: string }) => null };
