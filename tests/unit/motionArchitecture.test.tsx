@@ -5,6 +5,7 @@ import { MOTION_TIMING, MOTION_EASE, transitionCommand, transitionPanel } from '
 import { MetricRoller } from '../../src/components/MetricRoller';
 import { ActionSuccessCheck, ErrorShakeContainer } from '../../src/components/ActionFeedback';
 import { CustomSelectDropdown } from '../../src/components/CustomSelectDropdown';
+import { ToastContainer, type ToastMessage } from '../../src/components/Toast';
 
 describe('Tracklet Motion Architecture & Standards', () => {
   let container: HTMLDivElement;
@@ -118,6 +119,30 @@ describe('Tracklet Motion Architecture & Standards', () => {
       expect(listbox).toBeDefined();
       expect(listbox.style.transformOrigin).toBe('top left');
       expect(listbox.className).toContain('will-change-transform');
+    });
+  });
+
+  describe('Toast Notification Stacking & Feedback', () => {
+    it('renders success toast with ActionSuccessCheck component', async () => {
+      const toasts: ToastMessage[] = [
+        {
+          id: 't-1',
+          type: 'success',
+          title: 'Job Captured',
+          description: 'Saved to Pipeline',
+        },
+      ];
+
+      await act(async () => {
+        root.render(<ToastContainer toasts={toasts} onDismiss={() => {}} />);
+      });
+
+      expect(container.textContent).toContain('Job Captured');
+      expect(container.textContent).toContain('Saved to Pipeline');
+      // Verify the animated SVG check is rendered
+      const checkSvg = container.querySelector('svg');
+      expect(checkSvg).toBeDefined();
+      expect(checkSvg?.className.baseVal || checkSvg?.className).toContain('text-emerald-400');
     });
   });
 });
