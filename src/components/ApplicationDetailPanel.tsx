@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'motion/react';
-import { modalVariants } from '../lib/motion';
+import { Modal } from './Modal';
 import { Application, ApplicationStatus, Contact, ApplicationTask, FollowUpTemplate, EmailLog } from '../types';
 import { calculateDaysInStage } from '../lib/sampleData';
 import { ApplicationDetailHeader } from './detail/ApplicationDetailHeader';
@@ -59,6 +58,17 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
   onEditContact,
   onShowToast,
 }) => {
+  // Retain the last active application during exit animation so unmounting never throws null refs
+  const [cachedApp, setCachedApp] = useState<Application | null>(app);
+
+  useEffect(() => {
+    if (app) {
+      setCachedApp(app);
+    }
+  }, [app]);
+
+  const activeApp = app || cachedApp;
+
   const [notes, setNotes] = useState(app?.notes || '');
   const [saveStatus, setSaveStatus] = useState<'idle' | 'unsaved' | 'saving' | 'saved'>('idle');
   const [isSavingNotes, setIsSavingNotes] = useState(false);
@@ -69,44 +79,49 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
   const [draftNoticeVisible, setDraftNoticeVisible] = useState(false);
 
   // Follow-up engine state
-  const [templates, setTemplates] = useState<FollowUpTemplate[]>(() => TemplateRepository.generateDefaultTemplates(app?.userId));
+  const [templates, setTemplates] = useState<FollowUpTemplate[]>(() =>
+    TemplateRepository.generateDefaultTemplates(activeApp?.userId)
+  );
   const [isFollowUpModalOpen, setIsFollowUpModalOpen] = useState(false);
   const [followUpContact, setFollowUpContact] = useState<Contact | null>(null);
 
   useEffect(() => {
     let isMounted = true;
-    TemplateRepository.loadTemplates(app?.userId).then((loaded) => {
+    TemplateRepository.loadTemplates(activeApp?.userId).then((loaded) => {
       if (isMounted) setTemplates(loaded);
     });
     return () => {
       isMounted = false;
     };
-  }, [app?.userId]);
+  }, [activeApp?.userId]);
 
-  // Resolve primary contact name & email (checks app.contactEmail first, then linked contacts)
+  // Resolve primary contact name & email (checks activeApp.contactEmail first, then linked contacts)
   const effectiveContact = React.useMemo(() => {
-    if (!app) return { email: undefined, name: undefined };
-    if (app.contactEmail) {
-      const match = allContacts.find((c) => c.email === app.contactEmail) ||
-        (app.contacts || []).find((c) => c.email === app.contactEmail);
+    if (!activeApp) return { email: undefined, name: undefined };
+    if (activeApp.contactEmail) {
+      const match =
+        allContacts.find((c) => c.email === activeApp.contactEmail) ||
+        (activeApp.contacts || []).find((c) => c.email === activeApp.contactEmail);
       return {
-        email: app.contactEmail,
+        email: activeApp.contactEmail,
         name: match?.name,
       };
     }
-    const linkedIds = new Set(app.contactIds || []);
+    const linkedIds = new Set(activeApp.contactIds || []);
     const linked = allContacts.filter((c) => linkedIds.has(c.id) && c.email);
-    const legacy = (app.contacts || []).filter((c) => c.email);
+    const legacy = (activeApp.contacts || []).filter((c) => c.email);
     const candidates = [...linked, ...legacy];
     if (candidates.length > 0) {
-      const recruiter = candidates.find((c) => c.category === 'Recruiter' || c.category === 'Hiring Manager') || candidates[0];
+      const recruiter =
+        candidates.find((c) => c.category === 'Recruiter' || c.category === 'Hiring Manager') ||
+        candidates[0];
       return {
         email: recruiter.email,
         name: recruiter.name,
       };
     }
     return { email: undefined, name: undefined };
-  }, [app, allContacts]);
+  }, [activeApp, allContacts]);
 
   // Refs for tracking debounced auto-save state and flush on close
   const saveTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -117,18 +132,18 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
   const saveSeqRef = React.useRef(0);
 
   // Resync editor state ONLY when the target record changes (FR-003) —
-  // never as a side-effect of our own saves echoing back through app.notes.
+  // never as a side-effect of our own saves echoing back through activeApp.notes.
   useEffect(() => {
-    appIdRef.current = app?.id;
-    if (!app) return;
+    appIdRef.current = activeApp?.id;
+    if (!activeApp) return;
     if (saveTimerRef.current) {
       clearTimeout(saveTimerRef.current);
       saveTimerRef.current = null;
     }
 
     // Crash-recovery decision (FR-018/019): restore fresher device drafts
-    const resolution = resolveDraftOnOpen(app.id, app.notes || '', app.updatedAt);
-    let initialNotes = app.notes || '';
+    const resolution = resolveDraftOnOpen(activeApp.id, activeApp.notes || '', activeApp.updatedAt);
+    let initialNotes = activeApp.notes || '';
     let restored = false;
     if ('restore' in resolution && resolution.restore) {
       initialNotes = resolution.restore.markdown;
@@ -138,12 +153,12 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
 
     setNotes(initialNotes);
     latestNotesRef.current = initialNotes;
-    lastSavedNotesRef.current = app.notes || '';
+    lastSavedNotesRef.current = activeApp.notes || '';
     const dirtyOnLoad = initialNotes !== lastSavedNotesRef.current;
     setHasUnsavedNotes(dirtyOnLoad);
     setSaveStatus(dirtyOnLoad ? 'unsaved' : 'idle');
     setIsEditingInfo(false);
-  }, [app?.id]);
+  }, [activeApp?.id]);
 
   // Clean up timer on unmount
   useEffect(() => {
@@ -277,24 +292,22 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
     onClose();
   }, [isEditingInfo, onClose, onUpdateApp]);
 
-  useEscapeKey(handleRequestClose, Boolean(app) && !showUnsavedPrompt);
+  if (!activeApp) return null;
 
-  if (!app) return null;
-
-  const daysInStage = calculateDaysInStage(app.stageUpdatedAt);
-  const completedTasksCount = app.tasks ? app.tasks.filter((t) => t.completed).length : 0;
-  const totalTasksCount = app.tasks ? app.tasks.length : 0;
+  const daysInStage = calculateDaysInStage(activeApp.stageUpdatedAt);
+  const completedTasksCount = activeApp.tasks ? activeApp.tasks.filter((t) => t.completed).length : 0;
+  const totalTasksCount = activeApp.tasks ? activeApp.tasks.length : 0;
 
   // Status & Info handlers
   const handleStatusChange = async (newStatus: ApplicationStatus) => {
-    if (!app || newStatus === app.status) return;
+    if (!activeApp || newStatus === activeApp.status) return;
     const now = new Date().toISOString();
-    await onUpdateApp(app.id, { status: newStatus, stageUpdatedAt: now, updatedAt: now });
+    await onUpdateApp(activeApp.id, { status: newStatus, stageUpdatedAt: now, updatedAt: now });
   };
 
   const handleSaveInfo = async (updates: Partial<Application>) => {
-    if (!app) return;
-    await onUpdateApp(app.id, updates);
+    if (!activeApp) return;
+    await onUpdateApp(activeApp.id, updates);
     setIsEditingInfo(false);
     setShowSavedToast(true);
     setTimeout(() => setShowSavedToast(false), 2000);
@@ -302,14 +315,15 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
   };
 
   const handleDelete = async () => {
-    if (!app) return;
+    if (!activeApp) return;
     onClose();
-    await onDeleteApp(app.id);
+    await onDeleteApp(activeApp.id);
   };
 
   // Task handlers
   const handleToggleTask = async (taskId: string) => {
-    const updatedTasks = (app.tasks || []).map((t) => {
+    if (!activeApp) return;
+    const updatedTasks = (activeApp.tasks || []).map((t) => {
       if (t.id === taskId) {
         const nextCompleted = !t.completed;
         return {
@@ -320,11 +334,12 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
       }
       return t;
     });
-    await onUpdateApp(app.id, { tasks: updatedTasks, updatedAt: new Date().toISOString() });
+    await onUpdateApp(activeApp.id, { tasks: updatedTasks, updatedAt: new Date().toISOString() });
   };
 
   const handleEditTask = async (taskId: string, updatedFields: Partial<ApplicationTask>) => {
-    const updatedTasks = (app.tasks || []).map((t) => {
+    if (!activeApp) return;
+    const updatedTasks = (activeApp.tasks || []).map((t) => {
       if (t.id === taskId) {
         const nextCompleted = updatedFields.completed !== undefined ? updatedFields.completed : t.completed;
         let completedAt = t.completedAt;
@@ -339,19 +354,21 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
       }
       return t;
     });
-    await onUpdateApp(app.id, { tasks: updatedTasks, updatedAt: new Date().toISOString() });
+    await onUpdateApp(activeApp.id, { tasks: updatedTasks, updatedAt: new Date().toISOString() });
   };
 
   const handleAddTask = async (title: string, dueDate?: string) => {
+    if (!activeApp) return;
     const newTask: ApplicationTask = { id: `task-${Date.now()}`, title, completed: false, dueDate };
-    await onUpdateApp(app.id, { tasks: [...(app.tasks || []), newTask], updatedAt: new Date().toISOString() });
+    await onUpdateApp(activeApp.id, { tasks: [...(activeApp.tasks || []), newTask], updatedAt: new Date().toISOString() });
     onShowToast?.('success', 'Task added', title);
   };
 
   const handleDeleteTask = async (taskId: string) => {
-    const deletedTask = (app.tasks || []).find((t) => t.id === taskId);
-    const updatedTasks = (app.tasks || []).filter((t) => t.id !== taskId);
-    await onUpdateApp(app.id, {
+    if (!activeApp) return;
+    const deletedTask = (activeApp.tasks || []).find((t) => t.id === taskId);
+    const updatedTasks = (activeApp.tasks || []).filter((t) => t.id !== taskId);
+    await onUpdateApp(activeApp.id, {
       tasks: updatedTasks,
       updatedAt: new Date().toISOString(),
     });
@@ -360,8 +377,8 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
       onShowToast?.('info', `Task deleted (${deletedTask.title})`, undefined, {
         label: 'Undo',
         onClick: async () => {
-          await onUpdateApp(app.id, {
-            tasks: [...(app.tasks || []), deletedTask],
+          await onUpdateApp(activeApp.id, {
+            tasks: [...(activeApp.tasks || []), deletedTask],
             updatedAt: new Date().toISOString(),
           });
           onShowToast?.('success', 'Restored task');
@@ -372,9 +389,10 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
 
   // Contact handlers
   const handleSaveContact = async (contactData: Partial<Contact>, editingId?: string | null) => {
+    if (!activeApp) return;
     let updatedContacts: Contact[];
     if (editingId) {
-      updatedContacts = (app.contacts || []).map((c) => (c.id === editingId ? ({ ...c, ...contactData } as Contact) : c));
+      updatedContacts = (activeApp.contacts || []).map((c) => (c.id === editingId ? ({ ...c, ...contactData } as Contact) : c));
     } else {
       const newContact: Contact = {
         id: `c-${Date.now()}`,
@@ -385,20 +403,21 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
         linkedIn: contactData.linkedIn,
         notes: contactData.notes,
       };
-      updatedContacts = [...(app.contacts || []), newContact];
+      updatedContacts = [...(activeApp.contacts || []), newContact];
     }
     const updates: Partial<Application> = { contacts: updatedContacts, updatedAt: new Date().toISOString() };
-    if (!app.contactEmail && contactData.email) {
+    if (!activeApp.contactEmail && contactData.email) {
       updates.contactEmail = contactData.email;
     }
-    await onUpdateApp(app.id, updates);
+    await onUpdateApp(activeApp.id, updates);
     onShowToast?.('success', editingId ? 'Contact updated' : 'Contact added', contactData.name || 'Contact');
   };
 
   const handleDeleteContact = async (contactId: string) => {
-    const deletedContact = (app.contacts || []).find((c) => c.id === contactId);
-    const updatedContacts = (app.contacts || []).filter((c) => c.id !== contactId);
-    await onUpdateApp(app.id, {
+    if (!activeApp) return;
+    const deletedContact = (activeApp.contacts || []).find((c) => c.id === contactId);
+    const updatedContacts = (activeApp.contacts || []).filter((c) => c.id !== contactId);
+    await onUpdateApp(activeApp.id, {
       contacts: updatedContacts,
       updatedAt: new Date().toISOString(),
     });
@@ -407,8 +426,8 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
       onShowToast?.('info', `Contact deleted (${deletedContact.name})`, undefined, {
         label: 'Undo',
         onClick: async () => {
-          await onUpdateApp(app.id, {
-            contacts: [...(app.contacts || []), deletedContact],
+          await onUpdateApp(activeApp.id, {
+            contacts: [...(activeApp.contacts || []), deletedContact],
             updatedAt: new Date().toISOString(),
           });
           onShowToast?.('success', `Restored ${deletedContact.name}`);
@@ -418,7 +437,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
   };
 
   const handleSaveTemplate = async (templateToSave: Omit<FollowUpTemplate, 'id' | 'createdAt' | 'updatedAt'> & { id?: string }) => {
-    const saved = await TemplateRepository.saveTemplate(templateToSave, app?.userId);
+    const saved = await TemplateRepository.saveTemplate(templateToSave, activeApp?.userId);
     setTemplates((prev) => {
       const idx = prev.findIndex((t) => t.id === saved.id);
       if (idx >= 0) {
@@ -431,43 +450,43 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
   };
 
   const handleDeleteTemplate = async (id: string) => {
-    await TemplateRepository.deleteTemplate(id, app?.userId);
+    await TemplateRepository.deleteTemplate(id, activeApp?.userId);
     setTemplates((prev) => prev.filter((t) => t.id !== id));
   };
 
   const handleResetDefaults = async () => {
-    const resetted = await TemplateRepository.resetDefaultTemplates(app?.userId);
+    const resetted = await TemplateRepository.resetDefaultTemplates(activeApp?.userId);
     setTemplates(resetted);
   };
 
   const handleFollowUpTriggered = async (details: FollowUpTriggerDetails) => {
-    if (!app) return;
+    if (!activeApp) return;
 
     const now = new Date().toISOString();
 
     // 1. Log timeline touchpoint marker (Task T014)
     const historyEntry = {
       id: `hist-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-      toStatus: app.status,
-      fromStatus: app.status,
+      toStatus: activeApp.status,
+      fromStatus: activeApp.status,
       timestamp: now,
       note: `Follow-up sent to ${details.recipientName} (${details.template.title})`,
     };
-    const updatedHistory = [historyEntry, ...(app.history || [])];
+    const updatedHistory = [historyEntry, ...(activeApp.history || [])];
 
     // 2. Inject 5-day reminder task if requested (Task T015)
-    let updatedTasks = app.tasks ? [...app.tasks] : [];
+    let updatedTasks = activeApp.tasks ? [...activeApp.tasks] : [];
     if (details.addReminder) {
       const reminderTask: ApplicationTask = {
         id: `task-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-        title: `Follow up with ${details.recipientName} (${app.company})`,
+        title: `Follow up with ${details.recipientName} (${activeApp.company})`,
         completed: false,
         dueDate: addBusinessDays(new Date(), 5),
       };
       updatedTasks.push(reminderTask);
     }
 
-    await onUpdateApp(app.id, {
+    await onUpdateApp(activeApp.id, {
       history: updatedHistory,
       tasks: updatedTasks,
       updatedAt: now,
@@ -476,7 +495,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
 
   // Email handlers
   const handleAddEmailLog = async (emailData: Omit<EmailLog, 'id'>) => {
-    if (!app) return;
+    if (!activeApp) return;
 
     // Auto-resolve contactId if counterparty matches an existing contact
     let contactId = emailData.contactId;
@@ -505,21 +524,22 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
     const newEmailLog: EmailLog = {
       id: `email-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
       ...emailData,
-      applicationId: app.id,
+      applicationId: activeApp.id,
       contactId,
     };
-    await onUpdateApp(app.id, {
-      emails: [...(app.emails || []), newEmailLog],
+    await onUpdateApp(activeApp.id, {
+      emails: [...(activeApp.emails || []), newEmailLog],
       updatedAt: new Date().toISOString(),
     });
     onShowToast?.('success', 'Email logged');
   };
 
   const handleUpdateEmailLog = async (emailId: string, emailData: Partial<Omit<EmailLog, 'id'>>) => {
-    const updatedEmails = (app.emails || []).map((e) =>
+    if (!activeApp) return;
+    const updatedEmails = (activeApp.emails || []).map((e) =>
       e.id === emailId ? { ...e, ...emailData } : e
     );
-    await onUpdateApp(app.id, {
+    await onUpdateApp(activeApp.id, {
       emails: updatedEmails,
       updatedAt: new Date().toISOString(),
     });
@@ -527,9 +547,10 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
   };
 
   const handleDeleteEmailLog = async (emailId: string) => {
-    const deletedEmail = (app.emails || []).find((e) => e.id === emailId);
-    const updatedEmails = (app.emails || []).filter((e) => e.id !== emailId);
-    await onUpdateApp(app.id, {
+    if (!activeApp) return;
+    const deletedEmail = (activeApp.emails || []).find((e) => e.id === emailId);
+    const updatedEmails = (activeApp.emails || []).filter((e) => e.id !== emailId);
+    await onUpdateApp(activeApp.id, {
       emails: updatedEmails,
       updatedAt: new Date().toISOString(),
     });
@@ -538,7 +559,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
       onShowToast?.('info', `Deleted "${deletedEmail.subject}"`, undefined, {
         label: 'Undo',
         onClick: async () => {
-          await onUpdateApp(app.id, {
+          await onUpdateApp(activeApp.id, {
             emails: [...updatedEmails, deletedEmail],
             updatedAt: new Date().toISOString(),
           });
@@ -553,8 +574,8 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
     entryId: string,
     updates: { toStatus?: ApplicationStatus; timestamp?: string; note?: string }
   ) => {
-    if (!app) return;
-    const currentHistory = app.history || [];
+    if (!activeApp) return;
+    const currentHistory = activeApp.history || [];
     const targetEntry = currentHistory.find((e) => e.id === entryId);
     const isDeletingNote = 'note' in updates && (!updates.note || !updates.note.trim()) && Boolean(targetEntry?.note);
     const updatedHistory = updateStatusHistoryEntry(currentHistory, entryId, updates);
@@ -572,7 +593,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
     };
 
     try {
-      await onUpdateApp(app.id, appUpdates);
+      await onUpdateApp(activeApp.id, appUpdates);
       if (isDeletingNote && targetEntry?.note) {
         onShowToast?.('info', 'Milestone note deleted', undefined, {
           label: 'Undo',
@@ -589,13 +610,13 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
   };
 
   const handleDeleteStatusHistoryEntry = async (entryId: string) => {
-    if (!app) return;
-    const currentHistory = app.history || [];
+    if (!activeApp) return;
+    const currentHistory = activeApp.history || [];
 
     const { updatedHistory, rolledBackStatus, rolledBackStageUpdatedAt } = deleteStatusHistoryEntry(
       currentHistory,
       entryId,
-      app.status
+      activeApp.status
     );
 
     const appUpdates: Partial<Application> = {
@@ -606,7 +627,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
     };
 
     try {
-      await onUpdateApp(app.id, appUpdates);
+      await onUpdateApp(activeApp.id, appUpdates);
       const rollbackMsg = rolledBackStatus
         ? `Reverted status to ${rolledBackStatus}.`
         : 'Milestone removed from history.';
@@ -622,35 +643,21 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
     }
   };
 
-
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label={app ? `Application Details - ${app.company}` : 'Application Details'}
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 md:p-6 bg-slate-900/60 backdrop-blur-sm overflow-y-auto"
-      onClick={handleRequestClose}
-    >
-      {showUnsavedPrompt && (
-        <UnsavedChangesPrompt
-          onKeepEditing={() => setShowUnsavedPrompt(false)}
-          onDiscardAndExit={() => {
-            setShowUnsavedPrompt(false);
-            onClose();
-          }}
-        />
-      )}
-
-      <motion.div
-        variants={modalVariants}
-        initial="closed"
-        animate="open"
-        exit="closed"
-        className="w-full max-w-5xl max-h-[92vh] bg-white border border-slate-200/90 rounded-2xl flex flex-col shadow-2xl text-slate-900 overflow-hidden my-auto will-change-transform"
-        onClick={(e) => e.stopPropagation()}
+    <>
+      <Modal
+        isOpen={Boolean(app)}
+        onClose={handleRequestClose}
+        ariaLabel={activeApp ? `Application Details - ${activeApp.company}` : 'Application Details'}
+        maxWidthClassName="max-w-5xl"
+        className="max-h-[92vh] flex flex-col"
+        closeOnEscape={!showUnsavedPrompt}
+        onExitComplete={() => {
+          setCachedApp(null);
+        }}
       >
         <ApplicationDetailHeader
-          app={app}
+          app={activeApp}
           isEditingInfo={isEditingInfo}
           onToggleEditInfo={() => setIsEditingInfo(!isEditingInfo)}
           onStatusChange={handleStatusChange}
@@ -660,12 +667,12 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
         {/* Body */}
         <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-5">
           {isEditingInfo && (
-            <ApplicationInfoEditor app={app} onSave={handleSaveInfo} onCancel={() => setIsEditingInfo(false)} />
+            <ApplicationInfoEditor app={activeApp} onSave={handleSaveInfo} onCancel={() => setIsEditingInfo(false)} />
           )}
 
           <ApplicationMetricsBar
-            platform={app.platform}
-            dateApplied={app.dateApplied}
+            platform={activeApp.platform}
+            dateApplied={activeApp.dateApplied}
             daysInStage={daysInStage}
             completedTasksCount={completedTasksCount}
             totalTasksCount={totalTasksCount}
@@ -675,7 +682,7 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
             {/* Left Column */}
             <div className="lg:col-span-7 space-y-5">
               <TaskChecklistSection
-                tasks={app.tasks}
+                tasks={activeApp.tasks}
                 onToggleTask={handleToggleTask}
                 onEditTask={handleEditTask}
                 onAddTask={handleAddTask}
@@ -686,10 +693,10 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
                 notes={notes}
                 onNotesChange={handleNotesChange}
                 saveStatus={saveStatus}
-                appId={app.id}
+                appId={activeApp.id}
                 draftNoticeVisible={draftNoticeVisible}
                 onDismissDraftNotice={() => {
-                  clearNoteDraft(app.id);
+                  clearNoteDraft(activeApp.id);
                   setDraftNoticeVisible(false);
                 }}
               />
@@ -698,16 +705,16 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
             {/* Right Column */}
             <div className="lg:col-span-5 space-y-5">
               <ApplicationQuickLinks
-                jobLink={app.jobLink}
-                emailThreadUrl={app.emailThreadUrl}
+                jobLink={activeApp.jobLink}
+                emailThreadUrl={activeApp.emailThreadUrl}
                 onOpenEditInfo={() => setIsEditingInfo(true)}
               />
 
               <EmailLogSection
-                emails={app.emails}
-                companyName={app.company}
-                contactEmail={app.contactEmail}
-                contacts={app.contacts}
+                emails={activeApp.emails}
+                companyName={activeApp.company}
+                contactEmail={activeApp.contactEmail}
+                contacts={activeApp.contacts}
                 allContacts={allContacts}
                 currentUserEmail={currentUserEmail}
                 onAddEmailLog={handleAddEmailLog}
@@ -717,16 +724,16 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
 
               <ContactManagerSection
                 allContacts={allContacts}
-                linkedContactIds={app.contactIds || []}
+                linkedContactIds={activeApp.contactIds || []}
                 onLinkContact={async (contactId) => {
-                  if (onLinkContact) await onLinkContact(contactId, app.id);
+                  if (onLinkContact) await onLinkContact(contactId, activeApp.id);
                 }}
                 onUnlinkContact={async (contactId) => {
-                  if (onUnlinkContact) await onUnlinkContact(contactId, app.id);
+                  if (onUnlinkContact) await onUnlinkContact(contactId, activeApp.id);
                 }}
                 onCreateAndLinkContact={async (data) => {
                   if (onCreateAndLinkContact) {
-                    await onCreateAndLinkContact(data, app.id);
+                    await onCreateAndLinkContact(data, activeApp.id);
                   }
                 }}
                 onUpdateContact={onUpdateContact}
@@ -739,10 +746,10 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
               />
 
               <StatusHistoryTimeline
-                history={app.history}
-                currentStatus={app.status}
-                createdAt={app.createdAt}
-                stageUpdatedAt={app.stageUpdatedAt}
+                history={activeApp.history}
+                currentStatus={activeApp.status}
+                createdAt={activeApp.createdAt}
+                stageUpdatedAt={activeApp.stageUpdatedAt}
                 onUpdateEntry={handleUpdateStatusHistoryEntry}
                 onDeleteEntry={handleDeleteStatusHistoryEntry}
               />
@@ -757,12 +764,22 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
           isSaving={isSavingNotes}
           showSavedToast={showSavedToast}
         />
-      </motion.div>
+      </Modal>
+
+      {showUnsavedPrompt && (
+        <UnsavedChangesPrompt
+          onKeepEditing={() => setShowUnsavedPrompt(false)}
+          onDiscardAndExit={() => {
+            setShowUnsavedPrompt(false);
+            onClose();
+          }}
+        />
+      )}
 
       {isFollowUpModalOpen && (
         <FollowUpModal
           isOpen={isFollowUpModalOpen}
-          app={app}
+          app={activeApp}
           allContacts={allContacts}
           initialContactId={followUpContact?.id}
           initialContactEmail={followUpContact?.email || effectiveContact.email}
@@ -778,6 +795,6 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
           }}
         />
       )}
-    </div>
+    </>
   );
 };

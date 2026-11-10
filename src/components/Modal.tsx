@@ -156,7 +156,8 @@ export const Modal: React.FC<ModalProps> = ({
   return (
     <AnimatePresence onExitComplete={onExitComplete}>
       {isOpen && (
-        <div
+        <motion.div
+          key="modal-portal-root"
           data-testid="modal-portal-root"
           className={`fixed inset-0 z-50 flex ${
             align === 'top' ? 'items-start pt-16 sm:pt-24' : 'items-center'
@@ -211,7 +212,7 @@ export const Modal: React.FC<ModalProps> = ({
           >
             {children}
           </motion.div>
-        </div>
+        </motion.div>
       )}
     </AnimatePresence>
   );

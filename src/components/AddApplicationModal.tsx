@@ -177,9 +177,8 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
       notes: notes.trim() || undefined,
     };
 
-    // Optimistic UI reset & close
+    // Optimistic UI close (form is safely reset when exit animation finishes via onExitComplete)
     onClose();
-    resetForm();
 
     onAdd(payload).catch((err) => {
       console.error('Failed to create application:', err);
