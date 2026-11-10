@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Users, UserPlus, Linkedin, Phone } from 'lucide-react';
+import { Users, Linkedin, Phone } from 'lucide-react';
+import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { Contact } from '../../types';
 import { CONTACT_AVATAR_COLORS, CONTACT_CATEGORY_STYLES, getInitials } from '../../lib/constants';
 import { DeleteIconButton } from '../IconButton';
@@ -22,6 +23,7 @@ export const AddApplicationContactsSection: React.FC<AddApplicationContactsSecti
   onRemoveContact,
   onCreateContact,
 }) => {
+  const shouldReduceMotion = useReducedMotion();
   const [showPicker, setShowPicker] = useState(false);
 
   const handleSelectExisting = (contact: Contact) => {
@@ -67,102 +69,146 @@ export const AddApplicationContactsSection: React.FC<AddApplicationContactsSecti
         </button>
       </div>
 
-      {showPicker && (
-        <div className="p-3 bg-slate-50/80 rounded-xl border border-slate-200/90 shadow-2xs">
-          <ContactSearchPicker
-            contacts={allContacts}
-            linkedContactIds={contacts.map((c) => c.id)}
-            onSelectContact={handleSelectExisting}
-            onCreateAndLink={handleCreateAndLink}
-            onCancel={() => setShowPicker(false)}
-          />
-        </div>
-      )}
+      <AnimatePresence initial={false}>
+        {showPicker && (
+          <motion.div
+            key="picker"
+            initial={shouldReduceMotion ? { opacity: 0 } : { height: 0, opacity: 0 }}
+            animate={shouldReduceMotion ? { opacity: 1 } : { height: 'auto', opacity: 1 }}
+            exit={shouldReduceMotion ? { opacity: 0 } : { height: 0, opacity: 0 }}
+            transition={
+              shouldReduceMotion
+                ? { duration: 0 }
+                : {
+                    height: { duration: 0.2, ease: [0.16, 1, 0.3, 1] },
+                    opacity: { duration: 0.15, ease: [0.2, 0, 0, 1] },
+                  }
+            }
+            className="overflow-hidden"
+          >
+            <div className="p-3 bg-slate-50/80 rounded-xl border border-slate-200/90 shadow-2xs mb-2">
+              <ContactSearchPicker
+                contacts={allContacts}
+                linkedContactIds={contacts.map((c) => c.id)}
+                onSelectContact={handleSelectExisting}
+                onCreateAndLink={handleCreateAndLink}
+                onCancel={() => setShowPicker(false)}
+              />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className="rounded-xl border border-slate-200/80 divide-y divide-slate-100 overflow-hidden bg-white shadow-2xs">
-        {contacts.length > 0 ? (
-          contacts.map((c) => {
-            const colorIndex = (c.id || c.name)
-              .split('')
-              .reduce((acc, char) => acc + char.charCodeAt(0), 0) % CONTACT_AVATAR_COLORS.length;
-            const avatarColor = CONTACT_AVATAR_COLORS[colorIndex];
-            const category = c.category || 'Other';
-            const categoryStyle = CONTACT_CATEGORY_STYLES[category] || CONTACT_CATEGORY_STYLES.Other;
+        <AnimatePresence initial={false}>
+          {contacts.length > 0 ? (
+            contacts.map((c) => {
+              const colorIndex = (c.id || c.name)
+                .split('')
+                .reduce((acc, char) => acc + char.charCodeAt(0), 0) % CONTACT_AVATAR_COLORS.length;
+              const avatarColor = CONTACT_AVATAR_COLORS[colorIndex];
+              const category = c.category || 'Other';
+              const categoryStyle = CONTACT_CATEGORY_STYLES[category] || CONTACT_CATEGORY_STYLES.Other;
 
-            return (
-              <div key={c.id} className="p-3 hover:bg-slate-50/60 transition-colors group">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div
-                      className={`w-8 h-8 rounded-full border-2 font-bold font-mono text-xs flex items-center justify-center shrink-0 ${avatarColor}`}
-                    >
-                      {getInitials(c.name)}
-                    </div>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        <p className="text-xs font-bold text-slate-900 truncate leading-tight">
-                          {c.name}
-                        </p>
-                        <span
-                          className={`inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-semibold border ${categoryStyle.bg} ${categoryStyle.text} ${categoryStyle.border}`}
+              return (
+                <motion.div
+                  key={c.id}
+                  layout="position"
+                  initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, height: 0 }}
+                  animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, height: 'auto' }}
+                  exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, height: 0 }}
+                  transition={
+                    shouldReduceMotion
+                      ? { duration: 0 }
+                      : {
+                          height: { duration: 0.2, ease: [0.16, 1, 0.3, 1] },
+                          opacity: { duration: 0.15, ease: [0.2, 0, 0, 1] },
+                          layout: { duration: 0.2, ease: [0.16, 1, 0.3, 1] },
+                        }
+                  }
+                  className="overflow-hidden"
+                >
+                  <div className="p-3 hover:bg-slate-50/60 transition-colors group">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div
+                          className={`w-8 h-8 rounded-full border-2 font-bold font-mono text-xs flex items-center justify-center shrink-0 ${avatarColor}`}
                         >
-                          {category}
-                        </span>
+                          {getInitials(c.name)}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <p className="text-xs font-bold text-slate-900 truncate leading-tight">
+                              {c.name}
+                            </p>
+                            <span
+                              className={`inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-semibold border ${categoryStyle.bg} ${categoryStyle.text} ${categoryStyle.border}`}
+                            >
+                              {category}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-500 truncate">
+                            {c.role || 'Contact'}
+                            {c.organization && ` · ${c.organization}`}
+                          </p>
+                        </div>
                       </div>
-                      <p className="text-[11px] text-slate-500 truncate">
-                        {c.role || 'Contact'}
-                        {c.organization && ` · ${c.organization}`}
-                      </p>
+
+                      <div className="flex items-center gap-1 shrink-0">
+                        {c.email && (
+                          <span className="font-mono text-[11px] text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200/80 truncate max-w-[110px]">
+                            {c.email}
+                          </span>
+                        )}
+                        {c.linkedIn && (
+                          <a
+                            href={normalizeUrl(c.linkedIn)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-1 text-blue-700 hover:text-blue-800 hover:bg-blue-50 rounded transition-colors"
+                            title="LinkedIn Profile"
+                          >
+                            <Linkedin className="w-3.5 h-3.5" />
+                          </a>
+                        )}
+                        <DeleteIconButton
+                          onClick={() => onRemoveContact(c.id)}
+                          title="Remove contact from this application"
+                        />
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="flex items-center gap-1 shrink-0">
-                    {c.email && (
-                      <span className="font-mono text-[11px] text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200/80 truncate max-w-[110px]">
-                        {c.email}
-                      </span>
-                    )}
-                    {c.linkedIn && (
-                      <a
-                        href={normalizeUrl(c.linkedIn)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="p-1 text-blue-700 hover:text-blue-800 hover:bg-blue-50 rounded transition-colors"
-                        title="LinkedIn Profile"
-                      >
-                        <Linkedin className="w-3.5 h-3.5" />
-                      </a>
-                    )}
-                    <DeleteIconButton
-                      onClick={() => onRemoveContact(c.id)}
-                      title="Remove contact from this application"
-                    />
-                  </div>
-                </div>
-
-                {(c.phone || c.notes) && (
-                  <div className="mt-2 pl-[42px] space-y-1">
-                    {c.phone && (
-                      <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-mono bg-slate-50 px-2 py-1 rounded border border-slate-200/60">
-                        <Phone className="w-3 h-3 text-slate-500 shrink-0" />
-                        <span className="truncate">{c.phone}</span>
+                    {(c.phone || c.notes) && (
+                      <div className="mt-2 pl-[42px] space-y-1">
+                        {c.phone && (
+                          <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-mono bg-slate-50 px-2 py-1 rounded border border-slate-200/60">
+                            <Phone className="w-3 h-3 text-slate-500 shrink-0" />
+                            <span className="truncate">{c.phone}</span>
+                          </div>
+                        )}
+                        {c.notes && (
+                          <p className="text-[11px] text-slate-600 bg-slate-50 border border-slate-200/60 rounded px-2 py-1 leading-relaxed italic">
+                            <LinkifiedText text={c.notes} />
+                          </p>
+                        )}
                       </div>
                     )}
-                    {c.notes && (
-                      <p className="text-[11px] text-slate-600 bg-slate-50 border border-slate-200/60 rounded px-2 py-1 leading-relaxed italic">
-                        <LinkifiedText text={c.notes} />
-                      </p>
-                    )}
                   </div>
-                )}
-              </div>
-            );
-          })
-        ) : !showPicker ? (
-          <div className="text-slate-500 font-mono text-[11px] text-center py-3.5">
-            No contacts linked yet.
-          </div>
-        ) : null}
+                </motion.div>
+              );
+            })
+          ) : !showPicker ? (
+            <motion.div
+              key="empty"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="text-slate-500 font-mono text-[11px] text-center py-3.5"
+            >
+              No contacts linked yet.
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
       </div>
     </div>
   );
