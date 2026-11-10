@@ -6,7 +6,7 @@ import { FeedbackRepository } from '../../lib/feedbackRepository';
 import { AttachmentDropzone } from './AttachmentDropzone';
 import { FeedbackSuccessState } from './FeedbackSuccessState';
 import { FeedbackIntentSelector } from './FeedbackIntentSelector';
-import { useEscapeKey } from '../../lib/useEscapeKey';
+import { Modal } from '../Modal';
 import { useToastContext } from '../../context/ToastContext';
 import { 
   extractReportTitle, 
@@ -75,8 +75,6 @@ export const TesterReportModal: React.FC<TesterReportModalProps> = ({
     setErrorMessage(null);
     onClose();
   };
-
-  useEscapeKey(handleRequestClose, isOpen);
 
   const diagnostics = collectDiagnosticContext({
     activeTab,
@@ -150,20 +148,15 @@ export const TesterReportModal: React.FC<TesterReportModalProps> = ({
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="feedback-dialog-title"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150"
+    <Modal
+      isOpen={isOpen}
+      onClose={handleRequestClose}
+      ariaLabelledBy="feedback-dialog-title"
+      maxWidthClassName="max-w-lg"
+      className="flex flex-col max-h-[90vh]"
     >
-      <div
-        className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-150"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header with Larger, Confident Title */}
+      {/* Header with Larger, Confident Title */}
         <div className="px-6 py-4 border-b border-slate-200/80 flex items-center justify-between bg-slate-50/50">
           <h2 id="feedback-dialog-title" className="text-lg font-bold text-slate-900 font-heading tracking-tight">
             Feedback & Support
@@ -285,7 +278,6 @@ export const TesterReportModal: React.FC<TesterReportModalProps> = ({
             </button>
           </div>
         )}
-      </div>
-    </div>
+    </Modal>
   );
 };

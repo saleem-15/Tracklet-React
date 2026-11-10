@@ -1,8 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { motion } from 'motion/react';
 import { X, Keyboard, Search } from 'lucide-react';
-import { useEscapeKey } from '../lib/useEscapeKey';
-import { modalVariants } from '../lib/motion';
+import { Modal } from './Modal';
 
 export interface KeyboardShortcutsModalProps {
   isOpen: boolean;
@@ -186,8 +184,6 @@ export function KeyboardShortcutsModal({
 }: KeyboardShortcutsModalProps) {
   const [searchQuery, setSearchQuery] = useState('');
 
-  useEscapeKey(onClose, isOpen);
-
   const isMac = useMemo(() => {
     return (
       typeof navigator !== 'undefined' &&
@@ -211,25 +207,15 @@ export function KeyboardShortcutsModal({
     }).filter((cat) => cat.items.length > 0);
   }, [searchQuery]);
 
-  if (!isOpen) return null;
-
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="keyboard-shortcuts-title"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs"
-      onClick={onClose}
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      ariaLabelledBy="keyboard-shortcuts-title"
+      maxWidthClassName="max-w-xl"
+      className="flex flex-col max-h-[85vh]"
     >
-      <motion.div
-        variants={modalVariants}
-        initial="closed"
-        animate="open"
-        exit="closed"
-        className="relative w-full max-w-xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[85vh] will-change-transform"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header: Title on left, Close button on right */}
+      {/* Header: Title on left, Close button on right */}
         <div className="flex items-center justify-between px-6 pt-5 pb-3">
           <h2
             id="keyboard-shortcuts-title"
@@ -325,7 +311,6 @@ export function KeyboardShortcutsModal({
             ))
           )}
         </div>
-      </motion.div>
-    </div>
+    </Modal>
   );
 }

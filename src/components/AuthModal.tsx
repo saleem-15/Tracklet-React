@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'motion/react';
 import { X, Mail, Lock, MailCheck, AlertCircle, Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { AuthViewMode } from '../types';
 import { getFriendlyAuthErrorMessage } from '../lib/authErrors';
 import { SegmentedTabs } from './SegmentedTabs';
 import { AuthTextField } from './auth/AuthTextField';
-import { useEscapeKey } from '../lib/useEscapeKey';
-import { modalVariants } from '../lib/motion';
+import { Modal } from './Modal';
 
 interface AuthModalProps {
   onShowToast?: (type: 'success' | 'error' | 'info' | 'warning', title: string, message?: string) => void;
@@ -36,9 +34,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onShowToast }) => {
   const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string; confirmPassword?: string }>({});
   const [resetSent, setResetSent] = useState(false);
   const [resetCooldown, setResetCooldown] = useState(0);
-
-  // Dismiss on Escape key
-  useEscapeKey(closeAuthModal, isAuthModalOpen);
 
   const resetForm = React.useCallback(() => {
     setEmail('');
@@ -81,58 +76,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onShowToast }) => {
       resetForm();
     }
   }, [user, isAuthModalOpen, closeAuthModal, resetForm]);
-
-  const modalRef = React.useRef<HTMLDivElement>(null);
-  const previousFocusRef = React.useRef<HTMLElement | null>(null);
-
-  // Handle focus trap with focus save/restore
-  useEffect(() => {
-    if (!isAuthModalOpen) return;
-
-    // Save previously focused element
-    previousFocusRef.current = document.activeElement as HTMLElement | null;
-
-    // Move focus to first focusable element in the modal
-    const timer = setTimeout(() => {
-      if (modalRef.current) {
-        const focusable = modalRef.current.querySelectorAll<HTMLElement>(
-          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-        );
-        if (focusable.length > 0) {
-          focusable[0].focus();
-        }
-      }
-    }, 50);
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Tab' && isAuthModalOpen && modalRef.current) {
-        const focusable = modalRef.current.querySelectorAll<HTMLElement>(
-          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-        );
-        if (focusable.length === 0) return;
-        const first = focusable[0];
-        const last = focusable[focusable.length - 1];
-        if (e.shiftKey && document.activeElement === first) {
-          e.preventDefault();
-          last.focus();
-        } else if (!e.shiftKey && document.activeElement === last) {
-          e.preventDefault();
-          first.focus();
-        }
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      clearTimeout(timer);
-      window.removeEventListener('keydown', handleKeyDown);
-      // Restore focus when modal closes
-      if (previousFocusRef.current && document.body.contains(previousFocusRef.current)) {
-        previousFocusRef.current.focus();
-      }
-    };
-  }, [isAuthModalOpen]);
-
-  if (!isAuthModalOpen) return null;
 
   const validate = () => {
     const nextErrors: { email?: string; password?: string; confirmPassword?: string } = {};
@@ -237,23 +180,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onShowToast }) => {
   };
 
   return (
-    <div 
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4"
-      onClick={closeAuthModal}
+    <Modal
+      isOpen={isAuthModalOpen}
+      onClose={closeAuthModal}
+      ariaLabel={authModalMode === 'signin' ? 'Sign In' : authModalMode === 'signup' ? 'Sign Up' : 'Reset Password'}
+      maxWidthClassName="max-w-md"
     >
-      <motion.div
-        ref={modalRef}
-        role="dialog"
-        aria-modal="true"
-        aria-label={authModalMode === 'signin' ? 'Sign In' : authModalMode === 'signup' ? 'Sign Up' : 'Reset Password'}
-        variants={modalVariants}
-        initial="closed"
-        animate="open"
-        exit="closed"
-        className="relative w-full max-w-md bg-white rounded-2xl border border-slate-200/90 shadow-2xl overflow-hidden will-change-transform"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Modal Header */}
+      {/* Modal Header */}
         <div className="p-6 pb-4 border-b border-slate-100 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <img src="/logo.svg" alt="Tracklet Logo" className="w-7 h-7 shrink-0" />
@@ -482,7 +415,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onShowToast }) => {
             </div>
           )}
         </div>
-      </motion.div>
-    </div>
+    </Modal>
   );
 };
