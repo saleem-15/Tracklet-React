@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Modal } from './Modal';
+import React, { useState, useEffect } from 'react';
+import { motion } from 'motion/react';
+import { modalVariants } from '../lib/motion';
 import { Application, ApplicationStatus, Contact, ApplicationTask, FollowUpTemplate, EmailLog } from '../types';
 import { calculateDaysInStage } from '../lib/sampleData';
 import { ApplicationDetailHeader } from './detail/ApplicationDetailHeader';
@@ -276,20 +277,13 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
     onClose();
   }, [isEditingInfo, onClose, onUpdateApp]);
 
-  const lastAppRef = useRef<Application | null>(app);
-  if (app) {
-    lastAppRef.current = app;
-  }
-  const currentApp = app || lastAppRef.current;
-  const isOpen = Boolean(app);
+  useEscapeKey(handleRequestClose, Boolean(app) && !showUnsavedPrompt);
 
-  useEscapeKey(handleRequestClose, isOpen && !showUnsavedPrompt);
+  if (!app) return null;
 
-  if (!currentApp) return null;
-
-  const daysInStage = calculateDaysInStage(currentApp.stageUpdatedAt);
-  const completedTasksCount = currentApp.tasks ? currentApp.tasks.filter((t) => t.completed).length : 0;
-  const totalTasksCount = currentApp.tasks ? currentApp.tasks.length : 0;
+  const daysInStage = calculateDaysInStage(app.stageUpdatedAt);
+  const completedTasksCount = app.tasks ? app.tasks.filter((t) => t.completed).length : 0;
+  const totalTasksCount = app.tasks ? app.tasks.length : 0;
 
   // Status & Info handlers
   const handleStatusChange = async (newStatus: ApplicationStatus) => {
@@ -630,17 +624,33 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
 
 
   return (
-    <>
-      <Modal
-        isOpen={isOpen}
-        onClose={handleRequestClose}
-        ariaLabel={currentApp ? `Application Details - ${currentApp.company}` : 'Application Details'}
-        maxWidthClassName="max-w-5xl"
-        className="max-h-[92vh] flex flex-col"
-        closeOnEscape={!showUnsavedPrompt}
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={app ? `Application Details - ${app.company}` : 'Application Details'}
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 md:p-6 bg-slate-900/60 backdrop-blur-sm overflow-y-auto"
+      onClick={handleRequestClose}
+    >
+      {showUnsavedPrompt && (
+        <UnsavedChangesPrompt
+          onKeepEditing={() => setShowUnsavedPrompt(false)}
+          onDiscardAndExit={() => {
+            setShowUnsavedPrompt(false);
+            onClose();
+          }}
+        />
+      )}
+
+      <motion.div
+        variants={modalVariants}
+        initial="closed"
+        animate="open"
+        exit="closed"
+        className="w-full max-w-5xl max-h-[92vh] bg-white border border-slate-200/90 rounded-2xl flex flex-col shadow-2xl text-slate-900 overflow-hidden my-auto will-change-transform"
+        onClick={(e) => e.stopPropagation()}
       >
         <ApplicationDetailHeader
-          app={currentApp}
+          app={app}
           isEditingInfo={isEditingInfo}
           onToggleEditInfo={() => setIsEditingInfo(!isEditingInfo)}
           onStatusChange={handleStatusChange}
@@ -747,22 +757,12 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
           isSaving={isSavingNotes}
           showSavedToast={showSavedToast}
         />
-      </Modal>
-
-      {showUnsavedPrompt && (
-        <UnsavedChangesPrompt
-          onKeepEditing={() => setShowUnsavedPrompt(false)}
-          onDiscardAndExit={() => {
-            setShowUnsavedPrompt(false);
-            onClose();
-          }}
-        />
-      )}
+      </motion.div>
 
       {isFollowUpModalOpen && (
         <FollowUpModal
           isOpen={isFollowUpModalOpen}
-          app={currentApp}
+          app={app}
           allContacts={allContacts}
           initialContactId={followUpContact?.id}
           initialContactEmail={followUpContact?.email || effectiveContact.email}
@@ -778,6 +778,6 @@ export const ApplicationDetailPanel: React.FC<ApplicationDetailPanelProps> = ({
           }}
         />
       )}
-    </>
+    </div>
   );
 };
