@@ -9,9 +9,9 @@ import {
   Check,
   Briefcase,
 } from 'lucide-react';
-import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { Contact, EmailLog, Application } from '../../types';
 import { FormattedEmailBody } from './FormattedEmailBody';
+import { ExpandableContentContainer } from '../ExpandableContentContainer';
 import { formatEmailDateTime } from '../../lib/dateUtils';
 import { resolveEmailCounterparty } from '../../lib/emailCounterpartyUtils';
 
@@ -34,7 +34,6 @@ export const EmailLogCard: React.FC<EmailLogCardProps> = ({
   onDelete,
   onNavigateToApplication,
 }) => {
-  const shouldReduceMotion = useReducedMotion();
   const [isExpanded, setIsExpanded] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
@@ -160,30 +159,18 @@ export const EmailLogCard: React.FC<EmailLogCardProps> = ({
         </div>
       )}
 
-      {/* Unboxed Content Snippet with Smooth Card Resize Animation (Zero Text Dancing) */}
+      {/* Unboxed Content Snippet with Canonical ExpandableContentContainer */}
       {contentText && (
-        <div className="mt-1.5 relative">
-          <motion.div
-            id={`email-body-expanded-${email.id}`}
-            initial={false}
-            animate={{
-              height: isLong && !isExpanded ? 46 : 'auto',
-            }}
-            transition={
-              shouldReduceMotion
-                ? { duration: 0 }
-                : {
-                    height: { duration: 0.24, ease: [0.16, 1, 0.3, 1] },
-                  }
-            }
-            style={{ overflow: 'hidden' }}
-          >
-            <FormattedEmailBody text={contentText} />
-          </motion.div>
-          {isLong && !isExpanded && (
-            <div className="pointer-events-none absolute bottom-0 inset-x-0 h-4 bg-gradient-to-t from-white to-transparent" />
-          )}
-        </div>
+        <ExpandableContentContainer
+          id={`email-body-expanded-${email.id}`}
+          isExpanded={isExpanded}
+          collapsedHeight={46}
+          isCollapsible={isLong}
+          fadeColor="white"
+          className="mt-1.5"
+        >
+          <FormattedEmailBody text={contentText} />
+        </ExpandableContentContainer>
       )}
 
       {/* Bottom Action Surface: Read full email on left, ⋯ menu on right */}

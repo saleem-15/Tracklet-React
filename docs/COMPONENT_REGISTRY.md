@@ -36,6 +36,7 @@ Use this quick-lookup decision matrix to select the appropriate canonical compon
 | **Hover tooltips with keyboard shortcuts** | `Tooltip` / `useTooltip` | `src/components/Tooltip.tsx` | Browser default `title="..."` attributes alone |
 | **Universal Modal / Dialog with Animated Motion** | `Modal` | `src/components/Modal.tsx` | Raw `<div className="fixed inset-0...">`, ad-hoc dialogs |
 | **Modal / Drawer / Dialog dismissal** | `useEscapeKey` | `src/lib/useEscapeKey.ts` | Manual keydown listeners that close multiple layers simultaneously |
+| **Expandable card drawer / Collapsible text snippet** | `ExpandableContentContainer` | `src/components/ExpandableContentContainer.tsx` | Swapping elements in `<AnimatePresence>`, unclipped height jumps, dancing text |
 | **Standard buttons (Primary, Secondary, Outline, Ghost)** | `UI_TOKENS.btnPrimary`, `btnSecondary`, `btnOutline`, `btnGhost` | `src/theme/tokens.ts` | Hand-rolled inline button Tailwind utility strings |
 | **Standard form text input** | `UI_TOKENS.inputBase` | `src/theme/tokens.ts` | Arbitrary borders, unstyled inputs, `placeholder-slate-400` |
 
@@ -462,3 +463,4 @@ export const UI_TOKENS = {
 3. **NO Permanent Bright Red Buttons**: NEVER style standard delete buttons in table rows or cards with permanent `bg-red-600` or `text-rose-600`. Use `DeleteIconButton` or `DESTRUCTIVE_ACTION_STYLE` from `src/lib/constants.ts` (`text-slate-500 hover:text-rose-600 hover:bg-rose-50 active:bg-rose-100 transition-colors`).
 4. **NO Arbitrary Tailwind Hex Brackets**: NEVER write `bg-[#2563eb]`, `text-[#0f172a]`, or `rounded-[14px]`. Rely on Tailwind semantic color scales (`slate-*`, `blue-*`) and `UI_TOKENS`.
 5. **NO Native Browser Dialogs**: NEVER call `window.alert()`, `window.confirm()`, or `window.prompt()`. Use custom modal prompts or receipts with `addToast`.
+6. **NO Hand-Rolled Collapsible Text / Drawer Animations**: NEVER swap or cross-fade alternate text nodes in `<AnimatePresence>` to create expandable cards. Doing so causes line-wrap recalculations and text jitter ("dancing text"). ALWAYS use `ExpandableContentContainer`.

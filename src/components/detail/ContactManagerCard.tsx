@@ -22,6 +22,7 @@ import { CustomSelectDropdown, SelectOption } from '../CustomSelectDropdown';
 import { RichTextEditor } from '../editor';
 import { FollowUpControl } from '../contacts/FollowUpControl';
 import { FollowUpBadge } from '../contacts/FollowUpBadge';
+import { ExpandableContentContainer } from '../ExpandableContentContainer';
 
 export interface ContactManagerCardProps {
   contact: Contact;
@@ -455,33 +456,13 @@ export const ContactManagerCard: React.FC<ContactManagerCardProps> = ({
           </div>
 
           {/* Smooth, Hardware-Accelerated Card Resize Details Container */}
-          <AnimatePresence initial={false}>
-            {isExpanded && (
-              <motion.div
-                key="contact-details"
-                id={`contact-card-details-${contact.id}`}
-                initial={shouldReduceMotion ? { opacity: 0 } : { height: 0, opacity: 0 }}
-                animate={
-                  shouldReduceMotion
-                    ? { opacity: 1 }
-                    : { height: 'auto', opacity: 1 }
-                }
-                exit={
-                  shouldReduceMotion
-                    ? { opacity: 0 }
-                    : { height: 0, opacity: 0 }
-                }
-                transition={
-                  shouldReduceMotion
-                    ? { duration: 0 }
-                    : {
-                        height: { duration: 0.24, ease: [0.16, 1, 0.3, 1] },
-                        opacity: { duration: 0.18, ease: [0.2, 0, 0, 1] },
-                      }
-                }
-                style={{ overflow: 'hidden' }}
-              >
-                <div className="pt-2.5 border-t border-slate-100 space-y-2">
+          <ExpandableContentContainer
+            id={`contact-card-details-${contact.id}`}
+            isExpanded={isExpanded}
+            collapsedHeight={0}
+            animateOpacity
+          >
+            <div className="pt-2.5 border-t border-slate-100 space-y-2">
                   {/* Communication Chips with LinkedIn as Icon Button */}
                   <div className="flex items-center gap-1.5 flex-wrap">
                     {contact.email && (
@@ -572,9 +553,7 @@ export const ContactManagerCard: React.FC<ContactManagerCardProps> = ({
                     </div>
                   )}
                 </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          </ExpandableContentContainer>
         </div>
       )}
     </div>
