@@ -288,6 +288,17 @@ export const TooltipProvider: React.FC<{ children: ReactNode }> = ({ children })
       ? parseTooltipText(active.content, active.shortcut)
       : null;
 
+  const isUrl =
+    typeof parsed?.label === 'string' &&
+    /^(?:https?:\/\/|mailto:|tel:|\/|www\.)/i.test(parsed.label.trim());
+
+  const isMultiLine = Boolean(
+    !isUrl &&
+      ((parsed?.label && (parsed.label.length > 50 || parsed.label.includes('\n'))) ||
+        (typeof active?.content === 'string' &&
+          (active.content.length > 50 || active.content.includes('\n'))))
+  );
+
   const currentPlacement = coords?.placement ?? active?.placement ?? 'top';
   const isWarm = active?.isWarm ?? false;
 
@@ -360,30 +371,48 @@ export const TooltipProvider: React.FC<{ children: ReactNode }> = ({ children })
                   }
                 : {}),
             }}
-            className={`pointer-events-none select-none flex items-center gap-1.5 max-w-xs will-change-[transform,opacity] ${getTransformOrigin()} ${getAnimationClass()} motion-reduce:animate-none motion-reduce:opacity-100 motion-reduce:transform-none px-2.5 py-1 bg-slate-950/92 backdrop-blur-md text-slate-50 text-[11.5px] font-sans font-medium tracking-tight rounded-md ring-1 ring-inset ring-white/10 shadow-[0_2px_4px_rgba(0,0,0,0.3),0_8px_18px_rgba(0,0,0,0.4)]`}
+            className={`pointer-events-none select-none flex ${
+              isMultiLine ? 'items-start' : 'items-center'
+            } gap-1.5 min-w-0 max-w-xs sm:max-w-sm max-w-[calc(100vw-24px)] will-change-[transform,opacity] ${getTransformOrigin()} ${getAnimationClass()} motion-reduce:animate-none motion-reduce:opacity-100 motion-reduce:transform-none px-2.5 py-1 bg-slate-950/92 backdrop-blur-md text-slate-50 text-[11.5px] font-sans font-medium tracking-tight rounded-md ring-1 ring-inset ring-white/10 shadow-[0_2px_4px_rgba(0,0,0,0.3),0_8px_18px_rgba(0,0,0,0.4)] overflow-hidden`}
           >
             {parsed ? (
               <div
-                className={`flex items-center gap-1.5 ${
+                className={`flex ${
+                  isMultiLine ? 'items-start' : 'items-center'
+                } gap-1.5 min-w-0 max-w-full ${
                   travelDelta ? 'animate-[tooltipContentIn_140ms_cubic-bezier(0.16,1,0.3,1)_forwards]' : ''
                 }`}
               >
-                <span className={parsed.label.length > 50 ? 'whitespace-normal' : 'whitespace-nowrap'}>
+                <span
+                  className={`min-w-0 ${
+                    isUrl
+                      ? 'truncate font-mono text-[11px] max-w-[280px] sm:max-w-[340px] select-all whitespace-nowrap'
+                      : 'break-words [overflow-wrap:anywhere] leading-snug line-clamp-6'
+                  } ${
+                    isMultiLine
+                      ? 'whitespace-normal'
+                      : 'whitespace-nowrap'
+                  }`}
+                >
                   {parsed.label}
                 </span>
                 {parsed.shortcut && (
-                  <kbd className="inline-flex items-center font-mono uppercase px-1.5 py-0.5 bg-white/10 text-slate-300 text-[9px] font-medium rounded ring-1 ring-white/15 shadow-inner">
+                  <kbd
+                    className={`shrink-0 inline-flex items-center font-mono uppercase px-1.5 py-0.5 bg-white/10 text-slate-300 text-[9px] font-medium rounded ring-1 ring-white/15 shadow-inner ${
+                      isMultiLine ? 'mt-0.5' : ''
+                    }`}
+                  >
                     {formatShortcutForPlatform(parsed.shortcut)}
                   </kbd>
                 )}
               </div>
             ) : (
               <div
-                className={
+                className={`min-w-0 max-w-full break-words [overflow-wrap:anywhere] leading-snug line-clamp-6 ${
                   travelDelta
                     ? 'animate-[tooltipContentIn_140ms_cubic-bezier(0.16,1,0.3,1)_forwards]'
-                    : undefined
-                }
+                    : ''
+                }`}
               >
                 {active.content}
               </div>
