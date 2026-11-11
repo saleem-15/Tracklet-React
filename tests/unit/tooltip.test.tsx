@@ -110,6 +110,25 @@ describe('Tooltip Utilities', () => {
       const posRight = calculateTooltipPosition(targetRight, tooltip, 'top');
       expect(posRight.left + tooltip.width).toBeLessThanOrEqual(window.innerWidth - 8);
     });
+
+    it('clamps top and bottom vertical boundaries so tall tooltips never overflow the screen', () => {
+      // Extremely tall tooltip at near-top target
+      const targetNearTop = makeRect(15, 200, 40, 40);
+      const tallTooltip = makeRect(0, 0, 200, 700);
+      const pos = calculateTooltipPosition(targetNearTop, tallTooltip, 'top');
+
+      expect(pos.top).toBeGreaterThanOrEqual(8);
+      expect(pos.top + tallTooltip.height).toBeLessThanOrEqual(window.innerHeight - 8);
+    });
+
+    it('clamps left and right boundaries for side (left/right) placements', () => {
+      const targetNearRight = makeRect(200, window.innerWidth - 10, 40, 40);
+      const tooltip = makeRect(0, 0, 150, 40);
+      const posRight = calculateTooltipPosition(targetNearRight, tooltip, 'right');
+
+      expect(posRight.left).toBeGreaterThanOrEqual(8);
+      expect(posRight.left + tooltip.width).toBeLessThanOrEqual(window.innerWidth - 8);
+    });
   });
 });
 
@@ -616,6 +635,84 @@ describe('Tooltip Component & Global TooltipProvider', () => {
     // deltaX: previous left (210) - new left (130) = +80px (enters from the right direction where cursor came from!)
     expect(returnTooltip.style.getPropertyValue('--tt-travel-x')).toBe('80px');
     expect(returnTooltip.style.getPropertyValue('--tt-content-drift')).toBe('6px');
+  });
+
+  it('formats long link URLs as a single-line truncated monospace pill with overflow containment', () => {
+    const longUrl =
+      'https://links.wellfound.com/s/c/QWzr4bUqZa6i9oUT0J5vI8iDSCFUhcbKZFbfri7mbb-cS0HDVuVhgBMEILkda6mff8mOCB5aBmuiPw4fn5S4WjAz5Rp5L1EvWz3msPGLE3WoPA2gldSZ5ZUNOiH5VuWvG4jTcRhYEA1pPDYw2LWhjqbe7tGH6-KciMlbt7clq2fsfW9Pz9HTjRYKLTn9Et1X7vlggku0OA9qcosmjB4JCmaEfCXCw0l73nqd5HceJUdGG49ZWhXhyiNU50ZzdxylOzzhJs_OV/25';
+
+    act(() => {
+      root!.render(
+        <TooltipProvider>
+          <div>
+            <a id="test-link" href={longUrl} title={longUrl}>
+              View my application
+            </a>
+          </div>
+        </TooltipProvider>
+      );
+    });
+
+    const link = document.getElementById('test-link') as HTMLAnchorElement;
+    expect(link).not.toBeNull();
+
+    // Hover over link
+    act(() => {
+      link.dispatchEvent(
+        new PointerEvent('pointerover', { bubbles: true, cancelable: true, pointerType: 'mouse' })
+      );
+    });
+    act(() => {
+      vi.advanceTimersByTime(200);
+    });
+
+    const tooltip = document.querySelector('[role="tooltip"]') as HTMLElement;
+    expect(tooltip).not.toBeNull();
+    expect(tooltip.className).toContain('overflow-hidden');
+    expect(tooltip.className).toContain('max-w-xs');
+    expect(tooltip.className).toContain('items-center');
+
+    const span = tooltip.querySelector('span');
+    expect(span).not.toBeNull();
+    expect(span?.className).toContain('truncate');
+    expect(span?.className).toContain('font-mono');
+    expect(span?.className).toContain('whitespace-nowrap');
+  });
+
+  it('formats long non-URL text with break-words [overflow-wrap:anywhere] without break-all', () => {
+    const longText =
+      'This is a multi-line explanation detailing why this candidate application is marked stale after 14 days.';
+
+    act(() => {
+      root!.render(
+        <TooltipProvider>
+          <div>
+            <button id="test-btn" type="button" data-tooltip={longText}>
+              Stale Warning
+            </button>
+          </div>
+        </TooltipProvider>
+      );
+    });
+
+    const btn = document.getElementById('test-btn') as HTMLButtonElement;
+    act(() => {
+      btn.dispatchEvent(
+        new PointerEvent('pointerover', { bubbles: true, cancelable: true, pointerType: 'mouse' })
+      );
+    });
+    act(() => {
+      vi.advanceTimersByTime(200);
+    });
+
+    const tooltip = document.querySelector('[role="tooltip"]') as HTMLElement;
+    expect(tooltip).not.toBeNull();
+
+    const span = tooltip.querySelector('span');
+    expect(span).not.toBeNull();
+    expect(span?.className).toContain('break-words');
+    expect(span?.className).toContain('[overflow-wrap:anywhere]');
+    expect(span?.className).not.toContain('break-all');
   });
 });
 

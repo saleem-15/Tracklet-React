@@ -103,9 +103,14 @@ export function calculateTooltipPosition(
       viewportPad,
       Math.min(windowWidth - tooltipRect.width - viewportPad, left)
     );
+    const clampedTop = Math.max(
+      viewportPad,
+      Math.min(windowHeight - tooltipRect.height - viewportPad, top)
+    );
     const targetCenterX = targetRect.left + targetRect.width / 2;
     arrowOffset = Math.max(10, Math.min(tooltipRect.width - 10, targetCenterX - clampedLeft));
     left = clampedLeft;
+    top = clampedTop;
   } else {
     top = targetRect.top + (targetRect.height - tooltipRect.height) / 2;
     left =
@@ -113,6 +118,10 @@ export function calculateTooltipPosition(
         ? targetRect.left - tooltipRect.width - gap
         : targetRect.right + gap;
 
+    const clampedLeft = Math.max(
+      viewportPad,
+      Math.min(windowWidth - tooltipRect.width - viewportPad, left)
+    );
     const clampedTop = Math.max(
       viewportPad,
       Math.min(windowHeight - tooltipRect.height - viewportPad, top)
@@ -120,6 +129,7 @@ export function calculateTooltipPosition(
     const targetCenterY = targetRect.top + targetRect.height / 2;
     arrowOffset = Math.max(10, Math.min(tooltipRect.height - 10, targetCenterY - clampedTop));
     top = clampedTop;
+    left = clampedLeft;
   }
 
   return { top, left, placement, arrowOffset };
