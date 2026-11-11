@@ -49,6 +49,7 @@ You MUST declare your resolved components before providing code edits:
 | **Empty State** | `EmptyState` | `src/components/EmptyState.tsx` | Unstyled "No data found" div |
 | **Tooltip** | `Tooltip` / `useTooltip` | `src/components/Tooltip.tsx` | Browser `title="..."` alone |
 | **Modal Dismissal** | `useEscapeKey` | `src/lib/useEscapeKey.ts` | Manual keydown closing multiple layers |
+| **Expandable Content / Drawer / Snippet** | `ExpandableContentContainer` | `src/components/ExpandableContentContainer.tsx` | Hand-rolled `<AnimatePresence>` swapping preview/body text, unclipped height toggles |
 | **Action Buttons** | `UI_TOKENS.btnPrimary` etc. | `src/theme/tokens.ts` | Hand-rolled inline button Tailwind classes |
 | **Text Inputs** | `UI_TOKENS.inputBase` | `src/theme/tokens.ts` | `placeholder-slate-400` (WCAG AA violation) |
 
@@ -61,3 +62,4 @@ You MUST declare your resolved components before providing code edits:
 3. **PROHIBITION: Permanent red buttons**: Standard delete actions must use `DeleteIconButton` or `DESTRUCTIVE_ACTION_STYLE` (`text-slate-500 hover:text-rose-600 hover:bg-rose-50 active:bg-rose-100 transition-colors`). Never style resting state in bright red.
 4. **PROHIBITION: Arbitrary hex styles**: Never use Tailwind bracket arbitrary styles like `bg-[#2563eb]` or `rounded-[14px]`.
 5. **PROHIBITION: `transition-all` on cards or navigation**: Enforce `transition-colors duration-150` to eliminate layout jank.
+6. **PROHIBITION: Hand-rolled collapsible animations**: Never cross-fade or swap alternate text elements inside `<AnimatePresence>` to create expandable cards (which causes "text dancing" and layout stutter). Always use `ExpandableContentContainer` (`src/components/ExpandableContentContainer.tsx`).
