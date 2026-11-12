@@ -16,7 +16,7 @@ export interface WorkspaceSetupStepProps {
   onLaunchCSVImport?: () => void;
   onImportCSV?: (
     apps: Omit<Application, 'id' | 'userId' | 'createdAt' | 'updatedAt' | 'stageUpdatedAt'>[]
-  ) => Promise<void>;
+  ) => Promise<boolean | void>;
   onSeedDemoData?: () => void;
   onShowToast?: (type: 'success' | 'error' | 'info' | 'warning', title: string, message?: string) => void;
   totalAppCount?: number;
