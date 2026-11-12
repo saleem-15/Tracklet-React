@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ApplicationTask } from '../types';
-import { Check, Calendar, Pencil } from 'lucide-react';
+import { Calendar, Pencil } from 'lucide-react';
+import { Checkbox } from './Checkbox';
 import { DeleteIconButton, IconButton } from './IconButton';
 
 interface TaskItemProps {
@@ -146,19 +147,13 @@ export const TaskItem: React.FC<TaskItemProps> = ({
   return (
     <div className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-slate-100/60 transition-colors group">
       <div className="flex items-center gap-3 flex-1 min-w-0">
-        <button
-          type="button"
+        <Checkbox
+          checked={task.completed}
           disabled={readOnly || !onToggle}
-          onClick={() => onToggle && onToggle(task.id)}
-          className={`relative w-4 h-4 rounded-md border transition-all flex items-center justify-center shrink-0 cursor-pointer after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:min-w-[44px] after:min-h-[44px] ${
-            task.completed
-              ? 'bg-blue-600 border-blue-600 text-white shadow-2xs'
-              : 'border-slate-300 hover:border-blue-500 hover:bg-blue-50/50 bg-white'
-          }`}
-          title={task.completed ? 'Mark as incomplete' : 'Mark as completed'}
-        >
-          {task.completed && <Check className="w-3 h-3 stroke-[2.5]" />}
-        </button>
+          ariaLabel={task.completed ? 'Mark as incomplete' : 'Mark as completed'}
+          onChange={() => onToggle?.(task.id)}
+          className="after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:min-w-[44px] after:min-h-[44px]"
+        />
 
         {isEditing ? (
           <div className="flex items-center gap-1.5 flex-1 min-w-0">

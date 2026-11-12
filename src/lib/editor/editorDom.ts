@@ -45,7 +45,7 @@ export function computeMenuPosition(
  * caret explicitly instead of hoping the browser guessed right.
  */
 
-import { BLOCK_STYLES, LINK_CLASS } from './richTextMarkdownUtils';
+import { BLOCK_STYLES, LINK_CLASS, createTaskCheckboxHost } from './richTextMarkdownUtils';
 
 /** Line-level blocks the editor recognizes. */
 export const LINE_BLOCK_SELECTOR = 'p, h1, h2, h3, h4, h5, h6, li, blockquote';
@@ -417,6 +417,13 @@ function isAllowedUrl(href: string): boolean {
 }
 
 function cleanPastedElement(el: Element): void {
+  // SVGs never survive paste: foreign ones aren't in the serializer whitelist,
+  // task Checkbox portals are mounted by RichTextEditor after paste normalization.
+  if (el.tagName === 'SVG') {
+    el.remove();
+    return;
+  }
+
   Array.from(el.children).forEach(cleanPastedElement);
 
   if (el.tagName === 'A') {
@@ -434,12 +441,16 @@ function cleanPastedElement(el: Element): void {
         el.classList.contains('task-text') ||
         el.classList.contains('task-list') ||
         el.hasAttribute('data-task-checkbox') ||
-        el.classList.contains(BLOCK_STYLES.checkbox));
+        el.hasAttribute('data-task-checkbox-host') ||
+        el.classList.contains(BLOCK_STYLES.checkbox) ||
+        el.classList.contains(BLOCK_STYLES.checkboxHost));
 
     const keep =
       (el.tagName === 'A' && attr.name === 'href') ||
       (el.tagName === 'INPUT' &&
         ['checked', 'type', 'data-task-checkbox', 'aria-label'].includes(attr.name)) ||
+      (el.tagName === 'SPAN' && el.hasAttribute('data-task-checkbox-host') &&
+        ['data-task-checkbox-host', 'data-checked', 'aria-label', 'contenteditable', 'data-disabled'].includes(attr.name)) ||
       (el.tagName === 'LI' &&
         ['data-task', 'data-checked'].includes(attr.name)) ||
       (el.tagName === 'PRE' && attr.name === 'data-language') ||
@@ -459,89 +470,90 @@ function cleanPastedElement(el: Element): void {
   }
 }
 
+function taskCheckboxChecked(control: HTMLElement | null): boolean {
+  if (!control) return false;
+  if (control instanceof HTMLInputElement) return control.checked || control.hasAttribute('checked');
+  return control.dataset.checked === 'true' || control.getAttribute('aria-checked') === 'true' || control.querySelector('[aria-checked="true"]') !== null;
+}
+
 function normalizeTaskStructures(root: HTMLElement): void {
-  // 1. Notion role="checkbox" or class="notion-to-do-block" conversion
   root.querySelectorAll('[role="checkbox"], [aria-checked]').forEach((node) => {
-    const isChecked = node.getAttribute('aria-checked') === 'true' || node.classList.contains('checked');
+    if (node.hasAttribute('data-task-checkbox-host')) return;
+    const checked = node.getAttribute('aria-checked') === 'true' || node.classList.contains('checked');
     const input = document.createElement('input');
     input.type = 'checkbox';
-    if (isChecked) {
-      input.checked = true;
-      input.setAttribute('checked', '');
-    }
+    input.checked = checked;
+    if (checked) input.setAttribute('checked', '');
     input.setAttribute('data-task-checkbox', 'true');
-    input.className = BLOCK_STYLES.checkbox;
-
-    if ((node.textContent ?? '').trim() === '' && node.children.length === 0) {
-      node.replaceWith(input);
-    } else {
-      node.insertBefore(input, node.firstChild);
-    }
+    input.setAttribute('aria-label', 'Toggle to-do item');
+    if ((node.textContent ?? '').trim() === '' && node.children.length === 0) node.replaceWith(input);
+    else node.insertBefore(input, node.firstChild);
   });
 
-  // 2. Wrap stray div/p checkboxes into task li / ul
   root.querySelectorAll('p, div').forEach((block) => {
-    const checkbox = block.querySelector<HTMLInputElement>('input[type="checkbox"]');
-    if (checkbox && block.tagName !== 'LI') {
-      const checked = checkbox.checked || checkbox.hasAttribute('checked');
-      const li = document.createElement('li');
-      li.className = `${BLOCK_STYLES.taskItem}${checked ? ' task-checked' : ''}`;
-      li.dataset.task = 'true';
-      li.dataset.checked = checked ? 'true' : 'false';
-
-      checkbox.setAttribute('data-task-checkbox', 'true');
-      checkbox.className = BLOCK_STYLES.checkbox;
-      li.appendChild(checkbox);
-
-      const span = document.createElement('span');
-      span.className = `flex-1 task-text${checked ? ' line-through text-slate-400' : ''}`;
-      while (block.firstChild) {
-        if (block.firstChild !== checkbox) span.appendChild(block.firstChild);
-        else block.removeChild(block.firstChild);
-      }
-      if (!span.hasChildNodes() || span.textContent === '') span.innerHTML = '<br>';
-      li.appendChild(span);
-
-      const ul = document.createElement('ul');
-      ul.className = `${BLOCK_STYLES.taskList} text-slate-800 text-xs`;
-      ul.appendChild(li);
-      block.replaceWith(ul);
-    }
+    if (block.closest('[data-task-checkbox-host]') || block.querySelector('li')) return;
+    const input = block.querySelector<HTMLInputElement>('input[type="checkbox"]');
+    const oldHost = block.querySelector<HTMLElement>('[data-task-checkbox-host]');
+    const source = oldHost ?? input;
+    if (!source || block.tagName === 'LI') return;
+    const checked = taskCheckboxChecked(source);
+    const host = createTaskCheckboxHost(checked, source.getAttribute('aria-label') || 'Toggle to-do item');
+    const li = document.createElement('li');
+    li.className = `${BLOCK_STYLES.taskItem}${checked ? ' task-checked' : ''}`;
+    li.dataset.task = 'true';
+    li.dataset.checked = String(checked);
+    source.remove();
+    input?.remove();
+    li.appendChild(host);
+    const text = document.createElement('span');
+    text.className = `flex-1 task-text${checked ? ' line-through text-slate-400' : ''}`;
+    while (block.firstChild) text.appendChild(block.firstChild);
+    if (!text.hasChildNodes() || text.textContent === '') text.innerHTML = '<br>';
+    li.appendChild(text);
+    const list = document.createElement('ul');
+    list.className = `${BLOCK_STYLES.taskList} text-slate-800 text-xs`;
+    list.appendChild(li);
+    block.replaceWith(list);
   });
 
-  // 3. Normalize all LIs containing checkboxes
   root.querySelectorAll('li').forEach((li) => {
-    const checkbox = li.querySelector<HTMLInputElement>('input[type="checkbox"]');
-    if (checkbox) {
-      const checked = checkbox.checked || checkbox.hasAttribute('checked');
-      li.className = `${BLOCK_STYLES.taskItem}${checked ? ' task-checked' : ''}`;
-      li.dataset.task = 'true';
-      li.dataset.checked = checked ? 'true' : 'false';
-
-      checkbox.setAttribute('data-task-checkbox', 'true');
-      checkbox.className = BLOCK_STYLES.checkbox;
-
-      let span = li.querySelector<HTMLElement>('.task-text');
-      if (!span) {
-        span = document.createElement('span');
-        span.className = `flex-1 task-text${checked ? ' line-through text-slate-400' : ''}`;
-        const children = Array.from(li.childNodes).filter((c) => c !== checkbox);
-        children.forEach((c) => span!.appendChild(c));
-        if (!span.hasChildNodes() || (span.textContent ?? '').trim() === '') {
-          span.innerHTML = '<br>';
-        }
-        li.appendChild(span);
-      } else {
-        span.className = `flex-1 task-text${checked ? ' line-through text-slate-400' : ''}`;
-        if (!span.hasChildNodes() || (span.textContent ?? '').trim() === '') {
-          span.innerHTML = '<br>';
-        }
-      }
-
-      if (li.parentElement && li.parentElement.tagName === 'UL') {
-        li.parentElement.className = `${BLOCK_STYLES.taskList} text-slate-800 text-xs`;
-      }
+    const input = li.querySelector<HTMLInputElement>('input[type="checkbox"]');
+    const oldHost = li.querySelector<HTMLElement>('[data-task-checkbox-host]');
+    const source = oldHost ?? input;
+    if (!source) return;
+    const checked = li.dataset.checked === 'true' || taskCheckboxChecked(source);
+    const label = source.getAttribute('aria-label') || li.querySelector('.task-text')?.textContent?.trim() || 'Toggle to-do item';
+    const host = createTaskCheckboxHost(checked, label);
+    li.className = `${BLOCK_STYLES.taskItem}${checked ? ' task-checked' : ''}`;
+    li.dataset.task = 'true';
+    li.dataset.checked = String(checked);
+    if (oldHost) oldHost.replaceWith(host);
+    else if (input) input.replaceWith(host);
+    li.querySelectorAll('input[type="checkbox"], [data-task-checkbox-host]').forEach((extra) => {
+      if (extra !== host) extra.remove();
+    });
+    host.remove();
+    li.insertBefore(host, li.firstChild);
+    let text = li.querySelector<HTMLElement>('.task-text');
+    if (!text) {
+      text = document.createElement('span');
+      text.className = 'flex-1 task-text';
+      Array.from(li.childNodes).filter((child) => child !== host).forEach((child) => text!.appendChild(child));
+      li.appendChild(text);
     }
+    text.className = `flex-1 task-text${checked ? ' line-through text-slate-400' : ''}`;
+    if (!text.hasChildNodes() || (text.textContent ?? '').trim() === '') text.innerHTML = '<br>';
+    if (li.parentElement?.tagName === 'UL') li.parentElement.className = `${BLOCK_STYLES.taskList} text-slate-800 text-xs`;
+  });
+}
+
+/** Replaces legacy task inputs with hosts for shared React Checkbox portals. */
+export function ensureTaskCheckboxHosts(root: HTMLElement): void {
+  root.querySelectorAll('li.task-item').forEach((li) => {
+    const input = li.querySelector<HTMLInputElement>('input[data-task-checkbox], input[type="checkbox"]');
+    if (!input) return;
+    const label = input.getAttribute('aria-label') || li.querySelector('.task-text')?.textContent?.trim() || 'Toggle to-do item';
+    input.replaceWith(createTaskCheckboxHost(taskCheckboxChecked(input), label, input.disabled));
   });
 }
 
@@ -555,6 +567,7 @@ export function sanitizePastedHtml(html: string): string {
   container.innerHTML = html;
   normalizeTaskStructures(container);
   Array.from(container.children).forEach(cleanPastedElement);
+  ensureTaskCheckboxHosts(container);
 
   // Unwrap redundant single container wrappers (Google Docs pastes are
   // wrapped in style-carrying <div>s) so top-level blocks serialize cleanly.
@@ -563,7 +576,7 @@ export function sanitizePastedHtml(html: string): string {
     ['DIV', 'SPAN', 'FONT'].includes(container.firstElementChild!.tagName)
   ) {
     const only = container.firstElementChild!;
-    if (only.tagName === 'DIV' && only.querySelector('input[type="checkbox"]')) break;
+    if (only.tagName === 'DIV' && only.querySelector('input[type="checkbox"], [data-task-checkbox-host]')) break;
     const frag = document.createDocumentFragment();
     while (only.firstChild) frag.appendChild(only.firstChild);
     container.replaceChildren(frag);

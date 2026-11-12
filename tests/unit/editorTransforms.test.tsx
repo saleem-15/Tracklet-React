@@ -79,7 +79,7 @@ describe('deterministic block transformations (bug-fix regression)', () => {
 
     const li = ed.querySelector('li.task-item') as HTMLElement;
     expect(li.dataset.task).toBe('true');
-    expect(li.querySelector('input[type=checkbox]')).not.toBeNull();
+    expect(li.querySelector('[data-task-checkbox-host]')).not.toBeNull();
     expect(li.textContent).toContain('Buy milk');
     expect(document.getSelection()!.anchorNode && li.contains(document.getSelection()!.anchorNode)).toBe(true);
   });
@@ -103,10 +103,10 @@ describe('deterministic block transformations (bug-fix regression)', () => {
     expect(ed.querySelector('.task-text')!.textContent).toBe('A');
   });
 
-  it('checkbox includes data-task-checkbox attribute and handles checked state', async () => {
+  it('task checkbox markup creates a portal host and preserves checked state', async () => {
     const { markdownToHtml } = await import('../../src/lib/editor/richTextMarkdownUtils');
     const html = markdownToHtml('- [ ] x');
-    expect(html).toContain('data-task-checkbox="true"');
+    expect(html).toContain('data-task-checkbox-host="true"');
     expect(html).toContain('task-item');
 
     const checked = markdownToHtml('- [x] done');
@@ -308,7 +308,7 @@ describe('deterministic block transformations (bug-fix regression)', () => {
   });
 
   describe('security and fidelity serialization regressions', () => {
-    it('sanitizes unsafe javascript links while preserving safe links and input checkboxes', async () => {
+    it('sanitizes unsafe links and converts pasted checkboxes to portal hosts', async () => {
       const { sanitizePastedHtml } = await import('../../src/lib/editor/editorDom');
       const untrusted =
         '<p><a href="javascript:alert(1)">Click me</a> and <a href="https://example.com">Safe</a> and <input type="checkbox" checked /></p>';
@@ -316,7 +316,7 @@ describe('deterministic block transformations (bug-fix regression)', () => {
       expect(clean).not.toContain('javascript:');
       expect(clean).toContain('https://example.com');
       expect(clean).toContain('Click me');
-      expect(clean).toContain('type="checkbox"');
+      expect(clean).toContain('data-task-checkbox-host="true"');
     });
 
     it('preserves code block language tags through round-trip markdown conversion', async () => {
@@ -454,13 +454,13 @@ describe('deterministic block transformations (bug-fix regression)', () => {
       toggleTaskItem(li);
       expect(li.dataset.checked).toBe('true');
       expect(li.classList.contains('task-checked')).toBe(true);
-      expect(li.querySelector('input')!.checked).toBe(true);
+      expect(li.querySelector<HTMLElement>('[data-task-checkbox-host]')!.dataset.checked).toBe('true');
       expect(li.querySelector('.task-text')!.classList.contains('line-through')).toBe(true);
 
       toggleTaskItem(li);
       expect(li.dataset.checked).toBe('false');
       expect(li.classList.contains('task-checked')).toBe(false);
-      expect(li.querySelector('input')!.checked).toBe(false);
+      expect(li.querySelector<HTMLElement>('[data-task-checkbox-host]')!.dataset.checked).toBe('false');
       expect(li.querySelector('.task-text')!.classList.contains('line-through')).toBe(false);
     });
 
@@ -472,7 +472,7 @@ describe('deterministic block transformations (bug-fix regression)', () => {
       const notionForeignHtml = '<div class="notion-to-do-block"><div role="checkbox" aria-checked="true"></div><div>Fix alignment bug</div></div>';
       const clean = sanitizePastedHtml(notionForeignHtml);
       expect(clean).toContain('data-task="true"');
-      expect(clean).toContain('data-task-checkbox="true"');
+      expect(clean).toContain('data-task-checkbox-host="true"');
       expect(clean).toContain('Fix alignment bug');
 
       const md = htmlToMarkdown(clean);

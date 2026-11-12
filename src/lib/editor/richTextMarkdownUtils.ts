@@ -79,12 +79,29 @@ export const BLOCK_STYLES = {
   taskItem: 'task-item list-none flex items-start gap-2 py-0.5',
   checkbox:
     'w-4 h-4 shrink-0 rounded cursor-pointer',
+  checkboxHost: 'task-checkbox-host',
   quote:
     'border-l-4 border-blue-400 bg-blue-50/60 rounded-lg pl-3 pr-2 py-1.5 my-2 text-slate-700',
   codeBlock:
     'my-2 p-3 bg-slate-900 text-slate-100 rounded-xl font-mono text-[11px] leading-relaxed overflow-x-auto border border-slate-800 selection:bg-blue-500/40',
   hr: 'my-3 border-slate-200',
 } as const;
+
+/** Placeholder where RichTextEditor portals the shared React Checkbox. */
+export function createTaskCheckboxHost(
+  checked: boolean,
+  label: string,
+  disabled = false
+): HTMLSpanElement {
+  const host = document.createElement('span');
+  host.className = BLOCK_STYLES.checkboxHost;
+  host.setAttribute('data-task-checkbox-host', 'true');
+  host.setAttribute('data-checked', String(checked));
+  host.setAttribute('aria-label', label || 'Toggle to-do item');
+  host.setAttribute('contenteditable', 'false');
+  if (disabled) host.setAttribute('data-disabled', 'true');
+  return host;
+}
 
 /** Thematic break (divider) syntax: --- / *** / ___ */
 const HR_LINE_REGEX = /^\s*(-{3,}|\*{3,}|_{3,})\s*$/;
@@ -211,7 +228,7 @@ export function markdownToHtml(
       const taskLabel = rawContent.replace(/<[^>]*>/g, '').trim() || 'Toggle to-do item';
       htmlParts.push(
         `<li class="${BLOCK_STYLES.taskItem}${checked ? ' task-checked' : ''}" data-task="true" data-checked="${checked}" dir="auto">` +
-          `<input type="checkbox"${checked ? ' checked' : ''}${readOnly ? ' disabled' : ''} data-task-checkbox="true" aria-label="${escapeHtml(taskLabel)}" class="${BLOCK_STYLES.checkbox}" />` +
+          `<span data-task-checkbox-host="true" data-checked="${checked}" aria-label="${escapeHtml(taskLabel)}" contenteditable="false" class="${BLOCK_STYLES.checkboxHost}"${readOnly ? ' data-disabled="true"' : ''}></span>` +
           `<span class="flex-1 task-text${checked ? ' line-through text-slate-400' : ''}">${content}</span>` +
           `</li>`
       );
@@ -382,19 +399,19 @@ export function domNodeToMarkdown(node: Node): string {
     }
     case 'li': {
       // Task items carry their own marker
-      const checkbox = el.querySelector<HTMLInputElement>('input[type="checkbox"], input[data-task-checkbox]');
+      const checkbox = el.querySelector<HTMLElement>('input[type="checkbox"], input[data-task-checkbox], [data-task-checkbox-host]');
       const isTask = el.dataset.task === 'true' || el.classList.contains('task-item') || checkbox !== null;
       if (isTask) {
         const checked =
           el.dataset.checked === 'true' ||
-          (checkbox !== null && (checkbox.checked || checkbox.hasAttribute('checked')));
+          (checkbox !== null && (checkbox.dataset.checked === 'true' || checkbox.getAttribute('aria-checked') === 'true' || (checkbox instanceof HTMLInputElement && (checkbox.checked || checkbox.hasAttribute('checked')))));
         const textEl = el.querySelector('.task-text');
         const raw = textEl
           ? Array.from(textEl.childNodes)
               .map((c) => domNodeToMarkdown(c))
               .join('')
           : Array.from(el.childNodes)
-              .filter((c) => (c as HTMLElement).tagName !== 'INPUT')
+              .filter((c) => !((c as HTMLElement).tagName === 'INPUT' || (c as HTMLElement).hasAttribute('data-task-checkbox-host')))
               .map((c) => domNodeToMarkdown(c))
               .join('');
         return `- [${checked ? 'x' : ' '}] ${raw.trim()}`;
@@ -427,11 +444,11 @@ export function domNodeToMarkdown(node: Node): string {
     }
     case 'p':
     case 'div': {
-      const checkbox = el.querySelector<HTMLInputElement>('input[type="checkbox"], input[data-task-checkbox]');
+      const checkbox = el.querySelector<HTMLElement>('input[type="checkbox"], input[data-task-checkbox], [data-task-checkbox-host]');
       if (checkbox) {
-        const checked = checkbox.checked || checkbox.hasAttribute('checked');
+        const checked = checkbox.dataset.checked === 'true' || checkbox.getAttribute('aria-checked') === 'true' || (checkbox instanceof HTMLInputElement && (checkbox.checked || checkbox.hasAttribute('checked')));
         const raw = Array.from(el.childNodes)
-          .filter((c) => (c as HTMLElement).tagName !== 'INPUT')
+          .filter((c) => !((c as HTMLElement).tagName === 'INPUT' || (c as HTMLElement).hasAttribute('data-task-checkbox-host')))
           .map((c) => domNodeToMarkdown(c))
           .join('');
         return `- [${checked ? 'x' : ' '}] ${raw.trim()}`;
@@ -530,10 +547,16 @@ export function toggleTaskItem(itemEl: HTMLElement): void {
   const nowChecked = itemEl.dataset.checked !== 'true';
   itemEl.dataset.checked = nowChecked ? 'true' : 'false';
   itemEl.classList.toggle('task-checked', nowChecked);
+  const checkboxHost = itemEl.querySelector<HTMLElement>('[data-task-checkbox-host]');
   const input = itemEl.querySelector<HTMLInputElement>('input[data-task-checkbox], input[type="checkbox"]');
+  if (checkboxHost) {
+    checkboxHost.dataset.checked = String(nowChecked);
+    const button = checkboxHost.querySelector<HTMLButtonElement>('[role="checkbox"]');
+    button?.setAttribute('aria-checked', String(nowChecked));
+    button?.setAttribute('data-state', nowChecked ? 'checked' : 'unchecked');
+  }
   if (input) {
     input.checked = nowChecked;
-    // Mirror the attribute so styling/serialization can never desync
     if (nowChecked) input.setAttribute('checked', '');
     else input.removeAttribute('checked');
   }
@@ -559,12 +582,7 @@ function makeTaskItemElement(text: string, checked: boolean): HTMLElement {
   li.dataset.checked = checked ? 'true' : 'false';
   li.setAttribute('dir', 'auto');
 
-  const input = document.createElement('input');
-  input.type = 'checkbox';
-  input.checked = checked;
-  input.setAttribute('data-task-checkbox', 'true');
-  input.setAttribute('aria-label', text.trim() || 'Toggle to-do item');
-  input.className = BLOCK_STYLES.checkbox;
+  const checkboxHost = createTaskCheckboxHost(checked, text.trim() || 'Toggle to-do item');
 
   const span = document.createElement('span');
   span.className = 'flex-1 task-text';
@@ -574,7 +592,7 @@ function makeTaskItemElement(text: string, checked: boolean): HTMLElement {
     span.innerHTML = '<br>';
   }
 
-  li.appendChild(input);
+  li.appendChild(checkboxHost);
   li.appendChild(span);
   return li;
 }

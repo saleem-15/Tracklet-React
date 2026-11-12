@@ -1,4 +1,6 @@
 import React, { useCallback, useState, useRef } from 'react';
+import { createPortal } from 'react-dom';
+import { Checkbox } from '../Checkbox';
 import { canonicalizeMarkdown } from '../../lib/editor/richTextMarkdownUtils';
 import { useRichTextEditor } from '../../lib/editor/useRichTextEditor';
 import { EDITOR_ACTIONS } from './editorActions';
@@ -68,6 +70,50 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
   const userHeightRef = useRef<number | null>(userHeight);
   userHeightRef.current = userHeight;
   const isEmpty = isEmptyMarkdown(value);
+  const [taskCheckboxes, setTaskCheckboxes] = useState<Array<{
+    host: HTMLSpanElement;
+    checked: boolean;
+    label: string;
+    disabled: boolean;
+  }>>([]);
+
+  const refreshTaskCheckboxes = useCallback(() => {
+    const editor = editorRef.current;
+    if (!editor) return;
+    const next = Array.from(editor.querySelectorAll<HTMLSpanElement>('[data-task-checkbox-host]')).map((host) => ({
+      host,
+      checked: host.dataset.checked === 'true',
+      label: host.getAttribute('aria-label') || 'Toggle to-do item',
+      disabled: host.dataset.disabled === 'true',
+    }));
+    setTaskCheckboxes((previous) => {
+      if (previous.length === next.length && previous.every((item, index) =>
+        item.host === next[index].host &&
+        item.checked === next[index].checked &&
+        item.disabled === next[index].disabled &&
+        item.label === next[index].label
+      )) return previous;
+      return next;
+    });
+  }, [editorRef]);
+
+  React.useEffect(() => {
+    refreshTaskCheckboxes();
+  }, [refreshTaskCheckboxes, value]);
+
+  const handleTaskCheckboxChange = useCallback((host: HTMLSpanElement, checked: boolean) => {
+    host.dataset.checked = String(checked);
+    const item = host.closest<HTMLElement>('li.task-item');
+    if (item) {
+      item.dataset.checked = String(checked);
+      item.classList.toggle('task-checked', checked);
+      const text = item.querySelector<HTMLElement>('.task-text');
+      text?.classList.toggle('line-through', checked);
+      text?.classList.toggle('text-slate-400', checked);
+    }
+    refreshTaskCheckboxes();
+    handleInput();
+  }, [handleInput, refreshTaskCheckboxes]);
 
   // Drag-to-resize (bottom edge). Double-click resets to auto height.
   React.useEffect(() => {
@@ -188,7 +234,21 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
           aria-label={ariaLabel}
         />
 
-        {/* Manual resize handle */}
+        {taskCheckboxes.map(({ host, checked, label, disabled }, index) =>
+        createPortal(
+          <Checkbox
+            checked={checked}
+            disabled={disabled}
+            ariaLabel={label}
+            onChange={(next) => handleTaskCheckboxChange(host, next)}
+            className="after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:min-w-[44px] after:min-h-[44px]"
+          />,
+          host,
+          String(index)
+        )
+      )}
+
+      {/* Manual resize handle */}
         {resizable && (
           <div
             data-resize-handle

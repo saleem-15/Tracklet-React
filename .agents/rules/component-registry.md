@@ -50,6 +50,7 @@ You MUST declare your resolved components before providing code edits:
 | **Tooltip** | `Tooltip` / `useTooltip` | `src/components/Tooltip.tsx` | Browser `title="..."` alone |
 | **Modal Dismissal** | `useEscapeKey` | `src/lib/useEscapeKey.ts` | Manual keydown closing multiple layers |
 | **Expandable Content / Drawer / Snippet** | `ExpandableContentContainer` | `src/components/ExpandableContentContainer.tsx` | Hand-rolled `<AnimatePresence>` swapping preview/body text, unclipped height toggles |
+| **Boolean Checkbox** | `Checkbox` | `src/components/Checkbox.tsx` | Raw `<input type="checkbox">` in React UIs, unstyled toggles |
 | **Action Buttons** | `UI_TOKENS.btnPrimary` etc. | `src/theme/tokens.ts` | Hand-rolled inline button Tailwind classes |
 | **Text Inputs** | `UI_TOKENS.inputBase` | `src/theme/tokens.ts` | `placeholder-slate-400` (WCAG AA violation) |
 

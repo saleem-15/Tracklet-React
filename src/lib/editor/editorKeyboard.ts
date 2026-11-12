@@ -1,4 +1,4 @@
-import { BLOCK_STYLES } from './richTextMarkdownUtils';
+import { BLOCK_STYLES, createTaskCheckboxHost } from './richTextMarkdownUtils';
 import {
   prepareListExtraction,
   placeCaretAtStart,
@@ -230,17 +230,13 @@ function makeTaskItem(): HTMLElement {
   li.dataset.task = 'true';
   li.dataset.checked = 'false';
 
-  const input = document.createElement('input');
-  input.type = 'checkbox';
-  input.setAttribute('data-task-checkbox', 'true');
-  input.setAttribute('aria-label', 'Toggle to-do item');
-  input.className = BLOCK_STYLES.checkbox;
+  const checkboxHost = createTaskCheckboxHost(false, 'Toggle to-do item');
 
   const span = document.createElement('span');
   span.className = 'flex-1 task-text';
   span.innerHTML = '<br>';
 
-  li.appendChild(input);
+  li.appendChild(checkboxHost);
   li.appendChild(span);
   return li;
 }

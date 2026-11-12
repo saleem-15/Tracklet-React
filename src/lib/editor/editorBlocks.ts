@@ -1,5 +1,5 @@
 import React from 'react';
-import { BLOCK_STYLES, isInsideCodeFence } from './richTextMarkdownUtils';
+import { BLOCK_STYLES, createTaskCheckboxHost, isInsideCodeFence } from './richTextMarkdownUtils';
 import {
   findCaretBlock,
   selectionInside,
@@ -131,18 +131,13 @@ export function makeTaskItemEl(innerHtml: string, checked: boolean): HTMLElement
   li.dataset.checked = checked ? 'true' : 'false';
 
   const textLabel = innerHtml.replace(/<[^>]*>/g, '').trim() || 'Toggle to-do item';
-  const input = document.createElement('input');
-  input.type = 'checkbox';
-  input.checked = checked;
-  input.setAttribute('data-task-checkbox', 'true');
-  input.setAttribute('aria-label', textLabel);
-  input.className = BLOCK_STYLES.checkbox;
+  const checkboxHost = createTaskCheckboxHost(checked, textLabel);
 
   const span = makeElement('span', 'flex-1 task-text');
   // Seed with <br> when empty to create an active line-box and prevent caret collapse before the input
   span.innerHTML = innerHtml || '<br>';
 
-  li.appendChild(input);
+  li.appendChild(checkboxHost);
   li.appendChild(span);
   list.appendChild(li);
   return list;
