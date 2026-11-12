@@ -447,7 +447,7 @@ describe('deterministic block transformations (bug-fix regression)', () => {
     it('toggleTaskItem synchronizes task-checked class and dataset.checked', async () => {
       const { toggleTaskItem } = await import('../../src/lib/editor/richTextMarkdownUtils');
       const ed = setupEditor(
-        '<ul class="task-list"><li class="task-item" data-task="true" data-checked="false"><input type="checkbox" data-task-checkbox="true" /><span class="task-text">My item</span></li></ul>'
+        '<ul class="task-list"><li class="task-item" data-task="true" data-checked="false"><span data-task-checkbox-host="true" data-checked="false" aria-label="Toggle to-do item" contenteditable="false" class="task-checkbox-host"></span><span class="task-text">My item</span></li></ul>'
       );
       const li = ed.querySelector('li')!;
       
