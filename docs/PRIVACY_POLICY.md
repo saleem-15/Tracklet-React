@@ -83,7 +83,7 @@ We work with a minimal set of vetted infrastructure subprocessors:
 
 Regardless of your geographic location, Tracklet grants you comprehensive control over your personal data:
 
-1. **Right of Access & Portability**: You may export all your tracked job applications and contacts at any time to standard CSV or JSON formats directly from the Settings view.
+1. **Right of Access & Portability**: You may export all your tracked job applications and contacts — including status history, tasks, and email logs — at any time to standard CSV format directly from the Settings view.
 2. **Right to Rectification**: You can update, correct, or edit any application, contact, or note instantly in the dashboard.
 3. **Right to Erasure ("Right to Be Forgotten")**: You can permanently delete your account and all associated cloud records at any time via Settings $\rightarrow$ Account $\rightarrow$ **Delete Account**. This triggers an immediate, permanent purge of your user document, applications, history milestones, contacts, and cloud-stored resumes.
 4. **Do Not Sell**: We do not sell your personal information. No opt-out is necessary because we never engage in data brokering or recruiter sharing.

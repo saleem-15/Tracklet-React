@@ -300,7 +300,7 @@ export const PrivacyPolicyContent: React.FC = () => {
         </p>
         <ul className="list-disc pl-5 space-y-2 text-xs">
           <li>
-            <strong>Data Portability:</strong> You may export your entire application pipeline, status timelines, contacts, and logs to CSV or JSON at any time with a single click from the toolbar.
+            <strong>Data Portability:</strong> You may export your entire application pipeline, status timelines, contacts, and logs to standard CSV files at any time with a single click from Settings.
           </li>
           <li>
             <strong>Permanent Account & Data Deletion:</strong> You have the absolute right to purge your data. Initiating account deletion in Account Settings (&ldquo;Danger Zone&rdquo;) triggers a cascading deletion that permanently wipes your Firestore user profile, application subcollections, contact records, and Cloud Storage resume attachments.

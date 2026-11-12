@@ -85,7 +85,7 @@ To the maximum extent permitted by applicable law, Tracklet and its operators sh
 
 ## 9. Termination & Data Portability
 
-1. **Termination by You**: You may terminate these Terms at any time by deleting your account through the Settings interface. We strongly advise exporting your data (via CSV/JSON export) prior to account deletion.
+1. **Termination by You**: You may terminate these Terms at any time by deleting your account through the Settings interface. We strongly advise exporting your data (via CSV export) prior to account deletion.
 2. **Termination by Tracklet**: Tracklet may suspend or terminate your account if you materially breach these Terms or engage in fraudulent activities.
 
 ---
