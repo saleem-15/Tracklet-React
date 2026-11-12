@@ -39,6 +39,7 @@ Use this quick-lookup decision matrix to select the appropriate canonical compon
 | **Expandable card drawer / Collapsible text snippet** | `ExpandableContentContainer` | `src/components/ExpandableContentContainer.tsx` | Swapping elements in `<AnimatePresence>`, unclipped height jumps, dancing text |
 | **Standard buttons (Primary, Secondary, Outline, Ghost)** | `UI_TOKENS.btnPrimary`, `btnSecondary`, `btnOutline`, `btnGhost` | `src/theme/tokens.ts` | Hand-rolled inline button Tailwind utility strings |
 | **Standard form text input** | `UI_TOKENS.inputBase` | `src/theme/tokens.ts` | Arbitrary borders, unstyled inputs, `placeholder-slate-400` |
+| **Boolean checkbox / to-do completion control** | `Checkbox` | `src/components/Checkbox.tsx` | Hand-rolled form checkboxes outside the rich-text editor, unstyled toggles |
 
 ---
 
@@ -367,6 +368,7 @@ export const DescriptionSnippet: React.FC<{ rawText: string }> = ({ rawText }) =
 3. `Tooltip` / `TooltipProvider` / `useTooltip` (`src/components/Tooltip.tsx`)
 4. `useEscapeKey` (`src/lib/useEscapeKey.ts`)
 5. `WorkspaceLoadingState` (`src/components/layout/WorkspaceLoadingState.tsx`)
+6. `Checkbox` (`src/components/Checkbox.tsx`)
 
 - **When to Use**: Zero-data screens, filter empty states, animated modal dialogs, contextual tooltips with keyboard shortcuts, modal dismissal, and initial cold boot or in-workspace loading.
 - **Key Capabilities**:
@@ -375,6 +377,22 @@ export const DescriptionSnippet: React.FC<{ rawText: string }> = ({ rawText }) =
   - `Tooltip`: Portal-based rendering, warm-up delay tracking (zero delay on subsequent hovers), viewport collision avoidance, and shortcut hints.
   - `useEscapeKey`: Global LIFO stack that dismisses **only** the topmost overlay, preventing multi-layered drawers/modals from simultaneously closing on Escape.
   - `WorkspaceLoadingState`: Executive Linear-grade loading experience implementing the Staged Dissolve architecture (`fullScreen` cold boot monolith with 1.5px hairline progress rail and "Texts reveal" transition from transitions.dev revealing "loading ..." after 300ms, plus in-workspace deterministic skeletons for all 5 workspace views: Table, Board, Contacts, Analytics, and Settings with 0 Cumulative Layout Shift). Organized via modular sub-skeletons in `src/components/layout/skeletons/`.
+
+   - `Checkbox`: Canonical checkbox built on Radix UI and Motion. The box uses the app primary blue when checked, the checkmark draws with a fast eased curve, and hover/tap feedback uses a damped spring. Reduced-motion preferences disable scale feedback and the checkmark animation. RichTextEditor portals the same React checkbox into task hosts inside its contenteditable surface, preserving the shared interaction and animation.
+
+#### Checkbox TypeScript Interface & Prop Contract:
+```typescript
+export interface CheckboxProps
+  extends Omit<React.ComponentProps<typeof CheckboxPrimitive.Root>,
+    'checked' | 'defaultChecked' | 'onCheckedChange' | 'onChange' | 'className'> {
+  checked?: CheckboxPrimitive.CheckedState;
+  defaultChecked?: CheckboxPrimitive.CheckedState;
+  onCheckedChange?: (checked: CheckboxPrimitive.CheckedState) => void;
+  onChange?: (checked: boolean) => void;
+  ariaLabel?: string;
+  className?: string;
+}
+```
 
 #### Code Examples:
 ```tsx

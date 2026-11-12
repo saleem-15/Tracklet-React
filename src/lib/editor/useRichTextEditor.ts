@@ -130,6 +130,7 @@ export function useRichTextEditor({ value, onChange }: UseRichTextEditorOptions)
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLDivElement>) => {
+      if ((e.target as HTMLElement).closest?.('[data-task-checkbox-host]')) return;
       const isCmdOrCtrl = e.metaKey || e.ctrlKey;
       const el = editorRef.current;
       const sel = window.getSelection();

@@ -206,7 +206,7 @@ describe('richTextMarkdownUtils', () => {
       expect(html).toContain('data-task="true"');
       expect(html).toContain('data-checked="false"');
       expect(html).toContain('data-checked="true"');
-      expect(html).toContain('type="checkbox"');
+      expect(html).toContain('data-task-checkbox-host="true"');
       expect(html).not.toContain('disabled'); // editable context: interactive
       expect(html).toContain('Send email');
       expect(html).toContain('Prep questions');

@@ -27,6 +27,7 @@
     "context": "node scripts/check-context.js"
   },
   "dependencies": {
+    "@radix-ui/react-checkbox": "^1.4.1",
     "@sentry/react": "^10.70.0",
     "@tailwindcss/vite": "^4.1.14",
     "@vitejs/plugin-react": "^5.0.4",
