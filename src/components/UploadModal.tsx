@@ -94,6 +94,11 @@ export function UploadModal<T = unknown>({
   const uploadRef = useRef<UploadHandle<T> | null>(null);
   const cancelledRef = useRef(false);
   const timersRef = useRef<number[]>([]);
+  /** Monotonic upload-attempt identity. Callbacks (promise resolution,
+   *  rejection, settle timer) capture the attempt they belong to and no-op
+   *  when a newer one exists — a stale upload A can never clear upload B's
+   *  handle or mutate B's dialog state. */
+  const attemptRef = useRef(0);
 
   const addTimer = (id: number) => {
     timersRef.current.push(id);
@@ -103,6 +108,8 @@ export function UploadModal<T = unknown>({
     timersRef.current = [];
   };
   const cancelInFlight = () => {
+    // Invalidate any pending callbacks from the aborted attempt first.
+    attemptRef.current += 1;
     if (uploadRef.current) {
       cancelledRef.current = true;
       uploadRef.current.cancel();
@@ -111,6 +118,7 @@ export function UploadModal<T = unknown>({
   };
 
   const resetAll = () => {
+    attemptRef.current += 1;
     setPhase('idle');
     setPct(0);
     setFile(null);
@@ -126,14 +134,18 @@ export function UploadModal<T = unknown>({
   }, []);
 
   // Controlled open/close: entering 'closing' plays the 150ms exit transition
-  // before the dialog unmounts and internal state resets.
+  // before the dialog unmounts and internal state resets. Opening ALWAYS
+  // resets first — a reopen from 'closing' (or from any prior state) must
+  // not inherit a stuck phase like 'uploading'.
   useEffect(() => {
     if (isOpen) {
+      resetAll();
       setUiState('open');
     } else {
       setUiState((cur) => (cur === 'open' ? 'closing' : 'closed'));
       cancelInFlight();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
   useEffect(() => {
@@ -254,15 +266,20 @@ export function UploadModal<T = unknown>({
     setPhase('uploading');
     setPct(0);
 
+    const attempt = ++attemptRef.current;
+    const isCurrentAttempt = () => attemptRef.current === attempt;
     const report = (raw: number) => setPct(Math.min(100, Math.max(0, Math.round(raw))));
     const handle = onUpload(target, report);
     uploadRef.current = handle;
 
     handle.promise
       .then((result) => {
-        if (cancelledRef.current) return;
+        if (!isCurrentAttempt() || cancelledRef.current) return;
         uploadRef.current = null;
         const t = window.setTimeout(() => {
+          // The settle timer must not fire into a dialog that has been
+          // closed, reset, or superseded by a newer attempt.
+          if (!isCurrentAttempt()) return;
           setPhase('done');
           setPct(100);
           onUploaded?.(result);
@@ -270,6 +287,7 @@ export function UploadModal<T = unknown>({
         addTimer(t);
       })
       .catch((err: unknown) => {
+        if (!isCurrentAttempt()) return;
         uploadRef.current = null;
         if (cancelledRef.current) return;
         setPhase('error');
@@ -332,7 +350,16 @@ export function UploadModal<T = unknown>({
               />
               <div
                 className="drop"
+                role="button"
+                tabIndex={0}
+                aria-label="Drop a file here, or press Enter to browse"
                 onClick={() => fileInputRef.current?.click()}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    fileInputRef.current?.click();
+                  }
+                }}
                 onDragEnter={(e) => e.preventDefault()}
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={handleDrop}

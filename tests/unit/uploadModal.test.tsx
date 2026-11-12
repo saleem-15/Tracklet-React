@@ -270,4 +270,89 @@ describe('UploadModal (transitions.dev motion + real upload wiring)', () => {
     expect(bundle.deferreds.length).toBe(2); // fresh pending transfer
     expect(host!.querySelector('.zone')!.getAttribute('data-phase')).toBe('uploading');
   });
+
+  it('reopens clean when isOpen flips back true before the closing transition finishes', async () => {
+    const bundle = makeBundle();
+    render(bundle);
+
+    selectFile(new File(['resume body'], 'resume.pdf', { type: 'application/pdf' }));
+    await act(async () => {
+      findButtonByText('Upload').click();
+    });
+    await settle();
+    expect(host!.querySelector('.zone')!.getAttribute('data-phase')).toBe('uploading');
+
+    // Close mid-upload, then reopen before the 150ms exit completes —
+    // the aborted upload phase must not survive into the reopened dialog.
+    render({ ...bundle, isOpen: false });
+    await act(async () => {
+      latestDeferred(bundle).reject(new Error('Upload canceled'));
+    });
+    render({ ...bundle, isOpen: true });
+
+    expect(host!.querySelector('.zone')!.getAttribute('data-phase')).toBe('idle');
+    expect(host!.querySelector('.err[role="alert"]')).toBeNull();
+
+    // The dialog is fully usable: staging a file enables Upload again
+    selectFile(new File(['resume body'], 'resume3.pdf', { type: 'application/pdf' }));
+    await act(async () => {
+      findButtonByText('Upload').click();
+    });
+    expect(bundle.onUpload).toHaveBeenCalledTimes(2);
+    expect(host!.querySelector('.zone')!.getAttribute('data-phase')).toBe('uploading');
+  });
+
+  it('a stale upload attempt cannot corrupt a newer attempt after cancel + retry', async () => {
+    const bundle = makeBundle();
+    render(bundle);
+
+    selectFile(new File(['resume body'], 'resume.pdf', { type: 'application/pdf' }));
+    await act(async () => {
+      findButtonByText('Upload').click();
+    });
+    await settle();
+
+    // Close (cancels upload A), reopen, start upload B
+    render({ ...bundle, isOpen: false });
+    render({ ...bundle, isOpen: true });
+    selectFile(new File(['resume body'], 'resume2.pdf', { type: 'application/pdf' }));
+    await act(async () => {
+      findButtonByText('Upload').click();
+    });
+    await settle();
+    expect(bundle.deferreds.length).toBe(2);
+
+    // A's rejection arrives late — it must not clear B's state or show errors
+    await act(async () => {
+      bundle.deferreds[0].reject(new Error('Upload canceled'));
+    });
+    await settle();
+    expect(host!.querySelector('.zone')!.getAttribute('data-phase')).toBe('uploading');
+    expect(host!.textContent).not.toContain('Upload canceled');
+
+    // B still completes normally
+    await act(async () => {
+      latestDeferred(bundle).resolve(undefined);
+    });
+    await settle();
+    expect(host!.querySelector('.zone')!.getAttribute('data-phase')).toBe('done');
+    expect(bundle.onUploaded).toHaveBeenCalledTimes(1);
+  });
+
+  it('opens the file picker with Enter on the dropzone for keyboard users', () => {
+    const bundle = makeBundle();
+    render(bundle);
+
+    const input = host!.querySelector('input[type="file"]') as HTMLInputElement;
+    expect(input).not.toBeNull();
+    const clickSpy = vi.spyOn(input, 'click');
+
+    act(() => {
+      host!.querySelector('.drop')!.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })
+      );
+    });
+
+    expect(clickSpy).toHaveBeenCalledTimes(1);
+  });
 });
