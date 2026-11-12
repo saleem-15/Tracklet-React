@@ -35,6 +35,7 @@ Use this quick-lookup decision matrix to select the appropriate canonical compon
 | **Initial app boot & in-workspace loading state** | `WorkspaceLoadingState` | `src/components/layout/WorkspaceLoadingState.tsx` | Circular spinning icons, wireframe scaffolding on cold boot, raw "Loading..." text |
 | **Hover tooltips with keyboard shortcuts** | `Tooltip` / `useTooltip` | `src/components/Tooltip.tsx` | Browser default `title="..."` attributes alone |
 | **Universal Modal / Dialog with Animated Motion** | `Modal` | `src/components/Modal.tsx` | Raw `<div className="fixed inset-0...">`, ad-hoc dialogs |
+| **File upload dialog with real transfer progress** | `UploadModal` | `src/components/UploadModal.tsx` | Simulated/fake progress bars, ad-hoc upload spinners |
 | **Modal / Drawer / Dialog dismissal** | `useEscapeKey` | `src/lib/useEscapeKey.ts` | Manual keydown listeners that close multiple layers simultaneously |
 | **Expandable card drawer / Collapsible text snippet** | `ExpandableContentContainer` | `src/components/ExpandableContentContainer.tsx` | Swapping elements in `<AnimatePresence>`, unclipped height jumps, dancing text |
 | **Standard buttons (Primary, Secondary, Outline, Ghost)** | `UI_TOKENS.btnPrimary`, `btnSecondary`, `btnOutline`, `btnGhost` | `src/theme/tokens.ts` | Hand-rolled inline button Tailwind utility strings |
@@ -365,15 +366,17 @@ export const DescriptionSnippet: React.FC<{ rawText: string }> = ({ rawText }) =
 #### Canonical Components:
 1. `EmptyState` (`src/components/EmptyState.tsx`)
 2. `Modal` (`src/components/Modal.tsx`)
-3. `Tooltip` / `TooltipProvider` / `useTooltip` (`src/components/Tooltip.tsx`)
-4. `useEscapeKey` (`src/lib/useEscapeKey.ts`)
-5. `WorkspaceLoadingState` (`src/components/layout/WorkspaceLoadingState.tsx`)
-6. `Checkbox` (`src/components/Checkbox.tsx`)
+3. `UploadModal` (`src/components/UploadModal.tsx`)
+4. `Tooltip` / `TooltipProvider` / `useTooltip` (`src/components/Tooltip.tsx`)
+5. `useEscapeKey` (`src/lib/useEscapeKey.ts`)
+6. `WorkspaceLoadingState` (`src/components/layout/WorkspaceLoadingState.tsx`)
+7. `Checkbox` (`src/components/Checkbox.tsx`)
 
-- **When to Use**: Zero-data screens, filter empty states, animated modal dialogs, contextual tooltips with keyboard shortcuts, modal dismissal, and initial cold boot or in-workspace loading.
+- **When to Use**: Zero-data screens, filter empty states, animated modal dialogs, real file-upload transfers with progress, contextual tooltips with keyboard shortcuts, modal dismissal, and initial cold boot or in-workspace loading.
 - **Key Capabilities**:
   - `EmptyState`: Visually distinguishes initial zero-state from filtered search empty-state; uses standardized `UI_TOKENS` action buttons.
   - `Modal`: Universal executive modal dialog primitive. Features 160ms entrance and 100ms exit motion via `AnimatePresence`, WAI-ARIA 1.2 focus trapping and restoration, intelligent auto-focus (`autoFocus?: boolean`, default `true`; set `false` for detail panels so no inner child receives focus), `initialFocusRef` support, stack-aware Escape dismissal via `useEscapeKey`, backdrop press/release origin validation (drags across modal borders do not dismiss), and clean utility class override handling (`rounded-*` and `border-*`).
+  - `UploadModal`: Real file-upload dialog. The caller supplies the transfer via `onUpload(file, onProgress) → UploadHandle` (e.g. `uploadResume` from `src/lib/resumeStorage.ts`, which reports actual Firebase `uploadBytesResumable` progress); the modal owns validation (type/size), staged preview, progress bar, cancel-abort, retry, and the Done icon swap. **Documented exception to `Modal`**: its motion contract is the transitions.dev CSS timing (250ms scale-in / 150ms scale-out, `--modal-ease cubic-bezier(0.22,1,0.36,1)`, blurred text/icon swaps, press scale — see the `--modal-*` / `--stage-*` blocks in `src/index.css`), which `Modal`'s framer-motion variants do not express. It still follows registry conventions: `useEscapeKey` dismissal, backdrop press/release validation, focus capture & restoration, and Tab trapping.
   - `Tooltip`: Portal-based rendering, warm-up delay tracking (zero delay on subsequent hovers), viewport collision avoidance, and shortcut hints.
   - `useEscapeKey`: Global LIFO stack that dismisses **only** the topmost overlay, preventing multi-layered drawers/modals from simultaneously closing on Escape.
   - `WorkspaceLoadingState`: Executive Linear-grade loading experience implementing the Staged Dissolve architecture (`fullScreen` cold boot monolith with 1.5px hairline progress rail and "Texts reveal" transition from transitions.dev revealing "loading ..." after 300ms, plus in-workspace deterministic skeletons for all 5 workspace views: Table, Board, Contacts, Analytics, and Settings with 0 Cumulative Layout Shift). Organized via modular sub-skeletons in `src/components/layout/skeletons/`.

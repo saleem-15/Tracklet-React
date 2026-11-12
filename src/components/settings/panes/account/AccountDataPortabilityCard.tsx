@@ -1,21 +1,24 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import {
-  FileCode2,
-  Upload,
   FileSpreadsheet,
+  FileUp,
   Download,
-  ChevronRight
+  ChevronRight,
+  Loader2
 } from 'lucide-react';
 import { useApplicationsContext } from '../../../../context/ApplicationsContext';
 import { useContactsContext } from '../../../../context/ContactsContext';
 import { useToastContext } from '../../../../context/ToastContext';
 import { useEntitlementContext } from '../../../../context/EntitlementContext';
+import { useAuth } from '../../../../context/AuthContext';
 import { ACTIVE_STATUSES } from '../../../../lib/constants';
 import { Application } from '../../../../types';
+import { TemplateRepository } from '../../../../lib/templateRepository';
+import { uploadResume, formatFileSize, ResumeUploadResult } from '../../../../lib/resumeStorage';
 import { SettingsCard } from '../../SettingsCard';
-import { exportApplicationsToJSON, validateAndParseJSONBackup } from '../../../../lib/backupJson';
-import { exportContactsToCSV } from '../../../../lib/exportCsv';
+import { exportWorkspaceDataToCSV, WorkspaceExportResult } from '../../../../lib/exportCsv';
 import { ImportCSVModal } from '../../../ImportCSVModal';
+import { UploadModal } from '../../../UploadModal';
 
 interface PortabilityRowProps {
   icon: React.ReactNode;
@@ -23,7 +26,7 @@ interface PortabilityRowProps {
   label: string;
   description: string;
   meta?: string;
-  trailing: 'download' | 'chevron';
+  trailing: 'download' | 'chevron' | 'spinner';
   onClick: () => void;
 }
 
@@ -61,6 +64,8 @@ const PortabilityRow: React.FC<PortabilityRowProps> = ({
         className="w-4 h-4 text-slate-400 group-hover:text-blue-600 group-hover:-translate-y-0.5 transition-all shrink-0"
         aria-hidden="true"
       />
+    ) : trailing === 'spinner' ? (
+      <Loader2 className="w-4 h-4 text-slate-400 animate-spin shrink-0" aria-hidden="true" />
     ) : (
       <ChevronRight
         className="w-4 h-4 text-slate-300 group-hover:text-slate-500 group-hover:translate-x-0.5 transition-all shrink-0"
@@ -70,67 +75,36 @@ const PortabilityRow: React.FC<PortabilityRowProps> = ({
   </button>
 );
 
-const Overline: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = '' }) => (
-  <p className={`text-xs font-semibold uppercase tracking-wider text-slate-500 ${className}`}>
-    {children}
-  </p>
-);
-
 /**
  * AccountDataPortabilityCard
  *
- * Data portability and backups within Account settings, on the flat white canvas:
- * - Workspace Backup rows: 1:1 JSON snapshot export + restore from file
- * - Spreadsheet rows: Jobs CSV export, Contacts directory export, CSV import
- * - Live record counts preview what each export contains
+ * Import & Export within Account settings, on the flat white canvas (ADR 0014):
+ * - Import CSV: bulk-add applications from a spreadsheet (opens ImportCSVModal)
+ * - Upload Resume: real Firebase Cloud Storage upload via UploadModal
+ * - Export Data: one click, one CSV per data family — jobs, contacts, templates.
+ *   100% of structured data, including status history, tasks and email logs.
  * - Enforces title-only header paradigm and sub-300 lines rule
  */
 export const AccountDataPortabilityCard: React.FC = () => {
   const {
     applications,
-    handleExportCSV,
     handleBatchImportApplications
   } = useApplicationsContext();
   const { activeCount, maxActiveQuota, openPaywall } = useEntitlementContext();
 
   const { contacts } = useContactsContext();
   const { addToast } = useToastContext();
+  const { user } = useAuth();
 
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
-  const jsonFileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   const applicationCount = applications?.length ?? 0;
   const contactCount = contacts?.length ?? 0;
-  const applicationMeta = `${applicationCount} application${applicationCount === 1 ? '' : 's'}`;
-  const contactMeta = `${contactCount} contact${contactCount === 1 ? '' : 's'}`;
-
-  const handleDownloadJSON = () => {
-    if (!applications || applications.length === 0) {
-      addToast('warning', 'Backup Empty', 'No applications available to backup.');
-      return;
-    }
-    const success = exportApplicationsToJSON(applications);
-    if (success) {
-      addToast('success', 'JSON Backup Exported', `Saved 1:1 complete snapshot of ${applications.length} applications.`);
-    }
-  };
-
-  const handleDownloadContactsCSV = () => {
-    if (!contacts || contacts.length === 0) {
-      addToast('warning', 'No Contacts', 'Add recruiter contacts to export a directory CSV.');
-      return;
-    }
-    const success = exportContactsToCSV(contacts);
-    if (success) {
-      addToast('success', 'Contacts Exported', `Downloaded ${contacts.length} contacts as CSV.`);
-    } else {
-      addToast('error', 'Export Failed', 'Could not generate CSV file.');
-    }
-  };
 
   /**
-   * Shared quota-guarded import used by both JSON restore and CSV import so
-   * activeQuota.current can never exceed activeQuota.max.
+   * Quota-guarded import so activeQuota.current can never exceed activeQuota.max.
    * Mirrors WorkspaceContent's handleGuardedBatchImport.
    */
   const handleGuardedImport = async (
@@ -150,103 +124,71 @@ export const AccountDataPortabilityCard: React.FC = () => {
     return true;
   };
 
-  const handleJSONFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onerror = () => {
-      addToast('error', 'File Read Error', 'Failed to read the backup file from disk.');
-    };
-    reader.onload = async (event) => {
-      try {
-        const content = event.target?.result as string;
-        const res = validateAndParseJSONBackup(content);
-        if (!res.success || !res.applications) {
-          addToast('error', 'Restore Failed', res.error || 'Invalid backup file.');
-          return;
-        }
-        const imported = await handleGuardedImport(res.applications);
-        if (imported) {
-          addToast('success', 'Backup Restored', `Imported ${res.applications.length} applications from JSON backup.`);
-        }
-      } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : 'Could not read backup file.';
-        addToast('error', 'Import Error', msg);
+  const handleExportData = async () => {
+    if (applicationCount === 0 && contactCount === 0) {
+      addToast('warning', 'Nothing to Export', 'Add applications or contacts before exporting.');
+      return;
+    }
+
+    setIsExporting(true);
+    try {
+      const templates = await TemplateRepository.loadTemplates(user?.uid);
+      const result: WorkspaceExportResult | null = exportWorkspaceDataToCSV({
+        applications: applications || [],
+        contacts: contacts || [],
+        templates,
+      });
+
+      if (!result) {
+        addToast('error', 'Export Failed', 'Could not generate CSV files.');
+        return;
       }
-    };
-    reader.readAsText(file);
-    e.target.value = '';
+
+      addToast(
+        'success',
+        'Data Exported',
+        `Downloaded ${result.files} CSV file${result.files === 1 ? '' : 's'}: ${result.applications} applications, ${result.contacts} contacts${result.templates ? `, ${result.templates} templates` : ''}.`
+      );
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Could not generate CSV files.';
+      addToast('error', 'Export Failed', msg);
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   return (
     <>
-      {/* Hidden JSON file picker input */}
-      <input
-        ref={jsonFileInputRef}
-        type="file"
-        accept=".json,application/json"
-        onChange={handleJSONFileChange}
-        className="hidden"
-        aria-label="Upload JSON Backup File"
-      />
-
       <SettingsCard
-        title="Data Portability & Backups"
-        subtitle="Your workspace, your data. Export a complete snapshot, restore it anywhere, or move records in and out with spreadsheets."
+        title="Import & Export"
+        subtitle="Move your data in and out of Tracklet anytime. Everything exports as CSV — including status history, tasks and email logs."
       >
-        {/* ── Workspace Backup ── */}
         <div className="space-y-1">
-          <Overline className="pb-1">Workspace Backup</Overline>
-          <div className="divide-y divide-slate-100">
-            <PortabilityRow
-              icon={<FileCode2 className="w-4 h-4" />}
-              iconClass="bg-blue-50 text-blue-600 border-blue-200/80"
-              label="JSON Backup"
-              description="1:1 complete snapshot of your pipeline"
-              meta={applicationMeta}
-              trailing="download"
-              onClick={handleDownloadJSON}
-            />
-            <PortabilityRow
-              icon={<Upload className="w-4 h-4" />}
-              iconClass="bg-indigo-50 text-indigo-600 border-indigo-200/80"
-              label="Restore JSON"
-              description="Bring a .json backup file back into Tracklet"
-              trailing="chevron"
-              onClick={() => jsonFileInputRef.current?.click()}
-            />
-          </div>
-        </div>
-
-        {/* ── Spreadsheets ── */}
-        <div className="space-y-1 pt-4">
-          <Overline className="pb-1">Spreadsheets</Overline>
           <div className="divide-y divide-slate-100">
             <PortabilityRow
               icon={<FileSpreadsheet className="w-4 h-4" />}
               iconClass="bg-emerald-50 text-emerald-600 border-emerald-200/80"
-              label="Export Jobs CSV"
-              description="Applications table with status and history"
-              meta={applicationMeta}
-              trailing="download"
-              onClick={handleExportCSV}
-            />
-            <PortabilityRow
-              icon={<FileSpreadsheet className="w-4 h-4" />}
-              iconClass="bg-slate-100 text-slate-600 border-slate-200"
-              label="Export Contacts Directory (CSV)"
-              description="Recruiter and mentor directory"
-              meta={contactMeta}
-              trailing="download"
-              onClick={handleDownloadContactsCSV}
-            />
-            <PortabilityRow
-              icon={<Upload className="w-4 h-4" />}
-              iconClass="bg-slate-100 text-slate-600 border-slate-200"
               label="Import CSV"
               description="Bulk-add applications from a spreadsheet"
               trailing="chevron"
               onClick={() => setIsImportModalOpen(true)}
+            />
+            <PortabilityRow
+              icon={<FileUp className="w-4 h-4" />}
+              iconClass="bg-amber-50 text-amber-600 border-amber-200/80"
+              label="Upload Resume"
+              description="Store a resume in your private cloud storage"
+              trailing="chevron"
+              onClick={() => setIsUploadModalOpen(true)}
+            />
+            <PortabilityRow
+              icon={<Download className="w-4 h-4" />}
+              iconClass="bg-blue-50 text-blue-600 border-blue-200/80"
+              label="Export Data"
+              description="Download your full workspace as CSV"
+              meta={`${applicationCount} job${applicationCount === 1 ? '' : 's'} · ${contactCount} contact${contactCount === 1 ? '' : 's'}`}
+              trailing={isExporting ? 'spinner' : 'download'}
+              onClick={handleExportData}
             />
           </div>
         </div>
@@ -256,8 +198,30 @@ export const AccountDataPortabilityCard: React.FC = () => {
       <ImportCSVModal
         isOpen={isImportModalOpen}
         onClose={() => setIsImportModalOpen(false)}
-        onImport={async (newApps) => {
-          await handleGuardedImport(newApps);
+        onImport={handleGuardedImport}
+      />
+
+      {/* Resume Upload Modal — real Firebase Cloud Storage transfer */}
+      <UploadModal<ResumeUploadResult>
+        isOpen={isUploadModalOpen}
+        onClose={() => setIsUploadModalOpen(false)}
+        title="Upload Resume"
+        metaCopy="PDF, DOC or TXT up to 10 MB"
+        onUpload={(file, onProgress) => {
+          if (!user?.uid) {
+            return {
+              promise: Promise.reject(new Error('You must be signed in to upload.')),
+              cancel: () => {},
+            };
+          }
+          return uploadResume(user.uid, file, onProgress);
+        }}
+        onUploaded={(result) => {
+          addToast(
+            'success',
+            'Resume Uploaded',
+            `${result.fileName} (${formatFileSize(result.fileSize)}) is stored in your private cloud storage.`
+          );
         }}
       />
     </>
