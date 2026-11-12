@@ -39,7 +39,7 @@ export const CapabilitiesStep: React.FC<CapabilitiesStepProps> = () => {
               </span>
             </div>
             <p className="text-[11px] text-slate-600 leading-relaxed">
-              Export your entire pipeline to CSV or download a complete 1:1 JSON database backup anytime in Settings. Your data is always yours.
+              Export your full workspace — applications, contacts, templates, history — as CSV anytime in Settings. Your data is always yours.
             </p>
           </div>
         </div>
