@@ -10,11 +10,7 @@ export interface SettingsViewProps {
   onSelectApplication?: (appId: string) => void;
   onExportCSV?: () => void;
   onExportContactsCSV?: () => void;
-  onExportJSON?: () => void;
   onImportCSV?: (
-    apps: Omit<Application, 'id' | 'userId' | 'createdAt' | 'updatedAt' | 'stageUpdatedAt'>[]
-  ) => Promise<void>;
-  onImportJSON?: (
     apps: Omit<Application, 'id' | 'userId' | 'createdAt' | 'updatedAt' | 'stageUpdatedAt'>[]
   ) => Promise<void>;
   onSeedDemoData?: () => void;

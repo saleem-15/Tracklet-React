@@ -1,4 +1,4 @@
-import { PaywallTriggerContext } from '../../types';
+import { PaywallTriggerContext, Application } from '../../types';
 import { ACTIVE_STATUSES } from '../../lib/constants';
 import { UpgradePaywallModal } from '../paywall/UpgradePaywallModal';
 import { AddApplicationModal } from '../AddApplicationModal';
@@ -7,6 +7,7 @@ import { useNavigation } from '../../context/NavigationContext';
 import { useApplicationsContext } from '../../context/ApplicationsContext';
 import { useContactsContext } from '../../context/ContactsContext';
 import { useToastContext } from '../../context/ToastContext';
+import { useEntitlementContext } from '../../context/EntitlementContext';
 
 import { useAuth } from '../../context/AuthContext';
 import { TesterReportModal } from '../feedback/TesterReportModal';
@@ -62,7 +63,37 @@ export function AppModals({ paywall }: AppModalsProps = {}) {
   } = useApplicationsContext();
   const { contacts, handleAddContact } = useContactsContext();
   const { addToast } = useToastContext();
+  const { activeCount, maxActiveQuota, openPaywall } = useEntitlementContext();
   const extensionState = useExtensionContext();
+
+  /**
+   * Quota-guarded import so the active cap holds at EVERY entry point — the
+   * onboarding flow and the CSV import modal both route through here.
+   * Mirrors the settings card's `handleGuardedImport`. Resolves `false` when
+   * the guard rejected the batch (the paywall messaging is fired here).
+   */
+  const handleQuotaGuardedImport = async (
+    newApps: Omit<Application, 'id' | 'userId' | 'createdAt' | 'updatedAt' | 'stageUpdatedAt'>[]
+  ): Promise<boolean> => {
+    const newActiveCount = newApps.filter(
+      (a) => a.status && (ACTIVE_STATUSES as readonly string[]).includes(a.status)
+    ).length;
+    if (
+      Number.isFinite(maxActiveQuota) &&
+      newActiveCount > 0 &&
+      activeCount + newActiveCount > maxActiveQuota
+    ) {
+      addToast(
+        'warning',
+        'Pipeline Capacity Reached',
+        `Importing ${newActiveCount} active application${newActiveCount === 1 ? '' : 's'} would exceed your Free tier limit of ${maxActiveQuota}. Upgrade to Pro for unlimited applications.`
+      );
+      openPaywall('pipeline_cap');
+      return false;
+    }
+    await handleBatchImportApplications(newApps);
+    return true;
+  };
 
   const handleGuardedAdd = async (newApp: Parameters<typeof handleAddApplication>[0]) => {
     if (
@@ -124,7 +155,7 @@ export function AppModals({ paywall }: AppModalsProps = {}) {
         initialStep={onboardingInitialStep}
         onClose={closeOnboardingModal}
         onImportCSV={openImportModal}
-        onImportJSON={handleBatchImportApplications}
+        onBatchImportCSV={handleQuotaGuardedImport}
         onSeedDemoData={handleSeedDemoData}
         onShowToast={addToast}
         totalAppCount={applications.length}
@@ -134,7 +165,7 @@ export function AppModals({ paywall }: AppModalsProps = {}) {
       <ImportCSVModal
         isOpen={isImportModalOpen}
         onClose={closeImportModal}
-        onImport={handleBatchImportApplications}
+        onImport={handleQuotaGuardedImport}
       />
 
       {/* SaaS Entitlement Upgrade Modal */}

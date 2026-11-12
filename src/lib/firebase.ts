@@ -17,7 +17,7 @@ import {
   onAuthStateChanged,
   User 
 } from 'firebase/auth';
-import { 
+import {
   getFirestore, 
   initializeFirestore,
   collection, 
@@ -38,6 +38,14 @@ import {
   arrayRemove,
   deleteField
 } from 'firebase/firestore';
+import {
+  getStorage,
+  ref,
+  uploadBytesResumable,
+  getDownloadURL,
+  deleteObject,
+  type FirebaseStorage
+} from 'firebase/storage';
 import { FIREBASE_CONFIG, isFirebaseConfigured } from '../config/firebase.config';
 
 const app = !getApps().length ? initializeApp(FIREBASE_CONFIG) : getApp();
@@ -60,6 +68,9 @@ try {
 }
 export const db = firestoreInstance;
 
+// Cloud Storage (resumes & attachments, users/{userId}/resumes/...)
+export const storage = getStorage(app);
+
 export { 
   isFirebaseConfigured,
   collection, 
@@ -79,6 +90,10 @@ export {
   arrayUnion,
   arrayRemove,
   deleteField,
+  ref,
+  uploadBytesResumable,
+  getDownloadURL,
+  deleteObject,
   signInWithPopup, 
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,

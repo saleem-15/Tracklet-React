@@ -18,9 +18,9 @@ export interface OnboardingModalProps {
   initialStep?: number;
   onClose: () => void;
   onImportCSV?: () => void;
-  onImportJSON?: (
+  onBatchImportCSV?: (
     apps: Omit<Application, 'id' | 'userId' | 'createdAt' | 'updatedAt' | 'stageUpdatedAt'>[]
-  ) => Promise<void>;
+  ) => Promise<boolean | void>;
   onSeedDemoData?: () => void;
   onShowToast?: (type: 'success' | 'error' | 'info' | 'warning', title: string, message?: string) => void;
   totalAppCount?: number;
@@ -31,7 +31,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
   initialStep = 1,
   onClose,
   onImportCSV,
-  onImportJSON,
+  onBatchImportCSV,
   onSeedDemoData,
   onShowToast,
   totalAppCount = 0,
@@ -147,7 +147,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
             <WorkspaceSetupStep
               onContinue={() => advanceToStep(2)}
               onLaunchCSVImport={onImportCSV}
-              onImportJSON={onImportJSON}
+              onImportCSV={onBatchImportCSV}
               onSeedDemoData={onSeedDemoData}
               onShowToast={onShowToast}
               totalAppCount={totalAppCount}

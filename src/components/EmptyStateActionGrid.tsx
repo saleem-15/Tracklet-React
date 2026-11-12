@@ -83,7 +83,7 @@ export const EmptyStateActionGrid: React.FC<EmptyStateActionGridProps> = ({
             <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-purple-700 group-hover:translate-x-0.5 transition-all" />
           </div>
           <p className="text-[11px] text-slate-500 leading-snug">
-            Migrate existing applications from CSV or JSON in seconds.
+            Migrate existing applications from a CSV in seconds.
           </p>
         </div>
       </button>

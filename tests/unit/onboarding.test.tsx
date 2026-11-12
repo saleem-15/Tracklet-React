@@ -222,7 +222,7 @@ describe('Onboarding Flow & Triggers', () => {
 
       expect(host!.textContent).toContain('Workspace Setup');
       expect(host!.textContent).toContain('Choose how to initialize your applications pipeline.');
-      expect(host!.textContent).toContain('Import Spreadsheet (.CSV / .JSON)');
+      expect(host!.textContent).toContain('Import Spreadsheet (.CSV)');
       expect(host!.textContent).toContain('Explore Sample Roles');
       expect(host!.textContent).toContain('Start with a Clean Slate');
 
@@ -320,7 +320,7 @@ describe('Onboarding Flow & Triggers', () => {
             isOpen={true}
             initialStep={1}
             onClose={handleClose}
-            onImportJSON={importJSONMock}
+            onBatchImportCSV={importJSONMock}
             onShowToast={toastMock}
           />
         );

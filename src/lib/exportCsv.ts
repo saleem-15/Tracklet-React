@@ -1,4 +1,4 @@
-import { Application, Contact } from '../types';
+import { Application, Contact, FollowUpTemplate } from '../types';
 import { calculateDaysInStage } from './sampleData';
 
 /**
@@ -37,6 +37,57 @@ function downloadCsv(headers: string[], rows: string[], filenamePrefix: string):
   return true;
 }
 
+/* ────────────────────────────────────────────────────────────────────────────
+ * Nested-data flatteners (ADR 0014: 100% of structured data in CSV).
+ * Multi-value fields collapse into single cells separated by "; ".
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+const STATUS_HISTORY_COLUMN = 'Status History';
+const TASKS_COLUMN = 'Tasks';
+const EMAILS_COLUMN = 'Emails';
+const LINKED_CONTACTS_COLUMN = 'Linked Contacts';
+
+const flattenStatusHistory = (app: Application): string =>
+  (app.history || [])
+    .map((h) => {
+      const day = h.timestamp ? h.timestamp.slice(0, 10) : '';
+      const transition = h.fromStatus ? `${h.fromStatus} → ${h.toStatus}` : h.toStatus;
+      const note = h.note ? ` (${h.note})` : '';
+      return `${day}: ${transition}${note}`;
+    })
+    .join('; ');
+
+const flattenTasks = (app: Application): string =>
+  (app.tasks || [])
+    .map((t) => {
+      const state = t.completed ? 'done' : 'open';
+      const due = t.dueDate ? ` due ${t.dueDate}` : '';
+      return `${t.title} [${state}]${due}`;
+    })
+    .join('; ');
+
+const flattenEmails = (app: Application): string =>
+  (app.emails || [])
+    .map((e) => {
+      const dir = e.direction ? ` (${e.direction})` : '';
+      const body = e.body ? ` — ${e.body}` : '';
+      return `${e.date}${dir}: ${e.subject}${body}`;
+    })
+    .join('; ');
+
+const flattenLinkedContacts = (app: Application): string => {
+  if (app.contacts && app.contacts.length > 0) {
+    return app.contacts
+      .map((c) => `${c.name}${c.email ? ` <${c.email}>` : ''}`)
+      .join('; ');
+  }
+  return (app.contactIds || []).join('; ');
+};
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * Applications export
+ * ──────────────────────────────────────────────────────────────────────────── */
+
 export function exportApplicationsToCSV(
   applications: Application[],
   filenamePrefix: string = 'tracklet_job_applications'
@@ -46,6 +97,7 @@ export function exportApplicationsToCSV(
   }
 
   const headers = [
+    'Id',
     'Company',
     'Role',
     'Platform',
@@ -58,14 +110,24 @@ export function exportApplicationsToCSV(
     'Job Listing URL',
     'Email Thread URL',
     'Notes',
+    'Contact Email',
+    LINKED_CONTACTS_COLUMN,
+    STATUS_HISTORY_COLUMN,
+    TASKS_COLUMN,
+    EMAILS_COLUMN,
+    'Company Domain',
     'Resume File Name',
     'Resume File Size',
     'Resume Uploaded At',
+    'Stage Updated At',
+    'Created At',
+    'Updated At',
   ];
 
   const rows = applications.map((app) => {
     const days = calculateDaysInStage(app.stageUpdatedAt);
     return [
+      escapeCSV(app.id || ''),
       escapeCSV(app.company),
       escapeCSV(app.role),
       escapeCSV(app.platform),
@@ -78,14 +140,36 @@ export function exportApplicationsToCSV(
       escapeCSV(app.jobLink || ''),
       escapeCSV(app.emailThreadUrl || ''),
       escapeCSV(app.notes || ''),
+      escapeCSV(app.contactEmail || ''),
+      escapeCSV(flattenLinkedContacts(app)),
+      escapeCSV(flattenStatusHistory(app)),
+      escapeCSV(flattenTasks(app)),
+      escapeCSV(flattenEmails(app)),
+      escapeCSV(app.companyDomain || ''),
       escapeCSV(app.resumeFileName || ''),
       escapeCSV(app.resumeFileSize != null ? app.resumeFileSize.toString() : ''),
       escapeCSV(app.resumeUploadedAt || ''),
+      escapeCSV(app.stageUpdatedAt || ''),
+      escapeCSV(app.createdAt || ''),
+      escapeCSV(app.updatedAt || ''),
     ].join(',');
   });
 
   return downloadCsv(headers, rows, filenamePrefix);
 }
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * Contacts export
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+const flattenContactEmailLogs = (contact: Contact): string =>
+  (contact.emails || [])
+    .map((e) => {
+      const dir = e.direction ? ` (${e.direction})` : '';
+      const body = e.body ? ` — ${e.body}` : '';
+      return `${e.date}${dir}: ${e.subject}${body}`;
+    })
+    .join('; ');
 
 export function exportContactsToCSV(
   contacts: Contact[],
@@ -96,6 +180,7 @@ export function exportContactsToCSV(
   }
 
   const headers = [
+    'Id',
     'Name',
     'Category',
     'Role',
@@ -105,10 +190,16 @@ export function exportContactsToCSV(
     'LinkedIn',
     'Next Follow-up Date',
     'Notes',
+    'Email Logs',
+    'Linked Application IDs',
+    'Location',
+    'Created At',
+    'Updated At',
   ];
 
   const rows = contacts.map((c) => {
     return [
+      escapeCSV(c.id || ''),
       escapeCSV(c.name),
       escapeCSV(c.category || 'Other'),
       escapeCSV(c.role || ''),
@@ -118,8 +209,95 @@ export function exportContactsToCSV(
       escapeCSV(c.linkedIn || ''),
       escapeCSV(c.nextFollowUpDate || ''),
       escapeCSV(c.notes || ''),
+      escapeCSV(flattenContactEmailLogs(c)),
+      escapeCSV((c.applicationIds || []).join('; ')),
+      escapeCSV(c.location || ''),
+      escapeCSV(c.createdAt || ''),
+      escapeCSV(c.updatedAt || ''),
     ].join(',');
   });
 
   return downloadCsv(headers, rows, filenamePrefix);
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * Follow-up templates export (ADR 0014: user-created data must be exportable)
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+export function exportFollowUpTemplatesToCSV(
+  templates: FollowUpTemplate[],
+  filenamePrefix: string = 'tracklet_followup_templates'
+): boolean {
+  if (!templates || templates.length === 0) {
+    return false;
+  }
+
+  const headers = [
+    'Id',
+    'Title',
+    'Category',
+    'Subject',
+    'Body',
+    'Order',
+    'Built-in',
+    'Created At',
+    'Updated At',
+  ];
+
+  const rows = templates.map((t) => {
+    return [
+      escapeCSV(t.id || ''),
+      escapeCSV(t.title),
+      escapeCSV(t.category || ''),
+      escapeCSV(t.subject),
+      escapeCSV(t.body),
+      t.order != null ? t.order.toString() : '',
+      t.isBuiltIn ? 'yes' : 'no',
+      escapeCSV(t.createdAt || ''),
+      escapeCSV(t.updatedAt || ''),
+    ].join(',');
+  });
+
+  return downloadCsv(headers, rows, filenamePrefix);
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * Full workspace export (ADR 0014): one user action, one CSV per data family.
+ * Downloads fire synchronously inside the click gesture — no ZIP library, no
+ * bundling. Browsers present their native multi-download permission prompt once.
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+export interface WorkspaceExportInput {
+  applications: Application[];
+  contacts: Contact[];
+  templates?: FollowUpTemplate[];
+}
+
+export interface WorkspaceExportResult {
+  files: number;
+  applications: number;
+  contacts: number;
+  templates: number;
+}
+
+export function exportWorkspaceDataToCSV(
+  input: WorkspaceExportInput
+): WorkspaceExportResult | null {
+  const { applications, contacts, templates } = input;
+  let files = 0;
+
+  if (exportApplicationsToCSV(applications)) files += 1;
+  if (exportContactsToCSV(contacts)) files += 1;
+  if (templates && templates.length > 0 && exportFollowUpTemplatesToCSV(templates)) files += 1;
+
+  if (files === 0) {
+    return null;
+  }
+
+  return {
+    files,
+    applications: applications.length,
+    contacts: contacts.length,
+    templates: templates?.length ?? 0,
+  };
 }

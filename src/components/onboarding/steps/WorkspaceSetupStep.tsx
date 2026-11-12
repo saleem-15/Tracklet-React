@@ -6,7 +6,6 @@ import {
   Check
 } from 'lucide-react';
 import { Application } from '../../../types';
-import { validateAndParseJSONBackup } from '../../../lib/backupJson';
 import { parseCSVContentToApplications } from './onboardingImportUtils';
 import { ImportSpreadsheetSection, StagedImport } from './ImportSpreadsheetSection';
 
@@ -15,16 +14,16 @@ export type WorkspaceSetupChoice = 'import' | 'sample' | 'clean';
 export interface WorkspaceSetupStepProps {
   onContinue?: () => void;
   onLaunchCSVImport?: () => void;
-  onImportJSON?: (
+  onImportCSV?: (
     apps: Omit<Application, 'id' | 'userId' | 'createdAt' | 'updatedAt' | 'stageUpdatedAt'>[]
-  ) => Promise<void>;
+  ) => Promise<boolean | void>;
   onSeedDemoData?: () => void;
   onShowToast?: (type: 'success' | 'error' | 'info' | 'warning', title: string, message?: string) => void;
   totalAppCount?: number;
 }
 
 export const WorkspaceSetupStep: React.FC<WorkspaceSetupStepProps> = ({
-  onImportJSON,
+  onImportCSV,
   onSeedDemoData,
   onShowToast,
   totalAppCount = 0,
@@ -39,11 +38,10 @@ export const WorkspaceSetupStep: React.FC<WorkspaceSetupStepProps> = ({
   const effectiveCount = importedCount !== null ? importedCount : totalAppCount > 0 ? totalAppCount : null;
 
   const processFile = (file: File) => {
-    const isJson = file.name.toLowerCase().endsWith('.json');
     const isCsv = file.name.toLowerCase().endsWith('.csv');
 
-    if (!isJson && !isCsv) {
-      onShowToast?.('warning', 'Unsupported File', 'Please upload a valid .csv or .json file.');
+    if (!isCsv) {
+      onShowToast?.('warning', 'Unsupported File', 'Please upload a valid .csv file.');
       return;
     }
 
@@ -54,32 +52,18 @@ export const WorkspaceSetupStep: React.FC<WorkspaceSetupStepProps> = ({
     reader.onload = (e) => {
       try {
         const content = e.target?.result as string;
-        if (isCsv) {
-          const { apps, detectedColumns } = parseCSVContentToApplications(content);
-          if (apps.length === 0) {
-            onShowToast?.('warning', 'No Applications Found', 'Could not find valid rows with company or role.');
-            return;
-          }
-          setSelectedChoice('import');
-          setStagedImport({
-            fileName: file.name,
-            type: 'csv',
-            apps,
-            detectedColumns: detectedColumns.length > 0 ? detectedColumns : undefined,
-          });
-        } else {
-          const res = validateAndParseJSONBackup(content);
-          if (!res.success || !res.applications || res.applications.length === 0) {
-            onShowToast?.('error', 'Restore Failed', res.error || 'Invalid backup structure or no applications found.');
-            return;
-          }
-          setSelectedChoice('import');
-          setStagedImport({
-            fileName: file.name,
-            type: 'json',
-            apps: res.applications,
-          });
+        const { apps, detectedColumns } = parseCSVContentToApplications(content);
+        if (apps.length === 0) {
+          onShowToast?.('warning', 'No Applications Found', 'Could not find valid rows with company or role.');
+          return;
         }
+        setSelectedChoice('import');
+        setStagedImport({
+          fileName: file.name,
+          type: 'csv',
+          apps,
+          detectedColumns: detectedColumns.length > 0 ? detectedColumns : undefined,
+        });
       } catch (err) {
         const msg = err instanceof Error ? err.message : 'Could not parse file.';
         onShowToast?.('error', 'Parse Error', msg);
@@ -89,10 +73,10 @@ export const WorkspaceSetupStep: React.FC<WorkspaceSetupStepProps> = ({
   };
 
   const handleConfirmImport = async () => {
-    if (!stagedImport || !onImportJSON) return;
+    if (!stagedImport || !onImportCSV) return;
     setIsProcessing(true);
     try {
-      await onImportJSON(stagedImport.apps);
+      await onImportCSV(stagedImport.apps);
       setImportedCount(stagedImport.apps.length);
       onShowToast?.(
         'success',
@@ -138,12 +122,12 @@ export const WorkspaceSetupStep: React.FC<WorkspaceSetupStepProps> = ({
         type="file"
         ref={fileInputRef}
         onChange={handleFileChange}
-        accept=".csv,.json"
+        accept=".csv"
         className="hidden"
       />
 
       <div className="space-y-3 pt-1">
-        {/* Choice 1: Import Spreadsheet (.CSV / .JSON) */}
+        {/* Choice 1: Import Spreadsheet (.CSV) */}
         <ImportSpreadsheetSection
           isSelected={selectedChoice === 'import'}
           onSelect={() => setSelectedChoice('import')}

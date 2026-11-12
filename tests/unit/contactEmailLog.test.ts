@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import { Contact, Application, EmailLog } from '../../src/types';
-import { validateAndParseJSONBackup } from '../../src/lib/backupJson';
 import { aggregateContactEmails } from '../../src/lib/emailCounterpartyUtils';
 
 describe('Contact Email Log & Cross-Visibility Domain Logic', () => {
@@ -210,47 +209,5 @@ describe('Contact Email Log & Cross-Visibility Domain Logic', () => {
     // Google app email log must only contain its own emails
     expect(googleApp.emails).toHaveLength(0);
     expect((googleApp.emails || []).some((e) => e.id === 'e-confidential')).toBe(false);
-  });
-
-  it('round-trips contact emails in JSON backup format without data loss', () => {
-    const rawBackup = JSON.stringify({
-      version: '1.0.0',
-      exportDate: '2026-10-13T10:00:00Z',
-      appCount: 1,
-      applications: [
-        {
-          company: 'Acme Corp',
-          role: 'Full Stack Engineer',
-          platform: 'LinkedIn',
-          status: 'Interview',
-          dateApplied: '2026-10-01',
-          contacts: [
-            {
-              id: 'c-test',
-              name: 'Jane Doe',
-              email: 'jane@acme.corp',
-              emails: [
-                {
-                  id: 'e-sub',
-                  subject: 'Interview Prep',
-                  sender: 'jane@acme.corp',
-                  recipient: 'You',
-                  date: '2026-10-02',
-                  direction: 'inbound',
-                },
-              ],
-            },
-          ],
-        },
-      ],
-    });
-
-    const result = validateAndParseJSONBackup(rawBackup);
-    expect(result.success).toBe(true);
-    expect(result.applications).toHaveLength(1);
-    const parsedContact = result.applications![0].contacts![0];
-    expect(parsedContact.emails).toBeDefined();
-    expect(parsedContact.emails).toHaveLength(1);
-    expect(parsedContact.emails![0].subject).toBe('Interview Prep');
   });
 });

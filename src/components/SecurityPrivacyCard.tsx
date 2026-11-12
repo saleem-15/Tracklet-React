@@ -208,7 +208,7 @@ export const SecurityPrivacyCard: React.FC<SecurityPrivacyCardProps> = () => {
                   <div className="space-y-1.5">
                     <h4 className="font-bold text-slate-900 text-sm">3. Portability & Deletion Rights</h4>
                     <p>
-                      You retain full rights to export your entire application pipeline to CSV/JSON at any time and permanently delete your account and all associated cloud data via the Danger Zone in Account Settings.
+                      You retain full rights to export your entire application pipeline to CSV at any time and permanently delete your account and all associated cloud data via the Danger Zone in Account Settings.
                     </p>
                   </div>
                 </div>

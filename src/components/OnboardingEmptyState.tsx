@@ -246,7 +246,7 @@ export const OnboardingEmptyState: React.FC<OnboardingEmptyStateProps> = ({
       {/* Reassurance Footer */}
       <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
         <Database className="w-3.5 h-3.5 text-blue-600 shrink-0 stroke-[2]" />
-        <span>100% Data Portability Guarantee. Export to CSV or JSON backup at any time in Settings.</span>
+        <span>100% Data Portability Guarantee. Export your full workspace as CSV at any time in Settings.</span>
       </div>
     </div>
   );

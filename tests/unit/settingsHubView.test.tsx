@@ -195,11 +195,11 @@ describe('SettingsHubView component', () => {
     expect(host?.textContent).toContain('Antigravity Tester');
     expect(host?.textContent).toContain('developer@example.com');
 
-    // Consolidated Data Portability directly inside Account pane
-    expect(host?.textContent).toContain('Data Portability & Backups');
-    expect(host?.textContent).toContain('JSON Backup');
-    expect(host?.textContent).toContain('Export Jobs CSV');
-    expect(host?.textContent).toContain('Export Contacts Directory (CSV)');
+    // Consolidated Import & Export directly inside Account pane
+    expect(host?.textContent).toContain('Import & Export');
+    expect(host?.textContent).toContain('Import CSV');
+    expect(host?.textContent).toContain('Upload Resume');
+    expect(host?.textContent).toContain('Export Data');
 
     // Badges & sections removed per user requirements
     expect(host?.textContent).not.toContain('Google OAuth');
@@ -293,11 +293,11 @@ describe('SettingsHubView component', () => {
   it('houses Data Portability actions seamlessly within the Account pane above Danger Zone', () => {
     mount('account');
 
-    // Pure data portability actions inside Account pane
-    expect(host?.textContent).toContain('Data Portability & Backups');
-    expect(host?.textContent).toContain('JSON Backup');
-    expect(host?.textContent).toContain('Export Jobs CSV');
-    expect(host?.textContent).toContain('Export Contacts Directory (CSV)');
+    // Pure import & export actions inside Account pane
+    expect(host?.textContent).toContain('Import & Export');
+    expect(host?.textContent).toContain('Import CSV');
+    expect(host?.textContent).toContain('Upload Resume');
+    expect(host?.textContent).toContain('Export Data');
     expect(host?.textContent).toContain('Danger Zone');
     expect(host?.textContent).toContain('Delete Account');
 

@@ -26,18 +26,22 @@ export class TemplateRepository {
   }
 
   /**
-   * Load templates from Firestore for authenticated users (/users/{userId}/templates).
-   * Automatically seeds with default templates if none exist.
+   * Strict template read for export paths: unlike `loadTemplates`, this never
+   * substitutes generated defaults as if they were user data — it returns
+   * `null` when the user's real templates can't be read (signed out, or
+   * Firestore failure) so callers can report an incomplete result. An empty
+   * collection still seeds defaults into Firestore and returns them, since
+   * they become persisted user data.
    */
-  static async loadTemplates(userId?: string): Promise<FollowUpTemplate[]> {
+  static async loadTemplatesStrict(userId?: string): Promise<FollowUpTemplate[] | null> {
     if (!userId) {
-      return this.generateDefaultTemplates();
+      return null;
     }
 
     try {
       const userTplCol = collection(db, 'users', userId, 'templates');
       const querySnapshot = await getDocs(userTplCol);
-      
+
       if (querySnapshot.empty) {
         // First time user: seed default templates into Firestore
         const defaults = this.generateDefaultTemplates(userId);
@@ -61,8 +65,20 @@ export class TemplateRepository {
       return docsData.sort((a, b) => (a.order ?? 99) - (b.order ?? 99));
     } catch (err) {
       console.warn('Could not fetch Firestore templates:', err);
-      return this.generateDefaultTemplates(userId);
+      return null;
     }
+  }
+
+  /**
+   * Load templates from Firestore for authenticated users (/users/{userId}/templates).
+   * Automatically seeds with default templates if none exist.
+   */
+  static async loadTemplates(userId?: string): Promise<FollowUpTemplate[]> {
+    const strict = await this.loadTemplatesStrict(userId);
+    if (strict) {
+      return strict;
+    }
+    return this.generateDefaultTemplates(userId);
   }
 
   /**

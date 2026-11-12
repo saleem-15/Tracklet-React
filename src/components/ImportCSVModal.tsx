@@ -1,165 +1,174 @@
-import React, { useState, useRef } from 'react';
-import { 
-  FileSpreadsheet, 
-  Upload, 
-  CheckCircle2, 
-  AlertCircle, 
-  Download, 
-  X, 
-  ArrowRight, 
-  RefreshCw, 
-  Sparkles,
-  FileText,
-  Table,
-  Check,
-  ChevronDown
+import React, { useState, useRef, useEffect } from 'react';
+import {
+  CloudUpload,
+  AlertCircle,
+  RefreshCw
 } from 'lucide-react';
-import { Application, ApplicationStatus, JobPlatform } from '../types';
-import { CustomSelectDropdown, SelectOption } from './CustomSelectDropdown';
+import { Application } from '../types';
 import { CloseIconButton } from './IconButton';
-import { SegmentedTabs } from './SegmentedTabs';
+import { Modal } from './Modal';
 import { UI_TOKENS } from '../theme/tokens';
-import { useEscapeKey } from '../lib/useEscapeKey';
-import { 
-  parseRawCSV, 
-  autoDetectFieldMapping, 
-  CSVFieldMapping, 
-  normalizeCSVStatus, 
-  normalizeCSVPlatform, 
-  normalizeCSVWorkLocation, 
-  normalizeCSVEmploymentType, 
-  normalizeCSVDate, 
-  downloadSampleCSVTemplate 
+import {
+  parseRawCSV,
+  autoDetectFieldMapping,
+  CSVFieldMapping,
+  normalizeCSVStatus,
+  normalizeCSVPlatform,
+  normalizeCSVWorkLocation,
+  normalizeCSVEmploymentType,
+  normalizeCSVDate
 } from '../lib/importCsv';
 
 interface ImportCSVModalProps {
   isOpen: boolean;
   onClose: () => void;
+  /** Import the parsed applications. Resolve `false` only when a quota guard
+   *  rejected them (the parent owns that messaging, e.g. a paywall toast);
+   *  any other resolution — including `void` — counts as success. The modal
+   *  closes on resolve either way; a rejected promise keeps it open so the
+   *  failure can be surfaced and retried. Success feedback is owned by the
+   *  import handler itself (single toast, shared by all its callers). */
   onImport: (
     apps: Omit<Application, 'id' | 'userId' | 'createdAt' | 'updatedAt' | 'stageUpdatedAt'>[]
-  ) => Promise<void>;
+  ) => Promise<boolean | void>;
 }
+
+/** Field-index mapping before any file is parsed: every column unmapped. */
+const INITIAL_MAPPING: CSVFieldMapping = {
+  company: -1,
+  role: -1,
+  platform: -1,
+  workLocation: -1,
+  employmentType: -1,
+  dateApplied: -1,
+  status: -1,
+  jobLink: -1,
+  emailThreadUrl: -1,
+  notes: -1,
+  contactEmail: -1,
+  location: -1,
+  salary: -1,
+};
 
 export const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
   isOpen,
   onClose,
   onImport,
 }) => {
-  const [step, setStep] = useState<'upload' | 'mapping' | 'success'>('upload');
-  const [csvText, setCsvText] = useState('');
-  const [fileName, setFileName] = useState<string | null>(null);
-  const [rawRows, setRawRows] = useState<string[][]>([]);
-  const [headers, setHeaders] = useState<string[]>([]);
+  const [step, setStep] = useState<'upload' | 'mapping'>('upload');
+  const [isInvalidFormat, setIsInvalidFormat] = useState(false);
+  /** Live hover state while a file is dragged over the dropzone. Unlike
+   *  `isInvalidFormat` (sticky after a dropped file), this clears as soon
+   *  as the drag leaves the zone. 'unknown' lifts the zone but makes no
+   *  color judgment. */
+  const [dragHover, setDragHover] = useState<null | 'valid' | 'invalid' | 'unknown'>(null);
   const [dataRows, setDataRows] = useState<string[][]>([]);
-  const [mapping, setMapping] = useState<CSVFieldMapping>({
-    company: -1,
-    role: -1,
-    platform: -1,
-    workLocation: -1,
-    employmentType: -1,
-    dateApplied: -1,
-    status: -1,
-    jobLink: -1,
-    emailThreadUrl: -1,
-    notes: -1,
-    contactEmail: -1,
-    location: -1,
-    salary: -1,
-  });
+  const [mapping, setMapping] = useState<CSVFieldMapping>(INITIAL_MAPPING);
 
   const [parseError, setParseError] = useState<string | null>(null);
-  const [pasteMode, setPasteMode] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [importedCount, setImportedCount] = useState(0);
-  const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const modalRef = useRef<HTMLDivElement>(null);
-  const previousFocusRef = useRef<HTMLElement | null>(null);
+  /** Session identity: bumped every open/close so work that outlives a
+   *  session (an in-flight FileReader, an awaited `onImport`) can never
+   *  mutate state or close a NEWER session's modal. */
+  const sessionRef = useRef(0);
+  /** The reader that owns the current session's read, if any. */
+  const activeReaderRef = useRef<FileReader | null>(null);
 
-  // Stack-aware escape key handler
-  useEscapeKey(onClose, isOpen);
+  const showError = isInvalidFormat || dragHover === 'invalid';
 
-  React.useEffect(() => {
+  /** The component instance stays mounted across open/close (only the panel
+   *  animates), so every open must start from a clean slate — a dropped
+   *  .xlsx from a previous session must not bleed into this one. */
+  useEffect(() => {
+    // Bump on close too: in-flight reads and imports are invalidated the
+    // moment the session ends, not just when the next one starts.
+    sessionRef.current += 1;
+    activeReaderRef.current = null;
     if (!isOpen) return;
-
-    // Save previously focused element
-    previousFocusRef.current = document.activeElement as HTMLElement | null;
-
-    // Move focus to first focusable element inside modal
-    const timer = setTimeout(() => {
-      if (modalRef.current) {
-        const focusable = modalRef.current.querySelectorAll<HTMLElement>(
-          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-        );
-        if (focusable.length > 0) {
-          focusable[0].focus();
-        }
-      }
-    }, 50);
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Tab' && modalRef.current) {
-        const focusable = modalRef.current.querySelectorAll<HTMLElement>(
-          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-        );
-        if (focusable.length === 0) return;
-        const first = focusable[0];
-        const last = focusable[focusable.length - 1];
-        if (e.shiftKey && document.activeElement === first) {
-          e.preventDefault();
-          last.focus();
-        } else if (!e.shiftKey && document.activeElement === last) {
-          e.preventDefault();
-          first.focus();
-        }
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      clearTimeout(timer);
-      window.removeEventListener('keydown', handleKeyDown);
-      // Restore focus when modal closes
-      if (previousFocusRef.current && document.body.contains(previousFocusRef.current)) {
-        previousFocusRef.current.focus();
-      }
-    };
+    setStep('upload');
+    setIsInvalidFormat(false);
+    setDragHover(null);
+    setDataRows([]);
+    setMapping(INITIAL_MAPPING);
+    setParseError(null);
+    setIsSubmitting(false);
   }, [isOpen]);
 
-  if (!isOpen) return null;
+  const parsedApplications = dataRows
+    .map((row) => mapRowToApp(row, mapping))
+    .filter((app): app is Omit<Application, 'id' | 'userId' | 'createdAt' | 'updatedAt' | 'stageUpdatedAt'> => app !== null);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      processFile(file);
-    }
-  };
+  /** Only genuine CSV files are accepted — a dropped .xlsx or .txt must not
+   *  silently proceed to a confusing parse failure. */
+  const isCsvFile = (file: File) =>
+    file.name.toLowerCase().endsWith('.csv') || file.type === 'text/csv';
 
   const processFile = (file: File) => {
-    setFileName(file.name);
+    if (!isCsvFile(file)) {
+      setIsInvalidFormat(true);
+      return;
+    }
+    setIsInvalidFormat(false);
+    const session = sessionRef.current;
     const reader = new FileReader();
+    activeReaderRef.current = reader;
+    /** Guard: this callback belongs to the still-current read of the
+     *  still-current session. A read that outlives a close/reopen must not
+     *  push its rows into the fresh session. */
+    const isCurrentRead = () =>
+      sessionRef.current === session && activeReaderRef.current === reader;
     reader.onload = (event) => {
+      if (!isCurrentRead()) return;
       const content = event.target?.result as string;
       if (content) {
         processCSVContent(content);
       }
     };
+    reader.onerror = () => {
+      if (!isCurrentRead()) return;
+      setParseError('Could not read the file. Please try again.');
+    };
     reader.readAsText(file);
   };
 
-  const handleDrag = (e: React.DragEvent) => {
+  /** During dragover the drag data store is in "protected mode": file names
+   *  are hidden until drop. The MIME `type` IS readable, so a recognizable
+   *  non-CSV (xlsx, pdf, txt…) can light the zone red before the user
+   *  releases. Unknown types lift the zone without a color judgment; the
+   *  authoritative drop-time validation still catches every file. */
+  const isCsvMime = (mime: string) => mime === 'text/csv' || mime === 'application/csv';
+
+  const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
-    e.stopPropagation();
-    if (e.type === 'dragenter' || e.type === 'dragover') {
-      setDragActive(true);
-    } else if (e.type === 'dragleave') {
-      setDragActive(false);
-    }
+    const items = Array.from(e.dataTransfer.items).filter((item) => item.kind === 'file');
+    if (items.length === 0) return;
+    const verdicts = items.map((item) => {
+      const type = (item.type || '').toLowerCase();
+      const name = ((item as DataTransferItem & { name?: string }).name || '').toLowerCase();
+      if (isCsvMime(type) || name.endsWith('.csv')) return 'valid';
+      if (type || name) return 'invalid'; // identifiable non-CSV
+      return 'unknown'; // can't tell — don't guess
+    });
+    setDragHover(
+      verdicts.includes('invalid')
+        ? 'invalid'
+        : verdicts.includes('valid')
+          ? 'valid'
+          : 'unknown'
+    );
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    // Flicker guard: moving between child elements fires dragleave too.
+    if (e.currentTarget.contains(e.relatedTarget as Node | null)) return;
+    setDragHover(null);
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setDragActive(false);
+    setDragHover(null);
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       processFile(e.dataTransfer.files[0]);
     }
@@ -173,109 +182,10 @@ export const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
     }
 
     setParseError(null);
-    const detectedHeaders = parsed[0];
-    const rows = parsed.slice(1);
-
-    setHeaders(detectedHeaders);
-    setDataRows(rows);
-    setRawRows(parsed);
-
-    const autoMapping = autoDetectFieldMapping(detectedHeaders);
-    setMapping(autoMapping);
+    setDataRows(parsed.slice(1));
+    setMapping(autoDetectFieldMapping(parsed[0]));
     setStep('mapping');
   };
-
-  const handlePasteSubmit = () => {
-    if (!csvText.trim()) {
-      setParseError('Please paste valid CSV content.');
-      return;
-    }
-    processCSVContent(csvText);
-  };
-
-  const mapRowToApp = (
-    row: string[]
-  ): Omit<Application, 'id' | 'userId' | 'createdAt' | 'updatedAt' | 'stageUpdatedAt'> | null => {
-    const company = mapping.company >= 0 ? row[mapping.company]?.trim() : '';
-    const role = mapping.role >= 0 ? row[mapping.role]?.trim() : '';
-
-    if (!company && !role) {
-      return null; // Skip completely empty rows
-    }
-
-    const finalCompany = company || 'Unknown Company';
-    const finalRole = role || 'Applicant';
-
-    const rawPlatform = mapping.platform >= 0 ? row[mapping.platform] : '';
-    const platform = normalizeCSVPlatform(rawPlatform);
-
-    const rawWorkLocation = mapping.workLocation >= 0 ? row[mapping.workLocation] : '';
-    const workLocation = normalizeCSVWorkLocation(rawWorkLocation);
-
-    const rawEmploymentType = mapping.employmentType >= 0 ? row[mapping.employmentType] : '';
-    const employmentType = normalizeCSVEmploymentType(rawEmploymentType);
-
-    const rawStatus = mapping.status >= 0 ? row[mapping.status] : '';
-    const status = normalizeCSVStatus(rawStatus);
-
-    const rawDate = mapping.dateApplied >= 0 ? row[mapping.dateApplied] : '';
-    const dateApplied = normalizeCSVDate(rawDate);
-
-    let jobLink = mapping.jobLink >= 0 ? row[mapping.jobLink]?.trim() : undefined;
-    if (jobLink && !jobLink.startsWith('http://') && !jobLink.startsWith('https://')) {
-      jobLink = `https://${jobLink}`;
-    }
-
-    let emailThreadUrl = mapping.emailThreadUrl >= 0 ? row[mapping.emailThreadUrl]?.trim() : undefined;
-    if (emailThreadUrl && !emailThreadUrl.startsWith('http://') && !emailThreadUrl.startsWith('https://')) {
-      emailThreadUrl = `https://${emailThreadUrl}`;
-    }
-
-    let notes = mapping.notes >= 0 ? row[mapping.notes]?.trim() : undefined;
-    const contactEmail = mapping.contactEmail >= 0 ? row[mapping.contactEmail]?.trim() : undefined;
-    const salary = mapping.salary >= 0 ? row[mapping.salary]?.trim() : undefined;
-    const location = mapping.location >= 0 ? row[mapping.location]?.trim() : undefined;
-
-    if (salary) {
-      const extraStr = `Salary: ${salary}`;
-      notes = notes ? `${notes}\n(${extraStr})` : extraStr;
-    }
-
-    let companyDomain: string | undefined = undefined;
-    if (jobLink) {
-      try {
-        const host = new URL(jobLink).hostname.replace(/^www\./, '');
-        if (host && host.includes('.')) {
-          companyDomain = host;
-        }
-      } catch {
-        // ignore domain extraction error
-      }
-    }
-
-    const resumeFileName = mapping.resumeFileName != null && mapping.resumeFileName >= 0 ? row[mapping.resumeFileName]?.trim() : undefined;
-
-    return {
-      company: finalCompany,
-      companyDomain,
-      role: finalRole,
-      platform,
-      workLocation: workLocation || undefined,
-      employmentType: employmentType || undefined,
-      location: location || undefined,
-      dateApplied,
-      status,
-      jobLink: jobLink || undefined,
-      emailThreadUrl: emailThreadUrl || undefined,
-      contactEmail: contactEmail || undefined,
-      notes: notes || undefined,
-      resumeFileName: resumeFileName || undefined,
-    };
-  };
-
-  const parsedApplications = dataRows
-    .map(mapRowToApp)
-    .filter((app): app is Omit<Application, 'id' | 'userId' | 'createdAt' | 'updatedAt' | 'stageUpdatedAt'> => app !== null);
 
   const handleExecuteImport = async () => {
     if (parsedApplications.length === 0) {
@@ -285,21 +195,26 @@ export const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
 
     setIsSubmitting(true);
     setParseError(null);
+    const session = sessionRef.current;
     try {
       await onImport(parsedApplications);
-      setImportedCount(parsedApplications.length);
-      setStep('success');
+      // Committed (or guard-rejected with parent-owned messaging) — done here.
+      // Never close a modal that was reopened for a newer session.
+      if (sessionRef.current === session) onClose();
     } catch (err) {
       console.error('Import failed:', err);
-      setParseError('Import failed. Please verify your CSV format and try again.');
+      if (sessionRef.current === session) {
+        setParseError('Import failed. Please verify your CSV format and try again.');
+      }
     } finally {
-      setIsSubmitting(false);
+      if (sessionRef.current === session) setIsSubmitting(false);
     }
   };
 
-  const resetModal = () => {
+  const resetAndBack = () => {
     setStep('upload');
-    setCsvText('');
+    setIsInvalidFormat(false);
+    setDataRows([]);
     setParseError(null);
   };
 
@@ -315,267 +230,271 @@ export const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-xs animate-in fade-in duration-150">
-      <div
-        ref={modalRef}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Import Applications via CSV"
-        className={`w-full max-w-2xl ${UI_TOKENS.modal} overflow-hidden flex flex-col my-auto text-slate-900 animate-in zoom-in-95 duration-150`}
-      >
-        {/* Modal Header */}
-        <div className="px-6 py-4 border-b border-slate-200/80 flex items-center justify-between bg-slate-50/50">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-[10px] bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-200/60 shadow-2xs shrink-0">
-              <Table className="w-4 h-4" />
-            </div>
-            <div>
-              <h2 className="font-heading font-bold text-sm text-slate-900 flex items-center gap-2">
-                Import Applications via CSV
-                <span className="font-mono text-[11px] bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full font-semibold">
-                  Batch Upload
-                </span>
-              </h2>
-              <p className="text-xs text-slate-500 font-sans">
-                Quickly migrate existing job tracking spreadsheets into Tracklet
-              </p>
-            </div>
-          </div>
-          <CloseIconButton onClick={onClose} title="Close CSV import (Esc)" />
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      ariaLabel="Import CSV"
+      maxWidthClassName="max-w-xl"
+    >
+      {/* Header — text only; the dropzone is the single visual anchor */}
+      <div className="px-6 py-4 border-b border-slate-200/80 flex items-center justify-between bg-slate-50/50">
+        <div>
+          <h2 className="font-heading font-bold text-sm text-slate-900">
+            Import CSV
+          </h2>
+          <p className="text-xs text-slate-500 font-sans">
+            Add your job applications from any spreadsheet in seconds.
+          </p>
         </div>
+        <CloseIconButton onClick={onClose} title="Close CSV import (Esc)" />
+      </div>
 
-        {/* Modal Body */}
-        <div className="p-6 space-y-5 max-h-[75vh] overflow-y-auto">
-          {/* STEP 1: Upload or Paste CSV */}
-          {step === 'upload' && (
-            <div className="space-y-4">
-              {/* Toggle Switch: Upload File vs Paste Text */}
-              <SegmentedTabs<'file' | 'paste'>
-                tabs={[
-                  {
-                    id: 'file',
-                    label: 'Upload CSV File',
-                    icon: <Upload className="w-3.5 h-3.5 text-blue-600 shrink-0" />,
-                  },
-                  {
-                    id: 'paste',
-                    label: 'Paste CSV Text',
-                    icon: <FileText className="w-3.5 h-3.5 text-blue-600 shrink-0" />,
-                  },
-                ]}
-                activeTab={pasteMode ? 'paste' : 'file'}
-                onChange={(mode) => setPasteMode(mode === 'paste')}
-                size="md"
-                fullWidth={true}
-                hasBorder={false}
-                pillBorder={false}
-                activeWeight="bold"
-                inactiveWeight="semibold"
-                className="bg-slate-100 p-1 rounded-[10px]"
-                tabClassName="py-1.5 px-3 rounded-[8px]"
-                pillRadius="rounded-[8px]"
+      {/* Body */}
+      <div className="p-6 space-y-5 max-h-[75vh] overflow-y-auto">
+        {/* STEP 1: Choose CSV file */}
+        {step === 'upload' && (
+          <div className="space-y-3">
+            <div
+              className={[
+                'csv-drop',
+                showError ? 'is-error' : '',
+                dragHover === 'valid' ? 'is-armed' : '',
+                dragHover ? 'is-hover' : '',
+              ].filter(Boolean).join(' ')}
+              role="button"
+              tabIndex={0}
+              aria-label="Upload CSV: drop a file here, or press Enter to browse"
+              onDragEnter={(e) => e.preventDefault()}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              onClick={() => fileInputRef.current?.click()}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  fileInputRef.current?.click();
+                }
+              }}
+            >
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) processFile(file);
+                  e.target.value = '';
+                }}
+                accept=".csv, text/csv"
+                className="hidden"
+                onClick={(e) => e.stopPropagation()}
               />
-
-              {!pasteMode ? (
-                /* Drag and drop box */
-                <div
-                  onDragEnter={handleDrag}
-                  onDragOver={handleDrag}
-                  onDragLeave={handleDrag}
-                  onDrop={handleDrop}
-                  onClick={() => fileInputRef.current?.click()}
-                  className={`border-2 border-dashed rounded-2xl p-8 text-center transition-all cursor-pointer flex flex-col items-center justify-center gap-3 ${
-                    dragActive
-                      ? 'border-blue-500 bg-blue-50/60 scale-[1.01]'
-                      : 'border-slate-200 bg-slate-50/50 hover:bg-blue-50/30 hover:border-blue-300'
-                  }`}
-                >
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleFileChange}
-                    accept=".csv, .txt, text/csv"
-                    className="hidden"
-                  />
-                  <div className="w-12 h-12 rounded-[12px] bg-white border border-slate-200 text-blue-600 flex items-center justify-center shadow-xs">
-                    <Upload className="w-6 h-6" />
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-sm font-bold text-slate-800">
-                      Click to upload or drag & drop your CSV file
-                    </p>
-                    <p className="text-xs text-slate-500 font-mono">
-                      Supports .csv format with headers (Company, Role, Platform, Date Applied, Status, etc.)
-                    </p>
-                  </div>
-                </div>
+              <CloudUpload size={32} strokeWidth={1.5} aria-hidden="true" />
+              {showError ? (
+                <>
+                  <span className="font-semibold">Invalid format</span>
+                  <span>Only .csv files are supported. Try again.</span>
+                </>
               ) : (
-                /* Textarea paste mode */
-                <div className="space-y-2">
-                  <label className="block text-xs font-mono font-medium text-slate-600 uppercase tracking-wider">
-                    Paste CSV Raw Text:
-                  </label>
-                  <textarea
-                    value={csvText}
-                    onChange={(e) => setCsvText(e.target.value)}
-                    placeholder="Company,Role,Platform,Date Applied,Status,Job Listing URL&#10;Linear,Frontend Engineer,LinkedIn,2026-07-20,Interview,https://linear.app/careers&#10;Stripe,Full Stack,Company Site,2026-07-18,Applied,https://stripe.com/jobs"
-                    rows={7}
-                    className="w-full font-mono text-xs p-3 rounded-[10px] border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-                  />
-                  <button
-                    type="button"
-                    onClick={handlePasteSubmit}
-                    disabled={!csvText.trim()}
-                    className={`w-full ${UI_TOKENS.btnPrimary} disabled:opacity-50`}
-                  >
-                    <span>Parse CSV Text</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
-                </div>
-              )}
-
-              {/* Sample Template Download Bar */}
-              <div className="bg-slate-50 border border-slate-200/80 rounded-[10px] p-3 flex items-center justify-between text-xs text-slate-600">
-                <div className="flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-slate-500" />
-                  <span>Don't have a CSV formatted yet?</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={downloadSampleCSV}
-                  className="text-blue-600 hover:text-blue-800 font-semibold inline-flex items-center gap-1.5 cursor-pointer hover:underline"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  <span>Download Sample CSV</span>
-                </button>
-              </div>
-
-              {parseError && (
-                <div className="bg-rose-50 border border-rose-200 text-rose-800 p-3 rounded-[10px] text-xs flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
-                  <span>{parseError}</span>
-                </div>
+                <>
+                  <span>Drop your CSV here</span>
+                  <span>or click to browse</span>
+                </>
               )}
             </div>
-          )}
 
-          {/* STEP 2: Preview & Confirm */}
-          {step === 'mapping' && (
-            <div className="space-y-4">
-              <div className="bg-blue-50/70 border border-blue-200/80 rounded-[10px] p-3 flex items-center justify-between text-xs text-blue-900 font-medium">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-blue-600" />
-                  <span>Parsed {parsedApplications.length} valid job applications ready for import!</span>
-                </div>
-                <button
-                  onClick={() => setStep('upload')}
-                  className="text-xs text-blue-700 hover:underline cursor-pointer font-semibold"
-                >
-                  Change File
-                </button>
+            <p className="text-center text-xs text-slate-500">
+              Need the format?{' '}
+              <button
+                type="button"
+                onClick={downloadSampleCSV}
+                className="font-semibold text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
+              >
+                Download the sample CSV
+              </button>
+            </p>
+
+            {parseError && (
+              <div role="alert" className="bg-rose-50 border border-rose-200 text-rose-800 p-3 rounded-[10px] text-xs flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
+                <span>{parseError}</span>
               </div>
+            )}
+          </div>
+        )}
 
-              {/* Table Preview */}
-              <div className="border border-slate-200 rounded-[10px] overflow-hidden text-xs">
-                <div className="max-h-60 overflow-y-auto">
-                  <table className="w-full text-left border-collapse">
-                    <thead className="bg-slate-100 sticky top-0 font-mono text-[11px] text-slate-600 uppercase">
-                      <tr>
-                        <th className="p-2.5">Company</th>
-                        <th className="p-2.5">Role</th>
-                        <th className="p-2.5">Platform</th>
-                        <th className="p-2.5">Status</th>
-                        <th className="p-2.5">Date</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-200/80">
-                      {parsedApplications.map((app, idx) => (
-                        <tr key={idx} className="hover:bg-slate-50">
-                          <td className="p-2.5 font-bold text-slate-900">{app.company}</td>
-                          <td className="p-2.5 text-slate-700">{app.role}</td>
-                          <td className="p-2.5">
-                            <span className="font-mono text-[11px] px-1.5 py-0.5 rounded-md bg-blue-50 text-blue-700 font-semibold border border-blue-200/60">
-                              {app.platform}
-                            </span>
-                          </td>
-                          <td className="p-2.5 font-semibold text-slate-700">{app.status}</td>
-                          <td className="p-2.5 font-mono text-slate-500 text-[11px]">{app.dateApplied}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              {parseError && (
-                <div className="bg-rose-50 border border-rose-200 text-rose-800 p-3 rounded-[10px] text-xs flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
-                  <span>{parseError}</span>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* STEP 3: Success Screen */}
-          {step === 'success' && (
-            <div className="py-8 text-center space-y-4">
-              <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 mx-auto flex items-center justify-center shadow-xs">
-                <CheckCircle2 className="w-8 h-8" />
-              </div>
-
-              <div className="space-y-1">
-                <h3 className="text-lg font-bold text-slate-900">Import Successful!</h3>
-                <p className="text-xs text-slate-600 max-w-md mx-auto">
-                  Successfully imported <strong className="text-emerald-700 font-bold">{importedCount}</strong> new job application records into Tracklet.
-                </p>
-              </div>
-
-              <div className="pt-3">
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="py-2.5 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs transition-all cursor-pointer shadow-xs inline-flex items-center gap-2"
-                >
-                  <span>Done & Close</span>
-                  <Check className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Modal Footer Controls */}
+        {/* STEP 2: Preview & Confirm */}
         {step === 'mapping' && (
-          <div className="px-6 py-3.5 border-t border-slate-200/80 bg-slate-50 flex items-center justify-between">
-            <button
-              type="button"
-              onClick={() => setStep('upload')}
-              className="py-2 px-3.5 rounded-xl bg-slate-100 hover:bg-slate-200/80 text-slate-700 font-semibold text-xs transition-all cursor-pointer"
-            >
-              Back
-            </button>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-slate-500">
+                <strong className="font-bold text-slate-900">{parsedApplications.length}</strong>{' '}
+                valid application{parsedApplications.length === 1 ? '' : 's'} ready for import
+              </span>
+              <button
+                type="button"
+                onClick={resetAndBack}
+                className="font-semibold text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
+              >
+                Change file
+              </button>
+            </div>
 
-            <button
-              type="button"
-              onClick={handleExecuteImport}
-              disabled={isSubmitting || parsedApplications.length === 0}
-              className="py-2.5 px-5 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold text-xs transition-all cursor-pointer shadow-xs flex items-center gap-2"
-            >
-              {isSubmitting ? (
-                <>
-                  <RefreshCw className="w-4 h-4 animate-spin motion-reduce:animate-none" />
-                  <span>Importing {parsedApplications.length} Entries...</span>
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-4 h-4" />
-                  <span>Import {parsedApplications.length} Applications</span>
-                </>
-              )}
-            </button>
+            {dataRows.length > 0 && parsedApplications.length === 0 && (
+              <div role="alert" className="bg-amber-50 border border-amber-200 text-amber-800 p-3 rounded-[10px] text-xs flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0 text-amber-600" />
+                <span>
+                  We couldn&apos;t match the Company or Role columns in this file. Rename those headers (for example &quot;Company&quot; and &quot;Role&quot;) and try again.
+                </span>
+              </div>
+            )}
+
+            {/* Table Preview */}
+            <div className="border border-slate-200 rounded-[10px] overflow-hidden text-xs">
+              <div className="max-h-60 overflow-y-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead className="bg-slate-100 sticky top-0 font-mono text-[11px] text-slate-600 uppercase">
+                    <tr>
+                      <th className="p-2.5">Company</th>
+                      <th className="p-2.5">Role</th>
+                      <th className="p-2.5">Platform</th>
+                      <th className="p-2.5">Status</th>
+                      <th className="p-2.5">Date</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200/80">
+                    {parsedApplications.map((app, idx) => (
+                      <tr key={idx} className="hover:bg-slate-50 transition-colors">
+                        <td className="p-2.5 font-bold text-slate-900">{app.company}</td>
+                        <td className="p-2.5 text-slate-700">{app.role}</td>
+                        <td className="p-2.5 text-slate-600">{app.platform}</td>
+                        <td className="p-2.5 font-semibold text-slate-700">{app.status}</td>
+                        <td className="p-2.5 font-mono text-slate-500 text-[11px]">{app.dateApplied}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {parseError && (
+              <div role="alert" className="bg-rose-50 border border-rose-200 text-rose-800 p-3 rounded-[10px] text-xs flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
+                <span>{parseError}</span>
+              </div>
+            )}
           </div>
         )}
       </div>
-    </div>
+
+      {/* Footer */}
+      {step === 'mapping' && (
+        <div className="px-6 py-3.5 border-t border-slate-200/80 bg-slate-50 flex items-center justify-between">
+          <button
+            type="button"
+            onClick={resetAndBack}
+            className={UI_TOKENS.btnOutline}
+          >
+            Back
+          </button>
+
+          <button
+            type="button"
+            onClick={handleExecuteImport}
+            disabled={isSubmitting || parsedApplications.length === 0}
+            className={`${UI_TOKENS.btnPrimary} disabled:opacity-50`}
+          >
+            {isSubmitting ? (
+              <>
+                <RefreshCw className="w-4 h-4 animate-spin motion-reduce:animate-none" />
+                <span>Importing {parsedApplications.length} Entries...</span>
+              </>
+            ) : (
+              <>
+                <span>Import {parsedApplications.length} Applications</span>
+              </>
+            )}
+          </button>
+        </div>
+      )}
+    </Modal>
   );
 };
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * Row → Application mapping (pure, extracted from the render body)
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+function mapRowToApp(
+  row: string[],
+  mapping: CSVFieldMapping
+): Omit<Application, 'id' | 'userId' | 'createdAt' | 'updatedAt' | 'stageUpdatedAt'> | null {
+  const company = mapping.company >= 0 ? row[mapping.company]?.trim() : '';
+  const role = mapping.role >= 0 ? row[mapping.role]?.trim() : '';
+
+  if (!company && !role) {
+    return null; // Skip completely empty rows
+  }
+
+  const finalCompany = company || 'Unknown Company';
+  const finalRole = role || 'Applicant';
+
+  const platform = normalizeCSVPlatform(mapping.platform >= 0 ? row[mapping.platform] : '');
+  const workLocation = normalizeCSVWorkLocation(mapping.workLocation >= 0 ? row[mapping.workLocation] : '');
+  const employmentType = normalizeCSVEmploymentType(mapping.employmentType >= 0 ? row[mapping.employmentType] : '');
+  const status = normalizeCSVStatus(mapping.status >= 0 ? row[mapping.status] : '');
+  const dateApplied = normalizeCSVDate(mapping.dateApplied >= 0 ? row[mapping.dateApplied] : '');
+
+  let jobLink = mapping.jobLink >= 0 ? row[mapping.jobLink]?.trim() : undefined;
+  if (jobLink && !jobLink.startsWith('http://') && !jobLink.startsWith('https://')) {
+    jobLink = `https://${jobLink}`;
+  }
+
+  let emailThreadUrl = mapping.emailThreadUrl >= 0 ? row[mapping.emailThreadUrl]?.trim() : undefined;
+  if (emailThreadUrl && !emailThreadUrl.startsWith('http://') && !emailThreadUrl.startsWith('https://')) {
+    emailThreadUrl = `https://${emailThreadUrl}`;
+  }
+
+  let notes = mapping.notes >= 0 ? row[mapping.notes]?.trim() : undefined;
+  const contactEmail = mapping.contactEmail >= 0 ? row[mapping.contactEmail]?.trim() : undefined;
+  const salary = mapping.salary >= 0 ? row[mapping.salary]?.trim() : undefined;
+  const location = mapping.location >= 0 ? row[mapping.location]?.trim() : undefined;
+
+  if (salary) {
+    const extraStr = `Salary: ${salary}`;
+    notes = notes ? `${notes}\n(${extraStr})` : extraStr;
+  }
+
+  let companyDomain: string | undefined = undefined;
+  if (jobLink) {
+    try {
+      const host = new URL(jobLink).hostname.replace(/^www\./, '');
+      if (host && host.includes('.')) {
+        companyDomain = host;
+      }
+    } catch {
+      // ignore domain extraction error
+    }
+  }
+
+  const resumeFileName =
+    mapping.resumeFileName != null && mapping.resumeFileName >= 0
+      ? row[mapping.resumeFileName]?.trim()
+      : undefined;
+
+  return {
+    company: finalCompany,
+    companyDomain,
+    role: finalRole,
+    platform,
+    workLocation: workLocation || undefined,
+    employmentType: employmentType || undefined,
+    location: location || undefined,
+    dateApplied,
+    status,
+    jobLink: jobLink || undefined,
+    emailThreadUrl: emailThreadUrl || undefined,
+    contactEmail: contactEmail || undefined,
+    notes: notes || undefined,
+    resumeFileName: resumeFileName || undefined,
+  };
+}
