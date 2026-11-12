@@ -68,6 +68,12 @@ export const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
   const [parseError, setParseError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  /** Session identity: bumped every open/close so work that outlives a
+   *  session (an in-flight FileReader, an awaited `onImport`) can never
+   *  mutate state or close a NEWER session's modal. */
+  const sessionRef = useRef(0);
+  /** The reader that owns the current session's read, if any. */
+  const activeReaderRef = useRef<FileReader | null>(null);
 
   const showError = isInvalidFormat || dragHover === 'invalid';
 
@@ -75,6 +81,10 @@ export const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
    *  animates), so every open must start from a clean slate — a dropped
    *  .xlsx from a previous session must not bleed into this one. */
   useEffect(() => {
+    // Bump on close too: in-flight reads and imports are invalidated the
+    // moment the session ends, not just when the next one starts.
+    sessionRef.current += 1;
+    activeReaderRef.current = null;
     if (!isOpen) return;
     setStep('upload');
     setIsInvalidFormat(false);
@@ -82,6 +92,7 @@ export const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
     setDataRows([]);
     setMapping(INITIAL_MAPPING);
     setParseError(null);
+    setIsSubmitting(false);
   }, [isOpen]);
 
   const parsedApplications = dataRows
@@ -99,14 +110,23 @@ export const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
       return;
     }
     setIsInvalidFormat(false);
+    const session = sessionRef.current;
     const reader = new FileReader();
+    activeReaderRef.current = reader;
+    /** Guard: this callback belongs to the still-current read of the
+     *  still-current session. A read that outlives a close/reopen must not
+     *  push its rows into the fresh session. */
+    const isCurrentRead = () =>
+      sessionRef.current === session && activeReaderRef.current === reader;
     reader.onload = (event) => {
+      if (!isCurrentRead()) return;
       const content = event.target?.result as string;
       if (content) {
         processCSVContent(content);
       }
     };
     reader.onerror = () => {
+      if (!isCurrentRead()) return;
       setParseError('Could not read the file. Please try again.');
     };
     reader.readAsText(file);
@@ -175,15 +195,19 @@ export const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
 
     setIsSubmitting(true);
     setParseError(null);
+    const session = sessionRef.current;
     try {
       await onImport(parsedApplications);
       // Committed (or guard-rejected with parent-owned messaging) — done here.
-      onClose();
+      // Never close a modal that was reopened for a newer session.
+      if (sessionRef.current === session) onClose();
     } catch (err) {
       console.error('Import failed:', err);
-      setParseError('Import failed. Please verify your CSV format and try again.');
+      if (sessionRef.current === session) {
+        setParseError('Import failed. Please verify your CSV format and try again.');
+      }
     } finally {
-      setIsSubmitting(false);
+      if (sessionRef.current === session) setIsSubmitting(false);
     }
   };
 
@@ -314,6 +338,15 @@ export const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
                 Change file
               </button>
             </div>
+
+            {dataRows.length > 0 && parsedApplications.length === 0 && (
+              <div role="alert" className="bg-amber-50 border border-amber-200 text-amber-800 p-3 rounded-[10px] text-xs flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0 text-amber-600" />
+                <span>
+                  We couldn&apos;t match the Company or Role columns in this file. Rename those headers (for example &quot;Company&quot; and &quot;Role&quot;) and try again.
+                </span>
+              </div>
+            )}
 
             {/* Table Preview */}
             <div className="border border-slate-200 rounded-[10px] overflow-hidden text-xs">

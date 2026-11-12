@@ -304,4 +304,77 @@ describe('ImportCSVModal — dropzone live drag validation', () => {
 
     expect(clickSpy).toHaveBeenCalledTimes(1);
   });
+
+  it('ignores a FileReader completion that arrives after the session was reset', async () => {
+    // Controllable FileReader stub — lets the test fire the load callback
+    // AFTER a close/reopen, which is the race real slow reads can hit.
+    const readers: Array<{ onload: ((e?: unknown) => void) | null; onerror: ((e?: unknown) => void) | null; readAsText: () => void }> = [];
+    class FakeReader {
+      onload: ((e?: unknown) => void) | null = null;
+      onerror: ((e?: unknown) => void) | null = null;
+      readAsText() { readers.push(this); }
+    }
+    vi.stubGlobal('FileReader', FakeReader);
+    try {
+      renderModal();
+      fireDrag('drop', {
+        files: [new File(['Company,Role\nA,B'], 'sample.csv', { type: 'text/csv' })],
+      });
+      expect(readers.length).toBe(1);
+
+      // Close and reopen before the read completes
+      act(() => {
+        root!.render(<ImportCSVModal isOpen={false} onClose={onClose} onImport={onImport} />);
+      });
+      act(() => {
+        root!.render(<ImportCSVModal isOpen onClose={onClose} onImport={onImport} />);
+      });
+
+      // The stale read completes now — it must not leak into the fresh session
+      act(() => {
+        readers[0].onload!({ target: { result: 'Company,Role\nA,B' } });
+      });
+
+      expect(host!.textContent).toContain('Drop your CSV here');
+      expect(host!.textContent).not.toContain('ready for import');
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('does not let a stale import resolution close a reopened session', async () => {
+    let resolveImport!: (value: boolean) => void;
+    onImport.mockImplementation(
+      () => new Promise<boolean>((res) => { resolveImport = res; })
+    );
+    renderModal();
+
+    await dropFile(
+      new File(
+        ['Company,Role,Date Applied,Status\nStripe,Designer,2026-07-18,Applied'],
+        'sample.csv',
+        { type: 'text/csv' }
+      )
+    );
+    await act(async () => {
+      findButtonByText('Import 1 Applications').click();
+      await new Promise((r) => setTimeout(r, 10));
+    });
+
+    // Close and reopen while the first import is still in flight
+    act(() => {
+      root!.render(<ImportCSVModal isOpen={false} onClose={onClose} onImport={onImport} />);
+    });
+    act(() => {
+      root!.render(<ImportCSVModal isOpen onClose={onClose} onImport={onImport} />);
+    });
+
+    // The stale import resolves now — it must not close the new session
+    await act(async () => {
+      resolveImport(true);
+      await new Promise((r) => setTimeout(r, 10));
+    });
+
+    expect(onClose).not.toHaveBeenCalled();
+  });
 });
