@@ -97,6 +97,7 @@ export function exportApplicationsToCSV(
   }
 
   const headers = [
+    'Id',
     'Company',
     'Role',
     'Platform',
@@ -118,6 +119,7 @@ export function exportApplicationsToCSV(
     'Resume File Name',
     'Resume File Size',
     'Resume Uploaded At',
+    'Stage Updated At',
     'Created At',
     'Updated At',
   ];
@@ -125,6 +127,7 @@ export function exportApplicationsToCSV(
   const rows = applications.map((app) => {
     const days = calculateDaysInStage(app.stageUpdatedAt);
     return [
+      escapeCSV(app.id || ''),
       escapeCSV(app.company),
       escapeCSV(app.role),
       escapeCSV(app.platform),
@@ -146,6 +149,7 @@ export function exportApplicationsToCSV(
       escapeCSV(app.resumeFileName || ''),
       escapeCSV(app.resumeFileSize != null ? app.resumeFileSize.toString() : ''),
       escapeCSV(app.resumeUploadedAt || ''),
+      escapeCSV(app.stageUpdatedAt || ''),
       escapeCSV(app.createdAt || ''),
       escapeCSV(app.updatedAt || ''),
     ].join(',');
@@ -176,6 +180,7 @@ export function exportContactsToCSV(
   }
 
   const headers = [
+    'Id',
     'Name',
     'Category',
     'Role',
@@ -187,10 +192,14 @@ export function exportContactsToCSV(
     'Notes',
     'Email Logs',
     'Linked Application IDs',
+    'Location',
+    'Created At',
+    'Updated At',
   ];
 
   const rows = contacts.map((c) => {
     return [
+      escapeCSV(c.id || ''),
       escapeCSV(c.name),
       escapeCSV(c.category || 'Other'),
       escapeCSV(c.role || ''),
@@ -202,6 +211,9 @@ export function exportContactsToCSV(
       escapeCSV(c.notes || ''),
       escapeCSV(flattenContactEmailLogs(c)),
       escapeCSV((c.applicationIds || []).join('; ')),
+      escapeCSV(c.location || ''),
+      escapeCSV(c.createdAt || ''),
+      escapeCSV(c.updatedAt || ''),
     ].join(',');
   });
 
@@ -221,6 +233,7 @@ export function exportFollowUpTemplatesToCSV(
   }
 
   const headers = [
+    'Id',
     'Title',
     'Category',
     'Subject',
@@ -228,10 +241,12 @@ export function exportFollowUpTemplatesToCSV(
     'Order',
     'Built-in',
     'Created At',
+    'Updated At',
   ];
 
   const rows = templates.map((t) => {
     return [
+      escapeCSV(t.id || ''),
       escapeCSV(t.title),
       escapeCSV(t.category || ''),
       escapeCSV(t.subject),
@@ -239,6 +254,7 @@ export function exportFollowUpTemplatesToCSV(
       t.order != null ? t.order.toString() : '',
       t.isBuiltIn ? 'yes' : 'no',
       escapeCSV(t.createdAt || ''),
+      escapeCSV(t.updatedAt || ''),
     ].join(',');
   });
 

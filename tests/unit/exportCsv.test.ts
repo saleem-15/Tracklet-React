@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { exportApplicationsToCSV } from '../../src/lib/exportCsv';
-import { Application } from '../../src/types';
+import { exportApplicationsToCSV, exportContactsToCSV, exportFollowUpTemplatesToCSV } from '../../src/lib/exportCsv';
+import { Application, Contact, FollowUpTemplate } from '../../src/types';
 
 describe('exportCsv', () => {
   let createdElements: any[] = [];
@@ -60,5 +60,65 @@ describe('exportCsv', () => {
     expect(text).toContain(`"'=SUM(1,1)"`);
     expect(text).toContain(`"'@AdminRole"`);
     expect(text).toContain(`"'+DangerousFormula"`);
+  });
+
+  it('exports the full structured schema, including joinable application IDs', async () => {
+    const apps: Application[] = [
+      {
+        id: 'app-77',
+        userId: 'u1',
+        company: 'Acme',
+        role: 'Developer',
+        platform: 'LinkedIn',
+        dateApplied: '2026-08-01',
+        status: 'Applied',
+        stageUpdatedAt: '2026-08-05T10:00:00.000Z',
+        createdAt: '2026-08-01T09:00:00.000Z',
+        updatedAt: '2026-08-02T09:00:00.000Z',
+      },
+    ];
+
+    exportApplicationsToCSV(apps, 'schema_export');
+    const text = await capturedBlob!.text();
+    const header = text.split('\n')[0];
+    expect(header.startsWith('Id,')).toBe(true);
+    expect(header).toContain('Stage Updated At');
+    // The Id cell matches what "Linked Application IDs" in the contacts
+    // export references — the two files must be joinable.
+    expect(text).toContain('"app-77"');
+  });
+
+  it('includes Id, Location and audit timestamps in the contacts and templates exports', async () => {
+    const contact: Contact = {
+      id: 'contact-1',
+      name: 'Sarah Chen',
+      category: 'Recruiter',
+      location: 'Seattle, WA',
+      createdAt: '2026-08-01T09:00:00.000Z',
+      updatedAt: '2026-08-02T09:00:00.000Z',
+    };
+    exportContactsToCSV([contact], 'contacts_schema');
+    let text = await capturedBlob!.text();
+    let header = text.split('\n')[0];
+    expect(header.startsWith('Id,')).toBe(true);
+    expect(header).toContain('Location');
+    expect(header).toContain('Created At');
+    expect(header).toContain('Updated At');
+    expect(text).toContain('"contact-1"');
+
+    const template: FollowUpTemplate = {
+      id: 'tpl-1',
+      title: 'Follow up',
+      subject: 'Hello',
+      body: 'Checking in',
+      category: 'Custom',
+      createdAt: '2026-08-01T09:00:00.000Z',
+      updatedAt: '2026-08-03T09:00:00.000Z',
+    };
+    exportFollowUpTemplatesToCSV([template], 'templates_schema');
+    text = await capturedBlob!.text();
+    header = text.split('\n')[0];
+    expect(header.startsWith('Id,')).toBe(true);
+    expect(header).toContain('Updated At');
   });
 });

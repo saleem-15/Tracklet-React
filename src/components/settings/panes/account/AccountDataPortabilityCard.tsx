@@ -125,18 +125,25 @@ export const AccountDataPortabilityCard: React.FC = () => {
   };
 
   const handleExportData = async () => {
-    if (applicationCount === 0 && contactCount === 0) {
-      addToast('warning', 'Nothing to Export', 'Add applications or contacts before exporting.');
-      return;
-    }
-
     setIsExporting(true);
     try {
-      const templates = await TemplateRepository.loadTemplates(user?.uid);
+      // Strict read: a failed or signed-out template fetch must not present
+      // generated defaults as the user's saved data.
+      const templates = await TemplateRepository.loadTemplatesStrict(user?.uid);
+
+      if (
+        applicationCount === 0 &&
+        contactCount === 0 &&
+        (!templates || templates.length === 0)
+      ) {
+        addToast('warning', 'Nothing to Export', 'Add applications or contacts before exporting.');
+        return;
+      }
+
       const result: WorkspaceExportResult | null = exportWorkspaceDataToCSV({
         applications: applications || [],
         contacts: contacts || [],
-        templates,
+        templates: templates ?? [],
       });
 
       if (!result) {
@@ -144,11 +151,17 @@ export const AccountDataPortabilityCard: React.FC = () => {
         return;
       }
 
-      addToast(
-        'success',
-        'Data Exported',
-        `Downloaded ${result.files} CSV file${result.files === 1 ? '' : 's'}: ${result.applications} applications, ${result.contacts} contacts${result.templates ? `, ${result.templates} templates` : ''}.`
-      );
+      const summary = `Downloaded ${result.files} CSV file${result.files === 1 ? '' : 's'}: ${result.applications} applications, ${result.contacts} contacts${result.templates ? `, ${result.templates} templates` : ''}.`;
+
+      if (templates === null) {
+        addToast(
+          'warning',
+          'Export Incomplete',
+          `${summary} Your saved templates could not be read and were not included.`
+        );
+      } else {
+        addToast('success', 'Data Exported', summary);
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Could not generate CSV files.';
       addToast('error', 'Export Failed', msg);
