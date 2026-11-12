@@ -123,6 +123,22 @@ describe('resumeStorage (real Cloud Storage upload plumbing)', () => {
     expect(task.cancel).toHaveBeenCalledTimes(1);
   });
 
+  it('deletes the stored object when the download URL cannot be resolved', async () => {
+    const task = makeTask();
+    vi.mocked(uploadBytesResumable).mockReturnValue(task as never);
+    vi.mocked(getDownloadURL).mockRejectedValue(new Error('url unavailable') as never);
+
+    const file = new File(['body'], 'resume.pdf', { type: 'application/pdf' });
+    const handle = uploadResume('user-1', file, vi.fn());
+
+    const { complete } = getCallbacks(task);
+    complete!();
+
+    await expect(handle.promise).rejects.toThrow('url unavailable');
+    // The completed transfer must not be orphaned in storage
+    expect(deleteObject).toHaveBeenCalledWith(task.snapshot.ref);
+  });
+
   it('deleteResumeObject deletes the object at the given path', async () => {
     await deleteResumeObject('users/user-1/resumes/blob-9/cv.pdf');
     expect(ref).toHaveBeenCalledWith(expect.anything(), 'users/user-1/resumes/blob-9/cv.pdf');

@@ -76,6 +76,14 @@ export function uploadResume(
             downloadUrl,
           });
         } catch (err) {
+          // The bytes are already stored — don't orphan the object just
+          // because its URL couldn't be resolved. Best-effort cleanup, then
+          // surface the original error.
+          try {
+            await deleteObject(task.snapshot.ref);
+          } catch {
+            // The original rejection is what matters to the caller.
+          }
           reject(err instanceof Error ? err : new Error('Failed to resolve download URL.'));
         }
       }
