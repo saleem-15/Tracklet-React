@@ -61,7 +61,7 @@ export const StatsView: React.FC<StatsViewProps> = ({
   };
 
   return (
-    <div className="flex-1 bg-slate-50/50 p-4 sm:p-6 overflow-y-auto space-y-5 text-slate-900 select-none">
+    <div className="flex-1 bg-slate-50/50 p-4 sm:p-6 overflow-y-auto space-y-5 text-slate-900">
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div className="flex items-center gap-2.5">

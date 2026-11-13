@@ -350,7 +350,10 @@ export const ContactManagerCard: React.FC<ContactManagerCardProps> = ({
               >
                 {getInitials(contact.name)}
               </div>
-              <div className="min-w-0">
+              <div
+                className="min-w-0 select-text cursor-text"
+                onClick={(e) => e.stopPropagation()}
+              >
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <p className="text-xs font-bold text-slate-900 truncate leading-tight group-hover:text-blue-600 transition-colors">
                     {contact.name}

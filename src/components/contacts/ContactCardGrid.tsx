@@ -94,7 +94,7 @@ export const ContactCardGrid: React.FC<ContactCardGridProps> = ({
                   >
                     {getInitials(contact.name)}
                   </div>
-                  <div className="min-w-0">
+                  <div className="min-w-0 select-text cursor-text" onClick={(e) => e.stopPropagation()}>
                     <h4 className="text-sm font-bold text-slate-900 truncate leading-snug group-hover:text-blue-600 transition-colors font-heading">
                       {contact.name}
                     </h4>
@@ -152,7 +152,7 @@ export const ContactCardGrid: React.FC<ContactCardGridProps> = ({
               </div>
 
               {/* Role & Org */}
-              <div className="space-y-1 my-2">
+              <div className="space-y-1 my-2 select-text cursor-text" onClick={(e) => e.stopPropagation()}>
                 {contact.role && (
                   <div className="flex items-center gap-1.5 text-xs text-slate-600 truncate">
                     <Briefcase className="w-3.5 h-3.5 text-slate-500 shrink-0" />

@@ -21,7 +21,7 @@ export const BulkActionsBar: React.FC<BulkActionsBarProps> = ({
   if (selectedCount === 0) return null;
 
   return (
-    <div className="bg-blue-50/90 border-b border-blue-200/80 px-4 py-2 flex items-center justify-between gap-3 text-xs text-blue-950 animate-in fade-in slide-in-from-top-1 duration-150 backdrop-blur-xs shrink-0 min-h-10 relative z-20 overflow-x-auto">
+    <div className="bg-blue-50/90 border-b border-blue-200/80 px-4 py-2 flex items-center justify-between gap-3 text-xs text-blue-950 animate-in fade-in slide-in-from-top-1 duration-150 backdrop-blur-xs shrink-0 min-h-10 relative z-20 overflow-x-auto select-none">
       <div className="flex items-center gap-2.5 shrink-0">
         <span className="font-mono text-blue-600 bg-white px-2 py-0.5 rounded-md border border-blue-200 font-semibold shadow-2xs">
           {selectedCount} selected

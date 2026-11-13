@@ -149,7 +149,7 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
   };
 
   return (
-    <div className="flex-1 bg-white flex flex-col h-full min-h-0 select-none overflow-hidden relative">
+    <div className="flex-1 bg-white flex flex-col h-full min-h-0 overflow-hidden relative">
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
         {/* "Needs Attention Today" Hero Banner (Responsive layout) */}
         {!isAttentionDismissed && staleApps.length > 0 && (
@@ -165,7 +165,7 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
             <button
               type="button"
               onClick={() => setIsAttentionDismissed(true)}
-              className="text-amber-700 hover:text-amber-950 p-1.5 rounded transition-colors cursor-pointer shrink-0 min-h-[36px] min-w-[36px] flex items-center justify-center"
+              className="text-amber-700 hover:text-amber-950 p-1.5 rounded transition-colors cursor-pointer shrink-0 min-h-[36px] min-w-[36px] flex items-center justify-center select-none"
               title="Dismiss announcement"
             >
               <X className="w-4 h-4" />
@@ -174,7 +174,7 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
         )}
 
         {/* ── Mobile Stage Jump Tabs Bar (Visible only on < 768px) ── */}
-        <div className="md:hidden flex items-center gap-1.5 p-2 bg-slate-50/95 border-b border-slate-200/80 overflow-x-auto shrink-0 no-scrollbar">
+        <div className="md:hidden flex items-center gap-1.5 p-2 bg-slate-50/95 border-b border-slate-200/80 overflow-x-auto shrink-0 no-scrollbar select-none">
           {PIPELINE_COLUMNS.map((col) => {
             const count = applications.filter((app) => app.status === col.status).length;
             return (
@@ -221,7 +221,7 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
         )}
 
         {/* ── Desktop Column Headers Bar (Visible on md: ≥ 768px) ── */}
-        <div className="hidden md:grid md:grid-cols-5 bg-slate-50/80 border-b border-slate-200/80 sticky top-0 z-10 backdrop-blur-xs min-w-[900px]">
+        <div className="hidden md:grid md:grid-cols-5 bg-slate-50/80 border-b border-slate-200/80 sticky top-0 z-10 backdrop-blur-xs min-w-[900px] select-none">
           {PIPELINE_COLUMNS.map((col) => {
             const count = applications.filter((app) => app.status === col.status).length;
             const isTargeting = dragOverColumn === col.status;
@@ -346,7 +346,7 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
                               handleQuickAdvance(e, app, prevColumn.status);
                             }
                           }}
-                          className={`p-3.5 rounded-xl border transition-all cursor-grab active:cursor-grabbing group relative focus:outline-none focus:ring-2 focus:ring-blue-500/50 ${
+                          className={`p-3.5 rounded-xl border transition-all cursor-grab active:cursor-grabbing group relative focus:outline-none focus:ring-2 focus:ring-blue-500/50 select-none ${
                             isBeingDragged
                               ? 'opacity-40 scale-98 border-dashed border-blue-400 bg-blue-50/30'
                               : isSelected
@@ -368,11 +368,11 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
                               size="sm"
                             />
 
-                            <span dir="auto" className="font-heading font-bold text-slate-900 text-xs truncate text-start">{app.company}</span>
+                            <span dir="auto" className="font-heading font-bold text-slate-900 text-xs truncate text-start select-text cursor-text">{app.company}</span>
                           </div>
 
                           {/* Role Title */}
-                          <p dir="auto" className="text-slate-700 text-xs font-semibold truncate mb-2 text-start">{app.role}</p>
+                          <p dir="auto" className="text-slate-700 text-xs font-semibold truncate mb-2 text-start select-text cursor-text">{app.role}</p>
 
                           {/* Notes snippet or Tasks/Contacts chips */}
                           {Boolean(app.tasks?.length || app.contacts?.length || app.contactEmail || app.emails?.length) ? (

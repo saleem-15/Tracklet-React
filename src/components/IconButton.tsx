@@ -50,7 +50,7 @@ export const IconButton: React.FC<IconButtonProps> = ({
       data-tooltip-placement={tooltipPlacement}
       data-tooltip-shortcut={shortcut}
       aria-label={title}
-      className={`relative inline-flex items-center justify-center transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:min-w-[44px] after:min-h-[44px] after:w-full after:h-full ${sizeStyles[size]} ${variantStyles[variant]} ${className}`}
+      className={`relative inline-flex items-center justify-center select-none transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:min-w-[44px] after:min-h-[44px] after:w-full after:h-full ${sizeStyles[size]} ${variantStyles[variant]} ${className}`}
       {...props}
     >
       <Icon className={iconSizes[size]} />

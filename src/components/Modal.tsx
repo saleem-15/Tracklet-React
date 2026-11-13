@@ -217,7 +217,7 @@ export const Modal: React.FC<ModalProps> = ({
     : 'border border-slate-200/90';
 
   const panelClassName = [
-    'relative z-10 w-full',
+    'relative z-10 w-full select-text',
     maxWidthClassName,
     'bg-white',
     defaultRounded,
@@ -235,7 +235,7 @@ export const Modal: React.FC<ModalProps> = ({
           data-testid="modal-portal-root"
           className={`fixed inset-0 z-50 flex ${
             align === 'top' ? 'items-start pt-16 sm:pt-24' : 'items-center'
-          } justify-center p-3 sm:p-4 md:p-6 overflow-y-auto ${containerClassName}`}
+          } justify-center p-3 sm:p-4 md:p-6 overflow-y-auto select-none ${containerClassName}`}
           onKeyDown={handleKeyDown}
           onMouseDown={(e) => {
             pressTargetRef.current = e.target;

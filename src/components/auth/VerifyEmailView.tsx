@@ -267,7 +267,7 @@ export const VerifyEmailView: React.FC<VerifyEmailViewProps> = ({
 
   // 3. Ultra-Clean Standard Verification Screen
   return (
-    <div className="w-full space-y-6 animate-in fade-in zoom-in-95 duration-200 text-center select-none font-sans">
+    <div className="w-full space-y-6 animate-in fade-in zoom-in-95 duration-200 text-center font-sans">
       {/* Brand Icon Header */}
       <div className="space-y-3">
         <div className="w-13 h-13 rounded-2xl bg-blue-50 border border-blue-200/80 text-blue-600 flex items-center justify-center mx-auto shadow-2xs">
