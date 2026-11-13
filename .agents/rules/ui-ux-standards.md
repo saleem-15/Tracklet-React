@@ -282,14 +282,14 @@ If deep architectural or guideline context is needed, consult the distilled repo
 
 4. **The Clickable Row & Card Invariant**:
    - When a row, card, or list item is clickable or expandable (`role="button"`, `onClick={() => onToggleExpand()}` or `onClick={() => onSelect()}`):
-     - Domain data text spans (contact names, job titles, companies, emails, phone numbers, notes) MUST be wrapped in an element with `select-text cursor-text` and `onClick={(e) => e.stopPropagation()}`.
-     - *Why*: Without this, users cannot highlight or copy text, and clicking on text accidentally triggers row collapse/expansion or row navigation.
+     - Domain data text spans (contact names, job titles, companies, emails, phone numbers, notes) MUST have `select-text cursor-text`.
+     - Click handlers on rows/cards or text wrappers MUST check for active text selections (e.g. `const sel = window.getSelection(); if (sel && !sel.isCollapsed && sel.toString().trim().length > 0) return;`) so that text selection gestures do not trigger row toggles or navigation, while allowing ordinary clicks to open or toggle as expected.
 
 5. **Global Selection Aesthetic (`::selection`)**:
    - All text selection highlights must use Tracklet's brand-tinted palette defined in `src/index.css`:
      - Background: `rgba(37, 99, 235, 0.22)` (`brand blue-600` at 22% opacity).
-     - Foreground: `#0f172a` (`slate-900`) for crisp contrast and WCAG AA compliance.
-     - Code/Monospace: `rgba(59, 130, 246, 0.30)` (`blue-500` at 30% opacity) with `#0f172a`.
+     - Foreground: Preserve the element's existing text color (omitting explicit selection text color so dark code blocks, colored tags, and light surfaces retain natural WCAG contrast).
+     - Code/Monospace: `rgba(59, 130, 246, 0.30)` (`blue-500` at 30% opacity) with natural text contrast preserved.
    - Never use opaque solid blue highlights that obliterate font weights or clash with light UI backgrounds.
 
 6. **Clipboard Augmentation Protocol**:

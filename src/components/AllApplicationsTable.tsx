@@ -448,6 +448,10 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
                       rowRefs.current[index] = el;
                     }}
                     onClick={() => {
+                      const selection = window.getSelection();
+                      if (selection && !selection.isCollapsed && selection.toString().trim().length > 0) {
+                        return;
+                      }
                       setFocusedIndex(index);
                       onSelectApp(app);
                     }}

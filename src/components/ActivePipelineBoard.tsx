@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Application, ApplicationStatus } from '../types';
 import { CompanyLogo } from './CompanyLogo';
 import { EmptyState } from './EmptyState';
@@ -81,8 +81,19 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
   activeQuota,
 }) => {
   const [draggedAppId, setDraggedAppId] = useState<string | null>(null);
+  const [dragDisabledAppId, setDragDisabledAppId] = useState<string | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<ApplicationStatus | null>(null);
   const [isAttentionDismissed, setIsAttentionDismissed] = useState(false);
+
+  useEffect(() => {
+    const handleMouseUp = () => {
+      setDragDisabledAppId(null);
+    };
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, []);
 
   // Column refs for mobile stage jump scrolling
   const columnRefs = useRef<{ [key in ApplicationStatus]?: HTMLDivElement | null }>({});
@@ -329,10 +340,16 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
                           tabIndex={0}
                           role="button"
                           aria-label={`${app.company}, ${app.role}, in ${col.title}`}
-                          draggable
+                          draggable={dragDisabledAppId !== app.id}
                           onDragStart={(e) => handleDragStart(e, app.id)}
                           onDragEnd={handleDragEnd}
-                          onClick={() => onSelectApp(app)}
+                          onClick={() => {
+                            const selection = window.getSelection();
+                            if (selection && !selection.isCollapsed && selection.toString().trim().length > 0) {
+                              return;
+                            }
+                            onSelectApp(app);
+                          }}
                           onKeyDown={(e) => {
                             if (e.target !== e.currentTarget) return;
                             if (e.key === 'Enter' || e.key === ' ') {
@@ -368,11 +385,43 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
                               size="sm"
                             />
 
-                            <span dir="auto" className="font-heading font-bold text-slate-900 text-xs truncate text-start select-text cursor-text">{app.company}</span>
+                            <span
+                              dir="auto"
+                              className="font-heading font-bold text-slate-900 text-xs truncate text-start select-text cursor-text"
+                              onMouseEnter={() => setDragDisabledAppId(app.id)}
+                              onMouseLeave={(e) => {
+                                if (e.buttons === 0) {
+                                  setDragDisabledAppId(null);
+                                }
+                              }}
+                              onMouseDown={() => setDragDisabledAppId(app.id)}
+                              onDragStart={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                              }}
+                            >
+                              {app.company}
+                            </span>
                           </div>
 
                           {/* Role Title */}
-                          <p dir="auto" className="text-slate-700 text-xs font-semibold truncate mb-2 text-start select-text cursor-text">{app.role}</p>
+                          <p
+                            dir="auto"
+                            className="text-slate-700 text-xs font-semibold truncate mb-2 text-start select-text cursor-text"
+                            onMouseEnter={() => setDragDisabledAppId(app.id)}
+                            onMouseLeave={(e) => {
+                              if (e.buttons === 0) {
+                                setDragDisabledAppId(null);
+                              }
+                            }}
+                            onMouseDown={() => setDragDisabledAppId(app.id)}
+                            onDragStart={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                            }}
+                          >
+                            {app.role}
+                          </p>
 
                           {/* Notes snippet or Tasks/Contacts chips */}
                           {Boolean(app.tasks?.length || app.contacts?.length || app.contactEmail || app.emails?.length) ? (
