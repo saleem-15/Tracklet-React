@@ -247,3 +247,8 @@ If deep architectural or guideline context is needed, consult the distilled repo
 
 9. **WCAG 2.2 AAA Reduced Motion Invariant**:
    - Under `@media (prefers-reduced-motion: reduce)`, all transitions immediately collapse to `0.001ms !important`, preserving instant keyboard focus management and screen reader updates.
+
+10. **Strict Ban on Pulsing Glowing Dots, Radar Pings & AI Halos**:
+    - Never use `animate-pulse`, `animate-ping`, or glowing drop-shadow halos (`box-shadow: 0 0 ...`) on indicator dots, live status badges, notification pips, icon buttons, or drop zones.
+    - AI coding assistants instinctively generate pulsing dots and radar ripples to simulate "activity", producing cognitive fatigue and visual restlessness.
+    - Status indicators and notification pips must be calm, solid, static elements (e.g. `<span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />`). Skeletons (`src/components/layout/skeletons/`) are the only approved place where structural pulse indicates content loading.

@@ -144,7 +144,7 @@ export const ExtensionModal: React.FC<ExtensionModalProps> = ({
           >
             <span>Update Guide</span>
             {status === 'update_available' && (
-              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse motion-reduce:animate-none" />
+              <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
             )}
           </button>
 

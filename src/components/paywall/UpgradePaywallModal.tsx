@@ -71,7 +71,7 @@ export const UpgradePaywallModal: React.FC<PaywallModalProps> = ({
         </button>
 
         <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-white/15 border border-white/20 shadow-inner mb-3">
-          <Sparkles className="w-6 h-6 text-amber-300 animate-pulse motion-reduce:animate-none" />
+          <Sparkles className="w-6 h-6 text-amber-300" />
         </div>
 
         <h2 className="text-xl font-bold tracking-tight text-white">

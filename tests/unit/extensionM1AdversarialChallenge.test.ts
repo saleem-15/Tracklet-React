@@ -72,7 +72,7 @@ describe('Adversarial Empirical Challenge Suite — Extension M1 UI/UX Refactor'
         lastError: null,
         sendMessage: vi.fn(),
         onMessage: { addListener: vi.fn() },
-        getManifest: () => ({ version: '1.3.10', name: 'Tracklet' }),
+        getManifest: () => ({ version: '1.3.11', name: 'Tracklet' }),
       },
       action: {
         setBadgeText: vi.fn(),

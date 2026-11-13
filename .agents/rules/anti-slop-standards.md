@@ -5,20 +5,23 @@
 
 ---
 
-## The 6 Dimensions of AI Slop
+## The Dimensions of AI Slop
 
-"AI Slop" is the degradation of user interfaces caused by unguided LLM code generation. It manifests across six distinct dimensions:
+"AI Slop" is the degradation of user interfaces caused by unguided LLM code generation. It manifests across key dimensions:
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
-│                   THE 6 DIMENSIONS OF FRONTEND AI SLOP                 │
+│                   THE DIMENSIONS OF FRONTEND AI SLOP                   │
 ├──────────────────────────┬──────────────────────────┬──────────────────┤
 │ 1. Nested Containers     │ 2. Decorative Icons      │ 3. Static Badges │
 │ (Div soup, card-in-card) │ (Icons next to words)    │ (Tag soup walls) │
 ├──────────────────────────┼──────────────────────────┼──────────────────┤
 │ 4. Robotic Copywriting   │ 5. Motion & Easing Traps │ 6. Token Bypass  │
 │ (Elevate, subtitles)     │ (transition-all, jank)   │ (Arbitrary hex)  │
-└──────────────────────────┴──────────────────────────┴──────────────────┘
+├──────────────────────────┴──────────────────────────┴──────────────────┤
+│ 7. Spinners & Layout Shift (Full-screen loaders, CLS)                  │
+│ 8. Pulsing Glow Dots & Pings (animate-pulse/ping, AI neon halos)        │
+└────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -231,3 +234,42 @@ Dropping an `<Loader2 className="animate-spin" />` in the middle of a blank canv
 ### Audit Questions:
 1. Does any loading view render a circular spinner or raw unstyled text?
 2. Does the view suffer Cumulative Layout Shift (CLS > 0) when transitioning from loading to mounted state?
+
+---
+
+## Dimension 8: Pulsing Glow Dots, Radar Pings & AI Halos
+
+### The Anti-Pattern
+Adding `animate-pulse` or `animate-ping` to status pips, live badges, notification indicators, or cards, or adding neon glowing drop shadows (`box-shadow: 0 0 4px rgba(...)`, ring halos). AI coding assistants habitually apply pulsing glowing dots or expanding radar ripples to simulate "activity" or "realtime presence", resulting in cognitive fatigue, visual restlessness, and an amateurish "AI-generated prototype" feel.
+
+### The Rule
+- **Strict Ban on Pulsing / Glowing Dots & Pings**: Never use `animate-pulse`, `animate-ping`, or glowing chromatic halos (`box-shadow: 0 0 ...`) on indicator dots, live status badges, notification pips, icon buttons, or drop zones.
+- **Calm, Static Pips**: Status indicators and notification pips must be clean, solid, static elements (e.g. `<span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />` or `<span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />`).
+- **Quiet Executive Polish**: Communicate attention and urgency through clear typographic hierarchy and subtle background color differences, never via continuous looping pulse animations. Skeletons (`src/components/layout/skeletons/`) remain the only approved place where structural pulse indicates content loading.
+
+### Code Comparison:
+```tsx
+// ❌ AI SLOP: Pulsing glowing dots, radar ripples, and blinking badges
+<div className="flex items-center gap-2">
+  <span className="relative flex h-2 w-2">
+    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
+    <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-600" />
+  </span>
+  <span className="animate-pulse text-xs text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded-full">
+    Attention Needed
+  </span>
+</div>
+
+// ✅ TRACKLET CRAFT: Calm, static solid pip with crisp typography
+<div className="flex items-center gap-2">
+  <span className="w-2 h-2 rounded-full bg-blue-600 shrink-0" />
+  <span className="text-xs font-semibold text-slate-700">
+    Waiting for verification…
+  </span>
+</div>
+```
+
+### Audit Questions:
+1. Does any indicator dot, badge, card, or icon use `animate-pulse` or `animate-ping`? (Banned outside skeletons).
+2. Are there neon halo glows or chromatic `box-shadow: 0 0 ...` effects on status dots? (Banned).
+

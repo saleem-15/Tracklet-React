@@ -222,14 +222,12 @@ body {
   height: 6.5px;
   border-radius: 50%;
   background-color: #f59e0b;
-  box-shadow: 0 0 4px rgba(245, 158, 11, 0.35);
   flex-shrink: 0;
-  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+  transition: background-color 0.2s ease;
 }
 
 .user-account-dot.connected {
   background-color: #10b981;
-  box-shadow: 0 0 6px rgba(16, 185, 129, 0.45);
 }
 
 .user-account-label {
@@ -2209,7 +2207,8 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
   color: #475569;
 }
 
-.status-pulse-dot {
+.status-pulse-dot,
+.status-dot {
   width: 7px;
   height: 7px;
   border-radius: 50%;
@@ -2217,16 +2216,18 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
   flex-shrink: 0;
 }
 
-.autofill-status-pill.detected .status-pulse-dot {
+.autofill-status-pill.detected .status-pulse-dot,
+.autofill-status-pill.detected .status-dot {
   background-color: #22c55e;
-  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.25);
 }
 
-.autofill-status-pill.scanning .status-pulse-dot {
+.autofill-status-pill.scanning .status-pulse-dot,
+.autofill-status-pill.scanning .status-dot {
   background-color: #f59e0b;
 }
 
-.autofill-status-pill.none .status-pulse-dot {
+.autofill-status-pill.none .status-pulse-dot,
+.autofill-status-pill.none .status-dot {
   background-color: #94a3b8;
 }
 
