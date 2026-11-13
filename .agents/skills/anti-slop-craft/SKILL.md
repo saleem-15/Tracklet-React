@@ -105,6 +105,11 @@ Before considering any UI implementation complete, verify code against all 6 dim
   - Zero bracketed arbitrary hex values (`bg-[#...]`).
   - Readable text and placeholders maintain WCAG AA contrast (≥ 4.5:1; never use `text-slate-400` on white).
 
+- [ ] **7. Ban on Pulsing Glow Dots, Radar Pings & AI Halos**:
+  - Zero `animate-pulse` or `animate-ping` on indicator dots, live status badges, notification pips, icon buttons, or drop zones (skeletons in `src/components/layout/skeletons/` are the only approved pulse use).
+  - Zero neon glowing drop shadows or halos (`box-shadow: 0 0 ...` chromatic halos).
+  - Status indicators must be calm, solid, static pips (e.g. `<span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />`).
+
 ---
 
 ## 4. Concrete Remediation Recipes

@@ -96,6 +96,7 @@ All components must follow the formalized guidelines in `.agents/rules/ui-ux-sta
 6. **Micro-interaction & Motion Stability**: Follow `MOTION_TOKENS` from `src/theme/motion.ts`. Strictly ban `transition-all` in favor of targeted transitions (`transition-colors duration-150`). Durations must be <= 200ms. Springs must be critically damped (stiffness 400, damping 35, zero bounce). Instant 0ms on prefers-reduced-motion.
 7. **Action-Only Navigation Badges**: Persistent navigation tabs must remain calm and free of raw database tallies. Badges are strictly reserved for urgent/actionable events (e.g. pending follow-ups or expiring deadlines). Entity inventory counts belong in context within toolbars and column headers.
 8. **Anti-Slop Craft Standards**: Enforce max container depth of 1, ban decorative icons on self-evident labels, ban static metadata tag soup, and maintain 3-tier typography (Outfit / Plus Jakarta Sans / JetBrains Mono).
+9. **Ban on Pulsing Glowing Dots & Halos**: Strictly ban `animate-pulse`, `animate-ping`, and neon glowing halos (`box-shadow: 0 0 ...`) on indicator dots, live status badges, notification pips, icon buttons, and drop zones. Status dots must be calm, solid, static pips. Skeletons (`src/components/layout/skeletons/`) are the only approved pulse use.
 
 ### G. Browser Extension Versioning & Distribution
 1. **Synchronized Versioning**: Whenever modifying files inside `extension/`, you MUST bump the `"version"` string in `extension/manifest.json` AND update `LATEST_EXTENSION_VERSION` in `src/lib/constants.ts` in lockstep.
@@ -109,4 +110,4 @@ Run these commands to verify code integrity before finalizing any task:
 1. `npx tsc --noEmit` — Type checks must pass with zero errors.
 2. `npm run build` — Production build must succeed cleanly.
 3. **Lighthouse Compliance**: Never use `text-slate-400` on white/light backgrounds for readable text (use `text-slate-500` minimum for WCAG AA compliance). Maintain zero console errors and clean meta tags (see `.agents/skills/lighthouse-audit/SKILL.md`).
-4. **Anti-Slop & Pre-Flight Audit**: Verify that the Pre-Flight Discovery Manifest was declared and all 6 Anti-Slop Standards (`.agents/rules/anti-slop-standards.md` and `.agents/skills/anti-slop-craft/SKILL.md`) pass: no nested bordered cards, no icon clutter, no tag soup, no `transition-all`, and strict adherence to `UI_TOKENS`.
+4. **Anti-Slop & Pre-Flight Audit**: Verify that the Pre-Flight Discovery Manifest was declared and all Anti-Slop Standards (`.agents/rules/anti-slop-standards.md` and `.agents/skills/anti-slop-craft/SKILL.md`) pass: no nested bordered cards, no icon clutter, no tag soup, no `transition-all`, no pulsing glow dots or radar pings, and strict adherence to `UI_TOKENS`.
