@@ -298,13 +298,10 @@ export const VerifyEmailView: React.FC<VerifyEmailViewProps> = ({
         </div>
       )}
 
-      {/* Live Status Indicator (Unboxed, natural pulse) */}
+      {/* Live Status Indicator */}
       <div className="flex flex-col items-center justify-center gap-1.5 py-1">
         <div className="flex items-center gap-2 text-xs font-semibold text-slate-700">
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping motion-reduce:animate-none absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-600"></span>
-          </span>
+          <span className="inline-flex rounded-full h-2 w-2 bg-blue-600 shrink-0"></span>
           <span>Waiting for verification…</span>
         </div>
 

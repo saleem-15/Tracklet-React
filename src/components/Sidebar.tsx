@@ -254,14 +254,14 @@ export const Sidebar: React.FC<SidebarProps> = (props) => {
         icon: Kanban,
         badge: expirySettings.enabled && expiringTasksCount > 0 ? (
           <span
-            className="font-mono text-xs text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded-md border border-amber-200/80 font-bold animate-pulse motion-reduce:animate-none shrink-0"
+            className="font-mono text-xs text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded-md border border-amber-200/80 font-bold shrink-0"
             title={`${expiringTasksCount} task${expiringTasksCount === 1 ? '' : 's'} due soon`}
           >
             {expiringTasksCount}
           </span>
         ) : undefined,
         collapsedBadge: expirySettings.enabled && expiringTasksCount > 0 ? (
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-amber-500 animate-pulse motion-reduce:animate-none ring-2 ring-slate-50" />
+          <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-amber-500 ring-2 ring-slate-50" />
         ) : undefined,
       },
       {
@@ -270,14 +270,14 @@ export const Sidebar: React.FC<SidebarProps> = (props) => {
         icon: Users,
         badge: followUpDueCount > 0 ? (
           <span
-            className="font-mono text-xs text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded-md border border-amber-200/80 font-bold animate-pulse motion-reduce:animate-none shrink-0"
+            className="font-mono text-xs text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded-md border border-amber-200/80 font-bold shrink-0"
             title={`${followUpDueCount} follow-up${followUpDueCount === 1 ? '' : 's'} due soon`}
           >
             {followUpDueCount}
           </span>
         ) : undefined,
         collapsedBadge: followUpDueCount > 0 ? (
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-amber-500 animate-pulse motion-reduce:animate-none ring-2 ring-slate-50" />
+          <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-amber-500 ring-2 ring-slate-50" />
         ) : undefined,
       },
       {
@@ -376,7 +376,7 @@ export const Sidebar: React.FC<SidebarProps> = (props) => {
                   <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
                   <span className="truncate">Soon to Expire</span>
                 </div>
-                <span className="font-mono text-xs font-extrabold bg-amber-500 text-white px-1.5 py-0.2 rounded-full shadow-2xs animate-pulse motion-reduce:animate-none shrink-0">
+                <span className="font-mono text-xs font-extrabold bg-amber-500 text-white px-1.5 py-0.2 rounded-full shadow-2xs shrink-0">
                   {expiringTasksCount}
                 </span>
               </div>
@@ -414,7 +414,7 @@ export const Sidebar: React.FC<SidebarProps> = (props) => {
               title={`${expiringTasksCount} tasks expiring soon!`}
               data-tooltip={`${expiringTasksCount} tasks expiring soon!`}
               data-tooltip-placement="right"
-              className="w-8 h-8 flex items-center justify-center rounded-xl bg-amber-100 border border-amber-300 text-amber-700 animate-pulse motion-reduce:animate-none cursor-pointer"
+              className="w-8 h-8 flex items-center justify-center rounded-xl bg-amber-100 border border-amber-300 text-amber-700 cursor-pointer"
             >
               <Clock className="w-4 h-4 text-amber-600" />
             </button>

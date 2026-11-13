@@ -93,7 +93,7 @@ describe('Empirical Challenger M1 Suite — Tracklet Extension Refactor', () => 
           return Promise.resolve({ success: true });
         }),
         onMessage: { addListener: vi.fn() },
-        getManifest: () => ({ version: '1.3.10', name: 'Tracklet' }),
+        getManifest: () => ({ version: '1.3.11', name: 'Tracklet' }),
       },
       action: {
         setBadgeText: vi.fn(),

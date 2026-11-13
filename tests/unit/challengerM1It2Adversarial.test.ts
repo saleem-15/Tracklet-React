@@ -105,7 +105,7 @@ describe('Challenger 2 Empirical Adversarial Suite — M1 Iteration 2', () => {
           return Promise.resolve({ success: true });
         }),
         onMessage: { addListener: vi.fn() },
-        getManifest: () => ({ version: '1.3.10', name: 'Tracklet' }),
+        getManifest: () => ({ version: '1.3.11', name: 'Tracklet' }),
       },
       action: {
         setBadgeText: vi.fn(),

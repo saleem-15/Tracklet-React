@@ -50,7 +50,7 @@ export const ExtensionUpdateGuide: React.FC<ExtensionUpdateGuideProps> = ({
         <div className="bg-amber-50/70 border border-amber-200/80 rounded-xl p-3.5 flex items-center justify-between gap-3">
           <div>
             <div className="text-xs font-bold text-amber-900 flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse motion-reduce:animate-none" />
+              <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
               Update Ready to Install
             </div>
             <div className="text-xs text-amber-700 mt-0.5">

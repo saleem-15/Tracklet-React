@@ -172,7 +172,7 @@ export const AccountProfilePane: React.FC = () => {
                 disabled={isSendingVerif || cooldown > 0}
                 className="px-3 py-1 bg-white hover:bg-amber-100 border border-amber-300 text-amber-900 rounded-lg text-xs font-bold cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
               >
-                {cooldown > 0 && <Clock className="w-3 h-3 text-amber-600 animate-pulse" />}
+                {cooldown > 0 && <Clock className="w-3 h-3 text-amber-600 shrink-0" />}
                 <span>{cooldown > 0 ? `Resend in ${cooldown}s` : isSendingVerif ? 'Sending...' : 'Resend Link'}</span>
               </button>
               <button

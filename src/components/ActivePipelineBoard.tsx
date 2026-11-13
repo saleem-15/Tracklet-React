@@ -155,7 +155,7 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
         {!isAttentionDismissed && staleApps.length > 0 && (
           <div className="bg-amber-500/10 border-b border-amber-500/20 px-3.5 py-2.5 flex items-center justify-between text-xs text-amber-900 shrink-0 gap-2">
             <div className="flex items-center gap-2 font-medium min-w-0">
-              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse motion-reduce:animate-none shrink-0" />
+              <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
               <span className="leading-snug">
                 <strong className="font-semibold text-amber-950">Attention Needed:</strong>{' '}
                 <span className="font-semibold">{staleApps.length} application{staleApps.length > 1 ? 's' : ''}</span> have been in active hiring stages for over 14 days without progress updates.
@@ -299,7 +299,7 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
 
                   {/* Drop zone placeholder indicator when dragging */}
                   {isTargeting && columnApps.length > 0 && (
-                    <div className="py-2 px-3 rounded-xl border-2 border-dashed border-blue-400 bg-blue-50/80 text-blue-700 text-[11px] font-semibold flex items-center justify-center gap-1.5 animate-pulse motion-reduce:animate-none shrink-0">
+                    <div className="py-2 px-3 rounded-xl border-2 border-dashed border-blue-400 bg-blue-50/80 text-blue-700 text-[11px] font-semibold flex items-center justify-center gap-1.5 shrink-0">
                       <ArrowRight className="w-3.5 h-3.5" />
                       <span>Move application to {col.title}</span>
                     </div>
@@ -482,7 +482,7 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
                 className={`p-3 rounded-xl border-2 border-dashed flex items-center justify-center gap-2.5 transition-all duration-200 text-xs font-semibold ${
                   dragOverColumn === 'Archived'
                     ? 'bg-amber-100/90 border-amber-500 text-amber-900 ring-2 ring-amber-400/30 shadow-md scale-[1.01]'
-                    : 'bg-amber-50/80 border-amber-300 text-amber-800 animate-pulse motion-reduce:animate-none'
+                    : 'bg-amber-50/80 border-amber-300 text-amber-800'
                 }`}
               >
                 <Archive className={`w-4 h-4 shrink-0 ${dragOverColumn === 'Archived' ? 'text-amber-700' : 'text-amber-600'}`} />
@@ -498,7 +498,7 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
                 className={`p-3 rounded-xl border-2 border-dashed flex items-center justify-center gap-2.5 transition-all duration-200 text-xs font-semibold ${
                   dragOverColumn === 'Rejected'
                     ? 'bg-rose-100/90 border-rose-500 text-rose-900 ring-2 ring-rose-400/30 shadow-md scale-[1.01]'
-                    : 'bg-rose-50/80 border-rose-300 text-rose-800 animate-pulse motion-reduce:animate-none'
+                    : 'bg-rose-50/80 border-rose-300 text-rose-800'
                 }`}
               >
                 <XCircle className={`w-4 h-4 shrink-0 ${dragOverColumn === 'Rejected' ? 'text-rose-700' : 'text-rose-600'}`} />
