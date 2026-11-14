@@ -14,7 +14,7 @@ export const EmailVerificationGate: React.FC<EmailVerificationGateProps> = ({
   const shouldReduceMotion = useReducedMotion();
 
   return (
-    <div className="min-h-screen w-full flex flex-col justify-center items-center px-4 sm:px-6 bg-slate-50 text-slate-900 select-none font-sans">
+    <div className="min-h-screen w-full flex flex-col justify-center items-center px-4 sm:px-6 bg-slate-50 text-slate-900 font-sans">
       <div className="w-full max-w-[380px] py-10 flex flex-col justify-center">
         <motion.div
           initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 10 }}

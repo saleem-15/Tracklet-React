@@ -280,7 +280,7 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
   };
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 bg-white text-slate-900 select-none">
+    <div className="flex-1 flex flex-col min-h-0 bg-white text-slate-900">
       {/* Floating Bulk Actions Bar */}
       <BulkActionsBar
         selectedCount={selectedIds.size}
@@ -302,7 +302,7 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
       {/* Main Table */}
       <div className="flex-1 overflow-auto" ref={tableContainerRef}>
         <table className="w-full text-left border-collapse text-xs">
-          <thead className="bg-slate-50/80 border-b border-slate-200/80 sticky top-0 z-10 text-[11px] font-mono text-slate-500 uppercase tracking-wider backdrop-blur-xs">
+          <thead className="bg-slate-50/80 border-b border-slate-200/80 sticky top-0 z-10 text-[11px] font-mono text-slate-500 uppercase tracking-wider backdrop-blur-xs select-none">
             <tr>
               <th className="w-10 px-3 py-2.5 text-center">
                 <button
@@ -448,6 +448,10 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
                       rowRefs.current[index] = el;
                     }}
                     onClick={() => {
+                      const selection = window.getSelection();
+                      if (selection && !selection.isCollapsed && selection.toString().trim().length > 0) {
+                        return;
+                      }
                       setFocusedIndex(index);
                       onSelectApp(app);
                     }}

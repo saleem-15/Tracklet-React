@@ -157,7 +157,7 @@ export function CustomSelectDropdown<T extends string | number = string>({
         aria-label={ariaLabelledBy ? undefined : accessibleLabel}
         aria-labelledby={ariaLabelledBy}
         onClick={() => !disabled && setIsOpen(!isOpen)}
-        className={`w-full flex items-center justify-between gap-2 border font-sans transition-[color,background-color,border-color,box-shadow] duration-150 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 ${
+        className={`w-full flex items-center justify-between gap-2 border font-sans select-none transition-[color,background-color,border-color,box-shadow] duration-150 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 ${
           isOpen ? 'border-blue-400 ring-2 ring-blue-500/20 bg-slate-50/80' : ''
         } ${getButtonStyles()} ${getSizeStyles()} ${buttonClassName}`}
       >
@@ -206,7 +206,7 @@ export function CustomSelectDropdown<T extends string | number = string>({
                 type="button"
                 onClick={() => handleSelect(opt.value)}
                 onMouseEnter={() => setHighlightedIndex(idx)}
-                className={`w-full text-left px-3 py-1.5 rounded-[8px] text-xs font-medium flex items-center justify-between transition-colors cursor-pointer ${
+                className={`w-full text-left px-3 py-1.5 rounded-[8px] text-xs font-medium flex items-center justify-between select-none transition-colors cursor-pointer ${
                   isSelected
                     ? 'bg-blue-50 text-blue-900 font-bold'
                     : isHighlighted

@@ -335,7 +335,13 @@ export const ContactManagerCard: React.FC<ContactManagerCardProps> = ({
             aria-expanded={isExpanded}
             aria-controls={`contact-card-details-${contact.id}`}
             aria-label={`Toggle details for ${contact.name}`}
-            onClick={() => onToggleExpand(contact.id)}
+            onClick={() => {
+              const selection = window.getSelection();
+              if (selection && !selection.isCollapsed && selection.toString().trim().length > 0) {
+                return;
+              }
+              onToggleExpand(contact.id);
+            }}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
@@ -350,7 +356,15 @@ export const ContactManagerCard: React.FC<ContactManagerCardProps> = ({
               >
                 {getInitials(contact.name)}
               </div>
-              <div className="min-w-0">
+              <div
+                className="min-w-0 select-text cursor-text"
+                onClick={(e) => {
+                  const selection = window.getSelection();
+                  if (selection && !selection.isCollapsed && selection.toString().trim().length > 0) {
+                    e.stopPropagation();
+                  }
+                }}
+              >
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <p className="text-xs font-bold text-slate-900 truncate leading-tight group-hover:text-blue-600 transition-colors">
                     {contact.name}

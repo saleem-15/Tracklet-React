@@ -252,3 +252,45 @@ If deep architectural or guideline context is needed, consult the distilled repo
     - Never use `animate-pulse`, `animate-ping`, or glowing drop-shadow halos (`box-shadow: 0 0 ...`) on indicator dots, live status badges, notification pips, icon buttons, or drop zones.
     - AI coding assistants instinctively generate pulsing dots and radar ripples to simulate "activity", producing cognitive fatigue and visual restlessness.
     - Status indicators and notification pips must be calm, solid, static elements (e.g. `<span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />`). Skeletons (`src/components/layout/skeletons/`) are the only approved place where structural pulse indicates content loading.
+
+---
+
+## 19. Text Selection & Clipboard Ergonomics Standard (Content vs. Chrome)
+
+**Philosophy**: High-craft SaaS products (like Linear, Raycast, and Stripe) feel like native desktop applications because they strictly separate **App Chrome** (interactive affordances) from **App Content** (user data). Accidental blue text selection boxes on buttons or table headers destroy tactile immersion. Conversely, disabling selection on actual data infuriates users trying to copy information.
+
+1. **The Chrome Invariant (`select-none`)**:
+   - All interactive controls, navigation affordances, and static framing elements MUST be unselectable using `select-none`:
+     - Buttons, icon buttons, toggle switches, checkboxes.
+     - Tabs, segmented controls, breadcrumbs.
+     - Dropdown menu triggers, listbox options, modal action footers.
+     - Table column sorting headers, table pagination controls.
+     - Kanban board column headers, card drag handles, status badges, company logo avatars.
+   - *Rationale*: Fast double-clicking, drag-and-drop gestures, and rapid menu exploration must never generate unsightly OS selection rectangles.
+
+2. **The Content Invariant (`select-text`)**:
+   - All domain entities, user inputs, and readable data MUST remain freely selectable:
+     - Company names, job titles, locations, compensation ranges.
+     - Contact names, email addresses, phone numbers.
+     - Notes, interview prep logs, Markdown preview blocks, descriptions.
+     - Form `<input>` and `<textarea>` controls (native caret selection preserved).
+     - Code snippets, timestamps, table data cell values.
+
+3. **The Parent Trap Prohibition**:
+   - **Never** place `select-none` on an entire top-level view wrapper, screen container, modal dialog, or error boundary (e.g. `App.tsx`, `Modal.tsx`, `ErrorBoundary.tsx`, `AuthScreen.tsx`).
+   - `select-none` is strictly forbidden on container/view roots. It may ONLY be placed on leaf interactive controls (buttons, icon buttons, badges, tabs) or column headers.
+
+4. **The Clickable Row & Card Invariant**:
+   - When a row, card, or list item is clickable or expandable (`role="button"`, `onClick={() => onToggleExpand()}` or `onClick={() => onSelect()}`):
+     - Domain data text spans (contact names, job titles, companies, emails, phone numbers, notes) MUST have `select-text cursor-text`.
+     - Click handlers on rows/cards or text wrappers MUST check for active text selections (e.g. `const sel = window.getSelection(); if (sel && !sel.isCollapsed && sel.toString().trim().length > 0) return;`) so that text selection gestures do not trigger row toggles or navigation, while allowing ordinary clicks to open or toggle as expected.
+
+5. **Global Selection Aesthetic (`::selection`)**:
+   - All text selection highlights must use Tracklet's brand-tinted palette defined in `src/index.css`:
+     - Background: `rgba(37, 99, 235, 0.22)` (`brand blue-600` at 22% opacity).
+     - Foreground: Preserve the element's existing text color (omitting explicit selection text color so dark code blocks, colored tags, and light surfaces retain natural WCAG contrast).
+     - Code/Monospace: `rgba(59, 130, 246, 0.30)` (`blue-500` at 30% opacity) with natural text contrast preserved.
+   - Never use opaque solid blue highlights that obliterate font weights or clash with light UI backgrounds.
+
+6. **Clipboard Augmentation Protocol**:
+   - For high-frequency copy targets (e.g. contact email addresses, phone numbers, application URLs), do not rely solely on manual drag-and-select. Always pair the `select-text` display with a canonical `CopyIconButton` or `EmailIconButton` (`src/components/IconButton.tsx`) for zero-drag 1-click clipboard actions.

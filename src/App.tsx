@@ -175,7 +175,7 @@ function TrackletAppContent() {
 
   return (
     <AuthGate onReloadData={loadData}>
-      <div className="flex h-screen w-screen bg-slate-50 text-slate-900 font-sans overflow-hidden antialiased select-none">
+      <div className="flex h-screen w-screen bg-slate-50 text-slate-900 font-sans overflow-hidden antialiased">
         <Sidebar onSignOut={handleSignOut} />
         <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
           {(activeTab === 'all' || activeTab === 'pipeline') && !isNotFound && <TopBar />}

@@ -132,6 +132,8 @@ The Tracklet color system pairs a neutral Slate palette with vibrant, semantic s
 ### Named Rules
 **The Dual Register Rule.** Headings use geometric display face `Outfit` for brand authority; data values use `JetBrains Mono` for tabular precision.
 
+**The Executive Text Selection Rule.** Text selection highlights must use Tracklet's brand-tinted palette (`rgba(37, 99, 235, 0.18)` highlight with `#0f172a` text). App Chrome (buttons, tabs, headers, badges) must be strictly `select-none` to prevent accidental drag/click highlight glitches, while Content & Data (company names, job titles, notes, contacts) must remain explicitly `select-text`. Never wrap data in parent `select-none` without carving out child `select-text`. Pair critical data with `CopyIconButton`.
+
 ---
 
 ## Layout
