@@ -628,10 +628,16 @@ export class ContactRepository {
         });
       }
 
+      // Authored ids are preserved so seeded contact↔application links
+      // (applicationIds) remain valid; items without an id get a
+      // generated Firestore id.
       const itemsWithRefs = demoItems.map((item) => {
-        const docRef = doc(collection(db, 'users', userId, 'contacts'));
+        const { id: authoredId, ...rest } = item;
+        const docRef = authoredId
+          ? doc(db, 'users', userId, 'contacts', authoredId)
+          : doc(collection(db, 'users', userId, 'contacts'));
         const contactObj = sanitizeForFirestore({
-          ...item,
+          ...rest,
           userId,
         });
         return { docRef, contactObj };
