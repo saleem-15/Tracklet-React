@@ -377,11 +377,16 @@ export class ApplicationRepository {
         });
       }
 
-      // Seed new batch
+      // Seed new batch — authored ids are preserved so the seeded
+      // relationship graph (contactIds / applicationIds / email contactId)
+      // stays intact; items without an id get a generated Firestore id.
       const itemsWithRefs = initialWithHistory.map((item) => {
-        const docRef = doc(collection(db, 'users', userId, 'applications'));
+        const { id: authoredId, ...rest } = item;
+        const docRef = authoredId
+          ? doc(db, 'users', userId, 'applications', authoredId)
+          : doc(collection(db, 'users', userId, 'applications'));
         const appObj = sanitizeForFirestore({
-          ...item,
+          ...rest,
           userId,
         });
         return { docRef, appObj };

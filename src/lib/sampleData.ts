@@ -5,8 +5,11 @@ import { getPresetDate } from './contactUtils';
  * Demo seed data — 15 applications spread across every pipeline stage.
  *
  * Conventions:
- * - Top-level ids/userId are omitted; Firestore generates them at seed time.
- * - Nested items use hand-coded ids: contacts `c#`, tasks `t#`, emails `em#`,
+ * - Top-level ids are authored (`app-<slug>`, `c#`) so the relationship graph
+ *   can be wired statically: `contactIds` on applications, `applicationIds`
+ *   on contacts, and `contactId` on email logs. The repositories write these
+ *   docs with the authored id; user ids are added at seed time.
+ * - Nested items use the same ids: contacts `c#`, tasks `t#`, emails `em#`,
  *   status history `hist-<company-slug>-N` (unique across this file).
  * - `dateApplied`, task `dueDate`, email `date`, contact `nextFollowUpDate`
  *   are YYYY-MM-DD; all timestamps are ISO 8601 UTC (`Z`).
@@ -17,9 +20,10 @@ import { getPresetDate } from './contactUtils';
  *   others don't; remote roles vary between "Remote", "Remote — US only",
  *   "Remote — Worldwide", etc.
  */
-export const INITIAL_SAMPLE_APPLICATIONS: Omit<Application, 'id' | 'userId'>[] = [
+export const INITIAL_SAMPLE_APPLICATIONS: Omit<Application, 'userId'>[] = [
   // ─────────────────────────────── OFFER ───────────────────────────────
   {
+    id: 'app-honeycomb',
     company: 'Honeycomb',
     role: 'Staff Platform Engineer',
     platform: 'Greenhouse',
@@ -31,6 +35,7 @@ export const INITIAL_SAMPLE_APPLICATIONS: Omit<Application, 'id' | 'userId'>[] =
     jobLink: 'https://boards.greenhouse.io/honeycomb/jobs/6102203',
     emailThreadUrl: 'https://mail.google.com/mail/u/0/#inbox/FMfcgzQqZwTkxYvH',
     contactEmail: 'maya.osei@honeycomb.io',
+    contactIds: ['c1', 'c2'],
     companyDomain: 'honeycomb.io',
     contacts: [
       {
@@ -62,6 +67,7 @@ export const INITIAL_SAMPLE_APPLICATIONS: Omit<Application, 'id' | 'userId'>[] =
         id: 'em1',
         subject: 'Official Offer — Staff Platform Engineer at Honeycomb',
         sender: 'maya.osei@honeycomb.io',
+        contactId: 'c1',
         recipient: 'You',
         date: '2026-11-09',
         timestamp: '2026-11-09T17:25:00Z',
@@ -75,6 +81,7 @@ export const INITIAL_SAMPLE_APPLICATIONS: Omit<Application, 'id' | 'userId'>[] =
         subject: 'Re: Official Offer — a few questions before I sign',
         sender: 'You',
         recipient: 'maya.osei@honeycomb.io',
+        contactId: 'c1',
         date: '2026-11-10',
         timestamp: '2026-11-10T09:20:00Z',
         direction: 'outbound',
@@ -98,6 +105,7 @@ export const INITIAL_SAMPLE_APPLICATIONS: Omit<Application, 'id' | 'userId'>[] =
 
   // ────────────────────────────── INTERVIEW ──────────────────────────────
   {
+    id: 'app-duolingo',
     company: 'Duolingo',
     role: 'Senior Backend Engineer',
     platform: 'Company Site',
@@ -109,6 +117,7 @@ export const INITIAL_SAMPLE_APPLICATIONS: Omit<Application, 'id' | 'userId'>[] =
     jobLink: 'https://careers.duolingo.com/jobs/senior-backend-engineer-learning',
     emailThreadUrl: 'https://mail.google.com/mail/u/0/#inbox/FMfcgzQqZbNvHsTd',
     contactEmail: 'r.betancourt@duolingo.com',
+    contactIds: ['c3', 'c4'],
     contacts: [
       {
         id: 'c3',
@@ -138,6 +147,7 @@ export const INITIAL_SAMPLE_APPLICATIONS: Omit<Application, 'id' | 'userId'>[] =
         id: 'em3',
         subject: 'Take-home Exercise — Senior Backend Engineer',
         sender: 'r.betancourt@duolingo.com',
+        contactId: 'c3',
         recipient: 'You',
         date: '2026-10-14',
         timestamp: '2026-10-14T14:05:00Z',
@@ -150,6 +160,7 @@ export const INITIAL_SAMPLE_APPLICATIONS: Omit<Application, 'id' | 'userId'>[] =
         subject: 'Take-home submission — Spaced Repetition API',
         sender: 'You',
         recipient: 'r.betancourt@duolingo.com',
+        contactId: 'c3',
         date: '2026-10-19',
         timestamp: '2026-10-19T20:40:00Z',
         direction: 'outbound',
@@ -160,6 +171,7 @@ export const INITIAL_SAMPLE_APPLICATIONS: Omit<Application, 'id' | 'userId'>[] =
         id: 'em5',
         subject: 'Interview Loop — Wednesday Nov 18',
         sender: 'r.betancourt@duolingo.com',
+        contactId: 'c3',
         recipient: 'You',
         date: '2026-11-02',
         timestamp: '2026-11-02T15:55:00Z',
@@ -178,6 +190,7 @@ export const INITIAL_SAMPLE_APPLICATIONS: Omit<Application, 'id' | 'userId'>[] =
     updatedAt: '2026-11-02T16:00:00Z'
   },
   {
+    id: 'app-zapier',
     company: 'Zapier',
     role: 'Staff Full-Stack Engineer',
     platform: 'LinkedIn',
@@ -189,6 +202,7 @@ export const INITIAL_SAMPLE_APPLICATIONS: Omit<Application, 'id' | 'userId'>[] =
     jobLink: 'https://zapier.com/jobs/staff-fullstack-engineer/',
     emailThreadUrl: 'https://mail.google.com/mail/u/0/#inbox/FMfcgzQqZcKpLwRt',
     contactEmail: 'jana.kowalski@zapier.com',
+    contactIds: ['c5'],
     contacts: [
       {
         id: 'c5',
@@ -208,6 +222,7 @@ export const INITIAL_SAMPLE_APPLICATIONS: Omit<Application, 'id' | 'userId'>[] =
         id: 'em6',
         subject: 'Next Steps — Staff Full-Stack Engineer',
         sender: 'jana.kowalski@zapier.com',
+        contactId: 'c5',
         recipient: 'You',
         date: '2026-10-27',
         timestamp: '2026-10-27T15:50:00Z',
@@ -220,6 +235,7 @@ export const INITIAL_SAMPLE_APPLICATIONS: Omit<Application, 'id' | 'userId'>[] =
         subject: 'Re: Next Steps — Staff Full-Stack Engineer',
         sender: 'You',
         recipient: 'jana.kowalski@zapier.com',
+        contactId: 'c5',
         date: '2026-10-27',
         timestamp: '2026-10-27T19:05:00Z',
         direction: 'outbound',
@@ -237,6 +253,7 @@ export const INITIAL_SAMPLE_APPLICATIONS: Omit<Application, 'id' | 'userId'>[] =
     updatedAt: '2026-11-10T15:00:00Z'
   },
   {
+    id: 'app-sourcegraph',
     company: 'Sourcegraph',
     role: 'Senior Backend Engineer',
     platform: 'Referral',
@@ -247,6 +264,7 @@ export const INITIAL_SAMPLE_APPLICATIONS: Omit<Application, 'id' | 'userId'>[] =
     status: 'Interview',
     jobLink: 'https://sourcegraph.com/careers/senior-backend-engineer',
     contactEmail: 'recruiting@sourcegraph.com',
+    contactIds: ['c6'],
     contacts: [
       {
         id: 'c6',
@@ -286,6 +304,7 @@ export const INITIAL_SAMPLE_APPLICATIONS: Omit<Application, 'id' | 'userId'>[] =
 
   // ────────────────────────────── SCREENING ──────────────────────────────
   {
+    id: 'app-attio',
     company: 'Attio',
     role: 'Product Engineer',
     platform: 'Lever',
@@ -296,6 +315,7 @@ export const INITIAL_SAMPLE_APPLICATIONS: Omit<Application, 'id' | 'userId'>[] =
     status: 'Screening',
     jobLink: 'https://jobs.lever.co/attio/product-engineer',
     contactEmail: 'people@attio.com',
+    contactIds: ['c7'],
     contacts: [
       {
         id: 'c7',
@@ -314,6 +334,7 @@ export const INITIAL_SAMPLE_APPLICATIONS: Omit<Application, 'id' | 'userId'>[] =
         id: 'em9',
         subject: 'Recruiter Screen — Product Engineer at Attio',
         sender: 'people@attio.com',
+        contactId: 'c7',
         recipient: 'You',
         date: '2026-11-12',
         timestamp: '2026-11-12T10:25:00Z',
@@ -331,6 +352,7 @@ export const INITIAL_SAMPLE_APPLICATIONS: Omit<Application, 'id' | 'userId'>[] =
     updatedAt: '2026-11-12T10:30:00Z'
   },
   {
+    id: 'app-neon',
     company: 'Neon',
     role: 'Senior Developer Advocate',
     platform: 'Greenhouse',
@@ -355,6 +377,7 @@ export const INITIAL_SAMPLE_APPLICATIONS: Omit<Application, 'id' | 'userId'>[] =
 
   // ─────────────────────────────── APPLIED ───────────────────────────────
   {
+    id: 'app-webflow',
     company: 'Webflow',
     role: 'Senior Frontend Engineer',
     platform: 'Company Site',
@@ -370,6 +393,7 @@ export const INITIAL_SAMPLE_APPLICATIONS: Omit<Application, 'id' | 'userId'>[] =
     updatedAt: '2026-11-13T09:45:00Z'
   },
   {
+    id: 'app-posthog',
     company: 'PostHog',
     role: 'Growth Engineer',
     platform: 'Company Site',
@@ -402,6 +426,7 @@ export const INITIAL_SAMPLE_APPLICATIONS: Omit<Application, 'id' | 'userId'>[] =
     updatedAt: '2026-11-09T09:30:00Z'
   },
   {
+    id: 'app-careem',
     company: 'Careem',
     role: 'Senior Mobile Engineer',
     platform: 'Bayt',
@@ -436,6 +461,7 @@ export const INITIAL_SAMPLE_APPLICATIONS: Omit<Application, 'id' | 'userId'>[] =
 
   // ──────────────────────────────── SAVED ────────────────────────────────
   {
+    id: 'app-framer',
     company: 'Framer',
     role: 'Design Engineer',
     platform: 'Otta',
@@ -451,6 +477,7 @@ export const INITIAL_SAMPLE_APPLICATIONS: Omit<Application, 'id' | 'userId'>[] =
     updatedAt: '2026-11-11T20:15:00Z'
   },
   {
+    id: 'app-watershed',
     company: 'Watershed',
     role: 'Data Engineer',
     platform: 'Wellfound',
@@ -468,6 +495,7 @@ export const INITIAL_SAMPLE_APPLICATIONS: Omit<Application, 'id' | 'userId'>[] =
 
   // ─────────────────────────────── REJECTED ──────────────────────────────
   {
+    id: 'app-klaviyo',
     company: 'Klaviyo',
     role: 'Senior Software Engineer',
     platform: 'LinkedIn',
@@ -500,6 +528,7 @@ export const INITIAL_SAMPLE_APPLICATIONS: Omit<Application, 'id' | 'userId'>[] =
     updatedAt: '2026-10-29T13:00:00Z'
   },
   {
+    id: 'app-benchling',
     company: 'Benchling',
     role: 'Senior Full-Stack Engineer',
     platform: 'Lever',
@@ -511,6 +540,7 @@ export const INITIAL_SAMPLE_APPLICATIONS: Omit<Application, 'id' | 'userId'>[] =
     jobLink: 'https://jobs.lever.co/benchling/senior-fullstack-engineer',
     emailThreadUrl: 'https://mail.google.com/mail/u/0/#inbox/FMfcgzQqZdRmXjNk',
     contactEmail: 'margaret.yao@benchling.com',
+    contactIds: ['c8', 'c9'],
     contacts: [
       {
         id: 'c8',
@@ -542,6 +572,7 @@ export const INITIAL_SAMPLE_APPLICATIONS: Omit<Application, 'id' | 'userId'>[] =
         subject: 'Thank you — final round on Thursday',
         sender: 'You',
         recipient: 'margaret.yao@benchling.com',
+        contactId: 'c8',
         date: '2026-10-23',
         timestamp: '2026-10-23T10:15:00Z',
         direction: 'outbound',
@@ -552,6 +583,7 @@ export const INITIAL_SAMPLE_APPLICATIONS: Omit<Application, 'id' | 'userId'>[] =
         id: 'em14',
         subject: 'Update on your Benchling application',
         sender: 'margaret.yao@benchling.com',
+        contactId: 'c8',
         recipient: 'You',
         date: '2026-10-27',
         timestamp: '2026-10-27T16:40:00Z',
@@ -574,6 +606,7 @@ export const INITIAL_SAMPLE_APPLICATIONS: Omit<Application, 'id' | 'userId'>[] =
     updatedAt: '2026-10-28T09:30:00Z'
   },
   {
+    id: 'app-amplitude',
     company: 'Amplitude',
     role: 'Backend Engineer, Data Platform',
     platform: 'Indeed',
@@ -596,6 +629,7 @@ export const INITIAL_SAMPLE_APPLICATIONS: Omit<Application, 'id' | 'userId'>[] =
 
   // ─────────────────────────────── ARCHIVED ──────────────────────────────
   {
+    id: 'app-gitbook',
     company: 'GitBook',
     role: 'Senior Frontend Engineer — Editor Platform',
     platform: 'Otta',
@@ -617,8 +651,9 @@ export const INITIAL_SAMPLE_APPLICATIONS: Omit<Application, 'id' | 'userId'>[] =
   }
 ];
 
-export const INITIAL_SAMPLE_CONTACTS: Omit<Contact, 'id' | 'userId'>[] = [
+export const INITIAL_SAMPLE_CONTACTS: Omit<Contact, 'userId'>[] = [
   {
+    id: 'c1',
     name: 'Maya Osei',
     role: 'Technical Recruiter',
     organization: 'Honeycomb',
@@ -627,11 +662,12 @@ export const INITIAL_SAMPLE_CONTACTS: Omit<Contact, 'id' | 'userId'>[] = [
     phone: '+1 415-555-0162',
     linkedIn: 'https://linkedin.com/in/mayaosei',
     notes: 'Primary contact for the Honeycomb offer. Said start date is flexible — no rush on signing.',
-    applicationIds: [],
+    applicationIds: ['app-honeycomb'],
     createdAt: '2026-10-14T17:00:00Z',
     updatedAt: '2026-11-09T17:30:00Z'
   },
   {
+    id: 'c2',
     name: 'Priya Raghavan',
     role: 'Engineering Manager, Ingestion',
     organization: 'Honeycomb',
@@ -639,11 +675,12 @@ export const INITIAL_SAMPLE_CONTACTS: Omit<Contact, 'id' | 'userId'>[] = [
     email: 'priya.raghavan@honeycomb.io',
     linkedIn: 'https://linkedin.com/in/priyaraghavan',
     notes: 'Hiring manager for the Staff Platform role. Already walked through team scope — ClickHouse pipeline ownership.',
-    applicationIds: [],
+    applicationIds: ['app-honeycomb'],
     createdAt: '2026-10-14T17:00:00Z',
     updatedAt: '2026-11-09T17:30:00Z'
   },
   {
+    id: 'c3',
     name: 'Rachel Betancourt',
     role: 'Talent Partner',
     organization: 'Duolingo',
@@ -652,11 +689,24 @@ export const INITIAL_SAMPLE_CONTACTS: Omit<Contact, 'id' | 'userId'>[] = [
     phone: '+1 412-555-0177',
     linkedIn: 'https://linkedin.com/in/rachelbetancourt',
     notes: 'Runs the Duolingo loop logistics. Fast replies, sends everything in writing.',
-    applicationIds: [],
+    applicationIds: ['app-duolingo'],
     createdAt: '2026-10-12T09:15:00Z',
     updatedAt: '2026-11-02T16:00:00Z'
   },
   {
+    id: 'c4',
+    name: 'Sam Okonkwo',
+    role: 'Engineering Manager, Learning Platform',
+    organization: 'Duolingo',
+    category: 'Hiring Manager',
+    email: 's.okonkwo@duolingo.com',
+    notes: 'Hiring manager. Runs the experiment-assignment service — the team Duolingo is hiring for.',
+    applicationIds: ['app-duolingo'],
+    createdAt: '2026-10-12T09:15:00Z',
+    updatedAt: '2026-11-02T16:00:00Z'
+  },
+  {
+    id: 'c5',
     name: 'Jana Kowalski',
     role: 'Senior Recruiter',
     organization: 'Zapier',
@@ -664,11 +714,12 @@ export const INITIAL_SAMPLE_CONTACTS: Omit<Contact, 'id' | 'userId'>[] = [
     email: 'jana.kowalski@zapier.com',
     linkedIn: 'https://linkedin.com/in/janakowalski-zapier',
     notes: 'Coordinated both Zapier screens. Mentioned the comp band is shared only at offer stage.',
-    applicationIds: [],
+    applicationIds: ['app-zapier'],
     createdAt: '2026-10-18T11:20:00Z',
     updatedAt: '2026-11-10T15:00:00Z'
   },
   {
+    id: 'c8',
     name: 'Margaret Yao',
     role: 'Technical Recruiter',
     organization: 'Benchling',
@@ -677,11 +728,12 @@ export const INITIAL_SAMPLE_CONTACTS: Omit<Contact, 'id' | 'userId'>[] = [
     phone: '+1 415-555-0139',
     linkedIn: 'https://linkedin.com/in/margaretyao',
     notes: 'Gave genuinely useful rejection feedback. Encouraged re-applying in ~6 months and offered to re-engage directly.',
-    applicationIds: [],
+    applicationIds: ['app-benchling'],
     createdAt: '2026-09-28T15:05:00Z',
     updatedAt: '2026-10-27T16:45:00Z'
   },
   {
+    id: 'c9',
     name: 'Anika Srinivasan',
     role: 'Director of Engineering, Notebook',
     organization: 'Benchling',
@@ -689,11 +741,12 @@ export const INITIAL_SAMPLE_CONTACTS: Omit<Contact, 'id' | 'userId'>[] = [
     email: 'anika.srinivasan@benchling.com',
     linkedIn: 'https://linkedin.com/in/anikasrinivasan',
     notes: 'Ran the first Benchling round — warm, very deep on product thinking. Worth reconnecting regardless of outcome.',
-    applicationIds: [],
+    applicationIds: ['app-benchling'],
     createdAt: '2026-09-28T15:05:00Z',
     updatedAt: '2026-10-27T16:45:00Z'
   },
   {
+    id: 'c6',
     name: 'Dev Patel',
     role: 'Staff Engineer',
     organization: 'Sourcegraph',
@@ -702,11 +755,24 @@ export const INITIAL_SAMPLE_CONTACTS: Omit<Contact, 'id' | 'userId'>[] = [
     linkedIn: 'https://linkedin.com/in/devpatel-eng',
     notes: 'Former teammate. Referred me to the Sourcegraph hiring manager and fast-tracked the process.',
     nextFollowUpDate: getPresetDate(3),
-    applicationIds: [],
+    applicationIds: ['app-sourcegraph'],
     createdAt: '2026-10-09T13:00:00Z',
     updatedAt: '2026-11-05T14:00:00Z'
   },
   {
+    id: 'c7',
+    name: 'Claire Whitfield',
+    role: 'People Operations',
+    organization: 'Attio',
+    category: 'Recruiter',
+    email: 'people@attio.com',
+    notes: 'Runs the recruiter screen. Warned the process moves fast — full loop inside two weeks.',
+    applicationIds: ['app-attio'],
+    createdAt: '2026-11-01T10:10:00Z',
+    updatedAt: '2026-11-12T10:30:00Z'
+  },
+  {
+    id: 'c10',
     name: 'Naomi Adler',
     role: 'Principal Engineer & Career Mentor',
     organization: 'Independent',
