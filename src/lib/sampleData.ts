@@ -1,635 +1,738 @@
 import { Application, Contact } from '../types';
 import { getPresetDate } from './contactUtils';
 
+/**
+ * Demo seed data — 15 applications spread across every pipeline stage.
+ *
+ * Conventions:
+ * - Top-level ids/userId are omitted; Firestore generates them at seed time.
+ * - Nested items use hand-coded ids: contacts `c#`, tasks `t#`, emails `em#`,
+ *   status history `hist-<company-slug>-N` (unique across this file).
+ * - `dateApplied`, task `dueDate`, email `date`, contact `nextFollowUpDate`
+ *   are YYYY-MM-DD; all timestamps are ISO 8601 UTC (`Z`).
+ * - Density varies deliberately: a few rich records (contacts + tasks + emails
+ *   + history + resume attachment), several mid, and several minimal ones —
+ *   real pipelines are uneven.
+ * - Salary/location nuance lives in free text: some postings disclose comp,
+ *   others don't; remote roles vary between "Remote", "Remote — US only",
+ *   "Remote — Worldwide", etc.
+ */
 export const INITIAL_SAMPLE_APPLICATIONS: Omit<Application, 'id' | 'userId'>[] = [
+  // ─────────────────────────────── OFFER ───────────────────────────────
   {
-    company: 'Linear',
+    company: 'Honeycomb',
+    role: 'Staff Platform Engineer',
+    platform: 'Greenhouse',
+    workLocation: 'Hybrid',
+    employmentType: 'Full-time',
+    location: 'San Francisco, CA',
+    dateApplied: '2026-10-05',
+    status: 'Offer',
+    jobLink: 'https://boards.greenhouse.io/honeycomb/jobs/6102203',
+    emailThreadUrl: 'https://mail.google.com/mail/u/0/#inbox/FMfcgzQqZwTkxYvH',
+    contactEmail: 'maya.osei@honeycomb.io',
+    companyDomain: 'honeycomb.io',
+    contacts: [
+      {
+        id: 'c1',
+        name: 'Maya Osei',
+        role: 'Technical Recruiter',
+        email: 'maya.osei@honeycomb.io',
+        phone: '+1 415-555-0162',
+        linkedIn: 'https://linkedin.com/in/mayaosei',
+        notes: 'Primary contact for the offer. Said start date is flexible — no rush on signing.'
+      },
+      {
+        id: 'c2',
+        name: 'Priya Raghavan',
+        role: 'Engineering Manager, Ingestion',
+        email: 'priya.raghavan@honeycomb.io',
+        linkedIn: 'https://linkedin.com/in/priyaraghavan',
+        notes: 'Hiring manager. Already discussed team scope — ClickHouse pipeline ownership.'
+      }
+    ],
+    tasks: [
+      { id: 't1', title: 'Review offer breakdown (base + signing + RSUs)', completed: true, completedAt: '2026-11-10T13:00:00Z' },
+      { id: 't2', title: 'List comp questions for Maya (equity refresh, signing split)', completed: true, completedAt: '2026-11-11T08:00:00Z' },
+      { id: 't3', title: 'Decide start date — Dec 7 vs Jan 4', completed: false, dueDate: '2026-11-20' }
+    ],
+    notes: 'Offer received Nov 9: $232k base + $25k signing + $180k RSUs over 4 years. Hybrid — 3 days/week in SF HQ. Posting did not list a range, so the offer is my first hard number.',
+    emails: [
+      {
+        id: 'em1',
+        subject: 'Official Offer — Staff Platform Engineer at Honeycomb',
+        sender: 'maya.osei@honeycomb.io',
+        recipient: 'You',
+        date: '2026-11-09',
+        timestamp: '2026-11-09T17:25:00Z',
+        direction: 'inbound',
+        snippet: 'We are delighted to extend an official offer for the Staff Platform Engineer role...',
+        body: 'Hi!\n\nWe are delighted to extend an official offer for the Staff Platform Engineer role on the Ingestion team.\n\nSummary of terms:\n• Base Salary: $232,000 / year\n• Signing Bonus: $25,000 (paid in first paycheck)\n• Equity: $180,000 RSUs vested over 4 years with annual refresh\n• Location: SF HQ, hybrid — 3 days onsite\n\nThe DocuSign packet is valid through Nov 23. Ping me anytime to talk through details — happy to jump on a call.\n\nWarmly,\nMaya',
+        emailUrl: 'https://mail.google.com/mail/u/0/#inbox/FMfcgzQqZwTkxYvH'
+      },
+      {
+        id: 'em2',
+        subject: 'Re: Official Offer — a few questions before I sign',
+        sender: 'You',
+        recipient: 'maya.osei@honeycomb.io',
+        date: '2026-11-10',
+        timestamp: '2026-11-10T09:20:00Z',
+        direction: 'outbound',
+        snippet: 'Hi Maya, thank you and the whole panel — I am thrilled. Before signing: how does the annual refresh...',
+        body: 'Hi Maya,\n\nThank you, and please pass my thanks to the whole panel — I am genuinely excited about this one.\n\nBefore I sign, three quick things:\n1. How does the annual refresh grant work in practice?\n2. Is the signing bonus negotiable against a slightly higher base?\n3. Could the start date be Jan 4 instead of Dec 7?\n\nA 20-minute call this week would be great if easier.\n\nBest,\nCandidate'
+      }
+    ],
+    history: [
+      { id: 'hist-honeycomb-1', toStatus: 'Applied', timestamp: '2026-10-05T08:35:00Z' },
+      { id: 'hist-honeycomb-2', fromStatus: 'Applied', toStatus: 'Screening', timestamp: '2026-10-14T17:00:00Z', note: 'Recruiter screen with Maya — strong fit on observability background.' },
+      { id: 'hist-honeycomb-3', fromStatus: 'Screening', toStatus: 'Interview', timestamp: '2026-10-28T18:00:00Z', note: 'Virtual onsite completed — 4 rounds, all positive signals.' },
+      { id: 'hist-honeycomb-4', fromStatus: 'Interview', toStatus: 'Offer', timestamp: '2026-11-09T17:30:00Z', note: 'Verbal + written offer extended.' }
+    ],
+    resumeFileName: 'Resume_Staff_Platform_Honeycomb.pdf',
+    resumeFileSize: 184320,
+    resumeUploadedAt: '2026-10-05T08:40:00Z',
+    stageUpdatedAt: '2026-11-09T17:30:00Z',
+    createdAt: '2026-10-05T08:35:00Z',
+    updatedAt: '2026-11-10T09:20:00Z'
+  },
+
+  // ────────────────────────────── INTERVIEW ──────────────────────────────
+  {
+    company: 'Duolingo',
+    role: 'Senior Backend Engineer',
+    platform: 'Company Site',
+    workLocation: 'Hybrid',
+    employmentType: 'Full-time',
+    location: 'Pittsburgh, PA',
+    dateApplied: '2026-10-12',
+    status: 'Interview',
+    jobLink: 'https://careers.duolingo.com/jobs/senior-backend-engineer-learning',
+    emailThreadUrl: 'https://mail.google.com/mail/u/0/#inbox/FMfcgzQqZbNvHsTd',
+    contactEmail: 'r.betancourt@duolingo.com',
+    contacts: [
+      {
+        id: 'c3',
+        name: 'Rachel Betancourt',
+        role: 'Talent Partner',
+        email: 'r.betancourt@duolingo.com',
+        phone: '+1 412-555-0177',
+        linkedIn: 'https://linkedin.com/in/rachelbetancourt',
+        notes: 'Runs the loop logistics. Fast replies, sends everything in writing.'
+      },
+      {
+        id: 'c4',
+        name: 'Sam Okonkwo',
+        role: 'Engineering Manager, Learning Platform',
+        email: 's.okonkwo@duolingo.com',
+        notes: 'HM. Mentioned the team owns the experiment-assignment service.'
+      }
+    ],
+    tasks: [
+      { id: 't4', title: 'Backend take-home — Spaced Repetition API', completed: true, dueDate: '2026-10-19', completedAt: '2026-10-19T20:30:00Z' },
+      { id: 't5', title: 'Prep system design round: A/B experiment infra', completed: false, dueDate: '2026-11-17' },
+      { id: 't6', title: 'Re-read Duolingo engineering blog posts on streaks infra', completed: false, dueDate: '2026-11-16' }
+    ],
+    notes: 'Posting listed $180–215k base. Take-home passed review with "clean API design" feedback. 3-round virtual loop Nov 18: system design, API deep-dive, values. Role is 2 days/week onsite in Pittsburgh after hire.',
+    emails: [
+      {
+        id: 'em3',
+        subject: 'Take-home Exercise — Senior Backend Engineer',
+        sender: 'r.betancourt@duolingo.com',
+        recipient: 'You',
+        date: '2026-10-14',
+        timestamp: '2026-10-14T14:05:00Z',
+        direction: 'inbound',
+        snippet: 'Great speaking with you! As promised, here is the take-home: design a Spaced Repetition API...',
+        body: 'Hi!\n\nGreat speaking with you today. As promised, here is the take-home exercise:\n\nDesign and implement a small Spaced Repetition API (SM-2 or similar). We care most about API design, data modeling, and tests — not framework choice. Time budget: 4–6 hours, done by Oct 19 EOD.\n\nReply with a repo link and a short README of trade-offs.\n\nBest,\nRachel'
+      },
+      {
+        id: 'em4',
+        subject: 'Take-home submission — Spaced Repetition API',
+        sender: 'You',
+        recipient: 'r.betancourt@duolingo.com',
+        date: '2026-10-19',
+        timestamp: '2026-10-19T20:40:00Z',
+        direction: 'outbound',
+        snippet: 'Hi Rachel, submission attached. README covers the SM-2 interval math, the review queue model...',
+        body: 'Hi Rachel,\n\nSubmission is in: github.com/candidate/srs-takehome.\n\nThe README covers the SM-2 interval math, the review-queue data model, and why I skipped auth (out of scope, noted in trade-offs). Happy to walk through any of it live.\n\nThanks!\nCandidate'
+      },
+      {
+        id: 'em5',
+        subject: 'Interview Loop — Wednesday Nov 18',
+        sender: 'r.betancourt@duolingo.com',
+        recipient: 'You',
+        date: '2026-11-02',
+        timestamp: '2026-11-02T15:55:00Z',
+        direction: 'inbound',
+        snippet: 'Good news — the team loved your take-home. Your virtual loop is confirmed for Wednesday, Nov 18...',
+        body: 'Hi!\n\nGood news — the team really enjoyed your take-home. Your virtual loop is confirmed:\n\nWed, Nov 18 (ET)\n• 10:00 — System design: experiment assignment at scale (Sam)\n• 11:15 — API deep-dive (two engineers)\n• 12:30 — Values & collaboration\n\nCalendar invites with video links to follow. Anything we can do to set you up for success, just say the word.\n\nBest,\nRachel'
+      }
+    ],
+    history: [
+      { id: 'hist-duolingo-1', toStatus: 'Applied', timestamp: '2026-10-12T09:15:00Z' },
+      { id: 'hist-duolingo-2', fromStatus: 'Applied', toStatus: 'Screening', timestamp: '2026-10-20T15:00:00Z', note: 'Recruiter call with Rachel — positive.' },
+      { id: 'hist-duolingo-3', fromStatus: 'Screening', toStatus: 'Interview', timestamp: '2026-11-02T16:00:00Z', note: 'Take-home passed; virtual loop scheduled for Nov 18.' }
+    ],
+    stageUpdatedAt: '2026-11-02T16:00:00Z',
+    createdAt: '2026-10-12T09:15:00Z',
+    updatedAt: '2026-11-02T16:00:00Z'
+  },
+  {
+    company: 'Zapier',
+    role: 'Staff Full-Stack Engineer',
+    platform: 'LinkedIn',
+    workLocation: 'Remote',
+    employmentType: 'Full-time',
+    location: 'Remote — US only',
+    dateApplied: '2026-10-18',
+    status: 'Interview',
+    jobLink: 'https://zapier.com/jobs/staff-fullstack-engineer/',
+    emailThreadUrl: 'https://mail.google.com/mail/u/0/#inbox/FMfcgzQqZcKpLwRt',
+    contactEmail: 'jana.kowalski@zapier.com',
+    contacts: [
+      {
+        id: 'c5',
+        name: 'Jana Kowalski',
+        role: 'Senior Recruiter',
+        email: 'jana.kowalski@zapier.com',
+        linkedIn: 'https://linkedin.com/in/janakowalski-zapier',
+        notes: 'Coordinated both screens. Mentioned comp band is shared only at offer stage.'
+      }
+    ],
+    tasks: [
+      { id: 't7', title: 'Prep deep-dive: multi-tenant permissions & audit logging walkthrough', completed: false, dueDate: '2026-11-16' }
+    ],
+    notes: 'Posting says "Remote — US only" with no comp listed. Deep-dive scheduled Nov 17 with two staff engineers — expects a live walkthrough of a past architecture decision.',
+    emails: [
+      {
+        id: 'em6',
+        subject: 'Next Steps — Staff Full-Stack Engineer',
+        sender: 'jana.kowalski@zapier.com',
+        recipient: 'You',
+        date: '2026-10-27',
+        timestamp: '2026-10-27T15:50:00Z',
+        direction: 'inbound',
+        snippet: 'Feedback from both of your screens was excellent. We would like to schedule the technical deep-dive...',
+        body: 'Hi!\n\nFeedback from both of your screens was excellent, and we would like to move you to the technical deep-dive.\n\nFormat: 75 minutes. The panel asks you to walk through an architecture decision you owned end-to-end — design forces, what you would change now, and how it held up in production.\n\nCould you share 2–3 slots that work between Nov 16–19?\n\nBest,\nJana'
+      },
+      {
+        id: 'em7',
+        subject: 'Re: Next Steps — Staff Full-Stack Engineer',
+        sender: 'You',
+        recipient: 'jana.kowalski@zapier.com',
+        date: '2026-10-27',
+        timestamp: '2026-10-27T19:05:00Z',
+        direction: 'outbound',
+        snippet: 'Hi Jana, thanks for the quick turnaround. Nov 17 at 1pm PT works best on my side...',
+        body: 'Hi Jana,\n\nThanks for the quick turnaround. Nov 17 at 1pm PT works best on my side — I will prep the multi-tenant permissions and audit-logging project as the walkthrough subject since it is the richest one.\n\nLooking forward to it.\n\nBest,\nCandidate'
+      }
+    ],
+    history: [
+      { id: 'hist-zapier-1', toStatus: 'Applied', timestamp: '2026-10-18T11:20:00Z' },
+      { id: 'hist-zapier-2', fromStatus: 'Applied', toStatus: 'Screening', timestamp: '2026-10-27T16:00:00Z', note: 'Recruiter + hiring manager screens on the same day.' },
+      { id: 'hist-zapier-3', fromStatus: 'Screening', toStatus: 'Interview', timestamp: '2026-11-10T15:00:00Z', note: 'Both screens passed; technical deep-dive scheduled Nov 17.' }
+    ],
+    stageUpdatedAt: '2026-11-10T15:00:00Z',
+    createdAt: '2026-10-18T11:20:00Z',
+    updatedAt: '2026-11-10T15:00:00Z'
+  },
+  {
+    company: 'Sourcegraph',
+    role: 'Senior Backend Engineer',
+    platform: 'Referral',
+    workLocation: 'Remote',
+    employmentType: 'Full-time',
+    location: 'Remote',
+    dateApplied: '2026-10-09',
+    status: 'Interview',
+    jobLink: 'https://sourcegraph.com/careers/senior-backend-engineer',
+    contactEmail: 'recruiting@sourcegraph.com',
+    contacts: [
+      {
+        id: 'c6',
+        name: 'Dev Patel',
+        role: 'Staff Engineer',
+        email: 'dev.patel@sourcegraph.com',
+        linkedIn: 'https://linkedin.com/in/devpatel-eng',
+        notes: 'Former teammate. Referred me directly to the hiring manager — skipping the standard recruiter screen.'
+      }
+    ],
+    tasks: [
+      { id: 't8', title: 'Skim Cody context-engine docs and the code-search RFC', completed: true, completedAt: '2026-11-08T11:00:00Z' },
+      { id: 't9', title: 'Prep distributed-tracing design walkthrough for Monday panel', completed: false, dueDate: '2026-11-15' }
+    ],
+    notes: 'Referred by Dev Patel (ex-teammate, now Staff Eng there). Posting listed $190–230k + equity. Panel is Monday Nov 16.',
+    emails: [
+      {
+        id: 'em8',
+        subject: 'Interview Panel Confirmed — Monday, Nov 16',
+        sender: 'recruiting@sourcegraph.com',
+        recipient: 'You',
+        date: '2026-11-04',
+        timestamp: '2026-11-04T16:30:00Z',
+        direction: 'inbound',
+        snippet: 'Thanks to Dev\'s referral we are able to fast-track your process. Your panel is confirmed for Monday...',
+        body: 'Hi!\n\nThanks to Dev\'s referral we were able to fast-track your process past the standard recruiter screen.\n\nPanel confirmed: Monday, Nov 16, 10:00–12:30 PT.\n• Code search architecture discussion\n• Distributed systems design\n• Career conversation with the director\n\nVideo link will arrive the day before. Good luck — Dev had only good things to say!\n\nRecruiting Team'
+      }
+    ],
+    history: [
+      { id: 'hist-sourcegraph-1', toStatus: 'Applied', timestamp: '2026-10-09T13:00:00Z' },
+      { id: 'hist-sourcegraph-2', fromStatus: 'Applied', toStatus: 'Interview', timestamp: '2026-11-05T14:00:00Z', note: 'Fast-tracked past recruiter screen via internal referral; panel set for Nov 16.' }
+    ],
+    stageUpdatedAt: '2026-11-05T14:00:00Z',
+    createdAt: '2026-10-09T13:00:00Z',
+    updatedAt: '2026-11-05T14:00:00Z'
+  },
+
+  // ────────────────────────────── SCREENING ──────────────────────────────
+  {
+    company: 'Attio',
+    role: 'Product Engineer',
+    platform: 'Lever',
+    workLocation: 'Remote',
+    employmentType: 'Full-time',
+    location: 'Remote — UK & EU',
+    dateApplied: '2026-11-01',
+    status: 'Screening',
+    jobLink: 'https://jobs.lever.co/attio/product-engineer',
+    contactEmail: 'people@attio.com',
+    contacts: [
+      {
+        id: 'c7',
+        name: 'Claire Whitfield',
+        role: 'People Operations',
+        email: 'people@attio.com',
+        notes: 'Runs the recruiter screen. Warned the process moves fast — full loop inside two weeks.'
+      }
+    ],
+    tasks: [
+      { id: 't10', title: 'Prep for 30-min recruiter screen with Claire', completed: false, dueDate: '2026-11-18' }
+    ],
+    notes: 'Posting lists £95–120k + equity. Recruiter screen booked Nov 18, 4pm GMT. They want product-minded engineers who have shipped user-facing features end to end.',
+    emails: [
+      {
+        id: 'em9',
+        subject: 'Recruiter Screen — Product Engineer at Attio',
+        sender: 'people@attio.com',
+        recipient: 'You',
+        date: '2026-11-12',
+        timestamp: '2026-11-12T10:25:00Z',
+        direction: 'inbound',
+        snippet: 'Thanks for applying! We would love to start with a 30-minute intro call on Wednesday, Nov 18...',
+        body: 'Hi!\n\nThanks for applying to Attio — your background with data-heavy product work stood out.\n\nFirst step is a 30-minute intro call. Proposed: Wednesday, Nov 18 at 4pm GMT (8am PT). If that does not work, send a couple of alternatives.\n\nTalk soon,\nClaire'
+      }
+    ],
+    history: [
+      { id: 'hist-attio-1', toStatus: 'Applied', timestamp: '2026-11-01T10:10:00Z' },
+      { id: 'hist-attio-2', fromStatus: 'Applied', toStatus: 'Screening', timestamp: '2026-11-12T10:30:00Z', note: 'Recruiter screen booked for Nov 18.' }
+    ],
+    stageUpdatedAt: '2026-11-12T10:30:00Z',
+    createdAt: '2026-11-01T10:10:00Z',
+    updatedAt: '2026-11-12T10:30:00Z'
+  },
+  {
+    company: 'Neon',
+    role: 'Senior Developer Advocate',
+    platform: 'Greenhouse',
+    workLocation: 'Remote',
+    employmentType: 'Contract',
+    location: 'Remote — US',
+    dateApplied: '2026-10-25',
+    status: 'Screening',
+    jobLink: 'https://neon.com/careers/senior-developer-advocate',
+    tasks: [
+      { id: 't11', title: 'Follow up with Neon recruiting if no reply by Nov 17', completed: false }
+    ],
+    notes: 'Recruiter screen Oct 31 went well — mostly about conference cadence and content style. No salary in the posting; 6-month contract-to-hire. Awaiting hiring manager review.',
+    history: [
+      { id: 'hist-neon-1', toStatus: 'Applied', timestamp: '2026-10-25T12:00:00Z' },
+      { id: 'hist-neon-2', fromStatus: 'Applied', toStatus: 'Screening', timestamp: '2026-10-31T18:00:00Z', note: 'Recruiter screen completed; awaiting HM review.' }
+    ],
+    stageUpdatedAt: '2026-10-31T18:00:00Z',
+    createdAt: '2026-10-25T12:00:00Z',
+    updatedAt: '2026-10-31T18:00:00Z'
+  },
+
+  // ─────────────────────────────── APPLIED ───────────────────────────────
+  {
+    company: 'Webflow',
     role: 'Senior Frontend Engineer',
     platform: 'Company Site',
     workLocation: 'Hybrid',
     employmentType: 'Full-time',
     location: 'San Francisco, CA',
-    dateApplied: '2026-07-15',
-    status: 'Interview',
-    jobLink: 'https://linear.app/careers/senior-frontend-engineer',
-    emailThreadUrl: 'https://mail.google.com/mail/u/0/#inbox/FMfcgzGsmWdGgKhV',
-    contactEmail: 'karla@linear.app',
-    contacts: [
-      {
-        id: 'c1',
-        name: 'Karla Lindqvist',
-        role: 'Tech Talent Lead',
-        email: 'karla@linear.app',
-        phone: '+1 415-555-0144',
-        linkedIn: 'https://linkedin.com/in/karlaindqvist',
-        notes: 'Very friendly, responds promptly via email.'
-      },
-      {
-        id: 'c2',
-        name: 'Tuomas Artman',
-        role: 'Co-founder & CTO',
-        email: 'tuomas@linear.app'
-      }
-    ],
-    tasks: [
-      { id: 't1', title: 'Complete take-home design system assignment', completed: true, dueDate: '2026-07-19', completedAt: '2026-07-19T16:00:00Z' },
-      { id: 't2', title: 'Prepare architecture deck for Thursday panel', completed: false, dueDate: '2026-07-28' },
-      { id: 't3', title: 'Send follow-up thank you email to Karla', completed: false }
-    ],
-    notes: 'Completed technical take-home design system task. Scheduled system design panel on Thursday.',
-    emails: [
-      {
-        id: 'em1',
-        subject: 'Interview Confirmation — System Design Panel',
-        sender: 'karla@linear.app',
-        recipient: 'You',
-        date: '2026-07-20',
-        timestamp: '2026-07-20T14:00:00Z',
-        direction: 'inbound',
-        snippet: 'Hi! We are excited to move forward with the system design interview on Thursday at 2:00 PM PST...',
-        body: 'Hi!\n\nWe are excited to move forward with your candidacy for the Senior Frontend Engineer role. We have scheduled the 60-minute System Design Panel for Thursday, July 23 at 2:00 PM PST.\n\nPanelists:\n- Tuomas Artman (Co-founder)\n- Sarah Chen (Staff Engineer)\n\nZoom Link: https://zoom.us/j/9842103948\n\nPlease let us know if you need to adjust any timing!\n\nBest,\nKarla',
-        emailUrl: 'https://mail.google.com/mail/u/0/#inbox/FMfcgzGsmWdGgKhV',
-      },
-      {
-        id: 'em2',
-        subject: 'Thank You & Follow-up — System Design Panel',
-        sender: 'You',
-        recipient: 'karla@linear.app',
-        date: '2026-07-21',
-        timestamp: '2026-07-21T10:18:00Z',
-        direction: 'outbound',
-        snippet: 'Hi Karla, thanks so much for coordinating the panel interview with Tuomas and Sarah yesterday...',
-        body: 'Hi Karla,\n\nThanks so much for coordinating the panel discussion yesterday. I really enjoyed speaking with Tuomas and Sarah about Linear\'s offline sync engine and design system architecture.\n\nPlease let me know if there is any additional information or work samples I can provide!\n\nBest,\nCandidate',
-      }
-    ],
-    stageUpdatedAt: '2026-07-20T10:00:00Z',
-    createdAt: '2026-07-15T09:00:00Z',
-    updatedAt: '2026-07-20T10:00:00Z',
+    dateApplied: '2026-11-13',
+    status: 'Applied',
+    jobLink: 'https://webflow.com/careers/senior-frontend-engineer-interactions',
+    notes: 'Applied via careers portal yesterday — no response yet, which is normal this early. Posting listed $185–210k.',
+    stageUpdatedAt: '2026-11-13T09:45:00Z',
+    createdAt: '2026-11-13T09:45:00Z',
+    updatedAt: '2026-11-13T09:45:00Z'
   },
   {
-    company: 'Stripe',
-    role: 'Staff Product Engineer',
-    platform: 'Referral',
-    workLocation: 'Hybrid',
-    employmentType: 'Full-time',
-    location: 'Seattle, WA',
-    dateApplied: '2026-07-10',
-    status: 'Offer',
-    jobLink: 'https://stripe.com/jobs/staff-product-engineer',
-    emailThreadUrl: 'https://mail.google.com/mail/u/0/#inbox/FMfcgzGsmQxLmNpR',
-    contactEmail: 'alex.recruiter@stripe.com',
-    contacts: [
-      {
-        id: 'c3',
-        name: 'Alex Rivera',
-        role: 'Senior Staff Recruiter',
-        email: 'alex.recruiter@stripe.com',
-        phone: '+1 650-555-0199',
-        linkedIn: 'https://linkedin.com/in/alexriverastripe',
-        notes: 'Primary point of contact for offer negotiations and benefits package.'
-      },
-      {
-        id: 'c4',
-        name: 'David Chen',
-        role: 'Engineering Director',
-        email: 'dchen@stripe.com',
-        notes: 'Hiring manager for Billing Infrastructure.'
-      }
-    ],
-    tasks: [
-      { id: 't4', title: 'Review offer breakdown (Base + Equity + Signing bonus)', completed: true, completedAt: '2026-07-24T15:30:00Z' },
-      { id: 't5', title: 'Schedule call with David Chen regarding team placement', completed: true, dueDate: '2026-07-25', completedAt: '2026-07-24T15:30:00Z' },
-      { id: 't6', title: 'Sign and return official offer agreement', completed: false, dueDate: '2026-07-30' }
-    ],
-    notes: 'Written offer received! $215k base + equity. Discussing start date and team matching.',
-    emails: [
-      {
-        id: 'em3',
-        subject: 'Official Offer Letter — Staff Product Engineer',
-        sender: 'alex.recruiter@stripe.com',
-        recipient: 'You',
-        date: '2026-07-24',
-        timestamp: '2026-07-24T15:15:00Z',
-        direction: 'inbound',
-        snippet: 'We are thrilled to extend an official offer for the Staff Product Engineer position...',
-        body: 'Hi,\n\nWe are thrilled to extend this formal offer for the Staff Product Engineer position on the Billing Infrastructure team at Stripe!\n\nSummary of terms:\n• Base Salary: $215,000 / year\n• Signing Bonus: $30,000\n• Equity Grant: $400,000 RSUs vested over 4 years\n• Location: Seattle, WA (Hybrid)\n\nPlease review the DocuSign package and let us know if you have questions before next Friday.\n\nBest regards,\nAlex Rivera',
-        emailUrl: 'https://mail.google.com/mail/u/0/#inbox/FMfcgzGsmQxLmNpR',
-      }
-    ],
-    stageUpdatedAt: '2026-07-24T15:30:00Z',
-    createdAt: '2026-07-10T11:00:00Z',
-    updatedAt: '2026-07-24T15:30:00Z',
-  },
-  {
-    company: 'Vercel',
-    role: 'UI Platform Engineer',
-    platform: 'Otta',
-    workLocation: 'Remote',
-    employmentType: 'Full-time',
-    location: 'New York, NY',
-    dateApplied: '2026-07-18',
-    status: 'Screening',
-    jobLink: 'https://vercel.com/careers/ui-platform',
-    contactEmail: 'sarah.miller@vercel.com',
-    contacts: [
-      {
-        id: 'c5',
-        name: 'Sarah Miller',
-        role: 'Technical Recruiter',
-        email: 'sarah.miller@vercel.com',
-        phone: '+1 415-555-8822'
-      }
-    ],
-    tasks: [
-      { id: 't7', title: 'Initial recruiter screening call', completed: true, dueDate: '2026-07-21', completedAt: '2026-07-21T14:00:00Z' },
-      { id: 't8', title: 'Practice live Next.js Server Components coding scenario', completed: false, dueDate: '2026-07-29' }
-    ],
-    notes: 'Recruiter call with Sarah went great. Next step is 45-min coding screen with team lead.',
-    stageUpdatedAt: '2026-07-22T14:00:00Z',
-    createdAt: '2026-07-18T16:20:00Z',
-    updatedAt: '2026-07-22T14:00:00Z',
-  },
-  {
-    company: 'Figma',
-    role: 'Design Systems Engineer',
-    platform: 'LinkedIn',
-    workLocation: 'Onsite',
-    employmentType: 'Full-time',
-    location: 'New York, NY',
-    dateApplied: '2026-07-12',
-    status: 'Interview',
-    jobLink: 'https://figma.com/careers/dse',
-    contactEmail: 'jordan.careers@figma.com',
-    contacts: [
-      {
-        id: 'c6',
-        name: 'Jordan Lee',
-        role: 'Lead Talent Partner',
-        email: 'jordan.careers@figma.com',
-        linkedIn: 'https://linkedin.com/in/jordanleefigma'
-      }
-    ],
-    tasks: [
-      { id: 't9', title: 'Review HTML Canvas & WebGL performance fundamentals', completed: true, completedAt: '2026-07-20T10:00:00Z' },
-      { id: 't10', title: 'Onsite loop preparation with design system mock projects', completed: false, dueDate: '2026-07-28' }
-    ],
-    notes: 'Onsite loop scheduled for next Tuesday. 4 rounds: Canvas rendering, Component APIs, Architecture, Culture.',
-    stageUpdatedAt: '2026-07-21T09:15:00Z',
-    createdAt: '2026-07-12T13:10:00Z',
-    updatedAt: '2026-07-21T09:15:00Z',
-  },
-  {
-    company: 'Supabase',
-    role: 'Full Stack Engineer (Realtime)',
-    platform: 'Lever',
+    company: 'PostHog',
+    role: 'Growth Engineer',
+    platform: 'Company Site',
     workLocation: 'Remote',
     employmentType: 'Full-time',
     location: 'Remote — Worldwide',
-    dateApplied: '2026-07-20',
-    status: 'Screening',
-    jobLink: 'https://supabase.com/careers/fullstack-realtime',
-    notes: 'Applied with custom Elixir/React demo link in cover note.',
-    stageUpdatedAt: '2026-07-23T11:00:00Z',
-    createdAt: '2026-07-20T08:30:00Z',
-    updatedAt: '2026-07-23T11:00:00Z',
+    dateApplied: '2026-11-02',
+    status: 'Applied',
+    jobLink: 'https://posthog.com/careers/growth-engineer',
+    tasks: [
+      { id: 't12', title: 'Polish growth-experiment portfolio doc', completed: true, completedAt: '2026-11-07T15:00:00Z' },
+      { id: 't13', title: 'Send second follow-up if still silent by Nov 17', completed: false, dueDate: '2026-11-17' }
+    ],
+    notes: 'Applied Nov 2. Sent one polite follow-up Nov 9 — no reply yet. No comp in the posting (very PostHog).',
+    emails: [
+      {
+        id: 'em10',
+        subject: 'Growth Engineer application — quick follow-up',
+        sender: 'You',
+        recipient: 'careers@posthog.com',
+        date: '2026-11-09',
+        timestamp: '2026-11-09T09:25:00Z',
+        direction: 'outbound',
+        snippet: 'Hi PostHog team, following up on my Growth Engineer application from Nov 2. Added a short doc...',
+        body: 'Hi PostHog team,\n\nFollowing up on my Growth Engineer application from Nov 2. In the meantime I put together a short doc breaking down three growth experiments I would run in my first 90 days: https://candidate.dev/posthog-growth-notes\n\nHappy to share more or adjust course based on what the team is prioritizing.\n\nThanks for the consideration!\nCandidate'
+      }
+    ],
+    stageUpdatedAt: '2026-11-02T10:00:00Z',
+    createdAt: '2026-11-02T10:00:00Z',
+    updatedAt: '2026-11-09T09:30:00Z'
   },
   {
-    company: 'Raycast',
-    role: 'Desktop Application Engineer',
-    platform: 'Company Site',
+    company: 'Careem',
+    role: 'Senior Mobile Engineer',
+    platform: 'Bayt',
+    workLocation: 'Hybrid',
+    employmentType: 'Full-time',
+    location: 'Dubai, UAE',
+    dateApplied: '2026-11-08',
+    status: 'Applied',
+    jobLink: 'https://www.bayt.com/en/uae/jobs/senior-mobile-engineer-4401123/',
+    companyDomain: 'careem.com',
+    tasks: [
+      { id: 't14', title: 'Research UAE relocation logistics (visa, schooling)', completed: false, dueDate: '2026-11-24' }
+    ],
+    notes: 'Applied via Bayt. Hybrid — 3 days in the Dubai Internet City office. Posting mentions a relocation support package. AED salary band not disclosed.',
+    emails: [
+      {
+        id: 'em11',
+        subject: 'Your application was sent — Senior Mobile Engineer at Careem',
+        sender: 'no-reply@bayt.com',
+        recipient: 'You',
+        date: '2026-11-08',
+        timestamp: '2026-11-08T12:01:00Z',
+        direction: 'inbound',
+        snippet: 'Thank you for applying! Your application for Senior Mobile Engineer at Careem has been submitted...',
+        body: 'Thank you for applying!\n\nYour application for Senior Mobile Engineer at Careem (Dubai, UAE) has been submitted successfully.\n\nWhat happens next:\n• The employer reviews applications on a rolling basis\n• You will receive an email if you are shortlisted\n• Track status anytime from your Bayt account\n\nBayt Job ID: 4401123'
+      }
+    ],
+    stageUpdatedAt: '2026-11-08T12:00:00Z',
+    createdAt: '2026-11-08T12:00:00Z',
+    updatedAt: '2026-11-08T12:00:00Z'
+  },
+
+  // ──────────────────────────────── SAVED ────────────────────────────────
+  {
+    company: 'Framer',
+    role: 'Design Engineer',
+    platform: 'Otta',
+    workLocation: 'Hybrid',
+    employmentType: 'Full-time',
+    location: 'Amsterdam, Netherlands',
+    dateApplied: '2026-11-11',
+    status: 'Saved',
+    jobLink: 'https://framer.com/careers/design-engineer',
+    notes: 'Saved from Otta — not applied yet. Posting lists €85–110k + equity, hybrid in Amsterdam. Strong fit for the canvas/animation background; need to decide if relocating is on the table.',
+    stageUpdatedAt: '2026-11-11T20:15:00Z',
+    createdAt: '2026-11-11T20:15:00Z',
+    updatedAt: '2026-11-11T20:15:00Z'
+  },
+  {
+    company: 'Watershed',
+    role: 'Data Engineer',
+    platform: 'Wellfound',
+    workLocation: 'Hybrid',
+    employmentType: 'Full-time',
+    location: 'San Francisco, CA',
+    dateApplied: '2026-11-06',
+    status: 'Saved',
+    jobLink: 'https://watershed.com/careers/data-engineer',
+    notes: 'Comp not disclosed in the posting. Asked a Wellfound recruiter for the range — holding off on applying until salary is confirmed.',
+    stageUpdatedAt: '2026-11-06T17:40:00Z',
+    createdAt: '2026-11-06T17:40:00Z',
+    updatedAt: '2026-11-06T17:40:00Z'
+  },
+
+  // ─────────────────────────────── REJECTED ──────────────────────────────
+  {
+    company: 'Klaviyo',
+    role: 'Senior Software Engineer',
+    platform: 'LinkedIn',
+    workLocation: 'Hybrid',
+    employmentType: 'Full-time',
+    location: 'Boston, MA',
+    dateApplied: '2026-10-20',
+    status: 'Rejected',
+    jobLink: 'https://klaviyo.com/careers/senior-software-engineer-data-pipelines',
+    notes: 'Auto-rejection before any human contact — 9 days after applying. Posting listed $170–200k base. Probably a keyword/filter pass on the data-pipeline experience.',
+    emails: [
+      {
+        id: 'em12',
+        subject: 'Your application to Klaviyo',
+        sender: 'no-reply@klaviyo.com',
+        recipient: 'You',
+        date: '2026-10-29',
+        timestamp: '2026-10-29T12:58:00Z',
+        direction: 'inbound',
+        snippet: 'Thank you for your interest in Klaviyo. After careful review, we have decided to move forward...',
+        body: 'Thank you for your interest in Klaviyo.\n\nAfter careful review of your application, we have decided to move forward with candidates whose experience more closely matches the requirements of this role.\n\nWe encourage you to apply to other openings that match your skills.\n\nKlaviyo Recruiting Team'
+      }
+    ],
+    history: [
+      { id: 'hist-klaviyo-1', toStatus: 'Applied', timestamp: '2026-10-20T14:30:00Z' },
+      { id: 'hist-klaviyo-2', fromStatus: 'Applied', toStatus: 'Rejected', timestamp: '2026-10-29T13:00:00Z', note: 'Automated rejection 9 days after applying — no human contact.' }
+    ],
+    stageUpdatedAt: '2026-10-29T13:00:00Z',
+    createdAt: '2026-10-20T14:30:00Z',
+    updatedAt: '2026-10-29T13:00:00Z'
+  },
+  {
+    company: 'Benchling',
+    role: 'Senior Full-Stack Engineer',
+    platform: 'Lever',
+    workLocation: 'Hybrid',
+    employmentType: 'Full-time',
+    location: 'San Francisco, CA',
+    dateApplied: '2026-09-28',
+    status: 'Rejected',
+    jobLink: 'https://jobs.lever.co/benchling/senior-fullstack-engineer',
+    emailThreadUrl: 'https://mail.google.com/mail/u/0/#inbox/FMfcgzQqZdRmXjNk',
+    contactEmail: 'margaret.yao@benchling.com',
+    contacts: [
+      {
+        id: 'c8',
+        name: 'Margaret Yao',
+        role: 'Technical Recruiter',
+        email: 'margaret.yao@benchling.com',
+        phone: '+1 415-555-0139',
+        linkedIn: 'https://linkedin.com/in/margaretyao',
+        notes: 'Gave genuinely useful rejection feedback and encouraged re-applying in ~6 months.'
+      },
+      {
+        id: 'c9',
+        name: 'Anika Srinivasan',
+        role: 'Director of Engineering, Notebook',
+        email: 'anika.srinivasan@benchling.com',
+        linkedIn: 'https://linkedin.com/in/anikasrinivasan',
+        notes: 'Hiring manager. Ran the first round — warm, very deep on product thinking.'
+      }
+    ],
+    tasks: [
+      { id: 't15', title: 'Take-home: notebook integration design doc', completed: true, dueDate: '2026-10-14', completedAt: '2026-10-13T21:00:00Z' },
+      { id: 't16', title: 'Final round loop (4 panels) on Oct 22', completed: true, completedAt: '2026-10-22T23:00:00Z' },
+      { id: 't17', title: 'Write retro notes from rejection feedback', completed: true, completedAt: '2026-10-28T09:30:00Z' }
+    ],
+    notes: 'Full loop completed Oct 22. Positive rejection with real feedback: strong engineering signals, but they wanted deeper life-sciences domain depth. Margaret encouraged re-applying in ~6 months. Retro filed — weakest round was the scientific-data-modeling panel.',
+    emails: [
+      {
+        id: 'em13',
+        subject: 'Thank you — final round on Thursday',
+        sender: 'You',
+        recipient: 'margaret.yao@benchling.com',
+        date: '2026-10-23',
+        timestamp: '2026-10-23T10:15:00Z',
+        direction: 'outbound',
+        snippet: 'Hi Margaret, thanks for coordinating such a well-run loop yesterday. Please thank Anika and the panel...',
+        body: 'Hi Margaret,\n\nThanks for coordinating such a well-run loop yesterday. Please pass along my thanks to Anika and the panel — the domain deep-dive was genuinely fun, even where I was stretching.\n\nHappy to provide anything else that would help the decision.\n\nBest,\nCandidate'
+      },
+      {
+        id: 'em14',
+        subject: 'Update on your Benchling application',
+        sender: 'margaret.yao@benchling.com',
+        recipient: 'You',
+        date: '2026-10-27',
+        timestamp: '2026-10-27T16:40:00Z',
+        direction: 'inbound',
+        snippet: 'I want to share this news personally rather than via template: we will not be moving forward...',
+        body: 'Hi,\n\nI want to share this news personally rather than via a template: we will not be moving forward this time.\n\nThe panel was genuinely impressed with your engineering depth — the design doc and system design rounds were the strongest we have seen this cycle. The gap was life-sciences domain fluency, and the other finalist had five years of it.\n\nThis was a close call. Please do apply again in ~6 months; the Notebook team keeps growing. I would be happy to re-engage you directly.\n\nBest,\nMargaret'
+      }
+    ],
+    history: [
+      { id: 'hist-benchling-1', toStatus: 'Applied', timestamp: '2026-09-28T15:05:00Z' },
+      { id: 'hist-benchling-2', fromStatus: 'Applied', toStatus: 'Screening', timestamp: '2026-10-06T17:00:00Z', note: 'Recruiter screen with Margaret.' },
+      { id: 'hist-benchling-3', fromStatus: 'Screening', toStatus: 'Interview', timestamp: '2026-10-15T14:00:00Z', note: 'HM interview + take-home passed; final loop scheduled Oct 22.' },
+      { id: 'hist-benchling-4', fromStatus: 'Interview', toStatus: 'Rejected', timestamp: '2026-10-27T16:45:00Z', note: 'Positive rejection after final round — chose a candidate with deeper biotech domain experience.' }
+    ],
+    resumeFileName: 'Resume_FullStack_Benchling.pdf',
+    resumeFileSize: 201500,
+    resumeUploadedAt: '2026-09-28T15:00:00Z',
+    stageUpdatedAt: '2026-10-27T16:45:00Z',
+    createdAt: '2026-09-28T15:05:00Z',
+    updatedAt: '2026-10-28T09:30:00Z'
+  },
+  {
+    company: 'Amplitude',
+    role: 'Backend Engineer, Data Platform',
+    platform: 'Indeed',
+    workLocation: 'Remote',
+    employmentType: 'Full-time',
+    location: 'Remote — US only',
+    dateApplied: '2026-10-15',
+    status: 'Rejected',
+    jobLink: 'https://jobs.amplitude.com/backend-engineer-data-platform',
+    notes: 'Recruiter screen Oct 22 went fine; the requisition froze a week later and the role was filled via an internal transfer. Recruiter called directly — no emails exchanged.',
+    history: [
+      { id: 'hist-amplitude-1', toStatus: 'Applied', timestamp: '2026-10-15T11:00:00Z' },
+      { id: 'hist-amplitude-2', fromStatus: 'Applied', toStatus: 'Screening', timestamp: '2026-10-22T15:00:00Z', note: 'Recruiter screen completed.' },
+      { id: 'hist-amplitude-3', fromStatus: 'Screening', toStatus: 'Rejected', timestamp: '2026-10-30T11:00:00Z', note: 'Requisition frozen — role filled via internal transfer.' }
+    ],
+    stageUpdatedAt: '2026-10-30T11:00:00Z',
+    createdAt: '2026-10-15T11:00:00Z',
+    updatedAt: '2026-10-30T11:00:00Z'
+  },
+
+  // ─────────────────────────────── ARCHIVED ──────────────────────────────
+  {
+    company: 'GitBook',
+    role: 'Senior Frontend Engineer — Editor Platform',
+    platform: 'Otta',
     workLocation: 'Remote',
     employmentType: 'Full-time',
     location: 'Remote — Europe',
-    dateApplied: '2026-07-22',
-    status: 'Applied',
-    jobLink: 'https://raycast.com/jobs/desktop-engineer',
-    notes: 'Submitted application via website portal.',
-    stageUpdatedAt: '2026-07-22T10:00:00Z',
-    createdAt: '2026-07-22T10:00:00Z',
-    updatedAt: '2026-07-22T10:00:00Z',
-  },
-  {
-    company: 'OpenAI',
-    role: 'Member of Technical Staff - UI',
-    platform: 'Greenhouse',
-    workLocation: 'Onsite',
-    employmentType: 'Full-time',
-    location: 'San Francisco, CA',
-    dateApplied: '2026-07-05',
-    status: 'Interview',
-    jobLink: 'https://openai.com/careers/mts-ui',
-    notes: 'Passed initial technical screen. Deep dive into streaming AI token rendering mechanics.',
-    stageUpdatedAt: '2026-07-19T18:00:00Z',
-    createdAt: '2026-07-05T14:45:00Z',
-    updatedAt: '2026-07-19T18:00:00Z',
-  },
-  {
-    company: 'Anthropic',
-    role: 'Frontend Engineer - Claude Web',
-    platform: 'Greenhouse',
-    workLocation: 'Hybrid',
-    employmentType: 'Full-time',
-    location: 'San Francisco, CA',
-    dateApplied: '2026-07-08',
-    status: 'Screening',
-    jobLink: 'https://anthropic.com/careers/frontend-claude',
-    notes: 'Screening call booked for Friday morning.',
-    stageUpdatedAt: '2026-07-21T16:00:00Z',
-    createdAt: '2026-07-08T12:00:00Z',
-    updatedAt: '2026-07-21T16:00:00Z',
-  },
-  {
-    company: 'Datadog',
-    role: 'Senior Software Engineer - APM Dashboards',
-    platform: 'LinkedIn',
-    workLocation: 'Hybrid',
-    employmentType: 'Full-time',
-    location: 'New York, NY',
-    dateApplied: '2026-06-28',
-    status: 'Rejected',
-    jobLink: 'https://datadog.com/careers',
-    notes: 'Role filled internally. Received standard automated response.',
-    history: [
-      {
-        id: 'hist-datadog-1',
-        toStatus: 'Applied',
-        timestamp: '2026-06-28T09:00:00Z',
-      },
-      {
-        id: 'hist-datadog-2',
-        fromStatus: 'Applied',
-        toStatus: 'Rejected',
-        timestamp: '2026-07-10T12:00:00Z',
-        note: 'Role filled internally. Received standard automated response.',
-      },
-    ],
-    stageUpdatedAt: '2026-07-10T12:00:00Z',
-    createdAt: '2026-06-28T09:00:00Z',
-    updatedAt: '2026-07-10T12:00:00Z',
-  },
-  {
-    company: 'GitHub',
-    role: 'Senior Frontend Developer - Actions UI',
-    platform: 'Referral',
-    workLocation: 'Remote',
-    employmentType: 'Full-time',
-    location: 'Remote — US',
-    dateApplied: '2026-07-14',
-    status: 'Offer',
-    jobLink: 'https://github.com/about/careers',
-    notes: 'Verbal offer confirmed! Reviewing health benefits and remote stipend details.',
-    stageUpdatedAt: '2026-07-25T11:00:00Z',
-    createdAt: '2026-07-14T10:30:00Z',
-    updatedAt: '2026-07-25T11:00:00Z',
-  },
-  {
-    company: 'Notion',
-    role: 'Product Engineer - Editor Team',
-    platform: 'Otta',
-    workLocation: 'Hybrid',
-    employmentType: 'Full-time',
-    location: 'San Francisco, CA',
-    dateApplied: '2026-07-01',
-    status: 'Interview',
-    jobLink: 'https://notion.so/careers',
-    notes: 'Pair programming round on custom contenteditable extensions.',
-    history: [
-      {
-        id: 'hist-notion-1',
-        toStatus: 'Applied',
-        timestamp: '2026-07-01T14:00:00Z',
-      },
-      {
-        id: 'hist-notion-2',
-        fromStatus: 'Applied',
-        toStatus: 'Interview',
-        timestamp: '2026-07-16T15:00:00Z',
-        note: 'Completed recruiter screening call and scheduled technical interview panel.',
-      },
-    ],
-    stageUpdatedAt: '2026-07-16T15:00:00Z',
-    createdAt: '2026-07-01T14:00:00Z',
-    updatedAt: '2026-07-16T15:00:00Z',
-  },
-  {
-    company: 'Cloudflare',
-    role: 'Systems & UI Developer',
-    platform: 'LinkedIn',
-    workLocation: 'Hybrid',
-    employmentType: 'Full-time',
-    location: 'Austin, TX',
-    dateApplied: '2026-07-21',
-    status: 'Applied',
-    jobLink: 'https://cloudflare.com/careers',
-    notes: 'Applied via easy apply on LinkedIn.',
-    stageUpdatedAt: '2026-07-21T17:00:00Z',
-    createdAt: '2026-07-21T17:00:00Z',
-    updatedAt: '2026-07-21T17:00:00Z',
-  },
-  {
-    company: 'Retool',
-    role: 'Frontend Engineer - Core Components',
-    platform: 'Lever',
-    workLocation: 'Hybrid',
-    employmentType: 'Full-time',
-    location: 'San Francisco, CA',
-    dateApplied: '2026-07-16',
-    status: 'Applied',
-    jobLink: 'https://retool.com/careers',
-    notes: 'Awaiting recruiter review.',
-    stageUpdatedAt: '2026-07-16T13:00:00Z',
-    createdAt: '2026-07-16T13:00:00Z',
-    updatedAt: '2026-07-16T13:00:00Z',
-  },
-  {
-    company: 'Shopify',
-    role: 'Senior Developer - Checkout Experience',
-    platform: 'Company Site',
-    workLocation: 'Remote',
-    employmentType: 'Full-time',
-    location: 'Remote — Americas',
-    dateApplied: '2026-06-25',
+    dateApplied: '2026-09-10',
     status: 'Archived',
-    jobLink: 'https://shopify.com/careers',
-    notes: 'Decided not to pursue due to timezone difference.',
+    jobLink: 'https://gitbook.com/careers/senior-frontend-editor',
+    notes: 'Recruiter never responded after the Otta screening step. Auto-archived Nov 2 after sitting in stage for 45+ days.',
     history: [
-      {
-        id: 'hist-shopify-1',
-        toStatus: 'Applied',
-        timestamp: '2026-06-25T11:00:00Z',
-      },
-      {
-        id: 'hist-shopify-2',
-        fromStatus: 'Applied',
-        toStatus: 'Archived',
-        timestamp: '2026-07-05T09:00:00Z',
-        note: 'Decided not to pursue due to timezone difference.',
-      },
+      { id: 'hist-gitbook-1', toStatus: 'Applied', timestamp: '2026-09-10T09:30:00Z' },
+      { id: 'hist-gitbook-2', fromStatus: 'Applied', toStatus: 'Screening', timestamp: '2026-09-18T14:00:00Z', note: 'Completed Otta screening questions; no recruiter response since.' },
+      { id: 'hist-gitbook-3', fromStatus: 'Screening', toStatus: 'Archived', timestamp: '2026-11-02T08:00:00Z', note: 'Auto-archived: 45+ days in stage with no recruiter response.' }
     ],
-    stageUpdatedAt: '2026-07-05T09:00:00Z',
-    createdAt: '2026-06-25T11:00:00Z',
-    updatedAt: '2026-07-05T09:00:00Z',
-  },
-  {
-    company: 'Ramp',
-    role: 'Product Engineer - Expense Controls',
-    platform: 'Otta',
-    workLocation: 'Onsite',
-    employmentType: 'Full-time',
-    location: 'New York, NY',
-    dateApplied: '2026-07-19',
-    status: 'Applied',
-    jobLink: 'https://ramp.com/careers',
-    notes: 'Referred by former teammate.',
-    stageUpdatedAt: '2026-07-19T10:00:00Z',
-    createdAt: '2026-07-19T10:00:00Z',
-    updatedAt: '2026-07-19T10:00:00Z',
-  },
-  {
-    company: 'Vanta',
-    role: 'Staff Frontend Engineer',
-    platform: 'Lever',
-    workLocation: 'Hybrid',
-    employmentType: 'Full-time',
-    location: 'San Francisco, CA',
-    dateApplied: '2026-07-11',
-    status: 'Screening',
-    jobLink: 'https://vanta.com/careers',
-    notes: 'Hiring manager screen scheduled.',
-    stageUpdatedAt: '2026-07-18T14:30:00Z',
-    createdAt: '2026-07-11T12:00:00Z',
-    updatedAt: '2026-07-18T14:30:00Z',
-  },
-  {
-    company: 'Docker',
-    role: 'Senior Web Engineer',
-    platform: 'Indeed',
-    workLocation: 'Remote',
-    employmentType: 'Contract',
-    location: 'Palo Alto, CA',
-    dateApplied: '2026-06-20',
-    status: 'Rejected',
-    jobLink: 'https://docker.com/careers',
-    notes: 'Position closed after initial screening.',
-    history: [
-      {
-        id: 'hist-docker-1',
-        toStatus: 'Applied',
-        timestamp: '2026-06-20T15:00:00Z',
-      },
-      {
-        id: 'hist-docker-2',
-        fromStatus: 'Applied',
-        toStatus: 'Screening',
-        timestamp: '2026-06-26T11:00:00Z',
-      },
-      {
-        id: 'hist-docker-3',
-        fromStatus: 'Screening',
-        toStatus: 'Rejected',
-        timestamp: '2026-07-02T10:00:00Z',
-        note: 'Position closed after initial screening.',
-      },
-    ],
-    stageUpdatedAt: '2026-07-02T10:00:00Z',
-    createdAt: '2026-06-20T15:00:00Z',
-    updatedAt: '2026-07-02T10:00:00Z',
-  },
-  {
-    company: 'GitLab',
-    role: 'Frontend Engineer - CI/CD UX',
-    platform: 'Company Site',
-    workLocation: 'Remote',
-    employmentType: 'Full-time',
-    location: 'Remote — Worldwide',
-    dateApplied: '2026-07-23',
-    status: 'Applied',
-    jobLink: 'https://gitlab.com/jobs',
-    notes: 'Asynchronous screening questions submitted.',
-    stageUpdatedAt: '2026-07-23T11:20:00Z',
-    createdAt: '2026-07-23T11:20:00Z',
-    updatedAt: '2026-07-23T11:20:00Z',
-  },
-  {
-    company: 'Postman',
-    role: 'Senior UI Architect',
-    platform: 'LinkedIn',
-    workLocation: 'Remote',
-    employmentType: 'Full-time',
-    location: 'Bengaluru, IN',
-    dateApplied: '2026-07-17',
-    status: 'Applied',
-    jobLink: 'https://postman.com/careers',
-    notes: 'Submitted application.',
-    stageUpdatedAt: '2026-07-17T16:00:00Z',
-    createdAt: '2026-07-17T16:00:00Z',
-    updatedAt: '2026-07-17T16:00:00Z',
-  },
-  {
-    company: 'Slack',
-    role: 'Senior Frontend Engineer - Desktop',
-    platform: 'Greenhouse',
-    workLocation: 'Hybrid',
-    employmentType: 'Full-time',
-    location: 'San Francisco, CA',
-    dateApplied: '2026-07-13',
-    status: 'Interview',
-    jobLink: 'https://slack.com/careers',
-    notes: 'Architecture & Electron performance interview scheduled.',
-    stageUpdatedAt: '2026-07-22T09:00:00Z',
-    createdAt: '2026-07-13T10:00:00Z',
-    updatedAt: '2026-07-22T09:00:00Z',
-  },
-  {
-    company: 'Atlassian',
-    role: 'Senior Frontend Engineer - Jira Service',
-    platform: 'Company Site',
-    workLocation: 'Remote',
-    employmentType: 'Part-time',
-    location: 'Sydney, AU',
-    dateApplied: '2026-07-03',
-    status: 'Archived',
-    jobLink: 'https://atlassian.com/careers',
-    notes: 'Archived due to accepting another offer track.',
-    history: [
-      {
-        id: 'hist-atlassian-1',
-        toStatus: 'Applied',
-        timestamp: '2026-07-03T09:00:00Z',
-      },
-      {
-        id: 'hist-atlassian-2',
-        fromStatus: 'Applied',
-        toStatus: 'Archived',
-        timestamp: '2026-07-15T12:00:00Z',
-        note: 'Archived due to accepting another offer track.',
-      },
-    ],
-    stageUpdatedAt: '2026-07-15T12:00:00Z',
-    createdAt: '2026-07-03T09:00:00Z',
-    updatedAt: '2026-07-15T12:00:00Z',
-  },
-  {
-    company: 'Netflix',
-    role: 'UI Engineer - Member Experience',
-    platform: 'Referral',
-    workLocation: 'Onsite',
-    employmentType: 'Full-time',
-    location: 'Los Gatos, CA',
-    dateApplied: '2026-07-09',
-    status: 'Screening',
-    jobLink: 'https://jobs.netflix.com',
-    notes: 'Recruiter call finished. Waiting for engineering manager sync.',
-    stageUpdatedAt: '2026-07-17T11:00:00Z',
-    createdAt: '2026-07-09T14:00:00Z',
-    updatedAt: '2026-07-17T11:00:00Z',
-  },
-  {
-    company: 'Spotify',
-    role: 'Senior Web Engineer - Web Player',
-    platform: 'Greenhouse',
-    workLocation: 'Hybrid',
-    employmentType: 'Full-time',
-    location: 'New York, NY',
-    dateApplied: '2026-07-24',
-    status: 'Applied',
-    jobLink: 'https://lifeatspotify.com/jobs',
-    notes: 'Applied via company site.',
-    stageUpdatedAt: '2026-07-24T08:00:00Z',
-    createdAt: '2026-07-24T08:00:00Z',
-    updatedAt: '2026-07-24T08:00:00Z',
-  },
+    stageUpdatedAt: '2026-11-02T08:00:00Z',
+    createdAt: '2026-09-10T09:30:00Z',
+    updatedAt: '2026-11-02T08:00:00Z'
+  }
 ];
 
 export const INITIAL_SAMPLE_CONTACTS: Omit<Contact, 'id' | 'userId'>[] = [
   {
-    name: 'Karla Lindqvist',
-    role: 'Tech Talent Lead',
-    organization: 'Linear',
+    name: 'Maya Osei',
+    role: 'Technical Recruiter',
+    organization: 'Honeycomb',
     category: 'Recruiter',
-    email: 'karla@linear.app',
-    phone: '+1 415-555-0144',
-    linkedIn: 'https://linkedin.com/in/karlaindqvist',
-    notes: 'Very friendly, responds promptly via email. Coordinating system design panel.',
+    email: 'maya.osei@honeycomb.io',
+    phone: '+1 415-555-0162',
+    linkedIn: 'https://linkedin.com/in/mayaosei',
+    notes: 'Primary contact for the Honeycomb offer. Said start date is flexible — no rush on signing.',
     applicationIds: [],
-    createdAt: '2026-07-15T09:00:00Z',
-    updatedAt: '2026-07-20T10:00:00Z',
+    createdAt: '2026-10-14T17:00:00Z',
+    updatedAt: '2026-11-09T17:30:00Z'
   },
   {
-    name: 'Tuomas Artman',
-    role: 'Co-founder & CTO',
-    organization: 'Linear',
+    name: 'Priya Raghavan',
+    role: 'Engineering Manager, Ingestion',
+    organization: 'Honeycomb',
     category: 'Hiring Manager',
-    email: 'tuomas@linear.app',
-    notes: 'Key decision maker for frontend architecture team.',
+    email: 'priya.raghavan@honeycomb.io',
+    linkedIn: 'https://linkedin.com/in/priyaraghavan',
+    notes: 'Hiring manager for the Staff Platform role. Already walked through team scope — ClickHouse pipeline ownership.',
     applicationIds: [],
-    createdAt: '2026-07-15T09:00:00Z',
-    updatedAt: '2026-07-15T09:00:00Z',
+    createdAt: '2026-10-14T17:00:00Z',
+    updatedAt: '2026-11-09T17:30:00Z'
   },
   {
-    name: 'Alex Rivera',
-    role: 'Senior Staff Recruiter',
-    organization: 'Stripe',
+    name: 'Rachel Betancourt',
+    role: 'Talent Partner',
+    organization: 'Duolingo',
     category: 'Recruiter',
-    email: 'alex.recruiter@stripe.com',
-    phone: '+1 650-555-0199',
-    linkedIn: 'https://linkedin.com/in/alexriverastripe',
-    notes: 'Primary point of contact for offer negotiations and benefits package.',
+    email: 'r.betancourt@duolingo.com',
+    phone: '+1 412-555-0177',
+    linkedIn: 'https://linkedin.com/in/rachelbetancourt',
+    notes: 'Runs the Duolingo loop logistics. Fast replies, sends everything in writing.',
     applicationIds: [],
-    createdAt: '2026-07-10T11:00:00Z',
-    updatedAt: '2026-07-24T15:30:00Z',
+    createdAt: '2026-10-12T09:15:00Z',
+    updatedAt: '2026-11-02T16:00:00Z'
   },
   {
-    name: 'David Chen',
-    role: 'Engineering Director',
-    organization: 'Stripe',
+    name: 'Jana Kowalski',
+    role: 'Senior Recruiter',
+    organization: 'Zapier',
+    category: 'Recruiter',
+    email: 'jana.kowalski@zapier.com',
+    linkedIn: 'https://linkedin.com/in/janakowalski-zapier',
+    notes: 'Coordinated both Zapier screens. Mentioned the comp band is shared only at offer stage.',
+    applicationIds: [],
+    createdAt: '2026-10-18T11:20:00Z',
+    updatedAt: '2026-11-10T15:00:00Z'
+  },
+  {
+    name: 'Margaret Yao',
+    role: 'Technical Recruiter',
+    organization: 'Benchling',
+    category: 'Recruiter',
+    email: 'margaret.yao@benchling.com',
+    phone: '+1 415-555-0139',
+    linkedIn: 'https://linkedin.com/in/margaretyao',
+    notes: 'Gave genuinely useful rejection feedback. Encouraged re-applying in ~6 months and offered to re-engage directly.',
+    applicationIds: [],
+    createdAt: '2026-09-28T15:05:00Z',
+    updatedAt: '2026-10-27T16:45:00Z'
+  },
+  {
+    name: 'Anika Srinivasan',
+    role: 'Director of Engineering, Notebook',
+    organization: 'Benchling',
     category: 'Hiring Manager',
-    email: 'dchen@stripe.com',
-    notes: 'Hiring manager for Billing Infrastructure.',
+    email: 'anika.srinivasan@benchling.com',
+    linkedIn: 'https://linkedin.com/in/anikasrinivasan',
+    notes: 'Ran the first Benchling round — warm, very deep on product thinking. Worth reconnecting regardless of outcome.',
     applicationIds: [],
-    createdAt: '2026-07-10T11:00:00Z',
-    updatedAt: '2026-07-24T15:30:00Z',
+    createdAt: '2026-09-28T15:05:00Z',
+    updatedAt: '2026-10-27T16:45:00Z'
   },
   {
-    name: 'Elena Rostova',
-    role: 'Principal Architect & Career Mentor',
-    organization: 'Tech Mentorship Network',
+    name: 'Dev Patel',
+    role: 'Staff Engineer',
+    organization: 'Sourcegraph',
+    category: 'Peer / Alumni',
+    email: 'dev.patel@sourcegraph.com',
+    linkedIn: 'https://linkedin.com/in/devpatel-eng',
+    notes: 'Former teammate. Referred me to the Sourcegraph hiring manager and fast-tracked the process.',
+    nextFollowUpDate: getPresetDate(3),
+    applicationIds: [],
+    createdAt: '2026-10-09T13:00:00Z',
+    updatedAt: '2026-11-05T14:00:00Z'
+  },
+  {
+    name: 'Naomi Adler',
+    role: 'Principal Engineer & Career Mentor',
+    organization: 'Independent',
     category: 'Mentor',
-    email: 'elena.rostova@mentors.dev',
-    phone: '+1 206-555-0188',
-    linkedIn: 'https://linkedin.com/in/elenarostova-mentor',
-    notes: 'Monthly 1:1 strategy sessions on executive presence, salary negotiation, and system design interviews.',
+    email: 'naomi.adler@mentorship.dev',
+    phone: '+1 206-555-0121',
+    linkedIn: 'https://linkedin.com/in/naomiadler',
+    notes: 'Monthly 1:1 on offer strategy and system design prep. Currently helping pressure-test the Honeycomb negotiation.',
     nextFollowUpDate: getPresetDate(1),
     applicationIds: [],
     emails: [
       {
         id: 'email-mentor-1',
-        subject: 'Career Mentorship: System Design & Staff Scope',
-        sender: 'elena.rostova@mentors.dev',
+        subject: 'Honeycomb offer — negotiation prep for Thursday',
+        sender: 'naomi.adler@mentorship.dev',
         recipient: 'You',
-        date: '2026-07-24',
-        timestamp: '2026-07-24T14:00:00Z',
+        date: '2026-11-12',
+        timestamp: '2026-11-12T15:00:00Z',
         direction: 'inbound',
-        body: 'Hi! Reviewing your recent portfolio and architecture proposals. Your breakdown of caching tiers and multi-region replication is solid. For our upcoming sync, prepare your talking points on cross-team consensus.',
-        snippet: 'Hi! Reviewing your recent portfolio and architecture proposals. Your breakdown of caching tiers and multi-region replication is solid...',
-      },
+        body: 'Hi!\n\nReviewed the Honeycomb terms you forwarded. The base is at market; the levers are signing bonus and the equity refresh cadence. Bring your three questions to our Thursday sync and we will script the Maya conversation.\n\nAlso: do not forget the Sourcegraph panel Monday — block Sunday evening for the tracing walkthrough rehearsal.\n\n— Naomi',
+        snippet: 'Reviewed the Honeycomb terms you forwarded. The base is at market; the levers are signing bonus and equity refresh cadence...'
+      }
     ],
-    createdAt: '2026-07-01T10:00:00Z',
-    updatedAt: '2026-07-25T14:00:00Z',
-  },
-  {
-    name: 'Marcus Vance',
-    role: 'Staff Frontend Engineer',
-    organization: 'Supabase Alumni',
-    category: 'Peer / Alumni',
-    email: 'marcus.vance@alumni.dev',
-    linkedIn: 'https://linkedin.com/in/marcusvance',
-    notes: 'College classmate. Offered referral for upcoming senior engineer headcount.',
-    nextFollowUpDate: getPresetDate(3),
-    applicationIds: [],
-    createdAt: '2026-07-05T12:00:00Z',
-    updatedAt: '2026-07-20T08:00:00Z',
-  },
+    createdAt: '2026-10-01T09:00:00Z',
+    updatedAt: '2026-11-12T15:00:00Z'
+  }
 ];
 
 import { calculateDaysInStage } from './dateUtils';
