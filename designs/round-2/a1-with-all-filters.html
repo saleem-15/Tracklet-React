@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-50">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Approach 1: Responsive Priority Filter Bar · Tracklet</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            heading: ['Outfit', 'sans-serif'],
+            sans: ['Plus Jakarta Sans', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="h-full flex overflow-hidden font-sans text-slate-800 antialiased selection:bg-brand-100 selection:text-brand-700">
+
+  <!-- Tracklet Collapsible Desktop Sidebar -->
+  <aside id="sidebar" class="w-52 shrink-0 bg-slate-50 border-r border-slate-200/80 flex flex-col justify-between h-screen select-none text-slate-900 text-xs transition-all duration-200">
+    <div class="flex flex-col">
+      <!-- Sidebar Brand Header -->
+      <div class="h-13 px-3.5 py-3 flex items-center justify-between border-b border-slate-200/80">
+        <div class="flex items-center gap-2.5">
+          <button onclick="toggleSidebar()" class="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center text-white font-heading font-bold text-sm shadow-xs hover:scale-105 transition-transform" title="Toggle Sidebar">
+            T
+          </button>
+          <span id="brand-title" class="font-heading font-bold text-sm tracking-tight text-slate-900">Tracklet</span>
+        </div>
+      </div>
+
+      <!-- Navigation Links (Single Unified Applications Hub) -->
+      <nav class="p-2 space-y-1">
+        <a href="#applications" class="flex items-center justify-between px-3 py-2 rounded-lg font-semibold bg-white text-slate-900 border border-slate-200/80 shadow-2xs">
+          <div class="flex items-center gap-2.5">
+            <svg class="w-4 h-4 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+            <span class="nav-text">Applications</span>
+          </div>
+          <span id="sidebar-count" class="px-1.5 py-0.2 rounded-full bg-brand-50 text-brand-700 font-mono text-[10px] font-bold">5</span>
+        </a>
+
+        <a href="#contacts" class="flex items-center gap-2.5 px-3 py-2 rounded-lg font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100/70 transition-colors">
+          <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+          <span class="nav-text">Contacts</span>
+        </a>
+
+        <a href="#analytics" class="flex items-center gap-2.5 px-3 py-2 rounded-lg font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100/70 transition-colors">
+          <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+          <span class="nav-text">Analytics</span>
+        </a>
+
+        <a href="#settings" class="flex items-center gap-2.5 px-3 py-2 rounded-lg font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100/70 transition-colors">
+          <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          <span class="nav-text">Settings</span>
+        </a>
+      </nav>
+    </div>
+
+    <!-- Sidebar Footer -->
+    <div class="p-3 border-t border-slate-200/80 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <div class="w-7 h-7 rounded-full bg-slate-200 flex items-center justify-center font-bold text-[11px] text-slate-700">SM</div>
+        <div class="overflow-hidden">
+          <div class="font-semibold text-slate-900 truncate">Saleem</div>
+          <div class="text-[10px] text-emerald-600 font-medium">Pro Plan</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Workspace Container (Right of Sidebar) -->
+  <div class="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+
+    <!-- Approach 1: Responsive Priority Filter Bar (All 5 Filters Integrated) -->
+    <header class="h-13 bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-3 sm:px-5 flex items-center justify-between gap-3 sticky top-0 z-30 text-xs">
+      
+      <!-- Left: Search + 5 Real Tracklet Filters -->
+      <div class="flex items-center gap-2 flex-1 min-w-0 overflow-x-auto py-1">
+        
+        <!-- Search Input -->
+        <div class="relative w-44 sm:w-56 shrink-0">
+          <svg class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          <input 
+            id="filter-search"
+            type="text" 
+            placeholder="Search..." 
+            oninput="applyFilters()"
+            class="w-full pl-8 pr-7 py-1 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+          />
+        </div>
+
+        <!-- 1. Status Filter (Core: Active Only vs All vs Stages) -->
+        <select 
+          id="filter-status"
+          onchange="onStatusFilterChange(this.value)"
+          class="shrink-0 text-xs font-semibold bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-lg px-2.5 py-1.5 cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+        >
+          <option value="Active">Status: Active Only</option>
+          <option value="All">Status: All (Includes Archived)</option>
+          <option disabled>──────────</option>
+          <option value="Saved">Saved</option>
+          <option value="Applied">Applied</option>
+          <option value="Screening">Screening</option>
+          <option value="Interview">Interview</option>
+          <option value="Offer">Offer</option>
+          <option value="Rejected">Rejected</option>
+          <option value="Archived">Archived ⚡ (Auto-Table)</option>
+        </select>
+
+        <!-- 2. Platform Filter -->
+        <select 
+          id="filter-platform"
+          onchange="applyFilters()"
+          class="shrink-0 text-xs font-medium bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-lg px-2.5 py-1.5 cursor-pointer focus:outline-none"
+        >
+          <option value="All">Platform: All</option>
+          <option value="LinkedIn">LinkedIn</option>
+          <option value="Indeed">Indeed</option>
+          <option value="Greenhouse">Greenhouse</option>
+          <option value="Lever">Lever</option>
+          <option value="Wellfound">Wellfound</option>
+          <option value="Company Site">Company Site</option>
+        </select>
+
+        <!-- 3. Work Location Filter (Remote / Hybrid / Onsite) -->
+        <select 
+          id="filter-work"
+          onchange="applyFilters()"
+          class="hidden xl:inline-block shrink-0 text-xs font-medium bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-lg px-2.5 py-1.5 cursor-pointer focus:outline-none"
+        >
+          <option value="All">Work: All</option>
+          <option value="Remote">Remote</option>
+          <option value="Hybrid">Hybrid</option>
+          <option value="Onsite">Onsite</option>
+        </select>
+
+        <!-- 4. Job Type Filter (Full-time / Contract / etc.) -->
+        <select 
+          id="filter-jobtype"
+          onchange="applyFilters()"
+          class="hidden 2xl:inline-block shrink-0 text-xs font-medium bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-lg px-2.5 py-1.5 cursor-pointer focus:outline-none"
+        >
+          <option value="All">Job Type: All</option>
+          <option value="Full-time">Full-time</option>
+          <option value="Part-time">Part-time</option>
+          <option value="Contract">Contract</option>
+          <option value="Internship">Internship</option>
+        </select>
+
+        <!-- 5. Date Filter -->
+        <select 
+          id="filter-date"
+          onchange="applyFilters()"
+          class="hidden lg:inline-block shrink-0 text-xs font-medium bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-lg px-2.5 py-1.5 cursor-pointer focus:outline-none"
+        >
+          <option value="All">Date: All Time</option>
+          <option value="7days">Last 7 days</option>
+          <option value="30days">Last 30 days</option>
+          <option value="this_month">This Month</option>
+        </select>
+
+        <!-- Reset Button (Appears when filter is dirty) -->
+        <button 
+          id="btn-reset" 
+          onclick="resetAllFilters()"
+          class="hidden shrink-0 text-xs font-semibold text-rose-600 hover:text-rose-700 hover:bg-rose-50 px-2 py-1 rounded-md transition-colors"
+        >
+          Reset
+        </button>
+
+        <!-- Active Filter Count -->
+        <span id="active-count-label" class="font-mono text-[11px] text-slate-400 shrink-0 hidden md:inline ml-1">
+          5 items
+        </span>
+      </div>
+
+      <!-- Right Section: SegmentedTabs Layout Switcher + Add Application -->
+      <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+        
+        <!-- Canonical SegmentedTabs (Animated Spring Slider) -->
+        <div class="relative flex items-center bg-slate-100 p-1 rounded-lg border border-slate-200/80 text-xs font-medium select-none">
+          <button 
+            id="tab-btn-board" 
+            onclick="setLayout('board')"
+            class="relative z-10 flex items-center gap-1.5 px-3 py-1 rounded-md text-slate-900 font-semibold transition-colors duration-150 cursor-pointer"
+          >
+            <svg class="w-3.5 h-3.5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"/></svg>
+            <span>Board</span>
+          </button>
+
+          <button 
+            id="tab-btn-table" 
+            onclick="setLayout('table')"
+            class="relative z-10 flex items-center gap-1.5 px-3 py-1 rounded-md text-slate-600 hover:text-slate-900 transition-colors duration-150 cursor-pointer"
+          >
+            <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+            <span>Table</span>
+          </button>
+
+          <div id="tab-slider" class="absolute top-1 left-1 bottom-1 w-[72px] bg-white rounded-md shadow-xs transition-transform duration-200 ease-out pointer-events-none"></div>
+        </div>
+
+        <!-- Add Application CTA -->
+        <button 
+          onclick="alert('Open Add Job Modal')"
+          class="h-8 px-3 rounded-lg bg-brand-600 hover:bg-brand-700 text-white font-semibold shadow-xs text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+        >
+          <svg class="w-3.5 h-3.5 stroke-[2.5]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          <span class="hidden sm:inline">Add Job</span>
+        </button>
+      </div>
+
+    </header>
+
+    <!-- Smart Auto-Table Transition Notice Banner (Visible when Archived is selected) -->
+    <div id="archive-banner" class="hidden bg-slate-900 text-white px-4 py-2 text-xs flex items-center justify-between border-b border-slate-800">
+      <div class="flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+        <span class="font-medium">Viewing Archived Applications</span>
+        <span class="text-slate-400 text-[11px]">— Automatically switched to Table layout for dense audit.</span>
+      </div>
+      <button onclick="resetToActive()" class="text-xs text-brand-300 hover:text-white underline">Back to Active Board</button>
+    </div>
+
+    <!-- Main View Canvas -->
+    <main class="flex-1 min-h-0 overflow-hidden relative">
+
+      <!-- LENS A: Board View -->
+      <div id="container-board" class="h-full flex overflow-x-auto snap-x snap-mandatory p-4 sm:p-6 gap-4 min-h-0">
+        <!-- Col 1: Saved -->
+        <div class="w-72 sm:w-80 shrink-0 bg-slate-100/70 border border-slate-200/80 rounded-xl p-3 flex flex-col snap-start">
+          <div class="flex items-center justify-between pb-2 border-b border-slate-200/60 font-heading font-semibold text-xs text-slate-800">
+            <span>Saved (<span class="col-count" data-col="Saved">2</span>)</span>
+          </div>
+          <div class="mt-2.5 space-y-2.5 overflow-y-auto flex-1 col-cards" data-col="Saved"></div>
+        </div>
+
+        <!-- Col 2: Applied -->
+        <div class="w-72 sm:w-80 shrink-0 bg-slate-100/70 border border-slate-200/80 rounded-xl p-3 flex flex-col snap-start">
+          <div class="flex items-center justify-between pb-2 border-b border-slate-200/60 font-heading font-semibold text-xs text-slate-800">
+            <span>Applied (<span class="col-count" data-col="Applied">1</span>)</span>
+          </div>
+          <div class="mt-2.5 space-y-2.5 overflow-y-auto flex-1 col-cards" data-col="Applied"></div>
+        </div>
+
+        <!-- Col 3: Screening -->
+        <div class="w-72 sm:w-80 shrink-0 bg-slate-100/70 border border-slate-200/80 rounded-xl p-3 flex flex-col snap-start">
+          <div class="flex items-center justify-between pb-2 border-b border-slate-200/60 font-heading font-semibold text-xs text-slate-800">
+            <span>Screening (<span class="col-count" data-col="Screening">1</span>)</span>
+          </div>
+          <div class="mt-2.5 space-y-2.5 overflow-y-auto flex-1 col-cards" data-col="Screening"></div>
+        </div>
+
+        <!-- Col 4: Interview -->
+        <div class="w-72 sm:w-80 shrink-0 bg-slate-100/70 border border-slate-200/80 rounded-xl p-3 flex flex-col snap-start">
+          <div class="flex items-center justify-between pb-2 border-b border-slate-200/60 font-heading font-semibold text-xs text-slate-800">
+            <span>Interview (<span class="col-count" data-col="Interview">1</span>)</span>
+          </div>
+          <div class="mt-2.5 space-y-2.5 overflow-y-auto flex-1 col-cards" data-col="Interview"></div>
+        </div>
+
+        <!-- Col 5: Offer -->
+        <div class="w-72 sm:w-80 shrink-0 bg-slate-100/70 border border-slate-200/80 rounded-xl p-3 flex flex-col snap-start">
+          <div class="flex items-center justify-between pb-2 border-b border-slate-200/60 font-heading font-semibold text-xs text-slate-800">
+            <span>Offer (<span class="col-count" data-col="Offer">1</span>)</span>
+          </div>
+          <div class="mt-2.5 space-y-2.5 overflow-y-auto flex-1 col-cards" data-col="Offer"></div>
+        </div>
+      </div>
+
+      <!-- LENS B: Table View -->
+      <div id="container-table" class="h-full overflow-y-auto hidden p-4 sm:p-6">
+        <div class="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs">
+          <div class="px-4 py-3 bg-slate-50/80 border-b border-slate-200/80 flex items-center justify-between text-xs">
+            <span id="table-row-count" class="font-semibold text-slate-700">5 Applications</span>
+            <button class="px-2.5 py-1 bg-white hover:bg-slate-50 border border-slate-200 rounded-md font-medium text-slate-600 shadow-2xs">Export CSV</button>
+          </div>
+          <table class="w-full text-left border-collapse text-xs">
+            <thead class="bg-slate-50 border-b border-slate-200 text-[11px] font-mono text-slate-500 uppercase">
+              <tr>
+                <th class="px-4 py-2.5">Company & Role</th>
+                <th class="px-4 py-2.5">Status</th>
+                <th class="px-4 py-2.5">Platform</th>
+                <th class="px-4 py-2.5">Work</th>
+                <th class="px-4 py-2.5">Salary</th>
+                <th class="px-4 py-2.5">Updated</th>
+              </tr>
+            </thead>
+            <tbody id="table-body" class="divide-y divide-slate-100 text-slate-700"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </main>
+
+  </div>
+
+  <script>
+    // Real Tracklet Sample Applications Database
+    const SAMPLE_APPS = [
+      { id: '1', title: 'Staff Frontend Engineer', company: 'Figma', status: 'Saved', platform: 'LinkedIn', work: 'Hybrid', jobType: 'Full-time', salary: '$190,000 - $225,000', days: '2d ago', isArchived: false },
+      { id: '2', title: 'Product Design Lead', company: 'Linear', status: 'Saved', platform: 'Company Site', work: 'Remote', jobType: 'Full-time', salary: '$180,000 - $210,000', days: '4d ago', isArchived: false },
+      { id: '3', title: 'Senior React Architect', company: 'Datadog', status: 'Applied', platform: 'Greenhouse', work: 'Remote', jobType: 'Full-time', salary: '$210,000', days: '6d ago', isArchived: false },
+      { id: '4', title: 'Principal UI Engineer', company: 'Stripe', status: 'Screening', platform: 'Greenhouse', work: 'Remote', jobType: 'Full-time', salary: '$230,000', days: 'Tomorrow 2 PM', isArchived: false },
+      { id: '5', title: 'Fullstack Tech Lead', company: 'Airbnb', status: 'Interview', platform: 'Lever', work: 'Onsite', jobType: 'Full-time', salary: '$205,000', days: 'Fri 10 AM', isArchived: false },
+      { id: '6', title: 'Senior Staff Designer', company: 'Vercel', status: 'Offer', platform: 'Company Site', work: 'Remote', jobType: 'Full-time', salary: '$240,000', days: 'Offer in hand', isArchived: false },
+      // Historical Archived Jobs
+      { id: '7', title: 'Frontend Engineer', company: 'Meta', status: 'Archived', platform: 'LinkedIn', work: 'Onsite', jobType: 'Full-time', salary: '$185,000', days: 'Archived 30d ago', isArchived: true },
+      { id: '8', title: 'UI Architect', company: 'Uber', status: 'Archived', platform: 'Indeed', work: 'Hybrid', jobType: 'Full-time', salary: '$195,000', days: 'Archived 45d ago', isArchived: true },
+    ];
+
+    let currentLayout = 'board';
+    let isSidebarCollapsed = false;
+
+    function toggleSidebar() {
+      isSidebarCollapsed = !isSidebarCollapsed;
+      const sb = document.getElementById('sidebar');
+      const title = document.getElementById('brand-title');
+      const navTexts = document.querySelectorAll('.nav-text');
+
+      if (isSidebarCollapsed) {
+        sb.style.width = '68px';
+        title.style.display = 'none';
+        navTexts.forEach(el => el.style.display = 'none');
+      } else {
+        sb.style.width = '208px';
+        title.style.display = 'inline';
+        navTexts.forEach(el => el.style.display = 'inline');
+      }
+    }
+
+    function setLayout(layout) {
+      currentLayout = layout;
+      const cb = document.getElementById('container-board');
+      const ct = document.getElementById('container-table');
+      const slider = document.getElementById('tab-slider');
+      const btnBoard = document.getElementById('tab-btn-board');
+      const btnTable = document.getElementById('tab-btn-table');
+
+      if (layout === 'board') {
+        slider.style.transform = 'translateX(0px)';
+        btnBoard.className = 'relative z-10 flex items-center gap-1.5 px-3 py-1 rounded-md text-slate-900 font-semibold transition-colors duration-150 cursor-pointer';
+        btnTable.className = 'relative z-10 flex items-center gap-1.5 px-3 py-1 rounded-md text-slate-600 hover:text-slate-900 transition-colors duration-150 cursor-pointer';
+        ct.classList.add('hidden');
+        cb.classList.remove('hidden');
+      } else {
+        slider.style.transform = 'translateX(72px)';
+        btnTable.className = 'relative z-10 flex items-center gap-1.5 px-3 py-1 rounded-md text-slate-900 font-semibold transition-colors duration-150 cursor-pointer';
+        btnBoard.className = 'relative z-10 flex items-center gap-1.5 px-3 py-1 rounded-md text-slate-600 hover:text-slate-900 transition-colors duration-150 cursor-pointer';
+        cb.classList.add('hidden');
+        ct.classList.remove('hidden');
+      }
+    }
+
+    function onStatusFilterChange(val) {
+      const banner = document.getElementById('archive-banner');
+      if (val === 'Archived' || val === 'Rejected') {
+        setLayout('table');
+        banner.classList.remove('hidden');
+      } else {
+        banner.classList.add('hidden');
+      }
+      applyFilters();
+    }
+
+    function resetToActive() {
+      document.getElementById('filter-status').value = 'Active';
+      document.getElementById('archive-banner').classList.add('hidden');
+      setLayout('board');
+      applyFilters();
+    }
+
+    function resetAllFilters() {
+      document.getElementById('filter-search').value = '';
+      document.getElementById('filter-status').value = 'Active';
+      document.getElementById('filter-platform').value = 'All';
+      document.getElementById('filter-work').value = 'All';
+      document.getElementById('filter-jobtype').value = 'All';
+      document.getElementById('filter-date').value = 'All';
+      document.getElementById('archive-banner').classList.add('hidden');
+      applyFilters();
+    }
+
+    function applyFilters() {
+      const search = document.getElementById('filter-search').value.toLowerCase().trim();
+      const status = document.getElementById('filter-status').value;
+      const platform = document.getElementById('filter-platform').value;
+      const work = document.getElementById('filter-work').value;
+      const jobType = document.getElementById('filter-jobtype').value;
+
+      // Show/hide reset button
+      const isDirty = search !== '' || status !== 'Active' || platform !== 'All' || work !== 'All' || jobType !== 'All';
+      document.getElementById('btn-reset').style.display = isDirty ? 'inline-block' : 'none';
+
+      // Filter applications
+      const filtered = SAMPLE_APPS.filter(app => {
+        // Status scope logic
+        if (status === 'Active' && app.isArchived) return false;
+        if (status === 'Archived' && !app.isArchived) return false;
+        if (status !== 'Active' && status !== 'All' && status !== 'Archived' && app.status !== status) return false;
+
+        // Platform filter
+        if (platform !== 'All' && app.platform !== platform) return false;
+
+        // Work location
+        if (work !== 'All' && app.work !== work) return false;
+
+        // Job type
+        if (jobType !== 'All' && app.jobType !== jobType) return false;
+
+        // Search text
+        if (search && !app.company.toLowerCase().includes(search) && !app.title.toLowerCase().includes(search)) return false;
+
+        return true;
+      });
+
+      // Update Counts
+      document.getElementById('active-count-label').innerText = `${filtered.length} items`;
+      document.getElementById('sidebar-count').innerText = filtered.length;
+      document.getElementById('table-row-count').innerText = `${filtered.length} Applications`;
+
+      renderBoard(filtered);
+      renderTable(filtered);
+    }
+
+    function renderBoard(apps) {
+      const columns = ['Saved', 'Applied', 'Screening', 'Interview', 'Offer'];
+      columns.forEach(col => {
+        const colApps = apps.filter(a => a.status === col);
+        const container = document.querySelector(`.col-cards[data-col="${col}"]`);
+        const countSpan = document.querySelector(`.col-count[data-col="${col}"]`);
+        countSpan.innerText = colApps.length;
+
+        container.innerHTML = colApps.map(app => `
+          <div class="bg-white p-3.5 rounded-lg border border-slate-200 shadow-2xs hover:border-slate-300 transition-all cursor-pointer">
+            <div class="font-bold text-xs text-slate-900">${app.title}</div>
+            <div class="flex items-center gap-2 mt-1 text-[11px] text-slate-600">
+              <span class="font-medium text-slate-700">${app.company}</span>
+              <span class="text-slate-300">•</span>
+              <span class="text-slate-500">${app.work}</span>
+            </div>
+            <div class="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 font-mono">
+              <span class="font-semibold text-slate-800">${app.salary}</span>
+              <span class="px-1.5 py-0.5 rounded text-[10px] bg-slate-100 text-slate-600">${app.platform}</span>
+            </div>
+          </div>
+        `).join('');
+      });
+    }
+
+    function renderTable(apps) {
+      const tbody = document.getElementById('table-body');
+      tbody.innerHTML = apps.map(app => `
+        <tr class="hover:bg-slate-50 transition-colors">
+          <td class="px-4 py-2.5 font-bold text-slate-900">
+            ${app.title}
+            <span class="block font-normal text-[11px] text-slate-500">${app.company}</span>
+          </td>
+          <td class="px-4 py-2.5">
+            <span class="inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+              app.status === 'Offer' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
+              app.status === 'Interview' ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' :
+              app.status === 'Archived' ? 'bg-slate-100 text-slate-600 border border-slate-200' :
+              'bg-blue-50 text-blue-700 border border-blue-200'
+            }">${app.status}</span>
+          </td>
+          <td class="px-4 py-2.5 text-slate-600">${app.platform}</td>
+          <td class="px-4 py-2.5 text-slate-600">${app.work}</td>
+          <td class="px-4 py-2.5 font-mono text-slate-900">${app.salary}</td>
+          <td class="px-4 py-2.5 text-slate-500 font-mono text-[11px]">${app.days}</td>
+        </tr>
+      `).join('');
+    }
+
+    // Initial load
+    applyFilters();
+  </script>
+</body>
+</html>

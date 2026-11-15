@@ -294,3 +294,25 @@ If deep architectural or guideline context is needed, consult the distilled repo
 
 6. **Clipboard Augmentation Protocol**:
    - For high-frequency copy targets (e.g. contact email addresses, phone numbers, application URLs), do not rely solely on manual drag-and-select. Always pair the `select-text` display with a canonical `CopyIconButton` or `EmailIconButton` (`src/components/IconButton.tsx`) for zero-drag 1-click clipboard actions.
+
+---
+
+## 20. Canvas Ambient Calm & Notification Severity Invariant (DDR-0001)
+
+**Rule**: Primary operational workspaces (`ActivePipelineBoard.tsx`, `AllApplicationsTable.tsx`, `ContactsView.tsx`) must remain calm, focused, and free of ambient notification banners.
+
+1. **Strict Ban on Ambient Canvases Banners**:
+   - Never render full-width colored alert strips (`bg-amber-500/10`, `bg-yellow-50`, `border-amber-200`) across operational canvases to notify users of non-blocking conditions (e.g. *"Attention Needed: X applications in stage > 14 days"*).
+   - Full-width ambient banners induce severity inflation, trigger reflexive "banner blindness", and fracture Tracklet's 3-tier surface elevation system.
+
+2. **The 3-Tier Notification Hierarchy**:
+   - **Tier 1 (Blocking Modal Dialog)**: For irreversible destructive gates (account deletion, workspace reset). Followed by a receipt snackbar.
+   - **Tier 2 (Action Receipt Snackbar via `addToast`)**: For immediate confirmation of user actions (3–6s duration). Status changes and deletes MUST provide an `Undo` callback.
+   - **Tier 3 (In-Context Entity Signaling)**: For entity-level status, staleness, recency, or task urgency. Surfaced directly where the user looks and interacts:
+     - On Kanban cards (`PipelineCard.tsx`): Render calm in-card status chips (e.g. `<span>{daysInStage}d stale</span>`) with descriptive tooltips.
+     - On Data grids (`AllApplicationsTable.tsx`): Render in the `Stage History` column or sortable timestamps.
+     - In Toolbars: Filterable via `FilterToolbar` (Date, Status, or Platform dimensions).
+
+3. **Account-Level Exceptions**:
+   - Only true system-blocking account states (e.g. hard plan quota enforcement or unverified email preventing writes) may render persistent banners, and they MUST be located in the top-level application shell (`App.tsx`), never inside nested workspace views.
+
