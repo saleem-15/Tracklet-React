@@ -1,0 +1,407 @@
+/* FilterToolbar Container & Layout */
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  position: relative;
+  min-height: 34px;
+  font-family: inherit;
+  max-width: 100%;
+}
+
+.frame {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0.375rem;
+  position: relative;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.chips::-webkit-scrollbar {
+  display: none;
+}
+
+.slot {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/* Individual Filter Pill / Chip (Tracklet Blue Theme) */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  height: 28px;
+  padding: 0 4px 0 10px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 500;
+  box-shadow: 0 1px 2px rgba(37, 99, 235, 0.05);
+  white-space: nowrap;
+  user-select: none;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.chip:hover {
+  background-color: #dbeafe;
+  border-color: #93c5fd;
+}
+
+.chipLabel {
+  display: inline-flex;
+  align-items: center;
+  color: #1e40af;
+}
+
+.value {
+  display: inline-flex;
+  align-items: center;
+  font-weight: 600;
+  color: #1e3a8a;
+}
+
+.separator {
+  color: #93c5fd;
+  margin: 0 2px;
+}
+
+/* Remove 'X' Button on Chip (28px touch ergonomics with rose hover) */
+.chip button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 9999px;
+  border: none;
+  background: transparent;
+  color: #3b82f6;
+  cursor: pointer;
+  transition: color 0.15s ease, background-color 0.15s ease;
+  margin-left: 1px;
+}
+
+.chip button:hover {
+  color: #e11d48;
+  background-color: #ffe4e6;
+}
+
+.chip button:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 1px;
+}
+
+/* Morph Text */
+.morphText {
+  position: relative;
+  display: inline-flex;
+  overflow: hidden;
+  vertical-align: baseline;
+}
+
+.measure {
+  position: absolute;
+  visibility: hidden;
+  white-space: pre;
+  pointer-events: none;
+}
+
+.morphValue {
+  display: inline-block;
+  white-space: pre;
+}
+
+/* Empty State Note */
+.empty {
+  font-size: 11px;
+  color: #94a3b8;
+  font-style: normal;
+  padding: 0 4px;
+  user-select: none;
+}
+
+/* Actions area */
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  position: relative;
+  flex-shrink: 0;
+}
+
+/* Clear All Button */
+.clear {
+  border: none;
+  background: transparent;
+  color: #e11d48;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+}
+
+.clear:hover {
+  background-color: #fff1f2;
+  color: #be123c;
+}
+
+.clear:focus-visible {
+  outline: 2px solid #e11d48;
+  outline-offset: 1px;
+}
+
+.clearText {
+  display: inline-block;
+}
+
+/* Screen reader announcement */
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* FilterMenu: Morphing Add Filter Button & Popover */
+.menu {
+  position: relative;
+  display: inline-flex;
+}
+
+/* Filter Trigger Button (Pure white surface consuming Tracklet UI_TOKENS.btnOutline) */
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  background-color: #ffffff;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.trigger:hover {
+  background-color: #f8fafc;
+  border-color: #cbd5e1;
+  color: #0f172a;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+}
+
+.trigger:active {
+  background-color: #f1f5f9;
+}
+
+.trigger[aria-expanded="true"] {
+  background-color: #f8fafc;
+  border-color: #94a3b8;
+  color: #0f172a;
+}
+
+.trigger:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 1px;
+}
+
+.face {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Anchored Popover Surface (Drops cleanly below trigger with R=12, shadow-lg) */
+.surface {
+  position: absolute;
+  top: calc(100% + 6px);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.1), 0 8px 10px -6px rgba(15, 23, 42, 0.05);
+  overflow: hidden;
+  z-index: 50;
+  transform-origin: top left;
+}
+
+.menu[data-y="up"] .surface {
+  top: auto;
+  bottom: calc(100% + 6px);
+  transform-origin: bottom left;
+}
+
+.panel {
+  position: relative;
+  min-width: 210px;
+  padding: 6px;
+  outline: none;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 24px;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.back:hover {
+  background-color: #f1f5f9;
+  color: #0f172a;
+}
+
+.title {
+  flex: 1;
+  font-size: 11px;
+  font-weight: 600;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  overflow: hidden;
+}
+
+.titleText {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.stage {
+  position: relative;
+  overflow: hidden;
+  min-height: 120px;
+}
+
+.step {
+  width: 100%;
+}
+
+.list {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  outline: none;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+/* Floating selection highlight */
+.highlight {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-radius: 6px;
+  background: #f1f5f9;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.highlight[data-ring] {
+  box-shadow: 0 0 0 1.5px #3b82f6;
+}
+
+.item {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  font-size: 12px;
+  font-weight: 500;
+  color: #334155;
+  cursor: pointer;
+  outline: none;
+  text-align: left;
+  user-select: none;
+}
+
+.itemIcon {
+  display: inline-flex;
+  align-items: center;
+  color: #64748b;
+  flex-shrink: 0;
+}
+
+.itemLabel {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.itemMeta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+
+.metaValue {
+  font-size: 11px;
+  font-weight: 600;
+  color: #2563eb;
+}
+
+.hint {
+  font-size: 11px;
+  color: #94a3b8;
+  font-family: monospace;
+}
+
+.check {
+  display: inline-flex;
+  align-items: center;
+  color: #2563eb;
+  opacity: 0;
+  transition: opacity 0.1s ease;
+}
+
+.check[data-on] {
+  opacity: 1;
+}

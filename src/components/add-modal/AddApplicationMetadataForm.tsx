@@ -15,6 +15,8 @@ export interface AddApplicationMetadataFormProps {
   onEmploymentTypeChange: (val: EmploymentType | '') => void;
   jobLocation: string;
   onJobLocationChange: (val: string) => void;
+  salary?: string;
+  onSalaryChange?: (val: string) => void;
 }
 
 export const AddApplicationMetadataForm: React.FC<AddApplicationMetadataFormProps> = ({
@@ -28,6 +30,8 @@ export const AddApplicationMetadataForm: React.FC<AddApplicationMetadataFormProp
   onEmploymentTypeChange,
   jobLocation,
   onJobLocationChange,
+  salary = '',
+  onSalaryChange,
 }) => {
   return (
     <div className="space-y-3 bg-slate-50/80 rounded-xl border border-slate-200/80 p-4 shadow-2xs">
@@ -90,6 +94,20 @@ export const AddApplicationMetadataForm: React.FC<AddApplicationMetadataFormProp
             className="w-full bg-white text-slate-900 px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 font-mono text-xs transition-all shadow-2xs"
           />
         </div>
+
+        {onSalaryChange && (
+          <div>
+            <label htmlFor="add-job-salary" className="block text-[11px] font-mono font-medium text-slate-500 mb-1">Salary / Compensation</label>
+            <input
+              id="add-job-salary"
+              type="text"
+              value={salary}
+              onChange={(e) => onSalaryChange(e.target.value)}
+              placeholder="e.g. $190k or $185k–$210k"
+              className="w-full bg-white text-slate-900 px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 font-mono text-xs transition-all shadow-2xs"
+            />
+          </div>
+        )}
 
         <div>
           <label className="block text-[11px] font-mono font-medium text-slate-500 mb-1">Date Applied</label>

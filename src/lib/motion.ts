@@ -25,6 +25,16 @@ export const MOTION_EASE = {
 } as const;
 
 // ---------------------------------------------------------------------------
+// Kanban Physics Springs (Fluid Pointer Gestures)
+// ---------------------------------------------------------------------------
+
+/** Spring used when card lifts out of list into cursor-tracking overlay */
+export const LIFT_SPRING = { type: 'spring', stiffness: 520, damping: 34, mass: 0.7 } as const;
+
+/** Spring used for fluid card reordering, placeholder opening, and counter morphs */
+export const FLOW_SPRING = { type: 'spring', stiffness: 420, damping: 36, mass: 0.9 } as const;
+
+// ---------------------------------------------------------------------------
 // Base Transitions
 // ---------------------------------------------------------------------------
 

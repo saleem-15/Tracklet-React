@@ -102,6 +102,8 @@ export interface Application {
   history?: StatusHistoryEntry[];
   logoUrl?: string;
   companyDomain?: string;
+  salary?: string;
+  order?: number; // Fractional priority index for vertical Kanban positioning
   stageUpdatedAt: string; // ISO date string or YYYY-MM-DD
   createdAt: string;
   updatedAt: string;
@@ -140,6 +142,8 @@ export interface FollowUpTemplate {
   createdAt?: string;
   updatedAt?: string;
 }
+
+export type ApplicationLayout = 'board' | 'table';
 
 export type SortField = 'company' | 'role' | 'platform' | 'dateApplied' | 'status' | 'daysInStage';
 export type SortOrder = 'asc' | 'desc';

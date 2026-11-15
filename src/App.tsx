@@ -117,10 +117,9 @@ function TrackletAppContent() {
       if (!isEditable && !hasOpenModal) {
         const tabNumberMap: Record<string, typeof activeTab> = {
           '1': 'all',
-          '2': 'pipeline',
-          '3': 'contacts',
-          '4': 'stats',
-          '5': 'settings',
+          '2': 'contacts',
+          '3': 'stats',
+          '4': 'settings',
         };
         if (!e.ctrlKey && !e.metaKey && !e.shiftKey && tabNumberMap[e.key]) {
           e.preventDefault();

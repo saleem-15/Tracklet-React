@@ -48,7 +48,7 @@ afterEach(() => {
 });
 
 describe('Navigation UX Standards: Action-Only Badge Hierarchy in Sidebar', () => {
-  it('renders All Applications and Active Pipeline as clean navigation tabs without static inventory count pills', () => {
+  it('renders Applications as a clean navigation tab without static inventory count pills', () => {
     const apps: Application[] = [
       ...Array.from({ length: 23 }, (_, i) => makeApp(`app-${i}`, { status: 'Applied' })),
       makeApp('app-archived-1', { status: 'Archived' }),
@@ -63,17 +63,15 @@ describe('Navigation UX Standards: Action-Only Badge Hierarchy in Sidebar', () =
       );
     });
 
-    const allAppsButton = host!.querySelector('button[title="All Applications"]');
-    expect(allAppsButton).not.toBeNull();
+    const appsButton = host!.querySelector('button[title="Applications"]');
+    expect(appsButton).not.toBeNull();
     // Raw inventory number (e.g. 25 or 23) must NOT be displayed on the persistent nav tab
-    expect(allAppsButton!.querySelector('.font-mono')).toBeNull();
-    expect(allAppsButton!.textContent).toBe('All Applications');
+    expect(appsButton!.querySelector('.font-mono')).toBeNull();
+    expect(appsButton!.textContent).toBe('Applications');
 
+    // Active Pipeline is unified into Applications and must NOT appear as a separate persistent nav button
     const pipelineButton = host!.querySelector('button[title="Active Pipeline"]');
-    expect(pipelineButton).not.toBeNull();
-    // Active pipeline count (e.g. 23) must NOT be displayed on the persistent nav tab
-    expect(pipelineButton!.querySelector('.font-mono')).toBeNull();
-    expect(pipelineButton!.textContent).toBe('Active Pipeline');
+    expect(pipelineButton).toBeNull();
   });
 
   it('renders action alert badge on Contacts only when follow-ups are due soon, with zero static inventory clutter', () => {

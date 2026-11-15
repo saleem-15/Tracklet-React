@@ -16,11 +16,11 @@ export interface CompanyLogoProps {
 }
 
 const SIZE_MAP = {
-  xs: { box: 'w-6 h-6 rounded-md', icon: 'w-3.5 h-3.5', imgSize: 'p-0.5' },
-  sm: { box: 'w-8 h-8 rounded-lg', icon: 'w-4 h-4', imgSize: 'p-1' },
-  md: { box: 'w-10 h-10 rounded-xl', icon: 'w-5 h-5', imgSize: 'p-1.5' },
-  lg: { box: 'w-12 h-12 rounded-2xl', icon: 'w-6 h-6', imgSize: 'p-2' },
-  xl: { box: 'w-16 h-16 rounded-2xl', icon: 'w-8 h-8', imgSize: 'p-2.5' },
+  xs: { box: 'w-6 h-6 rounded-md bg-slate-50 border border-slate-200/70 p-0.5', icon: 'w-3 h-3', imgSize: '' },
+  sm: { box: 'w-8 h-8 rounded-lg bg-white border border-slate-200/90 shadow-2xs', icon: 'w-4 h-4', imgSize: 'p-1' },
+  md: { box: 'w-10 h-10 rounded-xl bg-white border border-slate-200/90 shadow-2xs', icon: 'w-5 h-5', imgSize: 'p-1.5' },
+  lg: { box: 'w-12 h-12 rounded-2xl bg-white border border-slate-200/90 shadow-2xs', icon: 'w-6 h-6', imgSize: 'p-2' },
+  xl: { box: 'w-16 h-16 rounded-2xl bg-white border border-slate-200/90 shadow-2xs', icon: 'w-8 h-8', imgSize: 'p-2.5' },
 };
 
 export const CompanyLogo: React.FC<CompanyLogoProps> = ({
@@ -88,7 +88,7 @@ export const CompanyLogo: React.FC<CompanyLogoProps> = ({
 
   return (
     <div
-      className={`relative shrink-0 flex items-center justify-center overflow-hidden bg-white border border-slate-200/90 shadow-2xs select-none ${box} ${className}`}
+      className={`relative shrink-0 flex items-center justify-center overflow-hidden select-none ${box} ${className}`}
       title={company || 'Company'}
     >
       {!hasFailed && currentUrl ? (
@@ -98,12 +98,12 @@ export const CompanyLogo: React.FC<CompanyLogoProps> = ({
           alt={company ? `${company} logo` : 'Company logo'}
           onLoad={handleImageLoad}
           onError={handleImageError}
-          className={`w-full h-full object-contain bg-white ${imgSize}`}
+          className={`w-full h-full object-contain ${imgSize}`}
           referrerPolicy="no-referrer"
         />
       ) : (
         <div
-          className="w-full h-full flex items-center justify-center bg-slate-100 text-slate-600 transition-colors duration-150"
+          className="w-full h-full flex items-center justify-center bg-slate-100 text-slate-500 transition-colors duration-150"
         >
           <Building2 className={`${icon} stroke-[1.75]`} />
         </div>

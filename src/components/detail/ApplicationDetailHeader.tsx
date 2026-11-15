@@ -6,6 +6,7 @@ import { CompanyLogo } from '../CompanyLogo';
 import { StageSelectorDropdown } from '../StageSelectorDropdown';
 import { CloseIconButton } from '../IconButton';
 import { JobTypeBadges } from '../JobTypeBadges';
+import { formatSalaryCompact } from '../../lib/salaryUtils';
 
 export interface ApplicationDetailHeaderProps {
   app: Application;
@@ -39,8 +40,16 @@ export const ApplicationDetailHeader: React.FC<ApplicationDetailHeaderProps> = (
               />
             )}
           </p>
-          {app.location && (
-            <p dir="auto" className="text-[11px] font-mono text-slate-500 truncate mt-0.5 text-start">{app.location}</p>
+          {(app.location || (app.salary && app.salary.trim())) && (
+            <p dir="auto" className="text-[11px] font-mono text-slate-500 truncate mt-0.5 text-start flex items-center gap-1.5">
+              {app.location && <span>{app.location}</span>}
+              {app.location && app.salary && app.salary.trim() && <span className="text-slate-300 select-none">·</span>}
+              {app.salary && app.salary.trim() && (
+                <span className="font-semibold text-slate-700">
+                  {formatSalaryCompact(app.salary)}
+                </span>
+              )}
+            </p>
           )}
         </div>
       </div>

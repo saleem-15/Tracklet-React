@@ -58,24 +58,20 @@ const SHORTCUT_CATEGORIES: ShortcutCategory[] = [
         combos: [['Ctrl', 'B']],
       },
       {
-        label: 'Switch to All Applications',
+        label: 'Switch to Applications',
         combos: [['1']],
       },
       {
-        label: 'Switch to Active Pipeline',
+        label: 'Switch to Contacts & Mentors',
         combos: [['2']],
       },
       {
-        label: 'Switch to Contacts & Mentors',
+        label: 'Switch to Analytics & ROI',
         combos: [['3']],
       },
       {
-        label: 'Switch to Analytics & ROI',
-        combos: [['4']],
-      },
-      {
         label: 'Switch to Settings',
-        combos: [['5']],
+        combos: [['4']],
       },
     ],
   },

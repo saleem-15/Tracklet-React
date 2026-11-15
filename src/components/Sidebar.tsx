@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, useReducedMotion, AnimatePresence } from 'motion/react';
 import { 
+  Briefcase,
   Table, 
   Kanban, 
   Users, 
@@ -245,13 +246,8 @@ export const Sidebar: React.FC<SidebarProps> = (props) => {
     }> = [
       {
         id: 'all',
-        label: 'All Applications',
-        icon: Table,
-      },
-      {
-        id: 'pipeline',
-        label: 'Active Pipeline',
-        icon: Kanban,
+        label: 'Applications',
+        icon: Briefcase,
         badge: expirySettings.enabled && expiringTasksCount > 0 ? (
           <span
             className="font-mono text-xs text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded-md border border-amber-200/80 font-bold shrink-0"
@@ -296,7 +292,7 @@ export const Sidebar: React.FC<SidebarProps> = (props) => {
       <nav className={`space-y-1 ${isMobileView ? 'p-3' : 'p-2 overflow-hidden'}`}>
         {navItems.map((item) => {
           const IconComponent = item.icon;
-          const isActive = activeTab === item.id;
+          const isActive = activeTab === item.id || (item.id === 'all' && activeTab === 'pipeline');
 
           return (
             <button
@@ -368,7 +364,10 @@ export const Sidebar: React.FC<SidebarProps> = (props) => {
           {expiringTasksCount > 0 ? (
             <button
               type="button"
-              onClick={() => handleTabClick('pipeline')}
+              onClick={() => {
+                nav.setLayout('board');
+                handleTabClick('all');
+              }}
               className="w-full text-left p-2.5 rounded-xl bg-gradient-to-br from-amber-50/90 via-amber-100/40 to-orange-50/60 border border-amber-200/90 shadow-2xs hover:border-amber-300 transition-colors cursor-pointer group space-y-1.5 min-h-[44px]"
             >
               <div className="flex items-center justify-between">
@@ -386,7 +385,7 @@ export const Sidebar: React.FC<SidebarProps> = (props) => {
                   : `${expiringTasksCount} tasks due within ${expirySettings.expiryThresholdHours}h!`}
               </p>
               <div className="flex items-center justify-between text-xs font-mono text-amber-700 font-semibold pt-0.5 border-t border-amber-200/60">
-                <span>View in Pipeline</span>
+                <span>View in Board</span>
                 <ChevronRight className="w-3 h-3 text-amber-600 group-hover:translate-x-0.5 transition-transform motion-reduce:transition-none shrink-0" />
               </div>
             </button>
@@ -410,7 +409,10 @@ export const Sidebar: React.FC<SidebarProps> = (props) => {
           >
             <button
               type="button"
-              onClick={() => handleTabClick('pipeline')}
+              onClick={() => {
+                nav.setLayout('board');
+                handleTabClick('all');
+              }}
               title={`${expiringTasksCount} tasks expiring soon!`}
               data-tooltip={`${expiringTasksCount} tasks expiring soon!`}
               data-tooltip-placement="right"

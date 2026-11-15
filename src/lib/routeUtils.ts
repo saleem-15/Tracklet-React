@@ -1,4 +1,4 @@
-import { ActiveTab, FilterState, JobPlatform, ApplicationStatus, WorkLocation, EmploymentType } from '../types';
+import { ActiveTab, FilterState, JobPlatform, ApplicationStatus, WorkLocation, EmploymentType, ApplicationLayout } from '../types';
 
 // ─── Path ↔ Tab mapping ──────────────────────────────────────────────────────
 
@@ -13,6 +13,7 @@ export const TAB_TO_PATH: Record<ActiveTab, string> = {
 export const PATH_TO_TAB: Record<string, ActiveTab> = {
   '/': 'all',
   '/applications': 'all',
+  '/all-applications': 'all',
   '/pipeline': 'pipeline',
   '/contacts': 'contacts',
   '/analytics': 'stats',
@@ -198,6 +199,7 @@ const QP = {
   DATE: 'date',
   APP: 'app',
   NEW: 'new',
+  LAYOUT: 'layout',
 } as const;
 
 // ─── Read state FROM the current URL ─────────────────────────────────────────
@@ -206,6 +208,7 @@ export interface UrlState {
   filter: FilterState;
   selectedAppId: string | null;
   isAddModalOpen: boolean;
+  layout: ApplicationLayout;
 }
 
 export function readUrlState(): UrlState {
@@ -224,19 +227,43 @@ export function readUrlState(): UrlState {
       (params.get(QP.DATE) as FilterState['dateRange']) ?? DEFAULT_FILTER.dateRange,
   };
 
+  const rawLayout = params.get(QP.LAYOUT);
+  let layout: ApplicationLayout = 'board';
+  if (filter.status === 'Archived' || filter.status === 'Rejected') {
+    // Smart Status routing: terminal/archived records always prefer table layout for dense audit
+    layout = 'table';
+  } else if (rawLayout === 'board' || rawLayout === 'table') {
+    layout = rawLayout;
+  } else if (typeof window !== 'undefined' && window.location.pathname === '/pipeline') {
+    layout = 'board';
+  } else if (typeof window !== 'undefined' && window.location.pathname === '/all-applications') {
+    layout = 'table';
+  } else {
+    try {
+      const saved = localStorage.getItem('tracklet_preferred_layout');
+      if (saved === 'board' || saved === 'table') {
+        layout = saved as ApplicationLayout;
+      }
+    } catch {
+      // ignore
+    }
+  }
+
   return {
     filter,
     selectedAppId: params.get(QP.APP) ?? params.get('appId') ?? null,
     isAddModalOpen: params.has(QP.NEW),
+    layout,
   };
 }
 
 // ─── Build a URLSearchParams from current app state ──────────────────────────
 
-function buildSearchParams(
+export function buildSearchParams(
   filter: FilterState,
   selectedAppId: string | null,
-  isAddModalOpen: boolean
+  isAddModalOpen: boolean,
+  layout?: ApplicationLayout
 ): string {
   const params = new URLSearchParams();
 
@@ -248,6 +275,7 @@ function buildSearchParams(
   if (filter.dateRange !== 'all') params.set(QP.DATE, filter.dateRange);
   if (selectedAppId) params.set(QP.APP, selectedAppId);
   if (isAddModalOpen) params.set(QP.NEW, '1');
+  if (layout) params.set(QP.LAYOUT, layout);
 
   const str = params.toString();
   return str ? `?${str}` : '';
@@ -262,9 +290,10 @@ function buildSearchParams(
 export function syncFiltersToUrl(
   filter: FilterState,
   selectedAppId: string | null,
-  isAddModalOpen: boolean
+  isAddModalOpen: boolean,
+  layout?: ApplicationLayout
 ): void {
-  const search = buildSearchParams(filter, selectedAppId, isAddModalOpen);
+  const search = buildSearchParams(filter, selectedAppId, isAddModalOpen, layout);
   const current = window.location.pathname + window.location.search;
   const next = window.location.pathname + search;
   if (current !== next) {
@@ -279,9 +308,10 @@ export function syncFiltersToUrl(
 export function syncAppSelectionToUrl(
   appId: string | null,
   filter: FilterState,
-  isAddModalOpen: boolean
+  isAddModalOpen: boolean,
+  layout?: ApplicationLayout
 ): void {
-  const search = buildSearchParams(filter, appId, isAddModalOpen);
+  const search = buildSearchParams(filter, appId, isAddModalOpen, layout);
   window.history.pushState(null, '', window.location.pathname + search);
 }
 
@@ -292,8 +322,27 @@ export function syncAppSelectionToUrl(
 export function syncAddModalToUrl(
   open: boolean,
   filter: FilterState,
-  selectedAppId: string | null
+  selectedAppId: string | null,
+  layout?: ApplicationLayout
 ): void {
-  const search = buildSearchParams(filter, selectedAppId, open);
+  const search = buildSearchParams(filter, selectedAppId, open, layout);
   window.history.pushState(null, '', window.location.pathname + search);
+}
+
+/**
+ * Called when layout changes (Board ⇄ Table).
+ * Uses replaceState to avoid polluting back-history while preserving deep-linkability.
+ */
+export function syncLayoutToUrl(
+  layout: ApplicationLayout,
+  filter: FilterState,
+  selectedAppId: string | null,
+  isAddModalOpen: boolean
+): void {
+  const search = buildSearchParams(filter, selectedAppId, isAddModalOpen, layout);
+  const current = window.location.pathname + window.location.search;
+  const next = window.location.pathname + search;
+  if (current !== next) {
+    window.history.replaceState(null, '', next);
+  }
 }

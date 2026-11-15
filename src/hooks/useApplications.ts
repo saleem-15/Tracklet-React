@@ -203,7 +203,18 @@ export function useApplications({
     }
 
     try {
-      const created = await ApplicationRepository.addApplication(newApp, user.uid);
+      const sameStatusApps = applicationsRef.current.filter((a) => a.status === newApp.status);
+      let targetOrder = 10000;
+      if (sameStatusApps.length > 0) {
+        const minOrder = Math.min(...sameStatusApps.map((a) => (typeof a.order === 'number' ? a.order : 10000)));
+        targetOrder = minOrder - 10000;
+      }
+      const appWithOrder = {
+        ...newApp,
+        order: typeof newApp.order === 'number' ? newApp.order : targetOrder,
+      };
+
+      const created = await ApplicationRepository.addApplication(appWithOrder, user.uid);
       setApplications((prev) => [created, ...prev]);
       addToast('success', 'Application Added', `Logged ${newApp.company} (${newApp.role})`);
       posthog.capture('application_created', {
@@ -280,6 +291,7 @@ export function useApplications({
           status: updates.status,
         });
         const prevStatus = currentApp.status;
+        const prevOrder = currentApp.order;
         const targetStatus = updates.status;
         const companyName = currentApp.company;
         addToast(
@@ -289,7 +301,10 @@ export function useApplications({
           {
             label: 'Undo',
             onClick: () => {
-              handleUpdateApplication(id, { status: prevStatus });
+              handleUpdateApplication(id, {
+                status: prevStatus,
+                ...(typeof prevOrder === 'number' ? { order: prevOrder } : {}),
+              });
             },
           },
           targetStatus

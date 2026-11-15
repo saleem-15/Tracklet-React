@@ -489,6 +489,7 @@ function mapRowToApp(
     workLocation: workLocation || undefined,
     employmentType: employmentType || undefined,
     location: location || undefined,
+    salary: salary || undefined,
     dateApplied,
     status,
     jobLink: jobLink || undefined,
