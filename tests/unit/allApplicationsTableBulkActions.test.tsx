@@ -144,9 +144,9 @@ describe('Bulk Actions Bar Actions (Archive, Reject, Export CSV, Delete)', () =>
     expect(host!.textContent).toContain('1 selected');
     expect(host!.textContent).toContain('Bulk actions:');
 
-    // Archive button is present
+    // Archive button is present (match by title — summary chips also mention stage names)
     const archiveBtn = Array.from(host!.querySelectorAll('button')).find(
-      (b) => b.textContent?.includes('Archive')
+      (b) => b.title === 'Archive selected applications'
     );
     expect(archiveBtn).toBeDefined();
 

@@ -89,7 +89,7 @@ describe('WorkspaceLoadingState Component (Executive Staged Dissolve)', () => {
   });
 
   describe('Stage B: In-Place Workspace Dissolve (Embedded)', () => {
-    it('renders table rows skeleton by default with deterministic 38px row height and zero CLS', () => {
+    it('renders table rows skeleton by default with deterministic 54px row height and zero CLS', () => {
       act(() => {
         root!.render(<WorkspaceLoadingState />);
       });
@@ -100,17 +100,17 @@ describe('WorkspaceLoadingState Component (Executive Staged Dissolve)', () => {
 
       // Table skeleton headers
       expect(host?.textContent).toContain('Company');
-      expect(host?.textContent).toContain('Role');
-      expect(host?.textContent).toContain('Platform');
+      expect(host?.textContent).toContain('Location');
+      expect(host?.textContent).toContain('Salary');
       expect(host?.textContent).toContain('Applied');
-      expect(host?.textContent).toContain('Stage');
       expect(host?.textContent).toContain('Status');
+      expect(host?.textContent).toContain('In Stage');
 
-      // Table rows with deterministic h-[38px]
+      // Table rows with deterministic h-[54px]
       const rows = host?.querySelectorAll('tbody tr');
       expect(rows?.length).toBe(8);
       rows?.forEach((row) => {
-        expect(row.className).toContain('h-[38px]');
+        expect(row.className).toContain('h-[54px]');
       });
 
       // Discrete bottom-bar systems telemetry

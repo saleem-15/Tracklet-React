@@ -242,6 +242,9 @@ export function WorkspaceContent({ isLoading = false, activeQuota }: WorkspaceCo
               >
                 <AllApplicationsTable
                   applications={filteredApplications}
+                  allApplications={applications}
+                  statusFilter={filter.status}
+                  onStatusFilterChange={(newStatus) => setFilter((prev) => ({ ...prev, status: newStatus }))}
                   totalAppCount={applications.length}
                   onOpenAddModal={handleGuardedOpenAddModal}
                   onResetFilters={resetFilters}

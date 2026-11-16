@@ -145,8 +145,39 @@ export interface FollowUpTemplate {
 
 export type ApplicationLayout = 'board' | 'table';
 
-export type SortField = 'company' | 'role' | 'platform' | 'dateApplied' | 'status' | 'daysInStage';
+export type SortField =
+  | 'company'
+  | 'role'
+  | 'platform'
+  | 'dateApplied'
+  | 'status'
+  | 'daysInStage'
+  | 'salary'
+  | 'lastActivity';
 export type SortOrder = 'asc' | 'desc';
+
+/** Grouping mode for the applications table view */
+export type TableGrouping = 'none' | 'status';
+
+/**
+ * Persisted view preferences for the table lens.
+ * Optional columns can be toggled without losing their data.
+ */
+export interface TableViewPrefs {
+  grouping: TableGrouping;
+  showLocation: boolean;
+  showSalary: boolean;
+  showLastActivity: boolean;
+  showEmploymentType: boolean;
+}
+
+export const DEFAULT_TABLE_VIEW_PREFS: TableViewPrefs = {
+  grouping: 'none',
+  showLocation: true,
+  showSalary: true,
+  showLastActivity: true,
+  showEmploymentType: false,
+};
 
 export interface FilterState {
   search: string;

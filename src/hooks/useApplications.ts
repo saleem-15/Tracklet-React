@@ -14,6 +14,7 @@ import { clearNoteDraft } from '../lib/editor/noteDrafts';
 import { broadcastDeletedApplication } from '../lib/extensionSync';
 import { findDuplicateApplications, mergeAllDuplicateGroups } from '../lib/dedupUtils';
 import { calculateDaysInStage } from '../lib/sampleData';
+import { getLastActivityTimestamp, parseSalaryValue, nextSortState, DEFAULT_SORT_STATE } from '../lib/tableUtils';
 import { exportApplicationsToCSV } from '../lib/exportCsv';
 import posthog from '../lib/posthog';
 
@@ -77,16 +78,10 @@ export function useApplications({
   selectedAppIdRef.current = selectedAppId;
 
   // Sort State
-  const [sort, setSort] = useState<SortState>({
-    field: 'dateApplied',
-    order: 'desc',
-  });
+  const [sort, setSort] = useState<SortState>(DEFAULT_SORT_STATE);
 
   const handleSortChange = useCallback((field: SortField) => {
-    setSort((prev) => ({
-      field,
-      order: prev.field === field && prev.order === 'asc' ? 'desc' : 'asc',
-    }));
+    setSort((prev) => nextSortState(prev, field));
   }, []);
 
   // Filtered and Sorted Applications
@@ -170,6 +165,20 @@ export function useApplications({
           const valA = calculateDaysInStage(a.stageUpdatedAt);
           const valB = calculateDaysInStage(b.stageUpdatedAt);
           return sort.order === 'asc' ? valA - valB : valB - valA;
+        }
+
+        if (sort.field === 'lastActivity') {
+          const valA = getLastActivityTimestamp(a);
+          const valB = getLastActivityTimestamp(b);
+          return sort.order === 'asc' ? valA - valB : valB - valA;
+        }
+
+        if (sort.field === 'salary') {
+          const valA = parseSalaryValue(a.salary) ?? -Infinity;
+          const valB = parseSalaryValue(b.salary) ?? -Infinity;
+          if (valA !== valB) return sort.order === 'asc' ? valA - valB : valB - valA;
+          // Unparseable/missing salaries sink deterministically by company
+          return a.company.localeCompare(b.company);
         }
 
         const valA = a[sort.field] || '';
