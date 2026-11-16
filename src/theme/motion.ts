@@ -45,6 +45,20 @@ export const MOTION_TOKENS = {
       damping: 32,
       mass: 0.8,
     },
+    // Lift spring for carried card (ActivePipelineBoard)
+    kanbanLift: {
+      type: 'spring',
+      stiffness: 520,
+      damping: 34,
+      mass: 0.7,
+    },
+    // Flow spring for smooth placeholder opening and card reordering (ActivePipelineBoard)
+    kanbanFlow: {
+      type: 'spring',
+      stiffness: 420,
+      damping: 36,
+      mass: 0.9,
+    },
     // Row height collapse on delete/archive
     collapse: {
       type: 'spring',

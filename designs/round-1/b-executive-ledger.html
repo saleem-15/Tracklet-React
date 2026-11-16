@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-50">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Direction B: Executive Overview Ledger · Tracklet</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            heading: ['Outfit', 'sans-serif'],
+            sans: ['Plus Jakarta Sans', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="h-full flex flex-col font-sans text-slate-800 antialiased selection:bg-brand-100 selection:text-brand-700">
+
+  <!-- Top Global Header -->
+  <header class="h-14 bg-white border-b border-slate-200/80 px-4 sm:px-6 flex items-center justify-between shrink-0 z-30">
+    <div class="flex items-center gap-6">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center text-white font-heading font-bold text-sm">
+          T
+        </div>
+        <span class="font-heading font-bold text-base tracking-tight text-slate-900">Tracklet</span>
+      </div>
+
+      <nav class="hidden sm:flex items-center gap-1">
+        <a href="#applications" class="px-3 py-1.5 rounded-md text-xs font-semibold bg-slate-100 text-slate-900">Applications</a>
+        <a href="#contacts" class="px-3 py-1.5 rounded-md text-xs font-medium text-slate-600 hover:text-slate-900">Contacts</a>
+        <a href="#analytics" class="px-3 py-1.5 rounded-md text-xs font-medium text-slate-600 hover:text-slate-900">Analytics</a>
+        <a href="#settings" class="px-3 py-1.5 rounded-md text-xs font-medium text-slate-600 hover:text-slate-900">Settings</a>
+      </nav>
+    </div>
+
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-full bg-slate-200 border border-slate-300 flex items-center justify-center text-xs font-bold text-slate-700">
+        SM
+      </div>
+    </div>
+  </header>
+
+  <!-- Direction B Signature: Pipeline Pulse Header Band -->
+  <div class="bg-white border-b border-slate-200/70 px-4 sm:px-6 py-3 shrink-0 flex flex-wrap items-center justify-between gap-4">
+    <div>
+      <h1 class="font-heading font-bold text-lg text-slate-900 leading-tight">Applications</h1>
+      <p class="text-xs text-slate-500 mt-0.5">Your unified command center across all in-flight opportunities</p>
+    </div>
+
+    <!-- Executive Pulse Micro-Metrics Ribbon -->
+    <div class="flex items-center gap-2 sm:gap-4 bg-slate-50 border border-slate-200/80 px-3.5 py-1.5 rounded-xl shadow-2xs text-xs">
+      <div class="flex items-center gap-2">
+        <span class="text-slate-500">Active Pipeline:</span>
+        <span class="font-mono font-bold text-slate-900">6</span>
+      </div>
+      <span class="text-slate-300">|</span>
+      <div class="flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>
+        <span class="text-slate-500">Interviews:</span>
+        <span class="font-mono font-bold text-indigo-700">2 upcoming</span>
+      </div>
+      <span class="text-slate-300">|</span>
+      <div class="flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+        <span class="text-slate-500">Offers:</span>
+        <span class="font-mono font-bold text-emerald-700">1</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Command Sub-Bar: Search, Filters, and Switcher -->
+  <div class="sticky top-0 z-20 bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-6 py-2 shrink-0 flex flex-wrap items-center justify-between gap-3 shadow-2xs">
+    
+    <!-- Left: Search and Filters -->
+    <div class="flex items-center gap-2 flex-1 min-w-[280px]">
+      <div class="relative w-full max-w-xs">
+        <input 
+          type="text" 
+          placeholder="Filter by company, role..." 
+          class="w-full pl-8 pr-4 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+        />
+        <svg class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+      </div>
+
+      <select class="text-xs font-medium bg-slate-50 text-slate-700 border border-slate-200 rounded-lg px-2.5 py-1.5">
+        <option>Status: Active (6)</option>
+        <option>Status: All (18)</option>
+        <option>Status: Archived (12)</option>
+      </select>
+    </div>
+
+    <!-- Right: SegmentedTabs & Add Job -->
+    <div class="flex items-center gap-3">
+      <div class="flex items-center bg-slate-100 p-1 rounded-lg border border-slate-200/80 text-xs font-medium">
+        <button id="b-tab-board" onclick="setLayoutB('board')" class="px-3 py-1 rounded-md font-semibold text-slate-900 bg-white shadow-xs">Board</button>
+        <button id="b-tab-table" onclick="setLayoutB('table')" class="px-3 py-1 rounded-md text-slate-600 hover:text-slate-900">Table</button>
+      </div>
+
+      <button class="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-lg shadow-xs transition-colors">
+        + Add Application
+      </button>
+    </div>
+  </div>
+
+  <!-- Content Canvas -->
+  <main class="flex-1 min-h-0 overflow-hidden relative">
+    <div id="b-board-view" class="h-full flex overflow-x-auto p-4 sm:p-6 gap-4 min-h-0">
+      <!-- 5 Columns Demo Content matching Direction A -->
+      <div class="w-72 shrink-0 bg-slate-100/80 rounded-xl p-3 border border-slate-200 flex flex-col">
+        <div class="flex items-center justify-between pb-2 border-b border-slate-200 text-xs font-bold text-slate-700 font-heading">
+          <span>Saved</span>
+          <span class="font-mono text-slate-500">2</span>
+        </div>
+        <div class="mt-2.5 space-y-2">
+          <div class="bg-white p-3 rounded-lg border border-slate-200 shadow-2xs">
+            <div class="font-bold text-xs text-slate-900">Staff Frontend Engineer</div>
+            <div class="text-[11px] text-slate-500 mt-1">Figma • $190k-$225k</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="w-72 shrink-0 bg-slate-100/80 rounded-xl p-3 border border-slate-200 flex flex-col">
+        <div class="flex items-center justify-between pb-2 border-b border-slate-200 text-xs font-bold text-slate-700 font-heading">
+          <span>Applied</span>
+          <span class="font-mono text-slate-500">1</span>
+        </div>
+        <div class="mt-2.5 space-y-2">
+          <div class="bg-white p-3 rounded-lg border border-slate-200 shadow-2xs">
+            <div class="font-bold text-xs text-slate-900">Senior React Architect</div>
+            <div class="text-[11px] text-slate-500 mt-1">Datadog • $210k</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="w-72 shrink-0 bg-slate-100/80 rounded-xl p-3 border border-slate-200 flex flex-col">
+        <div class="flex items-center justify-between pb-2 border-b border-slate-200 text-xs font-bold text-slate-700 font-heading">
+          <span>Screening</span>
+          <span class="font-mono text-slate-500">1</span>
+        </div>
+        <div class="mt-2.5 space-y-2">
+          <div class="bg-white p-3 rounded-lg border border-amber-200 shadow-2xs">
+            <div class="font-bold text-xs text-slate-900">Principal UI Engineer</div>
+            <div class="text-[11px] text-slate-500 mt-1">Stripe • $230k</div>
+            <div class="mt-2 text-[10px] text-amber-700 font-medium bg-amber-50 px-2 py-0.5 rounded border border-amber-200">Recruiter Call Tomorrow</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="w-72 shrink-0 bg-slate-100/80 rounded-xl p-3 border border-slate-200 flex flex-col">
+        <div class="flex items-center justify-between pb-2 border-b border-slate-200 text-xs font-bold text-slate-700 font-heading">
+          <span>Interview</span>
+          <span class="font-mono text-slate-500">1</span>
+        </div>
+        <div class="mt-2.5 space-y-2">
+          <div class="bg-white p-3 rounded-lg border border-indigo-200 shadow-2xs">
+            <div class="font-bold text-xs text-slate-900">Fullstack Tech Lead</div>
+            <div class="text-[11px] text-slate-500 mt-1">Airbnb • $205k</div>
+            <div class="mt-2 text-[10px] text-indigo-700 font-medium bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">Panel Friday 10:00 AM</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="w-72 shrink-0 bg-slate-100/80 rounded-xl p-3 border border-slate-200 flex flex-col">
+        <div class="flex items-center justify-between pb-2 border-b border-slate-200 text-xs font-bold text-slate-700 font-heading">
+          <span>Offer</span>
+          <span class="font-mono text-slate-500">1</span>
+        </div>
+        <div class="mt-2.5 space-y-2">
+          <div class="bg-white p-3 rounded-lg border border-emerald-300 shadow-2xs">
+            <div class="font-bold text-xs text-slate-900">Senior Staff Designer</div>
+            <div class="text-[11px] text-slate-500 mt-1">Vercel • $240k Base</div>
+            <div class="mt-2 text-[10px] text-emerald-700 font-medium bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">Offer Received</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="b-table-view" class="h-full overflow-y-auto hidden p-4 sm:p-6">
+      <div class="bg-white border border-slate-200 rounded-xl p-4 text-xs text-slate-600">
+        Table mode active. (Identical dense table matrix as Direction A).
+      </div>
+    </div>
+  </main>
+
+  <script>
+    function setLayoutB(layout) {
+      const board = document.getElementById('b-board-view');
+      const table = document.getElementById('b-table-view');
+      const tabBoard = document.getElementById('b-tab-board');
+      const tabTable = document.getElementById('b-tab-table');
+
+      if (layout === 'board') {
+        tabBoard.className = 'px-3 py-1 rounded-md font-semibold text-slate-900 bg-white shadow-xs';
+        tabTable.className = 'px-3 py-1 rounded-md text-slate-600 hover:text-slate-900';
+        table.classList.add('hidden');
+        board.classList.remove('hidden');
+      } else {
+        tabTable.className = 'px-3 py-1 rounded-md font-semibold text-slate-900 bg-white shadow-xs';
+        tabBoard.className = 'px-3 py-1 rounded-md text-slate-600 hover:text-slate-900';
+        board.classList.add('hidden');
+        table.classList.remove('hidden');
+      }
+    }
+  </script>
+</body>
+</html>

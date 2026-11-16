@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-50">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Direction A: Linear Fluid Command · Tracklet</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            heading: ['Outfit', 'sans-serif'],
+            sans: ['Plus Jakarta Sans', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+  </style>
+</head>
+<body class="h-full flex flex-col font-sans text-slate-800 antialiased selection:bg-brand-100 selection:text-brand-700">
+
+  <!-- Top Global App Navbar (Calm Single Hub) -->
+  <header class="h-14 bg-white border-b border-slate-200/80 px-4 sm:px-6 flex items-center justify-between shrink-0 z-30">
+    <div class="flex items-center gap-6">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-brand-600 to-indigo-500 flex items-center justify-center text-white font-heading font-bold text-sm shadow-xs">
+          T
+        </div>
+        <span class="font-heading font-bold text-base tracking-tight text-slate-900">Tracklet</span>
+      </div>
+
+      <nav class="hidden sm:flex items-center gap-1">
+        <a href="#applications" class="px-3 py-1.5 rounded-md text-xs font-semibold bg-slate-100 text-slate-900 transition-colors">Applications</a>
+        <a href="#contacts" class="px-3 py-1.5 rounded-md text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors">Contacts</a>
+        <a href="#analytics" class="px-3 py-1.5 rounded-md text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors">Analytics</a>
+        <a href="#settings" class="px-3 py-1.5 rounded-md text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors">Settings</a>
+      </nav>
+    </div>
+
+    <div class="flex items-center gap-3">
+      <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Extension Ready
+      </span>
+      <div class="w-8 h-8 rounded-full bg-slate-200 border border-slate-300 flex items-center justify-center text-xs font-bold text-slate-700">
+        SM
+      </div>
+    </div>
+  </header>
+
+  <!-- Sticky Command Toolbar: Direction A (Linear Fluid Single Row) -->
+  <div class="sticky top-0 z-20 bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-6 py-2.5 shrink-0 flex flex-wrap items-center justify-between gap-3 shadow-xs">
+    
+    <!-- Left: Search & Filter Pills -->
+    <div class="flex items-center gap-2 flex-1 min-w-[280px]">
+      <!-- Search Input -->
+      <div class="relative w-full max-w-xs">
+        <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+        </svg>
+        <input 
+          id="search-input"
+          type="text" 
+          placeholder="Search company, title, tag..." 
+          class="w-full pl-9 pr-12 py-1.5 text-xs bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-colors"
+          oninput="handleSearch(this.value)"
+        />
+        <kbd class="hidden sm:inline-block absolute right-2.5 top-1/2 -translate-y-1/2 px-1.5 py-0.5 text-[10px] font-mono text-slate-400 bg-white border border-slate-200 rounded shadow-2xs">⌘K</kbd>
+      </div>
+
+      <!-- Divider -->
+      <div class="hidden sm:block h-5 w-px bg-slate-200"></div>
+
+      <!-- Status Filter Dropdown -->
+      <div class="relative">
+        <select 
+          id="status-filter"
+          onchange="handleStatusChange(this.value)"
+          class="text-xs font-medium bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-lg px-2.5 py-1.5 cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+        >
+          <option value="Active">Status: Active Only</option>
+          <option value="All">Status: All Statuses</option>
+          <option disabled>──────────</option>
+          <option value="Saved">Saved</option>
+          <option value="Applied">Applied</option>
+          <option value="Screening">Screening</option>
+          <option value="Interview">Interview</option>
+          <option value="Offer">Offer</option>
+          <option value="Rejected">Rejected</option>
+          <option value="Archived">Archived (Auto-Table)</option>
+        </select>
+      </div>
+
+      <!-- Platform Filter Pill -->
+      <div class="hidden md:block relative">
+        <select class="text-xs font-medium bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-lg px-2.5 py-1.5 cursor-pointer focus:outline-none">
+          <option>Platform: All</option>
+          <option>LinkedIn</option>
+          <option>Indeed</option>
+          <option>Greenhouse</option>
+          <option>Lever</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Right: SegmentedTabs Layout Switcher + Primary Add Job CTA -->
+    <div class="flex items-center gap-3">
+      
+      <!-- Canonical SegmentedTabs (Animated Pill) -->
+      <div class="relative flex items-center bg-slate-100/90 p-1 rounded-lg border border-slate-200/80 text-xs font-medium">
+        <button 
+          id="tab-board" 
+          onclick="setLayout('board')"
+          class="relative z-10 flex items-center gap-1.5 px-3 py-1 rounded-md text-slate-900 font-semibold transition-colors duration-150"
+        >
+          <svg class="w-3.5 h-3.5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"/>
+          </svg>
+          <span>Board</span>
+        </button>
+
+        <button 
+          id="tab-table" 
+          onclick="setLayout('table')"
+          class="relative z-10 flex items-center gap-1.5 px-3 py-1 rounded-md text-slate-600 hover:text-slate-900 transition-colors duration-150"
+        >
+          <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+          </svg>
+          <span>Table</span>
+        </button>
+
+        <!-- Dynamic Spring Slider Indicator -->
+        <div id="tab-pill" class="absolute top-1 left-1 bottom-1 w-[74px] bg-white rounded-md shadow-xs transition-transform duration-200 ease-out pointer-events-none"></div>
+      </div>
+
+      <!-- Add Job Primary CTA -->
+      <button class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold rounded-lg shadow-xs transition-colors">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+        </svg>
+        <span>Add Job</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Main Applications View Container -->
+  <main class="flex-1 min-h-0 overflow-hidden relative">
+
+    <!-- LENS A: Board Layout (<ActivePipelineBoard />) -->
+    <div id="board-view" class="h-full flex overflow-x-auto snap-x snap-mandatory p-4 sm:p-6 gap-4 min-h-0 transition-opacity duration-150">
+      
+      <!-- Col 1: Saved -->
+      <div class="w-72 sm:w-80 shrink-0 flex flex-col bg-slate-100/70 border border-slate-200/80 rounded-xl snap-start">
+        <div class="p-3 border-b border-slate-200/60 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-slate-400"></span>
+            <span class="font-heading font-semibold text-xs text-slate-800">Saved</span>
+            <span class="px-1.5 py-0.5 rounded-full bg-slate-200 text-slate-600 font-mono text-[10px]">2</span>
+          </div>
+        </div>
+        <div class="p-2 space-y-2.5 overflow-y-auto flex-1">
+          <!-- Card 1 -->
+          <div class="bg-white p-3.5 rounded-lg border border-slate-200 shadow-2xs hover:border-slate-300 hover:shadow-xs transition-all cursor-grab active:cursor-grabbing">
+            <div class="flex items-start justify-between gap-2">
+              <span class="font-bold text-xs text-slate-900 leading-snug">Staff Frontend Engineer</span>
+              <span class="text-[10px] font-mono font-medium text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">$190k-$225k</span>
+            </div>
+            <div class="flex items-center gap-2 mt-1.5 text-xs text-slate-600">
+              <span class="font-medium text-slate-700">Figma</span>
+              <span class="text-slate-300">•</span>
+              <span class="text-slate-500 text-[11px]">San Francisco (Hybrid)</span>
+            </div>
+            <div class="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
+              <span>Saved 2d ago</span>
+              <span class="px-1.5 py-0.5 rounded text-[10px] font-mono bg-blue-50 text-blue-600">LinkedIn</span>
+            </div>
+          </div>
+          <!-- Card 2 -->
+          <div class="bg-white p-3.5 rounded-lg border border-slate-200 shadow-2xs hover:border-slate-300 hover:shadow-xs transition-all cursor-grab">
+            <div class="flex items-start justify-between gap-2">
+              <span class="font-bold text-xs text-slate-900 leading-snug">Product Design Lead</span>
+              <span class="text-[10px] font-mono font-medium text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">$180k-$210k</span>
+            </div>
+            <div class="flex items-center gap-2 mt-1.5 text-xs text-slate-600">
+              <span class="font-medium text-slate-700">Linear</span>
+              <span class="text-slate-300">•</span>
+              <span class="text-slate-500 text-[11px]">Remote</span>
+            </div>
+            <div class="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
+              <span>Saved 4d ago</span>
+              <span class="px-1.5 py-0.5 rounded text-[10px] font-mono bg-purple-50 text-purple-600">Company Site</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Col 2: Applied -->
+      <div class="w-72 sm:w-80 shrink-0 flex flex-col bg-slate-100/70 border border-slate-200/80 rounded-xl snap-start">
+        <div class="p-3 border-b border-slate-200/60 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
+            <span class="font-heading font-semibold text-xs text-slate-800">Applied</span>
+            <span class="px-1.5 py-0.5 rounded-full bg-slate-200 text-slate-600 font-mono text-[10px]">1</span>
+          </div>
+        </div>
+        <div class="p-2 space-y-2.5 overflow-y-auto flex-1">
+          <div class="bg-white p-3.5 rounded-lg border border-slate-200 shadow-2xs hover:border-slate-300 transition-all cursor-grab">
+            <div class="flex items-start justify-between gap-2">
+              <span class="font-bold text-xs text-slate-900 leading-snug">Senior React Architect</span>
+              <span class="text-[10px] font-mono font-medium text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">$210k</span>
+            </div>
+            <div class="flex items-center gap-2 mt-1.5 text-xs text-slate-600">
+              <span class="font-medium text-slate-700">Datadog</span>
+              <span class="text-slate-300">•</span>
+              <span class="text-slate-500 text-[11px]">New York (Remote)</span>
+            </div>
+            <div class="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
+              <span>Applied 6d ago</span>
+              <span class="px-1.5 py-0.5 rounded text-[10px] font-mono bg-emerald-50 text-emerald-600">Greenhouse</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Col 3: Screening -->
+      <div class="w-72 sm:w-80 shrink-0 flex flex-col bg-slate-100/70 border border-slate-200/80 rounded-xl snap-start">
+        <div class="p-3 border-b border-slate-200/60 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+            <span class="font-heading font-semibold text-xs text-slate-800">Screening</span>
+            <span class="px-1.5 py-0.5 rounded-full bg-slate-200 text-slate-600 font-mono text-[10px]">1</span>
+          </div>
+        </div>
+        <div class="p-2 space-y-2.5 overflow-y-auto flex-1">
+          <div class="bg-white p-3.5 rounded-lg border border-amber-200/80 shadow-2xs hover:border-amber-300 transition-all cursor-grab">
+            <div class="flex items-start justify-between gap-2">
+              <span class="font-bold text-xs text-slate-900 leading-snug">Principal UI Engineer</span>
+              <span class="text-[10px] font-mono font-medium text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">$230k</span>
+            </div>
+            <div class="flex items-center gap-2 mt-1.5 text-xs text-slate-600">
+              <span class="font-medium text-slate-700">Stripe</span>
+              <span class="text-slate-300">•</span>
+              <span class="text-slate-500 text-[11px]">Remote</span>
+            </div>
+            <div class="mt-2.5 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 text-[10px] font-medium border border-amber-200/60">
+              <svg class="w-3 h-3 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              Recruiter Call · Tomorrow 2:00 PM
+            </div>
+            <div class="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
+              <span>Stage: 4d</span>
+              <span class="text-slate-500 font-mono text-[10px]">Sarah Chen (Recruiter)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Col 4: Interview -->
+      <div class="w-72 sm:w-80 shrink-0 flex flex-col bg-slate-100/70 border border-slate-200/80 rounded-xl snap-start">
+        <div class="p-3 border-b border-slate-200/60 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
+            <span class="font-heading font-semibold text-xs text-slate-800">Interview</span>
+            <span class="px-1.5 py-0.5 rounded-full bg-slate-200 text-slate-600 font-mono text-[10px]">1</span>
+          </div>
+        </div>
+        <div class="p-2 space-y-2.5 overflow-y-auto flex-1">
+          <div class="bg-white p-3.5 rounded-lg border border-indigo-200/80 shadow-2xs hover:border-indigo-300 transition-all cursor-grab">
+            <div class="flex items-start justify-between gap-2">
+              <span class="font-bold text-xs text-slate-900 leading-snug">Fullstack Tech Lead</span>
+              <span class="text-[10px] font-mono font-medium text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">$205k</span>
+            </div>
+            <div class="flex items-center gap-2 mt-1.5 text-xs text-slate-600">
+              <span class="font-medium text-slate-700">Airbnb</span>
+              <span class="text-slate-300">•</span>
+              <span class="text-slate-500 text-[11px]">San Francisco</span>
+            </div>
+            <div class="mt-2.5 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 text-[10px] font-medium border border-indigo-200/60">
+              <svg class="w-3 h-3 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+              Technical Panel · Friday 10:00 AM
+            </div>
+            <div class="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
+              <span>Stage: 8d</span>
+              <span class="text-brand-600 font-medium">3 tasks pending</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Col 5: Offer -->
+      <div class="w-72 sm:w-80 shrink-0 flex flex-col bg-slate-100/70 border border-slate-200/80 rounded-xl snap-start">
+        <div class="p-3 border-b border-slate-200/60 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+            <span class="font-heading font-semibold text-xs text-slate-800">Offer</span>
+            <span class="px-1.5 py-0.5 rounded-full bg-slate-200 text-slate-600 font-mono text-[10px]">1</span>
+          </div>
+        </div>
+        <div class="p-2 space-y-2.5 overflow-y-auto flex-1">
+          <div class="bg-white p-3.5 rounded-lg border border-emerald-300 shadow-2xs hover:border-emerald-400 transition-all cursor-grab">
+            <div class="flex items-start justify-between gap-2">
+              <span class="font-bold text-xs text-slate-900 leading-snug">Senior Staff Designer</span>
+              <span class="text-[10px] font-mono font-bold text-emerald-800 bg-emerald-100 px-1.5 py-0.5 rounded">$240k Base</span>
+            </div>
+            <div class="flex items-center gap-2 mt-1.5 text-xs text-slate-600">
+              <span class="font-medium text-slate-700">Vercel</span>
+              <span class="text-slate-300">•</span>
+              <span class="text-slate-500 text-[11px]">Remote</span>
+            </div>
+            <div class="mt-2.5 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 text-[10px] font-medium border border-emerald-200">
+              🎉 Written Offer in Hand
+            </div>
+            <div class="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
+              <span>Decision: Nov 20</span>
+              <span class="text-emerald-600 font-semibold text-[10px]">Reviewing equity</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- LENS B: Table Layout (<AllApplicationsTable />) -->
+    <div id="table-view" class="h-full overflow-y-auto hidden p-4 sm:p-6 transition-opacity duration-150">
+      <div class="bg-white border border-slate-200/90 rounded-xl overflow-hidden shadow-xs">
+        
+        <!-- Table Toolbar -->
+        <div class="px-4 py-3 border-b border-slate-200/80 bg-slate-50/50 flex items-center justify-between text-xs">
+          <div class="flex items-center gap-3">
+            <span class="font-semibold text-slate-700">6 Applications</span>
+            <span class="text-slate-300">|</span>
+            <span class="text-slate-500 text-[11px]">Sorted by Stage Updated (Newest first)</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <button class="px-2.5 py-1 bg-white hover:bg-slate-50 border border-slate-200 text-slate-600 rounded-md font-medium text-xs shadow-2xs transition-colors">Export CSV</button>
+          </div>
+        </div>
+
+        <table class="w-full text-left border-collapse text-xs">
+          <thead class="bg-slate-50/90 border-b border-slate-200 text-[11px] font-mono text-slate-500 uppercase tracking-wider">
+            <tr>
+              <th class="w-8 px-3 py-2.5 text-center"><input type="checkbox" class="rounded border-slate-300 text-brand-600 focus:ring-brand-500"></th>
+              <th class="px-4 py-2.5">Company & Role</th>
+              <th class="px-4 py-2.5">Stage</th>
+              <th class="px-4 py-2.5">Location</th>
+              <th class="px-4 py-2.5">Salary</th>
+              <th class="px-4 py-2.5">Platform</th>
+              <th class="px-4 py-2.5">Stage Updated</th>
+              <th class="w-16 px-4 py-2.5 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100 text-slate-700">
+            <!-- Row 1 -->
+            <tr class="hover:bg-slate-50/80 transition-colors">
+              <td class="px-3 py-3 text-center"><input type="checkbox" class="rounded border-slate-300"></td>
+              <td class="px-4 py-3">
+                <div class="font-bold text-slate-900">Senior Staff Designer</div>
+                <div class="text-[11px] text-slate-500">Vercel</div>
+              </td>
+              <td class="px-4 py-3">
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200/60">Offer</span>
+              </td>
+              <td class="px-4 py-3 text-slate-600">Remote</td>
+              <td class="px-4 py-3 font-mono text-[11px] font-semibold text-slate-900">$240,000</td>
+              <td class="px-4 py-3 text-slate-500">Company Site</td>
+              <td class="px-4 py-3 font-mono text-[11px] text-slate-500">Nov 11 (2d ago)</td>
+              <td class="px-4 py-3 text-right">
+                <button class="text-slate-400 hover:text-slate-600 p-1">•••</button>
+              </td>
+            </tr>
+            <!-- Row 2 -->
+            <tr class="hover:bg-slate-50/80 transition-colors">
+              <td class="px-3 py-3 text-center"><input type="checkbox" class="rounded border-slate-300"></td>
+              <td class="px-4 py-3">
+                <div class="font-bold text-slate-900">Fullstack Tech Lead</div>
+                <div class="text-[11px] text-slate-500">Airbnb</div>
+              </td>
+              <td class="px-4 py-3">
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-indigo-50 text-indigo-700 border border-indigo-200/60">Interview</span>
+              </td>
+              <td class="px-4 py-3 text-slate-600">San Francisco</td>
+              <td class="px-4 py-3 font-mono text-[11px] font-semibold text-slate-900">$205,000</td>
+              <td class="px-4 py-3 text-slate-500">Lever</td>
+              <td class="px-4 py-3 font-mono text-[11px] text-slate-500">Nov 05 (8d ago)</td>
+              <td class="px-4 py-3 text-right">
+                <button class="text-slate-400 hover:text-slate-600 p-1">•••</button>
+              </td>
+            </tr>
+            <!-- Row 3 -->
+            <tr class="hover:bg-slate-50/80 transition-colors">
+              <td class="px-3 py-3 text-center"><input type="checkbox" class="rounded border-slate-300"></td>
+              <td class="px-4 py-3">
+                <div class="font-bold text-slate-900">Principal UI Engineer</div>
+                <div class="text-[11px] text-slate-500">Stripe</div>
+              </td>
+              <td class="px-4 py-3">
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-50 text-amber-700 border border-amber-200/60">Screening</span>
+              </td>
+              <td class="px-4 py-3 text-slate-600">Remote</td>
+              <td class="px-4 py-3 font-mono text-[11px] font-semibold text-slate-900">$230,000</td>
+              <td class="px-4 py-3 text-slate-500">Greenhouse</td>
+              <td class="px-4 py-3 font-mono text-[11px] text-slate-500">Nov 09 (4d ago)</td>
+              <td class="px-4 py-3 text-right">
+                <button class="text-slate-400 hover:text-slate-600 p-1">•••</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    let currentLayout = 'board';
+
+    function setLayout(layout) {
+      currentLayout = layout;
+      const boardView = document.getElementById('board-view');
+      const tableView = document.getElementById('table-view');
+      const tabPill = document.getElementById('tab-pill');
+      const tabBoard = document.getElementById('tab-board');
+      const tabTable = document.getElementById('tab-table');
+
+      if (layout === 'board') {
+        tabPill.style.transform = 'translateX(0px)';
+        tabPill.style.width = '74px';
+        tabBoard.classList.add('font-semibold', 'text-slate-900');
+        tabBoard.classList.remove('text-slate-600');
+        tabTable.classList.remove('font-semibold', 'text-slate-900');
+        tabTable.classList.add('text-slate-600');
+
+        tableView.classList.add('hidden');
+        boardView.classList.remove('hidden');
+      } else {
+        tabPill.style.transform = 'translateX(74px)';
+        tabPill.style.width = '72px';
+        tabTable.classList.add('font-semibold', 'text-slate-900');
+        tabTable.classList.remove('text-slate-600');
+        tabBoard.classList.remove('font-semibold', 'text-slate-900');
+        tabBoard.classList.add('text-slate-600');
+
+        boardView.classList.add('hidden');
+        tableView.classList.remove('hidden');
+      }
+    }
+
+    function handleStatusChange(value) {
+      if (value === 'Archived' || value === 'Rejected') {
+        setLayout('table');
+        alert(`Status set to "${value}": Automatically switched to Table layout for dense audit!`);
+      }
+    }
+
+    function handleSearch(query) {
+      console.log('Active search query:', query);
+    }
+  </script>
+</body>
+</html>

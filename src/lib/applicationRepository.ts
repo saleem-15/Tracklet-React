@@ -281,7 +281,7 @@ export class ApplicationRepository {
     const createdList: Application[] = [];
 
     try {
-      const itemsWithRefs = newApps.map((appItem) => {
+      const itemsWithRefs = newApps.map((appItem, idx) => {
         const docRef = doc(collection(db, 'users', userId, 'applications'));
         
         const validStatus: ApplicationStatus = 
@@ -331,6 +331,11 @@ export class ApplicationRepository {
         if (Array.isArray(appItem.contacts)) {
           sanitizedPayload.contacts = appItem.contacts.slice(0, 50);
         }
+        if (typeof appItem.order === 'number') {
+          sanitizedPayload.order = appItem.order;
+        } else {
+          sanitizedPayload.order = (idx + 1) * 10000;
+        }
 
         const appObj = sanitizeForFirestore(sanitizedPayload);
 
@@ -361,13 +366,19 @@ export class ApplicationRepository {
     }
 
     const now = new Date().toISOString();
-    const initialWithHistory = INITIAL_SAMPLE_APPLICATIONS.map((item) => ({
-      ...item,
-      contactIds: item.contactIds || [],
-      history: item.history && item.history.length > 0
-        ? item.history
-        : [createStatusHistoryEntry(item.status, undefined, item.stageUpdatedAt || item.createdAt || now)],
-    }));
+    const statusCounters = new Map<string, number>();
+    const initialWithHistory = INITIAL_SAMPLE_APPLICATIONS.map((item) => {
+      const count = (statusCounters.get(item.status) || 0) + 1;
+      statusCounters.set(item.status, count);
+      return {
+        ...item,
+        order: typeof item.order === 'number' ? item.order : count * 10000,
+        contactIds: item.contactIds || [],
+        history: item.history && item.history.length > 0
+          ? item.history
+          : [createStatusHistoryEntry(item.status, undefined, item.stageUpdatedAt || item.createdAt || now)],
+      };
+    });
 
     try {
       const snap = await getDocs(collection(db, 'users', userId, 'applications'));

@@ -28,6 +28,7 @@ function findButtonByText(...texts: string[]): HTMLButtonElement {
   const btn = Array.from(host!.querySelectorAll('button')).find((b) =>
     texts.some((t) => b.textContent?.includes(t))
   );
+  expect(btn).toBeDefined();
   expect(btn).not.toBeNull();
   return btn!;
 }
@@ -58,7 +59,12 @@ function fireDrag(type: 'dragenter' | 'dragover' | 'dragleave' | 'drop', data: D
 async function dropFile(file: File) {
   fireDrag('drop', { files: [file] });
   await act(async () => {
-    await new Promise((r) => setTimeout(r, 10));
+    for (let i = 0; i < 20; i++) {
+      await new Promise((r) => setTimeout(r, 15));
+      if (!host!.querySelector('.csv-drop') || host!.querySelector('.is-error')) {
+        break;
+      }
+    }
   });
 }
 

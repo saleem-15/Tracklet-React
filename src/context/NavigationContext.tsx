@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { useUrlNavigation } from '../hooks/useUrlNavigation';
-import { ActiveTab, FilterState } from '../types';
+import { ActiveTab, FilterState, ApplicationLayout } from '../types';
 import { LegalDocType, navigateToRoute, getPathForLegalDoc } from '../lib/routeUtils';
 
 export interface NavigationContextType {
@@ -17,6 +17,8 @@ export interface NavigationContextType {
   setIsAddModalOpen: (open: boolean) => void;
   openAddModal: () => void;
   closeAddModal: () => void;
+  layout: ApplicationLayout;
+  setLayout: (layout: ApplicationLayout) => void;
   isMobileSidebarOpen: boolean;
   setIsMobileSidebarOpen: (open: boolean) => void;
   openMobileSidebar: () => void;
@@ -71,6 +73,8 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     setSelectedAppId,
     isAddModalOpen,
     setIsAddModalOpen,
+    layout,
+    setLayout,
   } = useUrlNavigation();
 
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -149,6 +153,8 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     setIsAddModalOpen,
     openAddModal,
     closeAddModal,
+    layout,
+    setLayout,
     isMobileSidebarOpen,
     setIsMobileSidebarOpen,
     openMobileSidebar,
@@ -188,6 +194,8 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     setIsAddModalOpen,
     openAddModal,
     closeAddModal,
+    layout,
+    setLayout,
     isMobileSidebarOpen,
     openMobileSidebar,
     closeMobileSidebar,

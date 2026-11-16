@@ -24,3 +24,4 @@ lighthouse-report*.html
 # Ephemeral multi-agent teamwork logs
 .agents/teamwork/
 .worktree-servers*.json
+backups/

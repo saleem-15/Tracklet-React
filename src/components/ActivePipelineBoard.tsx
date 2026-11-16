@@ -1,21 +1,12 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence, LayoutGroup, useMotionValue, useReducedMotion, animate } from 'motion/react';
 import { Application, ApplicationStatus } from '../types';
-import { CompanyLogo } from './CompanyLogo';
 import { EmptyState } from './EmptyState';
 import { OnboardingEmptyState } from './OnboardingEmptyState';
-import { 
-  Clock, 
-  CheckCircle2,
-  ArrowRight,
-  Mail,
-  CheckSquare,
-  Users,
-  Archive,
-  XCircle,
-  X,
-  ChevronRight
-} from 'lucide-react';
-import { calculateDaysInStage } from '../lib/sampleData';
+import { PipelineCard, PipelineCardShell } from './pipeline/PipelineCard';
+import { PipelineScrollRail } from './pipeline/PipelineScrollRail';
+import { ArrowRight } from 'lucide-react';
+import { LIFT_SPRING, FLOW_SPRING, DROP_EASE, DROP_DURATION_SEC } from '../lib/motion';
 
 export interface ActiveQuotaInfo {
   current: number;
@@ -24,7 +15,7 @@ export interface ActiveQuotaInfo {
   onUpgradeClick?: () => void;
 }
 
-interface ActivePipelineBoardProps {
+export interface ActivePipelineBoardProps {
   activeQuota?: ActiveQuotaInfo;
   applications: Application[];
   totalAppCount?: number;
@@ -33,41 +24,81 @@ interface ActivePipelineBoardProps {
   onSeedDemoData?: () => void;
   onSelectApp: (app: Application) => void;
   selectedAppId: string | null;
-  onUpdateStatus: (id: string, newStatus: ApplicationStatus) => void;
+  onUpdateStatus: (id: string, newStatus: ApplicationStatus, newOrder?: number) => void;
+  onDeleteApp?: (id: string) => void;
 }
 
 const PIPELINE_COLUMNS: { status: ApplicationStatus; title: string; dot: string; tagBg: string }[] = [
-  { 
-    status: 'Saved', 
-    title: 'Saved', 
-    dot: 'bg-purple-500',
-    tagBg: 'text-purple-700 bg-purple-50'
-  },
-  { 
-    status: 'Applied', 
-    title: 'Applied', 
-    dot: 'bg-slate-500',
-    tagBg: 'text-slate-600 bg-slate-100'
-  },
-  { 
-    status: 'Screening', 
-    title: 'Screening', 
-    dot: 'bg-amber-500',
-    tagBg: 'text-amber-700 bg-amber-50'
-  },
-  { 
-    status: 'Interview', 
-    title: 'Interview', 
-    dot: 'bg-blue-500',
-    tagBg: 'text-blue-700 bg-blue-50'
-  },
-  { 
-    status: 'Offer', 
-    title: 'Offer', 
-    dot: 'bg-emerald-500',
-    tagBg: 'text-emerald-700 bg-emerald-50'
-  },
+  { status: 'Saved', title: 'Saved', dot: 'bg-purple-500', tagBg: 'text-purple-700 bg-purple-50' },
+  { status: 'Applied', title: 'Applied', dot: 'bg-slate-500', tagBg: 'text-slate-600 bg-slate-100' },
+  { status: 'Screening', title: 'Screening', dot: 'bg-amber-500', tagBg: 'text-amber-700 bg-amber-50' },
+  { status: 'Interview', title: 'Interview', dot: 'bg-blue-500', tagBg: 'text-blue-700 bg-blue-50' },
+  { status: 'Offer', title: 'Offer', dot: 'bg-emerald-500', tagBg: 'text-emerald-700 bg-emerald-50' },
 ];
+
+const GAP = 10;
+
+/**
+ * Calculates a fractional order value for dropping a card into a column at slotIndex.
+ * Standard base gap is 10,000 to allow dozens of midpoint splits without precision degradation.
+ */
+export function calculateNewOrder(
+  slotIndex: number,
+  destinationCards: Application[]
+): number {
+  const BASE_GAP = 10000;
+
+  if (destinationCards.length === 0) {
+    return BASE_GAP;
+  }
+
+  // Normalize ranks to a strictly increasing sequence
+  const ranks: number[] = [];
+  let lastRank = -Infinity;
+  for (let i = 0; i < destinationCards.length; i++) {
+    const explicit = destinationCards[i].order;
+    let rank: number;
+    if (typeof explicit === 'number' && explicit > lastRank) {
+      rank = explicit;
+    } else if (lastRank === -Infinity) {
+      rank = typeof explicit === 'number' ? explicit : BASE_GAP;
+    } else {
+      rank = lastRank + BASE_GAP;
+    }
+    ranks.push(rank);
+    lastRank = rank;
+  }
+
+  // Dropped at the very top (index 0)
+  if (slotIndex <= 0) {
+    return ranks[0] - BASE_GAP;
+  }
+
+  // Dropped at the very bottom
+  if (slotIndex >= ranks.length) {
+    return ranks[ranks.length - 1] + BASE_GAP;
+  }
+
+  // Dropped between two cards
+  const prevOrder = ranks[slotIndex - 1];
+  const nextOrder = ranks[slotIndex];
+
+  return (prevOrder + nextOrder) / 2;
+}
+
+type DragState = {
+  taskId: string;
+  fromCol: ApplicationStatus;
+  width: number;
+  height: number;
+  offsetX: number;
+  offsetY: number;
+};
+
+type Slot = {
+  col: ApplicationStatus;
+  index: number;
+};
 
 export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
   applications,
@@ -78,113 +109,539 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
   onSelectApp,
   selectedAppId,
   onUpdateStatus,
+  onDeleteApp,
   activeQuota,
 }) => {
-  const [draggedAppId, setDraggedAppId] = useState<string | null>(null);
-  const [dragDisabledAppId, setDragDisabledAppId] = useState<string | null>(null);
-  const [dragOverColumn, setDragOverColumn] = useState<ApplicationStatus | null>(null);
-  const [isAttentionDismissed, setIsAttentionDismissed] = useState(false);
+  const [drag, setDrag] = useState<DragState | null>(null);
+  const [slot, setSlot] = useState<Slot | null>(null);
+  const [isDropping, setIsDropping] = useState(false);
+  const [grabbed, setGrabbed] = useState<string | null>(null);
+  const [activeMenuAppId, setActiveMenuAppId] = useState<string | null>(null);
+  const [announcement, setAnnouncement] = useState('');
+  const [atStart, setAtStart] = useState(true);
+  const [atEnd, setAtEnd] = useState(true);
+
+  const reduceMotion = useReducedMotion();
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+
+  const trackRef = useRef<HTMLDivElement>(null);
+  const colRefs = useRef(new Map<ApplicationStatus, HTMLDivElement>());
+  const listRefs = useRef(new Map<ApplicationStatus, HTMLDivElement>());
+  const cardRefs = useRef(new Map<string, HTMLDivElement>());
+
+  const dragRef = useRef<DragState | null>(null);
+  const slotRef = useRef<Slot | null>(null);
+  const isDroppingRef = useRef(false);
+  const dropAnimControlsRef = useRef<{ stop: () => void } | null>(null);
+  const snapRef = useRef(new Map<ApplicationStatus, number[]>());
+  const originSlotRef = useRef<{ col: ApplicationStatus; index: number } | null>(null);
+  const dragOccurredRef = useRef(false);
+  const pendingDragRef = useRef<{
+    startX: number;
+    startY: number;
+    app: Application;
+    colStatus: ApplicationStatus;
+    index: number;
+    rect: DOMRect;
+  } | null>(null);
+
+  const autoScroll = useRef(0);
+  const rafRef = useRef<number | null>(null);
+  const applicationsRef = useRef(applications);
+  useEffect(() => {
+    applicationsRef.current = applications;
+  }, [applications]);
 
   useEffect(() => {
-    const handleMouseUp = () => {
-      setDragDisabledAppId(null);
-    };
-    window.addEventListener('mouseup', handleMouseUp);
     return () => {
-      window.removeEventListener('mouseup', handleMouseUp);
+      dropAnimControlsRef.current?.stop();
     };
   }, []);
 
-  // Column refs for mobile stage jump scrolling
-  const columnRefs = useRef<{ [key in ApplicationStatus]?: HTMLDivElement | null }>({});
+  // Horizontal edge fade detection
+  const syncEdges = useCallback(() => {
+    const el = trackRef.current;
+    if (!el) return;
+    setAtStart(el.scrollLeft < 8);
+    setAtEnd(el.scrollLeft + el.clientWidth >= el.scrollWidth - 8);
+  }, []);
+
+  useEffect(() => {
+    syncEdges();
+    const el = trackRef.current;
+    if (!el) return;
+    if (typeof ResizeObserver !== 'undefined') {
+      const ro = new ResizeObserver(syncEdges);
+      ro.observe(el);
+      return () => ro.disconnect();
+    }
+  }, [syncEdges, applications.length]);
+
+  const fade = '24px';
+  const maskStops = [
+    `transparent 0%, #000 ${atStart ? '0%' : fade}`,
+    `#000 ${atEnd ? '100%' : `calc(100% - ${fade})`}, transparent 100%`,
+  ].join(', ');
+  const mask = atStart && atEnd ? undefined : `linear-gradient(to right, ${maskStops})`;
+
+  // Re-focus grabbed card if stage changes through keyboard navigation
+  useEffect(() => {
+    if (!grabbed) return;
+    const el = cardRefs.current.get(grabbed);
+    if (el && document.activeElement !== el) {
+      el.focus({ preventScroll: true });
+    }
+  }, [applications, grabbed]);
+
+  // Snapshot card midpoints for frictionless coordinate calculation
+  const snapshot = useCallback((taskId: string, fromCol: ApplicationStatus) => {
+    const map = new Map<ApplicationStatus, number[]>();
+    listRefs.current.forEach((list, colStatus) => {
+      if (!list) return;
+      const listTop = list.getBoundingClientRect().top;
+      const cards = Array.from(list.querySelectorAll<HTMLElement>('[data-kanban-card]'));
+      let removed = -1;
+      let removedH = 0;
+      const rows = cards.map((el, i) => {
+        const r = el.getBoundingClientRect();
+        const isDragged = colStatus === fromCol && el.dataset.kanbanCard === taskId;
+        if (isDragged) {
+          removed = i;
+          removedH = r.height;
+        }
+        return { top: r.top - listTop, h: r.height, isDragged };
+      });
+      const mids = rows
+        .filter((row) => !row.isDragged)
+        .map((row, i) => {
+          const shift = removed > -1 && i >= removed ? removedH + GAP : 0;
+          return row.top - shift + row.h / 2;
+        });
+      map.set(colStatus, mids);
+    });
+    snapRef.current = map;
+  }, []);
+
+  // Determine which column and slot the pointer is currently hovering over
+  const slotAt = useCallback((clientX: number, clientY: number): Slot | null => {
+    const d = dragRef.current;
+    if (!d) return null;
+
+    let inside: ApplicationStatus | null = null;
+    let nearestStatus: ApplicationStatus = 'Saved';
+    let nearest = Infinity;
+
+    colRefs.current.forEach((el, status) => {
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      if (clientX >= r.left && clientX <= r.right) inside = status;
+      const dx = Math.abs(clientX - (r.left + r.width / 2));
+      if (dx < nearest) {
+        nearest = dx;
+        nearestStatus = status;
+      }
+    });
+
+    const colId = inside || nearestStatus;
+    const list = listRefs.current.get(colId);
+    if (!list) return { col: colId, index: 0 };
+
+    const listTop = list.getBoundingClientRect().top;
+    const mids = snapRef.current.get(colId) ?? [];
+
+    let index = mids.length;
+    for (let i = 0; i < mids.length; i++) {
+      if (clientY < listTop + mids[i]) {
+        index = i;
+        break;
+      }
+    }
+    return { col: colId, index };
+  }, []);
+
+  const startAutoScroll = useCallback(() => {
+    if (rafRef.current) return;
+    const tick = () => {
+      if (autoScroll.current && trackRef.current) {
+        trackRef.current.scrollLeft += autoScroll.current;
+      }
+      if (dragRef.current) {
+        rafRef.current = requestAnimationFrame(tick);
+      } else {
+        rafRef.current = null;
+      }
+    };
+    rafRef.current = requestAnimationFrame(tick);
+  }, []);
+
+  const stopAutoScroll = useCallback(() => {
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+    autoScroll.current = 0;
+  }, []);
+
+  const cancelPointerDrag = useCallback(() => {
+    if (isDroppingRef.current) return;
+    const d = dragRef.current;
+    if (!d) return;
+
+    stopAutoScroll();
+    pendingDragRef.current = null;
+
+    const originEl = cardRefs.current.get(d.taskId);
+    const originRect = originEl?.getBoundingClientRect();
+
+    if (reduceMotion || !originRect || (originRect.width === 0 && originRect.height === 0)) {
+      dragRef.current = null;
+      slotRef.current = null;
+      setDrag(null);
+      setSlot(null);
+      return;
+    }
+
+    setIsDropping(true);
+    isDroppingRef.current = true;
+
+    let doneCount = 0;
+    const finish = () => {
+      doneCount++;
+      if (doneCount >= 2) {
+        dragRef.current = null;
+        slotRef.current = null;
+        isDroppingRef.current = false;
+        setIsDropping(false);
+        setDrag(null);
+        setSlot(null);
+      }
+    };
+
+    try {
+      const ctrlX = animate(x, originRect.left, {
+        duration: DROP_DURATION_SEC,
+        ease: DROP_EASE,
+        onComplete: finish,
+      });
+      const ctrlY = animate(y, originRect.top, {
+        duration: DROP_DURATION_SEC,
+        ease: DROP_EASE,
+        onComplete: finish,
+      });
+      dropAnimControlsRef.current = {
+        stop: () => {
+          ctrlX.stop();
+          ctrlY.stop();
+        },
+      };
+    } catch {
+      dragRef.current = null;
+      slotRef.current = null;
+      isDroppingRef.current = false;
+      setIsDropping(false);
+      setDrag(null);
+      setSlot(null);
+    }
+  }, [reduceMotion, stopAutoScroll, x, y]);
+
+  const endDrag = useCallback(() => {
+    if (isDroppingRef.current) return;
+    const d = dragRef.current;
+    const s = slotRef.current;
+    if (!d || !s) {
+      dragRef.current = null;
+      slotRef.current = null;
+      pendingDragRef.current = null;
+      stopAutoScroll();
+      setDrag(null);
+      setSlot(null);
+      return;
+    }
+
+    const destApps = applicationsRef.current
+      .filter((app) => app.status === s.col && app.id !== d.taskId)
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+
+    const newOrder = calculateNewOrder(s.index, destApps);
+
+    stopAutoScroll();
+    pendingDragRef.current = null;
+
+    // Find the placeholder DOM node to measure destination rect
+    const placeholderEl = document.querySelector('[data-kanban-placeholder]') as HTMLElement | null;
+    const targetRect = placeholderEl?.getBoundingClientRect();
+
+    const hasValidTarget = targetRect && targetRect.width > 0 && targetRect.height > 0;
+
+    if (reduceMotion || !hasValidTarget) {
+      // In reduced motion or headless test environments, commit immediately
+      onUpdateStatus(d.taskId, s.col, newOrder);
+      dragRef.current = null;
+      slotRef.current = null;
+      setDrag(null);
+      setSlot(null);
+      return;
+    }
+
+    // Begin @dnd-kit style drop flight animation
+    setIsDropping(true);
+    isDroppingRef.current = true;
+
+    let doneCount = 0;
+    const finish = () => {
+      doneCount++;
+      if (doneCount >= 2) {
+        onUpdateStatus(d.taskId, s.col, newOrder);
+        dragRef.current = null;
+        slotRef.current = null;
+        isDroppingRef.current = false;
+        setIsDropping(false);
+        setDrag(null);
+        setSlot(null);
+      }
+    };
+
+    try {
+      const ctrlX = animate(x, targetRect.left, {
+        duration: DROP_DURATION_SEC,
+        ease: DROP_EASE,
+        onComplete: finish,
+      });
+      const ctrlY = animate(y, targetRect.top, {
+        duration: DROP_DURATION_SEC,
+        ease: DROP_EASE,
+        onComplete: finish,
+      });
+      dropAnimControlsRef.current = {
+        stop: () => {
+          ctrlX.stop();
+          ctrlY.stop();
+        },
+      };
+    } catch {
+      // Fallback
+      onUpdateStatus(d.taskId, s.col, newOrder);
+      dragRef.current = null;
+      slotRef.current = null;
+      isDroppingRef.current = false;
+      setIsDropping(false);
+      setDrag(null);
+      setSlot(null);
+    }
+  }, [onUpdateStatus, reduceMotion, stopAutoScroll, x, y]);
+
+  // Pointer drag event handlers
+  useEffect(() => {
+    const onMove = (e: PointerEvent) => {
+      if (isDroppingRef.current) return;
+      const pending = pendingDragRef.current;
+      if (pending && !dragRef.current) {
+        const dist = Math.hypot(e.clientX - pending.startX, e.clientY - pending.startY);
+        if (dist > 4) {
+          dragOccurredRef.current = true;
+          const state: DragState = {
+            taskId: pending.app.id,
+            fromCol: pending.colStatus,
+            width: pending.rect.width,
+            height: pending.rect.height,
+            offsetX: pending.startX - pending.rect.left,
+            offsetY: pending.startY - pending.rect.top,
+          };
+          x.set(e.clientX - state.offsetX);
+          y.set(e.clientY - state.offsetY);
+          snapshot(pending.app.id, pending.colStatus);
+          dragRef.current = state;
+          slotRef.current = { col: pending.colStatus, index: pending.index };
+          setDrag(state);
+          setSlot({ col: pending.colStatus, index: pending.index });
+          setGrabbed(null);
+          setActiveMenuAppId(null);
+          startAutoScroll();
+        }
+      }
+
+      const d = dragRef.current;
+      if (!d) return;
+
+      x.set(e.clientX - d.offsetX);
+      y.set(e.clientY - d.offsetY);
+
+      const next = slotAt(e.clientX, e.clientY);
+      const cur = slotRef.current;
+      if (next && (!cur || cur.col !== next.col || cur.index !== next.index)) {
+        slotRef.current = next;
+        setSlot(next);
+      }
+
+      // Edge track nudge during drag
+      const track = trackRef.current;
+      if (track) {
+        const r = track.getBoundingClientRect();
+        const edge = 72;
+        autoScroll.current =
+          e.clientX < r.left + edge ? -14 : e.clientX > r.right - edge ? 14 : 0;
+      }
+    };
+
+    const onUp = () => {
+      if (isDroppingRef.current) return;
+      if (dragRef.current) {
+        endDrag();
+      } else {
+        pendingDragRef.current = null;
+        stopAutoScroll();
+      }
+    };
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && dragRef.current && !isDroppingRef.current) {
+        e.preventDefault();
+        cancelPointerDrag();
+      }
+    };
+
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onUp);
+    window.addEventListener('keydown', onKeyDown);
+
+    return () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', onUp);
+      window.removeEventListener('keydown', onKeyDown);
+      stopAutoScroll();
+    };
+  }, [cancelPointerDrag, endDrag, slotAt, snapshot, startAutoScroll, stopAutoScroll, x, y]);
+
+  const handlePointerDownCard = (
+    e: React.PointerEvent<HTMLDivElement>,
+    app: Application,
+    colStatus: ApplicationStatus,
+    index: number
+  ) => {
+    if (isDroppingRef.current) return;
+    if (e.button !== 0) return;
+    if ((e.target as HTMLElement).closest('button, a')) return;
+    dragOccurredRef.current = false;
+    const el = e.currentTarget;
+    pendingDragRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      app,
+      colStatus,
+      index,
+      rect: el.getBoundingClientRect(),
+    };
+  };
+
+  const handleCardKeyDown = (e: React.KeyboardEvent<HTMLDivElement>, app: Application) => {
+    if (e.target !== e.currentTarget) {
+      return;
+    }
+    const isGrabbed = grabbed === app.id;
+
+    if (e.key === ' ') {
+      e.preventDefault();
+      if (isGrabbed) {
+        setGrabbed(null);
+        setAnnouncement(`Dropped ${app.company} ${app.role} in ${app.status}.`);
+      } else {
+        originSlotRef.current = { col: app.status, index: 0 };
+        setGrabbed(app.id);
+        setAnnouncement(
+          `Picked up ${app.company} ${app.role}. Use arrow keys to move between stages, Space to drop, Escape to cancel.`
+        );
+      }
+      return;
+    }
+
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (isGrabbed) {
+        setGrabbed(null);
+        setAnnouncement(`Dropped ${app.company} ${app.role} in ${app.status}.`);
+      } else {
+        onSelectApp(app);
+      }
+      return;
+    }
+
+    if (e.key === 'Escape' && isGrabbed) {
+      e.preventDefault();
+      if (originSlotRef.current && originSlotRef.current.col !== app.status) {
+        onUpdateStatus(app.id, originSlotRef.current.col);
+      }
+      setGrabbed(null);
+      setAnnouncement(`Cancelled. ${app.company} ${app.role} restored to ${originSlotRef.current?.col ?? app.status}.`);
+      return;
+    }
+
+    if (!isGrabbed) return;
+
+    const currentColApps = applicationsRef.current
+      .filter((c) => c.status === app.status)
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    const cardIdx = currentColApps.findIndex((c) => c.id === app.id);
+
+    if (e.key === 'ArrowUp' && cardIdx > 0) {
+      e.preventDefault();
+      const targetSlot = cardIdx - 1;
+      const otherApps = currentColApps.filter((c) => c.id !== app.id);
+      const newOrder = calculateNewOrder(targetSlot, otherApps);
+      onUpdateStatus(app.id, app.status, newOrder);
+      setAnnouncement(`${app.company} moved up to position ${targetSlot + 1}.`);
+      return;
+    } else if (e.key === 'ArrowDown' && cardIdx < currentColApps.length - 1) {
+      e.preventDefault();
+      const targetSlot = cardIdx + 1;
+      const otherApps = currentColApps.filter((c) => c.id !== app.id);
+      const newOrder = calculateNewOrder(targetSlot, otherApps);
+      onUpdateStatus(app.id, app.status, newOrder);
+      setAnnouncement(`${app.company} moved down to position ${targetSlot + 1}.`);
+      return;
+    }
+
+    const colIndex = PIPELINE_COLUMNS.findIndex((c) => c.status === app.status);
+
+    if (e.key === 'ArrowRight' && colIndex < PIPELINE_COLUMNS.length - 1) {
+      e.preventDefault();
+      const nextCol = PIPELINE_COLUMNS[colIndex + 1];
+      onUpdateStatus(app.id, nextCol.status);
+      setAnnouncement(`${app.company} moved to ${nextCol.title}.`);
+    } else if (e.key === 'ArrowLeft' && colIndex > 0) {
+      e.preventDefault();
+      const prevCol = PIPELINE_COLUMNS[colIndex - 1];
+      onUpdateStatus(app.id, prevCol.status);
+      setAnnouncement(`${app.company} moved to ${prevCol.title}.`);
+    }
+  };
 
   const scrollToColumn = (status: ApplicationStatus) => {
-    const el = columnRefs.current[status];
+    const el = colRefs.current.get(status);
     if (el) {
       el.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
     }
   };
 
-  const staleApps = useMemo(() => {
-    return applications.filter(
-      (a) =>
-        a.status !== 'Rejected' &&
-        a.status !== 'Archived' &&
-        calculateDaysInStage(a.stageUpdatedAt) > 14
-    );
-  }, [applications]);
+  const draggedApp = useMemo(() => {
+    return drag ? applications.find((a) => a.id === drag.taskId) ?? null : null;
+  }, [applications, drag]);
 
-  const handleDragStart = (e: React.DragEvent<HTMLDivElement>, id: string) => {
-    e.dataTransfer.setData('text/plain', id);
-    e.dataTransfer.effectAllowed = 'move';
-    setDraggedAppId(id);
-  };
-
-  const handleDragEnd = () => {
-    setDraggedAppId(null);
-    setDragOverColumn(null);
-  };
-
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>, status: ApplicationStatus) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    if (dragOverColumn !== status) {
-      setDragOverColumn(status);
+  const draggedNextColumn = useMemo(() => {
+    if (!draggedApp) return null;
+    const colIndex = PIPELINE_COLUMNS.findIndex((c) => c.status === draggedApp.status);
+    if (colIndex >= 0 && colIndex < PIPELINE_COLUMNS.length - 1) {
+      return PIPELINE_COLUMNS[colIndex + 1];
     }
-  };
-
-  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>, status: ApplicationStatus) => {
-    // Only clear if leaving the main column container
-    if (e.currentTarget.contains(e.relatedTarget as Node)) return;
-    if (dragOverColumn === status) {
-      setDragOverColumn(null);
-    }
-  };
-
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>, targetStatus: ApplicationStatus) => {
-    e.preventDefault();
-    const id = e.dataTransfer.getData('text/plain') || draggedAppId;
-    if (id) {
-      const app = applications.find((a) => a.id === id);
-      if (app && app.status !== targetStatus) {
-        onUpdateStatus(id, targetStatus);
-      }
-    }
-    setDraggedAppId(null);
-    setDragOverColumn(null);
-  };
-
-  const handleQuickAdvance = (e: React.SyntheticEvent, app: Application, nextStatus: ApplicationStatus) => {
-    e.stopPropagation();
-    onUpdateStatus(app.id, nextStatus);
-  };
+    return null;
+  }, [draggedApp]);
 
   return (
-    <div className="flex-1 bg-white flex flex-col h-full min-h-0 overflow-hidden relative">
+    <div className="flex-1 bg-slate-50/60 flex flex-col h-full min-h-0 overflow-hidden relative">
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-        {/* "Needs Attention Today" Hero Banner (Responsive layout) */}
-        {!isAttentionDismissed && staleApps.length > 0 && (
-          <div className="bg-amber-500/10 border-b border-amber-500/20 px-3.5 py-2.5 flex items-center justify-between text-xs text-amber-900 shrink-0 gap-2">
-            <div className="flex items-center gap-2 font-medium min-w-0">
-              <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
-              <span className="leading-snug">
-                <strong className="font-semibold text-amber-950">Attention Needed:</strong>{' '}
-                <span className="font-semibold">{staleApps.length} application{staleApps.length > 1 ? 's' : ''}</span> have been in active hiring stages for over 14 days without progress updates.
-              </span>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setIsAttentionDismissed(true)}
-              className="text-amber-700 hover:text-amber-950 p-1.5 rounded transition-colors cursor-pointer shrink-0 min-h-[36px] min-w-[36px] flex items-center justify-center select-none"
-              title="Dismiss announcement"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        )}
-
-        {/* ── Mobile Stage Jump Tabs Bar (Visible only on < 768px) ── */}
+        {/* Mobile Stage Jump Tabs Bar */}
         <div className="md:hidden flex items-center gap-1.5 p-2 bg-slate-50/95 border-b border-slate-200/80 overflow-x-auto shrink-0 no-scrollbar select-none">
           {PIPELINE_COLUMNS.map((col) => {
             const count = applications.filter((app) => app.status === col.status).length;
@@ -197,7 +654,7 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
               >
                 <span className={`w-2 h-2 rounded-full ${col.dot}`} />
                 <span>{col.title}</span>
-                <span className="font-mono text-[11px] text-slate-500 font-bold bg-slate-100 px-1.5 py-0.5 rounded-full">
+                <span className="font-mono text-[11px] text-slate-500 font-bold bg-slate-100 px-1.5 py-0.5 rounded-full tabular-nums">
                   {count}
                 </span>
               </button>
@@ -205,7 +662,7 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
           })}
         </div>
 
-        {/* ── Active Pipeline Quota Banner (ADR 0010 Compliant) ── */}
+        {/* Active Capacity Banner */}
         {activeQuota && (
           <div className="px-4 py-1.5 bg-slate-50 border-b border-slate-200/60 flex items-center justify-between text-xs text-slate-600">
             <div className="flex items-center gap-2">
@@ -231,31 +688,7 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
           </div>
         )}
 
-        {/* ── Desktop Column Headers Bar (Visible on md: ≥ 768px) ── */}
-        <div className="hidden md:grid md:grid-cols-5 bg-slate-50/80 border-b border-slate-200/80 sticky top-0 z-10 backdrop-blur-xs min-w-[900px] select-none">
-          {PIPELINE_COLUMNS.map((col) => {
-            const count = applications.filter((app) => app.status === col.status).length;
-            const isTargeting = dragOverColumn === col.status;
-
-            return (
-              <div
-                key={col.status}
-                className={`px-3 py-2.5 flex items-center justify-between transition-colors ${
-                  isTargeting ? 'bg-blue-50/80' : ''
-                }`}
-              >
-                <div className="flex items-center gap-2 font-heading font-bold text-slate-800 text-xs tracking-tight">
-                  <span className={`w-2 h-2 rounded-full ${col.dot} shadow-xs shrink-0`} />
-                  <span>{col.title}</span>
-                  <span className="font-mono text-[11px] font-semibold text-slate-500 ml-0.5">
-                    ({count})
-                  </span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
+        {/* Empty States */}
         {applications.length === 0 ? (
           <div className="flex-1 overflow-y-auto">
             {totalAppCount === 0 && onOpenAddModal && onSeedDemoData ? (
@@ -274,291 +707,185 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
           </div>
         ) : (
           <>
-            {/* ── Kanban Columns Area (Mobile Horizontal Swipe Snap + Desktop 5-Col Grid) ── */}
-            <div className="flex-1 flex md:grid md:grid-cols-5 min-h-0 overflow-x-auto md:overflow-y-auto snap-x snap-mandatory md:snap-none scroll-smooth p-3 md:p-0 gap-3 md:gap-0 md:min-w-[900px]">
-            {PIPELINE_COLUMNS.map((col, index) => {
-              const columnApps = applications
-                .filter((app) => app.status === col.status)
-                .sort((a, b) => calculateDaysInStage(b.stageUpdatedAt) - calculateDaysInStage(a.stageUpdatedAt));
-              const isTargeting = dragOverColumn === col.status;
-              const prevColumn = index > 0 ? PIPELINE_COLUMNS[index - 1] : null;
-              const nextColumn = index < PIPELINE_COLUMNS.length - 1 ? PIPELINE_COLUMNS[index + 1] : null;
+            {/* Kanban Columns Track with Edge Fade Masks */}
+            <div
+              ref={trackRef}
+              onScroll={syncEdges}
+              style={mask ? ({ maskImage: mask, WebkitMaskImage: mask } as React.CSSProperties) : undefined}
+              className="flex-1 min-h-0 min-w-0 w-full overflow-x-auto md:overflow-y-auto snap-x snap-mandatory md:snap-none scroll-smooth p-3 md:p-3.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            >
+              <div className="flex md:grid md:grid-cols-5 min-h-full gap-3 md:gap-3 md:min-w-[900px]">
+              <LayoutGroup>
+                {PIPELINE_COLUMNS.map((col, index) => {
+                  const columnApps = applications
+                    .filter((app) => app.status === col.status)
+                    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+                  const isTargeting = slot?.col === col.status && (!!drag || isDropping);
+                  const prevColumn = index > 0 ? PIPELINE_COLUMNS[index - 1] : null;
+                  const nextColumn = index < PIPELINE_COLUMNS.length - 1 ? PIPELINE_COLUMNS[index + 1] : null;
 
-              return (
-                <div
-                  key={col.status}
-                  ref={(el) => { columnRefs.current[col.status] = el; }}
-                  onDragOver={(e) => handleDragOver(e, col.status)}
-                  onDragLeave={(e) => handleDragLeave(e, col.status)}
-                  onDrop={(e) => handleDrop(e, col.status)}
-                  className={`w-[85vw] sm:w-[320px] md:w-auto shrink-0 snap-center md:shrink md:snap-align-none rounded-2xl md:rounded-none border md:border-0 border-slate-200/80 md:border-transparent bg-slate-50/40 md:bg-white p-3 md:p-3.5 flex flex-col space-y-2.5 transition-all duration-150 min-h-[400px] ${
-                    isTargeting
-                      ? 'bg-blue-50/30 ring-2 ring-inset ring-blue-400/30'
-                      : 'hover:bg-slate-50/30'
-                  }`}
-                >
-                  {/* Mobile-Only Column Header Card Header */}
-                  <div className="md:hidden flex items-center justify-between pb-2 border-b border-slate-200/80">
-                    <div className="flex items-center gap-2 font-heading font-bold text-slate-800 text-xs">
-                      <span className={`w-2.5 h-2.5 rounded-full ${col.dot} shadow-xs shrink-0`} />
-                      <span>{col.title}</span>
-                    </div>
-                    <span className="font-mono text-xs font-bold text-slate-600 bg-white px-2 py-0.5 rounded-md border border-slate-200/80 shadow-2xs">
-                      {columnApps.length}
-                    </span>
-                  </div>
+                  const filteredApps = columnApps.filter((t) => t.id !== drag?.taskId);
 
-                  {/* Drop zone placeholder indicator when dragging */}
-                  {isTargeting && columnApps.length > 0 && (
-                    <div className="py-2 px-3 rounded-xl border-2 border-dashed border-blue-400 bg-blue-50/80 text-blue-700 text-[11px] font-semibold flex items-center justify-center gap-1.5 shrink-0">
-                      <ArrowRight className="w-3.5 h-3.5" />
-                      <span>Move application to {col.title}</span>
-                    </div>
-                  )}
-
-                  {/* Column application cards */}
-                  {columnApps.length === 0 ? (
-                    <div className="flex-1 min-h-[140px] flex items-center justify-center p-6 text-center text-slate-500 font-mono text-[11px] border border-dashed border-slate-200/80 rounded-xl my-1 bg-white/60">
-                      {isTargeting ? (
-                        <span className="text-blue-600 font-semibold flex items-center gap-1.5">
-                          <ArrowRight className="w-3.5 h-3.5" />
-                          Drop application here
-                        </span>
-                      ) : (
-                        `No applications in ${col.title.toLowerCase()}`
-                      )}
-                    </div>
-                  ) : (
-                    columnApps.map((app) => {
-                      const daysInStage = calculateDaysInStage(app.stageUpdatedAt);
-                      const isSelected = selectedAppId === app.id;
-                      const isBeingDragged = draggedAppId === app.id;
-
-                      return (
-                        <div
-                          key={app.id}
-                          tabIndex={0}
-                          role="button"
-                          aria-label={`${app.company}, ${app.role}, in ${col.title}`}
-                          draggable={dragDisabledAppId !== app.id}
-                          onDragStart={(e) => handleDragStart(e, app.id)}
-                          onDragEnd={handleDragEnd}
-                          onClick={() => {
-                            const selection = window.getSelection();
-                            if (selection && !selection.isCollapsed && selection.toString().trim().length > 0) {
-                              return;
-                            }
-                            onSelectApp(app);
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.target !== e.currentTarget) return;
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              e.preventDefault();
-                              onSelectApp(app);
-                            } else if (e.key === 'ArrowRight' && nextColumn && e.target === e.currentTarget) {
-                              e.preventDefault();
-                              handleQuickAdvance(e, app, nextColumn.status);
-                            } else if (e.key === 'ArrowLeft' && prevColumn && e.target === e.currentTarget) {
-                              e.preventDefault();
-                              handleQuickAdvance(e, app, prevColumn.status);
-                            }
-                          }}
-                          className={`p-3.5 rounded-xl border transition-all cursor-grab active:cursor-grabbing group relative focus:outline-none focus:ring-2 focus:ring-blue-500/50 select-none ${
-                            isBeingDragged
-                              ? 'opacity-40 scale-98 border-dashed border-blue-400 bg-blue-50/30'
-                              : isSelected
-                              ? 'bg-blue-50/70 border-blue-500/80 ring-1 ring-blue-500/20 shadow-xs'
-                              : daysInStage > 14
-                              ? 'bg-white hover:bg-slate-50/90 border-rose-200/80 hover:border-rose-300 shadow-2xs hover:shadow-xs hover:-translate-y-0.5'
-                              : daysInStage > 7
-                              ? 'bg-white hover:bg-slate-50/90 border-amber-200/80 hover:border-amber-300 shadow-2xs hover:shadow-xs hover:-translate-y-0.5'
-                              : 'bg-white hover:bg-slate-50/90 border-slate-200/80 hover:border-blue-300 shadow-2xs hover:shadow-xs hover:-translate-y-0.5'
-                          }`}
-                        >
-                          {/* Top Row: Company Avatar & Name */}
-                          <div className="flex items-center gap-2 mb-1 min-w-0">
-                            <CompanyLogo
-                              company={app.company}
-                              jobLink={app.jobLink}
-                              logoUrl={app.logoUrl}
-                              companyDomain={app.companyDomain}
-                              size="sm"
-                            />
-
-                            <span
-                              dir="auto"
-                              className="font-heading font-bold text-slate-900 text-xs truncate text-start select-text cursor-text"
-                              onMouseEnter={() => setDragDisabledAppId(app.id)}
-                              onMouseLeave={(e) => {
-                                if (e.buttons === 0) {
-                                  setDragDisabledAppId(null);
-                                }
-                              }}
-                              onMouseDown={() => setDragDisabledAppId(app.id)}
-                              onDragStart={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                              }}
-                            >
-                              {app.company}
-                            </span>
-                          </div>
-
-                          {/* Role Title */}
-                          <p
-                            dir="auto"
-                            className="text-slate-700 text-xs font-semibold truncate mb-2 text-start select-text cursor-text"
-                            onMouseEnter={() => setDragDisabledAppId(app.id)}
-                            onMouseLeave={(e) => {
-                              if (e.buttons === 0) {
-                                setDragDisabledAppId(null);
-                              }
-                            }}
-                            onMouseDown={() => setDragDisabledAppId(app.id)}
-                            onDragStart={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                            }}
-                          >
-                            {app.role}
-                          </p>
-
-                          {/* Notes snippet or Tasks/Contacts chips */}
-                          {Boolean(app.tasks?.length || app.contacts?.length || app.contactEmail || app.emails?.length) ? (
-                            <div className="flex items-center gap-1.5 flex-wrap mb-2 font-mono text-[11px]">
-                              {app.contactEmail ? (
-                                <a
-                                  href={`mailto:${app.contactEmail}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  onClick={(e) => e.stopPropagation()}
-                                  className="inline-flex items-center gap-1 text-blue-700 hover:text-blue-900 bg-blue-50/80 hover:bg-blue-100 px-1.5 py-0.5 rounded border border-blue-200/80 transition-colors"
-                                  title={`Contact email: ${app.contactEmail}`}
-                                >
-                                  <Mail className="w-2.5 h-2.5 text-blue-500" />
-                                  <span className="truncate max-w-[110px]">Contact</span>
-                                </a>
-                              ) : null}
-                              {app.tasks && app.tasks.length > 0 ? (
-                                <span
-                                  className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded border font-semibold ${
-                                    app.tasks.every((t) => t.completed)
-                                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200/80'
-                                      : 'bg-blue-50 text-blue-700 border-blue-200/80'
-                                  }`}
-                                  title={`${app.tasks.filter((t) => t.completed).length}/${app.tasks.length} tasks completed`}
-                                >
-                                  <CheckSquare className="w-2.5 h-2.5" />
-                                  <span>{app.tasks.filter((t) => t.completed).length}/{app.tasks.length} tasks</span>
-                                </span>
-                              ) : null}
-                              {app.contacts && app.contacts.length > 0 ? (
-                                <span className="inline-flex items-center gap-1 text-slate-600 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-200/80" title={`${app.contacts.length} contact(s)`}>
-                                  <Users className="w-2.5 h-2.5 text-slate-500" />
-                                  <span>{app.contacts.length} contact{app.contacts.length > 1 ? 's' : ''}</span>
-                                </span>
-                              ) : null}
-                              {app.emails && app.emails.length > 0 ? (
-                                <span
-                                  className="inline-flex items-center gap-1 text-purple-700 bg-purple-50/80 hover:bg-purple-100/80 px-1.5 py-0.5 rounded border border-purple-200/80 font-medium transition-colors"
-                                  title={`${app.emails.length} logged email(s)`}
-                                >
-                                  <Mail className="w-2.5 h-2.5 text-purple-600" />
-                                  <span>{app.emails.length} email{app.emails.length > 1 ? 's' : ''}</span>
-                                </span>
-                              ) : null}
-                            </div>
-                          ) : null}
-
-                          {/* Footer Metadata: Platform Tag + Days in Stage Recency Badge */}
-                          <div className="flex items-center justify-between text-[11px] pt-2 border-t border-slate-100/80 gap-1.5">
-                            <span className="font-mono text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200/80 font-medium text-[11px] shrink-0">
-                              {app.platform}
-                            </span>
-
-                            <div className="flex items-center gap-1.5">
-                              <span
-                                className={`flex items-center gap-1 font-mono text-[11px] px-2 py-0.5 rounded-md font-semibold ${
-                                  daysInStage > 14
-                                    ? 'text-rose-700 font-semibold bg-rose-50 border border-rose-200/80'
-                                    : daysInStage > 7
-                                    ? 'text-amber-700 font-semibold bg-amber-50 border border-amber-200/80'
-                                    : 'text-slate-500 bg-slate-100 border border-slate-200/60'
-                                }`}
-                                title={`In ${app.status} stage for ${daysInStage} days`}
-                              >
-                                <Clock className="w-3 h-3 shrink-0" />
-                                <span>{daysInStage}d</span>
-                              </span>
-
-                              {/* Mobile Touch Quick Stage Advance Affordance (eliminates drag requirement) */}
-                              {nextColumn && (
-                                <button
-                                  type="button"
-                                  onClick={(e) => handleQuickAdvance(e, app, nextColumn.status)}
-                                  title={`Advance to ${nextColumn.title}`}
-                                  aria-label={`Advance to ${nextColumn.title}`}
-                                  className="md:hidden flex items-center gap-0.5 font-mono text-[11px] font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded-md border border-blue-200/80 transition-colors cursor-pointer min-h-[30px]"
-                                >
-                                  <span>{nextColumn.title}</span>
-                                  <ChevronRight className="w-3 h-3 text-blue-600" />
-                                </button>
-                              )}
-                            </div>
-                          </div>
+                  return (
+                    <div
+                      key={col.status}
+                      ref={(el) => {
+                        if (el) colRefs.current.set(col.status, el);
+                        else colRefs.current.delete(col.status);
+                      }}
+                      className={`w-[85vw] sm:w-[320px] md:w-auto shrink-0 snap-center md:shrink md:snap-align-none rounded-xl border border-slate-200/80 bg-slate-100/80 p-3 flex flex-col space-y-2.5 transition-colors duration-150 min-h-[400px] ${
+                        isTargeting ? 'bg-blue-50/40 border-blue-300' : ''
+                      }`}
+                    >
+                      {/* Integrated Lane Header: Anchored header card with status dot, title, and committed count badge */}
+                      <div className="bg-white/90 border border-slate-200/70 shadow-2xs rounded-lg px-3 py-2 flex items-center justify-between shrink-0 select-none">
+                        <div className="flex items-center gap-2 font-heading font-bold text-slate-800 text-xs tracking-tight">
+                          <span className={`w-2 h-2 rounded-full ${col.dot} shadow-xs shrink-0`} />
+                          <span>{col.title}</span>
                         </div>
-                      );
-                    })
-                  )}
-                </div>
-              );
-            })}
-          </div>
+                        <span className="font-mono text-[11px] font-semibold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded-full tabular-nums">
+                          {columnApps.length}
+                        </span>
+                      </div>
 
-          {/* Quick-Drop Zones Bar (Archive & Mark Rejected) */}
-          <div
-            className={`border-t border-slate-200/90 bg-slate-50/90 sticky bottom-0 z-20 backdrop-blur-xs overflow-hidden transition-all duration-300 ease-in-out ${
-              draggedAppId !== null
-                ? 'max-h-24 opacity-100 p-3 translate-y-0 shadow-lg'
-                : 'max-h-0 opacity-0 p-0 translate-y-4 pointer-events-none'
-            }`}
-          >
-            <div className="grid grid-cols-2 gap-3">
-              <div
-                onDragOver={(e) => handleDragOver(e, 'Archived')}
-                onDragLeave={(e) => handleDragLeave(e, 'Archived')}
-                onDrop={(e) => handleDrop(e, 'Archived')}
-                className={`p-3 rounded-xl border-2 border-dashed flex items-center justify-center gap-2.5 transition-all duration-200 text-xs font-semibold ${
-                  dragOverColumn === 'Archived'
-                    ? 'bg-amber-100/90 border-amber-500 text-amber-900 ring-2 ring-amber-400/30 shadow-md scale-[1.01]'
-                    : 'bg-amber-50/80 border-amber-300 text-amber-800'
-                }`}
-              >
-                <Archive className={`w-4 h-4 shrink-0 ${dragOverColumn === 'Archived' ? 'text-amber-700' : 'text-amber-600'}`} />
-                <span className="truncate">
-                  {dragOverColumn === 'Archived' ? 'Release to Archive' : 'Quick Drop: Archive'}
-                </span>
-              </div>
-
-              <div
-                onDragOver={(e) => handleDragOver(e, 'Rejected')}
-                onDragLeave={(e) => handleDragLeave(e, 'Rejected')}
-                onDrop={(e) => handleDrop(e, 'Rejected')}
-                className={`p-3 rounded-xl border-2 border-dashed flex items-center justify-center gap-2.5 transition-all duration-200 text-xs font-semibold ${
-                  dragOverColumn === 'Rejected'
-                    ? 'bg-rose-100/90 border-rose-500 text-rose-900 ring-2 ring-rose-400/30 shadow-md scale-[1.01]'
-                    : 'bg-rose-50/80 border-rose-300 text-rose-800'
-                }`}
-              >
-                <XCircle className={`w-4 h-4 shrink-0 ${dragOverColumn === 'Rejected' ? 'text-rose-700' : 'text-rose-600'}`} />
-                <span className="truncate">
-                  {dragOverColumn === 'Rejected' ? 'Release to Reject' : 'Quick Drop: Reject'}
-                </span>
+                      {/* Cards List Container */}
+                      <div
+                        ref={(el) => {
+                          if (el) listRefs.current.set(col.status, el);
+                          else listRefs.current.delete(col.status);
+                        }}
+                        className="flex flex-col gap-2.5 flex-1 min-h-[140px]"
+                      >
+                        {filteredApps.length === 0 && !isTargeting ? (
+                          <div className="flex-1 min-h-[140px] flex items-center justify-center p-6 text-center text-slate-500 font-mono text-[11px] border border-dashed border-slate-200/80 rounded-xl my-1 bg-white/60">
+                            No applications in {col.title.toLowerCase()}
+                          </div>
+                        ) : (
+                          <>
+                            {filteredApps.map((app, i) => {
+                              return (
+                                <React.Fragment key={app.id}>
+                                  {isTargeting && slot?.index === i && (
+                                    <motion.div
+                                      layout
+                                      data-kanban-placeholder
+                                      initial={{ opacity: 0, scaleY: 0.7 }}
+                                      animate={{ opacity: isDropping ? 0.35 : 1, scaleY: 1 }}
+                                      exit={{ opacity: 0, scaleY: 0.7 }}
+                                      transition={FLOW_SPRING}
+                                      style={{ height: drag?.height || 88 }}
+                                      className={`origin-top rounded-xl border-2 border-dashed flex items-center justify-center gap-1.5 text-xs font-semibold shrink-0 transition-colors duration-150 ${
+                                        isDropping
+                                          ? 'border-blue-300 bg-blue-50/30 text-blue-400'
+                                          : 'border-blue-400 bg-blue-50/70 text-blue-700'
+                                      }`}
+                                    >
+                                      <ArrowRight className="w-3.5 h-3.5" />
+                                      <span>{isDropping ? 'Placing application...' : 'Drop application here'}</span>
+                                    </motion.div>
+                                  )}
+                                  <PipelineCard
+                                    app={app}
+                                    colTitle={col.title}
+                                    isSelected={selectedAppId === app.id}
+                                    isGrabbed={grabbed === app.id}
+                                    reduceMotion={Boolean(reduceMotion)}
+                                    nextColumn={nextColumn}
+                                    elRef={(el) => {
+                                      if (el) cardRefs.current.set(app.id, el);
+                                      else cardRefs.current.delete(app.id);
+                                    }}
+                                    onPointerDown={(e) => handlePointerDownCard(e, app, col.status, i)}
+                                    onClick={() => {
+                                      if (dragOccurredRef.current) {
+                                        dragOccurredRef.current = false;
+                                        return;
+                                      }
+                                      onSelectApp(app);
+                                    }}
+                                    onKeyDown={(e) => handleCardKeyDown(e, app)}
+                                    onQuickAdvance={(e, nextStatus) => {
+                                      e.stopPropagation();
+                                      onUpdateStatus(app.id, nextStatus);
+                                    }}
+                                    onUpdateStatus={onUpdateStatus}
+                                    onDeleteApp={onDeleteApp}
+                                    isMenuOpen={activeMenuAppId === app.id}
+                                    onToggleMenu={(e) => {
+                                      e.stopPropagation();
+                                      setActiveMenuAppId((prev) => (prev === app.id ? null : app.id));
+                                    }}
+                                    onCloseMenu={() => setActiveMenuAppId(null)}
+                                  />
+                                </React.Fragment>
+                              );
+                            })}
+                            {isTargeting && slot && slot.index >= filteredApps.length && (
+                              <motion.div
+                                layout
+                                data-kanban-placeholder
+                                initial={{ opacity: 0, scaleY: 0.7 }}
+                                animate={{ opacity: isDropping ? 0.35 : 1, scaleY: 1 }}
+                                exit={{ opacity: 0, scaleY: 0.7 }}
+                                transition={FLOW_SPRING}
+                                style={{ height: drag?.height || 88 }}
+                                className={`origin-top rounded-xl border-2 border-dashed flex items-center justify-center gap-1.5 text-xs font-semibold shrink-0 transition-colors duration-150 ${
+                                  isDropping
+                                    ? 'border-blue-300 bg-blue-50/30 text-blue-400'
+                                    : 'border-blue-400 bg-blue-50/70 text-blue-700'
+                                }`}
+                              >
+                                <ArrowRight className="w-3.5 h-3.5" />
+                                <span>{isDropping ? 'Placing application...' : 'Drop application here'}</span>
+                              </motion.div>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </LayoutGroup>
               </div>
             </div>
-          </div>
-        </>
-      )}
+
+            {/* Draggable Persistent Scroll Rail */}
+            <PipelineScrollRail trackRef={trackRef} />
+          </>
+        )}
+
+        {/* Floating Card Riding Cursor */}
+        <AnimatePresence>
+          {drag && draggedApp && (
+            <motion.div
+              style={{ x, y, width: drag.width }}
+              initial={{ scale: 1, rotate: 0, opacity: 1 }}
+              animate={{
+                scale: 1,
+                rotate: 0,
+                opacity: 1,
+              }}
+              exit={{ scale: 1, rotate: 0, opacity: 0 }}
+              transition={{
+                duration: isDropping ? DROP_DURATION_SEC : 0.15,
+                ease: DROP_EASE,
+              }}
+              className="pointer-events-none fixed left-0 top-0 z-50 origin-top-left"
+            >
+              <PipelineCardShell
+                app={draggedApp}
+                isFloating
+                isDropping={isDropping}
+                nextColumn={draggedNextColumn}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Screen Reader Announcement Live Region */}
+        <p className="sr-only" role="status" aria-live="polite">
+          {announcement}
+        </p>
       </div>
     </div>
   );

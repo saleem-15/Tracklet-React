@@ -21,6 +21,7 @@ export const ApplicationInfoEditor: React.FC<ApplicationInfoEditorProps> = ({
   const [editWorkLocation, setEditWorkLocation] = useState<WorkLocation | ''>(app.workLocation || '');
   const [editEmploymentType, setEditEmploymentType] = useState<EmploymentType | ''>(app.employmentType || '');
   const [editJobLocation, setEditJobLocation] = useState(app.location || '');
+  const [editSalary, setEditSalary] = useState(app.salary || '');
   const [editDateApplied, setEditDateApplied] = useState(app.dateApplied || '');
   const [editJobLink, setEditJobLink] = useState(app.jobLink || '');
   const [editEmailThreadUrl, setEditEmailThreadUrl] = useState(app.emailThreadUrl || '');
@@ -40,6 +41,7 @@ export const ApplicationInfoEditor: React.FC<ApplicationInfoEditorProps> = ({
         workLocation: editWorkLocation || undefined,
         employmentType: editEmploymentType || undefined,
         location: editJobLocation.trim() || undefined,
+        salary: editSalary.trim(),
         dateApplied: editDateApplied,
         jobLink: editJobLink.trim() || undefined,
         emailThreadUrl: editEmailThreadUrl.trim() || undefined,
@@ -132,8 +134,8 @@ export const ApplicationInfoEditor: React.FC<ApplicationInfoEditorProps> = ({
         </div>
       </div>
 
-      {/* Row 3: Work Type + Job Type + Job Location */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      {/* Row 3: Work Type + Job Type */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <label className="block text-[11px] font-mono font-medium text-slate-500 mb-1">Work Type</label>
           <CustomSelectDropdown<WorkLocation | ''>
@@ -160,6 +162,10 @@ export const ApplicationInfoEditor: React.FC<ApplicationInfoEditorProps> = ({
             className="w-full"
           />
         </div>
+      </div>
+
+      {/* Row 4: Job Location + Salary / Compensation */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <label htmlFor="edit-job-location" className="block text-[11px] font-mono font-medium text-slate-500 mb-1">Job Location</label>
           <input
@@ -169,7 +175,18 @@ export const ApplicationInfoEditor: React.FC<ApplicationInfoEditorProps> = ({
             value={editJobLocation}
             onChange={(e) => setEditJobLocation(e.target.value)}
             placeholder="e.g. San Francisco, CA"
-            className="w-full bg-white text-slate-900 font-mono px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 text-xs text-start transition-all"
+            className="w-full bg-white text-slate-900 font-mono px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 text-xs text-start transition-colors"
+          />
+        </div>
+        <div>
+          <label htmlFor="edit-job-salary" className="block text-[11px] font-mono font-medium text-slate-500 mb-1">Salary / Compensation</label>
+          <input
+            id="edit-job-salary"
+            type="text"
+            value={editSalary}
+            onChange={(e) => setEditSalary(e.target.value)}
+            placeholder="e.g. $190k or $185k–$210k"
+            className="w-full bg-white text-slate-900 font-mono px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 text-xs text-start transition-colors"
           />
         </div>
       </div>

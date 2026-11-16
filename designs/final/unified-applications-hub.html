@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-50">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Final Approved Screen: Unified Applications Hub · Tracklet</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            heading: ['Outfit', 'sans-serif'],
+            sans: ['Plus Jakarta Sans', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            }
+          },
+          boxShadow: {
+            '2xs': '0 1px 2px 0 rgba(0, 0, 0, 0.04)',
+            'xs': '0 1px 3px 0 rgba(0, 0, 0, 0.08), 0 1px 2px -1px rgba(0, 0, 0, 0.08)',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    .card-dragging {
+      opacity: 0.35 !important;
+      transform: scale(0.98);
+      border-style: dashed !important;
+      border-color: #60a5fa !important;
+    }
+  </style>
+</head>
+<body class="h-full flex overflow-hidden font-sans text-slate-800 antialiased selection:bg-brand-100 selection:text-brand-700 bg-slate-50">
+
+  <!-- Tracklet Collapsible Left Desktop Sidebar -->
+  <aside id="sidebar" class="w-52 shrink-0 bg-slate-50 border-r border-slate-200/80 flex flex-col justify-between h-screen select-none text-slate-900 text-xs transition-all duration-200">
+    <div class="flex flex-col">
+      <!-- Sidebar Header -->
+      <div class="h-13 px-3.5 py-3 flex items-center justify-between border-b border-slate-200/80">
+        <div class="flex items-center gap-2.5">
+          <button 
+            type="button"
+            onclick="toggleSidebar()" 
+            class="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center text-white font-heading font-bold text-sm shadow-xs hover:scale-105 active:scale-95 transition-transform cursor-pointer"
+            title="Toggle Sidebar (Ctrl+B)"
+            aria-label="Toggle Sidebar"
+          >
+            T
+          </button>
+          <span id="brand-title" class="font-heading font-bold text-sm tracking-tight text-slate-900 select-none">Tracklet</span>
+        </div>
+      </div>
+
+      <!-- Main Navigation Links -->
+      <nav class="p-2 space-y-1">
+        <!-- Single Unified Applications Link -->
+        <a href="#applications" class="flex items-center justify-between px-3 py-2 rounded-lg font-semibold bg-white text-slate-900 border border-slate-200/80 shadow-2xs">
+          <div class="flex items-center gap-2.5">
+            <svg class="w-4 h-4 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+            <span class="nav-text">Applications</span>
+          </div>
+          <span id="sidebar-count" class="px-1.5 py-0.2 rounded-full bg-brand-50 text-brand-700 font-mono text-[10px] font-bold">7</span>
+        </a>
+
+        <a href="#contacts" class="flex items-center gap-2.5 px-3 py-2 rounded-lg font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100/70 transition-colors">
+          <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+          <span class="nav-text">Contacts</span>
+        </a>
+
+        <a href="#analytics" class="flex items-center gap-2.5 px-3 py-2 rounded-lg font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100/70 transition-colors">
+          <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+          <span class="nav-text">Analytics</span>
+        </a>
+
+        <a href="#settings" class="flex items-center gap-2.5 px-3 py-2 rounded-lg font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100/70 transition-colors">
+          <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          <span class="nav-text">Settings</span>
+        </a>
+      </nav>
+    </div>
+
+    <!-- Sidebar Footer -->
+    <div class="p-3 border-t border-slate-200/80 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <div class="w-7 h-7 rounded-full bg-slate-200 flex items-center justify-center font-bold text-[11px] text-slate-700">SM</div>
+        <div class="overflow-hidden">
+          <div class="font-semibold text-slate-900 truncate">Saleem</div>
+          <div class="text-[10px] text-emerald-600 font-medium">Pro Plan</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Viewport Canvas -->
+  <div class="flex-1 flex flex-col h-screen min-w-0 overflow-hidden bg-slate-50/60">
+
+    <!-- Unified Command Top Bar (Approach 2: Linear Progressive Filters) -->
+    <header class="h-13 bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-6 flex items-center justify-between gap-3 sticky top-0 z-30 text-xs shadow-2xs">
+      
+      <!-- Left Section: Search Input + Progressive Filter Trigger + Chips -->
+      <div class="flex items-center gap-2 sm:gap-2.5 flex-1 min-w-0 overflow-x-auto no-scrollbar py-1">
+        
+        <!-- Search Input with Keyboard Discoverability badge (⌘K) -->
+        <div class="relative w-48 sm:w-64 shrink-0">
+          <svg class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          <input 
+            type="text" 
+            id="filter-search"
+            oninput="applyAllFilters()"
+            placeholder="Search applications..." 
+            class="w-full bg-slate-50 hover:bg-slate-100/80 focus:bg-white text-slate-900 placeholder:text-slate-400 pl-8 pr-11 py-1.5 rounded-lg border border-slate-200/80 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 text-xs transition-colors"
+          >
+          <kbd class="hidden sm:inline-block absolute right-2 top-1/2 -translate-y-1/2 font-mono text-[10px] text-slate-400 bg-white border border-slate-200 px-1 py-0.2 rounded shadow-2xs pointer-events-none">⌘K</kbd>
+        </div>
+
+        <div class="h-4 w-px bg-slate-200/80 shrink-0"></div>
+
+        <!-- Always-Visible Status Scope Dropdown with Smart Auto-Table Trigger -->
+        <select 
+          id="filter-status"
+          onchange="onStatusFilterChange(this.value)"
+          class="shrink-0 text-xs font-semibold bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-lg px-2.5 py-1.5 cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+        >
+          <option value="Active">Status: Active Only</option>
+          <option value="All">Status: All (Includes Archived)</option>
+          <option disabled>──────────</option>
+          <option value="Saved">Saved</option>
+          <option value="Applied">Applied</option>
+          <option value="Screening">Screening</option>
+          <option value="Interview">Interview</option>
+          <option value="Offer">Offer</option>
+          <option value="Rejected">Rejected</option>
+          <option value="Archived">Archived ⚡ (Auto-Table)</option>
+        </select>
+
+        <!-- Progressive "+ Filter" Dropdown -->
+        <div class="relative shrink-0" id="filter-popover-wrapper">
+          <button 
+            id="btn-add-filter"
+            type="button"
+            onclick="toggleFilterMenu()" 
+            class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-dashed border-slate-300 text-slate-600 hover:text-slate-900 hover:border-slate-400 hover:bg-slate-50 font-medium transition-colors cursor-pointer"
+            aria-haspopup="true"
+            aria-expanded="false"
+          >
+            <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            <span>Filter</span>
+          </button>
+
+          <!-- Dropdown Popover of Secondary Filters -->
+          <div id="filter-popover" class="hidden absolute left-0 mt-1.5 w-48 bg-white border border-slate-200 rounded-xl shadow-lg py-1.5 z-50 text-xs">
+            <div class="px-3 py-1 font-mono text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Add Filter</div>
+            <button onclick="addFilterChip('platform', 'Company Site')" class="w-full text-left px-3 py-1.5 hover:bg-slate-50 text-slate-700 flex items-center justify-between cursor-pointer">
+              <span>Platform: Company Site</span>
+              <span class="text-slate-400 text-[10px]">Direct</span>
+            </button>
+            <button onclick="addFilterChip('platform', 'LinkedIn')" class="w-full text-left px-3 py-1.5 hover:bg-slate-50 text-slate-700 flex items-center justify-between cursor-pointer">
+              <span>Platform: LinkedIn</span>
+              <span class="text-slate-400 text-[10px]">Job Board</span>
+            </button>
+            <button onclick="addFilterChip('platform', 'Greenhouse')" class="w-full text-left px-3 py-1.5 hover:bg-slate-50 text-slate-700 flex items-center justify-between cursor-pointer">
+              <span>Platform: Greenhouse</span>
+              <span class="text-slate-400 text-[10px]">ATS</span>
+            </button>
+            <button onclick="addFilterChip('work', 'Remote')" class="w-full text-left px-3 py-1.5 hover:bg-slate-50 text-slate-700 flex items-center justify-between cursor-pointer">
+              <span>Work: Remote</span>
+              <span class="text-slate-400 text-[10px]">Location</span>
+            </button>
+            <button onclick="addFilterChip('work', 'Hybrid')" class="w-full text-left px-3 py-1.5 hover:bg-slate-50 text-slate-700 flex items-center justify-between cursor-pointer">
+              <span>Work: Hybrid</span>
+              <span class="text-slate-400 text-[10px]">Location</span>
+            </button>
+            <button onclick="addFilterChip('jobType', 'Full-time')" class="w-full text-left px-3 py-1.5 hover:bg-slate-50 text-slate-700 flex items-center justify-between cursor-pointer">
+              <span>Job Type: Full-time</span>
+              <span class="text-slate-400 text-[10px]">Role</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Active Filter Chips Container -->
+        <div id="active-chips-container" class="flex items-center gap-1.5 shrink-0"></div>
+
+        <!-- Conditional Reset Filters Button -->
+        <button 
+          id="btn-reset" 
+          onclick="resetAllFilters()"
+          class="hidden shrink-0 text-xs font-semibold text-rose-600 hover:text-rose-700 hover:bg-rose-50 px-2 py-1 rounded-md transition-colors cursor-pointer"
+        >
+          Reset
+        </button>
+
+        <span id="active-count-label" class="font-mono text-[11px] text-slate-400 shrink-0 hidden md:inline ml-1">
+          7 items
+        </span>
+      </div>
+
+      <!-- Right Section: Concentric SegmentedTabs + Add Job -->
+      <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+        
+        <!-- Concentric Radii SegmentedTabs (R = 10px, p = 4px, r = 6px) -->
+        <div class="relative flex items-center bg-slate-100 p-1 rounded-[10px] border border-slate-200/80 text-xs font-medium select-none">
+          <button 
+            id="tab-btn-board" 
+            onclick="setLayout('board')"
+            class="relative z-10 flex items-center gap-1.5 px-3 py-1 rounded-[6px] text-slate-900 font-semibold transition-colors duration-150 cursor-pointer"
+            aria-selected="true"
+            role="tab"
+          >
+            <svg class="w-3.5 h-3.5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"/></svg>
+            <span>Board</span>
+          </button>
+
+          <button 
+            id="tab-btn-table" 
+            onclick="setLayout('table')"
+            class="relative z-10 flex items-center gap-1.5 px-3 py-1 rounded-[6px] text-slate-600 hover:text-slate-900 transition-colors duration-150 cursor-pointer"
+            aria-selected="false"
+            role="tab"
+          >
+            <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+            <span>Table</span>
+          </button>
+
+          <!-- Spring Slider Pill (rounded-[6px]) -->
+          <div id="tab-slider" class="absolute top-1 left-1 bottom-1 w-[72px] bg-white rounded-[6px] shadow-xs transition-transform duration-200 ease-out pointer-events-none"></div>
+        </div>
+
+        <!-- Add Job Primary CTA -->
+        <button 
+          onclick="openAddJobModal()"
+          title="Add application (Press 'N')"
+          class="h-8 px-3 rounded-lg bg-brand-600 hover:bg-brand-700 active:scale-[0.98] text-white font-semibold shadow-xs text-xs flex items-center gap-1.5 transition-all cursor-pointer"
+        >
+          <svg class="w-3.5 h-3.5 stroke-[2.5]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          <span class="hidden sm:inline">Add Job</span>
+        </button>
+      </div>
+
+    </header>
+
+    <!-- Archive Smart Routing Notice Banner -->
+    <div id="archive-banner" class="hidden bg-slate-900 text-white px-4 py-2 text-xs flex items-center justify-between border-b border-slate-800">
+      <div class="flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+        <span class="font-medium">Viewing Archived Applications</span>
+        <span class="text-slate-400 text-[11px]">— Automatically switched to Table layout for dense audit.</span>
+      </div>
+      <button onclick="resetToActive()" class="text-xs text-brand-300 hover:text-white underline cursor-pointer">Back to Active Board</button>
+    </div>
+
+    <!-- Main View Canvas with Subtle Slate Foundation -->
+    <main class="flex-1 min-h-0 overflow-hidden relative bg-slate-50/60">
+
+      <!-- LENS A: Board View (3-Tier Surface Contrast: Canvas -> Lane Tracks -> White Cards) -->
+      <div id="container-board" class="h-full flex overflow-x-auto snap-x snap-mandatory p-4 sm:p-6 gap-4 min-h-0 bg-slate-50/60">
+        <!-- Columns dynamically rendered by JavaScript with integrated lane headers -->
+      </div>
+
+      <!-- LENS B: Table View -->
+      <div id="container-table" class="h-full overflow-y-auto hidden p-4 sm:p-6">
+        <div class="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs">
+          <div class="px-4 py-3 bg-slate-50/80 border-b border-slate-200/80 flex items-center justify-between text-xs">
+            <span id="table-row-count" class="font-semibold text-slate-700">7 Applications</span>
+            <button onclick="showToast('Exported CSV to downloads')" class="px-2.5 py-1 bg-white hover:bg-slate-50 border border-slate-200 rounded-md font-medium text-slate-600 shadow-2xs cursor-pointer">Export CSV</button>
+          </div>
+          <table class="w-full text-left border-collapse text-xs">
+            <thead class="bg-slate-50 border-b border-slate-200 text-[11px] font-mono text-slate-500 uppercase">
+              <tr>
+                <th class="px-4 py-2.5">Company & Role</th>
+                <th class="px-4 py-2.5">Status</th>
+                <th class="px-4 py-2.5">Platform</th>
+                <th class="px-4 py-2.5">Work Mode</th>
+                <th class="px-4 py-2.5">Salary</th>
+                <th class="px-4 py-2.5">Recency</th>
+                <th class="px-4 py-2.5 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="table-body" class="divide-y divide-slate-100 text-slate-700"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </main>
+
+  </div>
+
+  <!-- Centered Application Detail Modal (v1 Baseline) -->
+  <div id="detail-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs">
+    <div class="bg-white border border-slate-200/90 rounded-2xl shadow-xl max-w-lg w-full p-6 text-xs text-slate-800 space-y-4">
+      <div class="flex items-start justify-between">
+        <div class="flex items-center gap-3">
+          <div id="modal-company-logo" class="w-9 h-9 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-sm text-slate-700">
+            R
+          </div>
+          <div>
+            <h3 id="modal-title" class="font-heading font-bold text-base text-slate-900 leading-snug">Frontend Engineer, Design Systems</h3>
+            <p id="modal-company-work" class="text-slate-500 text-xs mt-0.5">Ramp · Hybrid · New York</p>
+          </div>
+        </div>
+        <button onclick="closeDetailModal()" class="w-7 h-7 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 flex items-center justify-center cursor-pointer">✕</button>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200/60 font-mono text-[11px]">
+        <div>
+          <span class="text-slate-400 block">Stage</span>
+          <span id="modal-stage" class="font-semibold text-slate-800">Applied</span>
+        </div>
+        <div>
+          <span class="text-slate-400 block">Salary Range</span>
+          <span id="modal-salary" class="font-semibold text-slate-800">$185k–$210k</span>
+        </div>
+        <div>
+          <span class="text-slate-400 block">Platform</span>
+          <span id="modal-platform" class="text-slate-700">Company Site</span>
+        </div>
+        <div>
+          <span class="text-slate-400 block">Status Recency</span>
+          <span id="modal-recency" class="text-slate-700">18d stale</span>
+        </div>
+      </div>
+
+      <div class="space-y-1.5">
+        <span class="font-semibold text-slate-700 block">Next Milestone / Task</span>
+        <p id="modal-task" class="text-slate-600 bg-slate-50 p-2.5 rounded-lg border border-slate-200/70">Architecture deck · Thu</p>
+      </div>
+
+      <div class="pt-2 border-t border-slate-100 flex items-center justify-between">
+        <a id="modal-job-link" href="#" target="_blank" rel="noopener noreferrer" class="text-brand-600 hover:underline font-medium inline-flex items-center gap-1.5">
+          <span>View Job Posting</span>
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+        </a>
+        <button onclick="closeDetailModal()" class="px-3.5 py-1.5 rounded-lg bg-slate-900 text-white font-medium hover:bg-slate-800 cursor-pointer">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Floating Container -->
+  <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <script>
+    // Stage configurations with colors
+    const PIPELINE_COLUMNS = [
+      { status: 'Saved', title: 'Saved', dot: 'bg-purple-500' },
+      { status: 'Applied', title: 'Applied', dot: 'bg-slate-500' },
+      { status: 'Screening', title: 'Screening', dot: 'bg-amber-500' },
+      { status: 'Interview', title: 'Interview', dot: 'bg-blue-500' },
+      { status: 'Offer', title: 'Offer', dot: 'bg-emerald-500' },
+    ];
+
+    const STAGE_DOTS = {
+      'Saved': 'bg-purple-500',
+      'Applied': 'bg-slate-500',
+      'Screening': 'bg-amber-500',
+      'Interview': 'bg-blue-500',
+      'Offer': 'bg-emerald-500',
+      'Rejected': 'bg-rose-500',
+      'Archived': 'bg-slate-400'
+    };
+
+    // Real Tracklet Sample Applications Database (including Ramp from user note)
+    let SAMPLE_APPS = [
+      { 
+        id: 'ramp', 
+        title: 'Frontend Engineer, Design Systems', 
+        company: 'Ramp', 
+        status: 'Applied', 
+        platform: 'Company Site', 
+        work: 'Hybrid · New York', 
+        jobType: 'Full-time', 
+        salary: '$185k–$210k', 
+        task: 'Architecture deck · Thu', 
+        days: '18d stale', 
+        isStale: true, 
+        isArchived: false, 
+        jobUrl: 'https://ramp.com/careers' 
+      },
+      { 
+        id: 'figma', 
+        title: 'Staff Frontend Engineer', 
+        company: 'Figma', 
+        status: 'Saved', 
+        platform: 'LinkedIn', 
+        work: 'Hybrid · SF', 
+        jobType: 'Full-time', 
+        salary: '$190k–$225k', 
+        task: 'Review team portfolio', 
+        days: '2d', 
+        isStale: false, 
+        isArchived: false, 
+        jobUrl: 'https://figma.com/careers' 
+      },
+      { 
+        id: 'linear', 
+        title: 'Product Design Lead', 
+        company: 'Linear', 
+        status: 'Saved', 
+        platform: 'Company Site', 
+        work: 'Remote', 
+        jobType: 'Full-time', 
+        salary: '$180k–$210k', 
+        task: 'System design prep', 
+        days: '4d', 
+        isStale: false, 
+        isArchived: false, 
+        jobUrl: 'https://linear.app/careers' 
+      },
+      { 
+        id: 'datadog', 
+        title: 'Senior React Architect', 
+        company: 'Datadog', 
+        status: 'Applied', 
+        platform: 'Greenhouse', 
+        work: 'Remote', 
+        jobType: 'Full-time', 
+        salary: '$210k', 
+        task: 'Follow-up with recruiter', 
+        days: '6d', 
+        isStale: false, 
+        isArchived: false, 
+        jobUrl: 'https://datadog.com' 
+      },
+      { 
+        id: 'stripe', 
+        title: 'Principal UI Engineer', 
+        company: 'Stripe', 
+        status: 'Screening', 
+        platform: 'Greenhouse', 
+        work: 'Remote', 
+        jobType: 'Full-time', 
+        salary: '$230k', 
+        task: 'Technical screen · Tomorrow 2 PM', 
+        days: '1d', 
+        isStale: false, 
+        isArchived: false, 
+        jobUrl: 'https://stripe.com/jobs' 
+      },
+      { 
+        id: 'airbnb', 
+        title: 'Fullstack Tech Lead', 
+        company: 'Airbnb', 
+        status: 'Interview', 
+        platform: 'Company Site', 
+        work: 'Onsite · SF', 
+        jobType: 'Full-time', 
+        salary: '$205k', 
+        task: 'Onsite loop · Friday 10 AM', 
+        days: '3d', 
+        isStale: false, 
+        isArchived: false, 
+        jobUrl: 'https://airbnb.com/careers' 
+      },
+      { 
+        id: 'vercel', 
+        title: 'Senior Staff Designer', 
+        company: 'Vercel', 
+        status: 'Offer', 
+        platform: 'Company Site', 
+        work: 'Remote', 
+        jobType: 'Full-time', 
+        salary: '$240k Base', 
+        task: 'Negotiate equity grant', 
+        days: 'Offer in hand', 
+        isStale: false, 
+        isArchived: false, 
+        jobUrl: 'https://vercel.com/careers' 
+      },
+      { 
+        id: 'meta', 
+        title: 'Frontend Engineer', 
+        company: 'Meta', 
+        status: 'Archived', 
+        platform: 'LinkedIn', 
+        work: 'Onsite · Menlo Park', 
+        jobType: 'Full-time', 
+        salary: '$185k', 
+        task: 'Archived after hiring freeze', 
+        days: '30d', 
+        isStale: false, 
+        isArchived: true, 
+        jobUrl: 'https://metacareers.com' 
+      },
+      { 
+        id: 'uber', 
+        title: 'UI Architect', 
+        company: 'Uber', 
+        status: 'Archived', 
+        platform: 'Indeed', 
+        work: 'Hybrid · Seattle', 
+        jobType: 'Full-time', 
+        salary: '$195k', 
+        task: 'Position closed', 
+        days: '45d', 
+        isStale: false, 
+        isArchived: true, 
+        jobUrl: 'https://uber.com/careers' 
+      },
+    ];
+
+    let activeFilterChips = [];
+    let currentLayout = 'board';
+    let isSidebarCollapsed = false;
+    let draggedAppId = null;
+    let activeCardMenuId = null;
+
+    // Toast system
+    let toastUndoAction = null;
+    let toastTimer = null;
+
+    function showToast(message, onUndo) {
+      const container = document.getElementById('toast-container');
+      toastUndoAction = onUndo || null;
+      if (toastTimer) clearTimeout(toastTimer);
+
+      container.innerHTML = `
+        <div class="pointer-events-auto bg-slate-900 text-white px-3.5 py-2.5 rounded-xl shadow-xl flex items-center gap-3 text-xs border border-slate-800 transition-all">
+          <span>${message}</span>
+          ${onUndo ? `<button onclick="executeToastUndo()" class="text-brand-300 hover:text-white font-semibold underline ml-1 cursor-pointer">Undo</button>` : ''}
+          <button onclick="dismissToast()" class="text-slate-400 hover:text-white ml-1 cursor-pointer">✕</button>
+        </div>
+      `;
+
+      toastTimer = setTimeout(() => {
+        dismissToast();
+      }, 4500);
+    }
+
+    function executeToastUndo() {
+      if (toastUndoAction) {
+        toastUndoAction();
+        toastUndoAction = null;
+      }
+      dismissToast();
+    }
+
+    function dismissToast() {
+      document.getElementById('toast-container').innerHTML = '';
+      if (toastTimer) clearTimeout(toastTimer);
+    }
+
+    // Sidebar Toggle
+    function toggleSidebar() {
+      isSidebarCollapsed = !isSidebarCollapsed;
+      const sb = document.getElementById('sidebar');
+      const title = document.getElementById('brand-title');
+      const navTexts = document.querySelectorAll('.nav-text');
+
+      if (isSidebarCollapsed) {
+        sb.style.width = '68px';
+        title.style.display = 'none';
+        navTexts.forEach(el => el.style.display = 'none');
+      } else {
+        sb.style.width = '208px';
+        title.style.display = 'inline';
+        navTexts.forEach(el => el.style.display = 'inline');
+      }
+    }
+
+    // Keyboard Shortcuts
+    document.addEventListener('keydown', (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        document.getElementById('filter-search').focus();
+      }
+      if (e.key === 'n' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+        openAddJobModal();
+      }
+      if (e.key === 'Escape') {
+        closeFilterMenu();
+        closeAllCardMenus();
+        closeDetailModal();
+      }
+    });
+
+    // Global click listener to close popovers when clicking outside
+    document.addEventListener('click', (e) => {
+      // Filter menu outside click
+      const filterWrapper = document.getElementById('filter-popover-wrapper');
+      if (filterWrapper && !filterWrapper.contains(e.target)) {
+        closeFilterMenu();
+      }
+      // Card context menu outside click
+      if (!e.target.closest('.card-menu-container')) {
+        closeAllCardMenus();
+      }
+    });
+
+    function toggleFilterMenu() {
+      const popover = document.getElementById('filter-popover');
+      const btn = document.getElementById('btn-add-filter');
+      const isHidden = popover.classList.contains('hidden');
+      if (isHidden) {
+        popover.classList.remove('hidden');
+        btn.setAttribute('aria-expanded', 'true');
+      } else {
+        popover.classList.add('hidden');
+        btn.setAttribute('aria-expanded', 'false');
+      }
+    }
+
+    function closeFilterMenu() {
+      document.getElementById('filter-popover').classList.add('hidden');
+      document.getElementById('btn-add-filter').setAttribute('aria-expanded', 'false');
+    }
+
+    function addFilterChip(type, value) {
+      closeFilterMenu();
+      if (activeFilterChips.some(c => c.type === type && c.value === value)) return;
+
+      activeFilterChips.push({
+        type: type,
+        value: value,
+        label: `${type.charAt(0).toUpperCase() + type.slice(1)}: ${value}`
+      });
+      renderFilterChips();
+      applyAllFilters();
+    }
+
+    function removeFilterChip(index) {
+      activeFilterChips.splice(index, 1);
+      renderFilterChips();
+      applyAllFilters();
+    }
+
+    function renderFilterChips() {
+      const container = document.getElementById('active-chips-container');
+      container.innerHTML = activeFilterChips.map((chip, idx) => `
+        <span class="inline-flex items-center gap-1 pl-2.5 pr-1 py-0.5 rounded-full text-[11px] font-medium bg-brand-50 text-brand-700 border border-brand-200/80 shadow-2xs transition-colors">
+          <span>${chip.label}</span>
+          <button 
+            type="button"
+            onclick="removeFilterChip(${idx})"
+            aria-label="Remove filter ${chip.label}"
+            class="w-5 h-5 rounded-full hover:bg-rose-100 hover:text-rose-700 flex items-center justify-center transition-colors cursor-pointer text-slate-400"
+          >
+            ✕
+          </button>
+        </span>
+      `).join('');
+    }
+
+    // Layout Switcher
+    function setLayout(layout) {
+      currentLayout = layout;
+      const cb = document.getElementById('container-board');
+      const ct = document.getElementById('container-table');
+      const slider = document.getElementById('tab-slider');
+      const btnBoard = document.getElementById('tab-btn-board');
+      const btnTable = document.getElementById('tab-btn-table');
+
+      if (layout === 'board') {
+        slider.style.transform = 'translateX(0px)';
+        btnBoard.className = 'relative z-10 flex items-center gap-1.5 px-3 py-1 rounded-[6px] text-slate-900 font-semibold transition-colors duration-150 cursor-pointer';
+        btnTable.className = 'relative z-10 flex items-center gap-1.5 px-3 py-1 rounded-[6px] text-slate-600 hover:text-slate-900 transition-colors duration-150 cursor-pointer';
+        btnBoard.setAttribute('aria-selected', 'true');
+        btnTable.setAttribute('aria-selected', 'false');
+        ct.classList.add('hidden');
+        cb.classList.remove('hidden');
+      } else {
+        slider.style.transform = 'translateX(72px)';
+        btnTable.className = 'relative z-10 flex items-center gap-1.5 px-3 py-1 rounded-[6px] text-slate-900 font-semibold transition-colors duration-150 cursor-pointer';
+        btnBoard.className = 'relative z-10 flex items-center gap-1.5 px-3 py-1 rounded-[6px] text-slate-600 hover:text-slate-900 transition-colors duration-150 cursor-pointer';
+        btnTable.setAttribute('aria-selected', 'true');
+        btnBoard.setAttribute('aria-selected', 'false');
+        cb.classList.add('hidden');
+        ct.classList.remove('hidden');
+      }
+    }
+
+    function onStatusFilterChange(val) {
+      const banner = document.getElementById('archive-banner');
+      if (val === 'Archived' || val === 'Rejected') {
+        setLayout('table');
+        banner.classList.remove('hidden');
+      } else {
+        banner.classList.add('hidden');
+      }
+      applyAllFilters();
+    }
+
+    function resetToActive() {
+      document.getElementById('filter-status').value = 'Active';
+      document.getElementById('archive-banner').classList.add('hidden');
+      setLayout('board');
+      applyAllFilters();
+    }
+
+    function resetAllFilters() {
+      document.getElementById('filter-search').value = '';
+      document.getElementById('filter-status').value = 'Active';
+      activeFilterChips = [];
+      renderFilterChips();
+      document.getElementById('archive-banner').classList.add('hidden');
+      applyAllFilters();
+    }
+
+    // Filter Engine
+    function applyAllFilters() {
+      const search = document.getElementById('filter-search').value.toLowerCase().trim();
+      const status = document.getElementById('filter-status').value;
+
+      const isDirty = search !== '' || status !== 'Active' || activeFilterChips.length > 0;
+      document.getElementById('btn-reset').style.display = isDirty ? 'inline-block' : 'none';
+
+      const filtered = SAMPLE_APPS.filter(app => {
+        // Status scope
+        if (status === 'Active' && app.isArchived) return false;
+        if (status === 'Archived' && !app.isArchived) return false;
+        if (status !== 'Active' && status !== 'All' && status !== 'Archived' && app.status !== status) return false;
+
+        // Progressive Chips
+        for (const chip of activeFilterChips) {
+          if (chip.type === 'platform' && app.platform !== chip.value) return false;
+          if (chip.type === 'work' && !app.work.includes(chip.value)) return false;
+          if (chip.type === 'jobType' && app.jobType !== chip.value) return false;
+        }
+
+        // Search text
+        if (search && !app.company.toLowerCase().includes(search) && !app.title.toLowerCase().includes(search)) return false;
+
+        return true;
+      });
+
+      document.getElementById('active-count-label').innerText = `${filtered.length} items`;
+      document.getElementById('sidebar-count').innerText = filtered.length;
+      document.getElementById('table-row-count').innerText = `${filtered.length} Applications`;
+
+      renderBoardView(filtered);
+      renderTableView(filtered);
+    }
+
+    // Render Board View with 3-Tier Layering & Column Containers
+    function renderBoardView(apps) {
+      const boardContainer = document.getElementById('container-board');
+      
+      boardContainer.innerHTML = PIPELINE_COLUMNS.map(col => {
+        const colApps = apps.filter(a => a.status === col.status);
+
+        return `
+          <div 
+            class="w-72 sm:w-80 shrink-0 bg-slate-100/80 border border-slate-200/80 rounded-xl p-3 flex flex-col snap-start min-h-0 transition-colors duration-150 column-lane"
+            data-col="${col.status}"
+            ondragover="handleColDragOver(event, '${col.status}')"
+            ondragleave="handleColDragLeave(event, '${col.status}')"
+            ondrop="handleColDrop(event, '${col.status}')"
+          >
+            <!-- Integrated Column Header Bar with Badge Counter (Committed State Only) -->
+            <div class="flex items-center justify-between pb-2.5 mb-2.5 border-b border-slate-200/70 font-heading font-bold text-xs text-slate-800 bg-white/90 px-3 py-2 rounded-lg border border-slate-200/70 shadow-2xs">
+              <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full ${col.dot} shadow-xs shrink-0"></span>
+                <span>${col.title}</span>
+              </div>
+              <span class="col-count font-mono text-[11px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200/80" data-col="${col.status}">
+                ${colApps.length}
+              </span>
+            </div>
+
+            <!-- In-Flight Drop Target Slot (Hidden by default; toggled via JS onDragOver) -->
+            <div id="drop-slot-${col.status}" class="hidden mb-2.5 py-3 px-3.5 rounded-xl border-2 border-dashed border-blue-400 bg-blue-50/70 text-blue-700 text-xs font-semibold flex items-center justify-center gap-1.5 animate-pulse select-none">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/></svg>
+              <span>Release to move to ${col.title}</span>
+            </div>
+
+            <!-- Cards Container -->
+            <div class="space-y-2.5 overflow-y-auto flex-1 pr-0.5 col-cards-list" data-col="${col.status}">
+              ${colApps.length === 0 ? `
+                <div class="h-28 border-2 border-dashed border-slate-200/90 rounded-xl flex flex-col items-center justify-center text-center p-3 text-slate-400 select-none bg-white/50">
+                  <span class="text-xs font-semibold text-slate-500">No applications in ${col.title}</span>
+                  <span class="text-[11px] text-slate-400 mt-0.5">Drag cards here or click + Add Job</span>
+                </div>
+              ` : colApps.map(app => renderCardHtml(app)).join('')}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Render Individual Job Application Card (Crisp White Physical Object on Slate Track)
+    function renderCardHtml(app) {
+      const initial = app.company.charAt(0);
+
+      return `
+        <div 
+          id="card-${app.id}"
+          draggable="true"
+          ondragstart="handleCardDragStart(event, '${app.id}')"
+          ondragend="handleCardDragEnd(event)"
+          onclick="handleCardClick(event, '${app.id}')"
+          class="bg-white p-3.5 rounded-xl border border-slate-200/90 shadow-2xs hover:border-slate-300 hover:shadow-xs transition-colors duration-150 cursor-grab active:cursor-grabbing group select-none relative"
+        >
+          <!-- Top Row: Standard w-6 h-6 Logo Container + Titles + Context Menu Button -->
+          <div class="flex items-start justify-between gap-2 min-w-0">
+            <div class="flex items-center gap-2 min-w-0">
+              <div class="w-6 h-6 rounded-md bg-slate-50 border border-slate-200/80 flex items-center justify-center text-[10px] font-bold text-slate-700 shrink-0 select-none shadow-2xs">
+                ${initial}
+              </div>
+              <div class="min-w-0">
+                <h4 class="font-bold text-xs text-slate-900 truncate leading-snug">${app.title}</h4>
+                <p class="text-[11px] text-slate-500 truncate flex items-center gap-1.5 mt-0.5">
+                  <span class="font-medium text-slate-700">${app.company}</span>
+                  <span class="text-slate-300 font-bold">·</span>
+                  <span>${app.work}</span>
+                </p>
+              </div>
+            </div>
+
+            <!-- Card Action Context Menu (Three Horizontal Dots) -->
+            <div class="relative card-menu-container shrink-0" onclick="event.stopPropagation()">
+              <button 
+                type="button" 
+                onclick="toggleCardContextMenu(event, '${app.id}')"
+                class="w-6 h-6 rounded-md text-slate-400 hover:text-slate-800 hover:bg-slate-100 flex items-center justify-center transition-colors cursor-pointer"
+                aria-label="Actions for ${app.company}"
+                title="Options"
+              >
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/><circle cx="5" cy="12" r="1.5"/></svg>
+              </button>
+
+              <!-- Dropdown Menu Popover -->
+              <div id="card-menu-${app.id}" class="card-context-menu hidden absolute right-0 mt-1 w-48 bg-white border border-slate-200/90 rounded-xl shadow-lg py-1 z-50 text-xs">
+                <div class="px-3 py-1 font-mono text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Move to Stage</div>
+                ${PIPELINE_COLUMNS.filter(c => c.status !== app.status).map(c => `
+                  <button 
+                    type="button" 
+                    onclick="moveCardToStage(event, '${app.id}', '${c.status}')" 
+                    class="w-full text-left px-3 py-1.5 hover:bg-slate-50 text-slate-700 flex items-center gap-2 cursor-pointer transition-colors"
+                  >
+                    <span class="w-2 h-2 rounded-full ${c.dot} shrink-0"></span>
+                    <span>${c.title}</span>
+                  </button>
+                `).join('')}
+
+                <div class="my-1 border-t border-slate-100"></div>
+
+                ${app.jobUrl ? `
+                  <a 
+                    href="${app.jobUrl}" 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    onclick="event.stopPropagation(); closeAllCardMenus();"
+                    class="w-full text-left px-3 py-1.5 hover:bg-slate-50 text-slate-700 flex items-center justify-between cursor-pointer transition-colors"
+                  >
+                    <span class="flex items-center gap-2">
+                      <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                      <span>View Job Posting</span>
+                    </span>
+                    <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                  </a>
+                ` : ''}
+
+                <button 
+                  type="button" 
+                  onclick="archiveCard(event, '${app.id}')" 
+                  class="w-full text-left px-3 py-1.5 hover:bg-slate-50 text-slate-700 flex items-center gap-2 cursor-pointer transition-colors"
+                >
+                  <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>
+                  <span>Archive</span>
+                </button>
+
+                <button 
+                  type="button" 
+                  onclick="deleteCard(event, '${app.id}')" 
+                  class="w-full text-left px-3 py-1.5 hover:bg-rose-50 text-rose-600 flex items-center gap-2 cursor-pointer transition-colors"
+                >
+                  <svg class="w-3.5 h-3.5 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                  <span>Delete</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Middle Row: Single-Line Truncated Task Pill (Zero Height Jitter) -->
+          ${app.task ? `
+            <div class="mt-2.5">
+              <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-50 text-slate-600 border border-slate-200/70 max-w-full truncate" title="${app.task}">
+                <svg class="w-3 h-3 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                <span class="truncate">${app.task}</span>
+              </span>
+            </div>
+          ` : ''}
+
+          <!-- Bottom Metadata Row: Compact Salary on Left, Platform & Recency on Right -->
+          <div class="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-[11px] font-mono">
+            <span class="font-semibold text-slate-800 tabular-nums">${app.salary}</span>
+            <div class="flex items-center gap-1.5">
+              <span class="px-1.5 py-0.2 rounded text-[10px] bg-slate-100 text-slate-600 font-medium">${app.platform}</span>
+              <span class="${app.isStale ? 'text-amber-700 font-semibold bg-amber-50 px-1.5 py-0.2 rounded border border-amber-200/70' : 'text-slate-400'}">
+                ${app.days}
+              </span>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // Render Dense Table View
+    function renderTableView(apps) {
+      const tbody = document.getElementById('table-body');
+      tbody.innerHTML = apps.map(app => `
+        <tr class="hover:bg-slate-50/80 transition-colors cursor-pointer" onclick="handleCardClick(event, '${app.id}')">
+          <td class="px-4 py-2.5">
+            <div class="font-bold text-slate-900">${app.title}</div>
+            <div class="font-normal text-[11px] text-slate-500">${app.company} · ${app.work}</div>
+          </td>
+          <td class="px-4 py-2.5">
+            <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+              app.status === 'Offer' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
+              app.status === 'Interview' ? 'bg-blue-50 text-blue-700 border border-blue-200' :
+              app.status === 'Screening' ? 'bg-amber-50 text-amber-700 border border-amber-200' :
+              app.status === 'Archived' ? 'bg-slate-100 text-slate-600 border border-slate-200' :
+              'bg-purple-50 text-purple-700 border border-purple-200'
+            }">
+              <span class="w-1.5 h-1.5 rounded-full ${STAGE_DOTS[app.status]}"></span>
+              <span>${app.status}</span>
+            </span>
+          </td>
+          <td class="px-4 py-2.5 text-slate-600 font-mono text-[11px]">${app.platform}</td>
+          <td class="px-4 py-2.5 text-slate-600">${app.work}</td>
+          <td class="px-4 py-2.5 font-mono text-slate-900 font-medium tabular-nums">${app.salary}</td>
+          <td class="px-4 py-2.5 font-mono text-[11px] ${app.isStale ? 'text-amber-700 font-semibold' : 'text-slate-500'}">${app.days}</td>
+          <td class="px-4 py-2.5 text-right" onclick="event.stopPropagation()">
+            <button onclick="deleteCard(event, '${app.id}')" class="text-slate-400 hover:text-rose-600 p-1 rounded hover:bg-rose-50 transition-colors cursor-pointer" title="Delete">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            </button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    // ─── Drag and Drop Handlers (Enforcing Invariant: Counts ONLY update on Drop) ───
+
+    function handleCardDragStart(e, id) {
+      draggedAppId = id;
+      e.dataTransfer.setData('text/plain', id);
+      e.dataTransfer.effectAllowed = 'move';
+      
+      const cardEl = document.getElementById(`card-${id}`);
+      if (cardEl) {
+        cardEl.classList.add('card-dragging');
+      }
+      closeAllCardMenus();
+    }
+
+    function handleCardDragEnd(e) {
+      if (draggedAppId) {
+        const cardEl = document.getElementById(`card-${draggedAppId}`);
+        if (cardEl) {
+          cardEl.classList.remove('card-dragging');
+        }
+      }
+      draggedAppId = null;
+
+      // Clean up all lane highlights and drop slots
+      PIPELINE_COLUMNS.forEach(col => {
+        const slot = document.getElementById(`drop-slot-${col.status}`);
+        if (slot) slot.classList.add('hidden');
+        const lane = document.querySelector(`.column-lane[data-col="${col.status}"]`);
+        if (lane) lane.classList.remove('ring-2', 'ring-blue-400/40', 'bg-blue-50/20');
+      });
+    }
+
+    function handleColDragOver(e, status) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+
+      // Highlight target lane track
+      const lane = document.querySelector(`.column-lane[data-col="${status}"]`);
+      if (lane && !lane.classList.contains('ring-2')) {
+        lane.classList.add('ring-2', 'ring-blue-400/40', 'bg-blue-50/20');
+      }
+
+      // Show insertion placeholder slot in target column
+      const slot = document.getElementById(`drop-slot-${status}`);
+      if (slot && slot.classList.contains('hidden')) {
+        slot.classList.remove('hidden');
+      }
+
+      // Hide slots in other columns
+      PIPELINE_COLUMNS.forEach(col => {
+        if (col.status !== status) {
+          const otherSlot = document.getElementById(`drop-slot-${col.status}`);
+          if (otherSlot) otherSlot.classList.add('hidden');
+          const otherLane = document.querySelector(`.column-lane[data-col="${col.status}"]`);
+          if (otherLane) otherLane.classList.remove('ring-2', 'ring-blue-400/40', 'bg-blue-50/20');
+        }
+      });
+
+      // NOTE: Column badge counts are NOT touched here!
+    }
+
+    function handleColDragLeave(e, status) {
+      const lane = document.querySelector(`.column-lane[data-col="${status}"]`);
+      if (lane && !lane.contains(e.relatedTarget)) {
+        lane.classList.remove('ring-2', 'ring-blue-400/40', 'bg-blue-50/20');
+        const slot = document.getElementById(`drop-slot-${status}`);
+        if (slot) slot.classList.add('hidden');
+      }
+    }
+
+    function handleColDrop(e, targetStatus) {
+      e.preventDefault();
+      const id = e.dataTransfer.getData('text/plain') || draggedAppId;
+
+      if (id) {
+        const app = SAMPLE_APPS.find(a => a.id === id);
+        if (app && app.status !== targetStatus) {
+          const prevStatus = app.status;
+          app.status = targetStatus;
+
+          // Commit: Counts update here during applyAllFilters()
+          applyAllFilters();
+
+          showToast(`Moved ${app.company} to ${targetStatus}`, () => {
+            app.status = prevStatus;
+            applyAllFilters();
+          });
+        }
+      }
+
+      handleCardDragEnd(e);
+    }
+
+    // ─── Card Actions Context Menu ───
+
+    function toggleCardContextMenu(e, id) {
+      e.stopPropagation();
+      const menu = document.getElementById(`card-menu-${id}`);
+      const isCurrentlyOpen = !menu.classList.contains('hidden');
+      closeAllCardMenus();
+      if (!isCurrentlyOpen) {
+        menu.classList.remove('hidden');
+        activeCardMenuId = id;
+      }
+    }
+
+    function closeAllCardMenus() {
+      document.querySelectorAll('.card-context-menu').forEach(el => el.classList.add('hidden'));
+      activeCardMenuId = null;
+    }
+
+    function moveCardToStage(e, id, targetStage) {
+      e.stopPropagation();
+      closeAllCardMenus();
+      const app = SAMPLE_APPS.find(a => a.id === id);
+      if (app && app.status !== targetStage) {
+        const prevStatus = app.status;
+        app.status = targetStage;
+        applyAllFilters();
+
+        showToast(`Moved ${app.company} to ${targetStage}`, () => {
+          app.status = prevStatus;
+          applyAllFilters();
+        });
+      }
+    }
+
+    function archiveCard(e, id) {
+      e.stopPropagation();
+      closeAllCardMenus();
+      const app = SAMPLE_APPS.find(a => a.id === id);
+      if (app) {
+        app.isArchived = true;
+        const prevStatus = app.status;
+        app.status = 'Archived';
+        applyAllFilters();
+
+        showToast(`Archived ${app.company}`, () => {
+          app.isArchived = false;
+          app.status = prevStatus;
+          applyAllFilters();
+        });
+      }
+    }
+
+    function deleteCard(e, id) {
+      e.stopPropagation();
+      closeAllCardMenus();
+      const idx = SAMPLE_APPS.findIndex(a => a.id === id);
+      if (idx !== -1) {
+        const deletedApp = SAMPLE_APPS[idx];
+        SAMPLE_APPS.splice(idx, 1);
+        applyAllFilters();
+
+        showToast(`Deleted ${deletedApp.company} application`, () => {
+          SAMPLE_APPS.splice(idx, 0, deletedApp);
+          applyAllFilters();
+        });
+      }
+    }
+
+    // Card Details Modal (v1 Centered Panel)
+    function handleCardClick(e, id) {
+      // Don't open if clicking on menu button
+      if (e.target.closest('.card-menu-container') || e.target.closest('button') || e.target.closest('a')) {
+        return;
+      }
+      openCardDetail(id);
+    }
+
+    function openCardDetail(id) {
+      const app = SAMPLE_APPS.find(a => a.id === id);
+      if (!app) return;
+
+      document.getElementById('modal-company-logo').innerText = app.company.charAt(0);
+      document.getElementById('modal-title').innerText = app.title;
+      document.getElementById('modal-company-work').innerText = `${app.company} · ${app.work}`;
+      document.getElementById('modal-stage').innerText = app.status;
+      document.getElementById('modal-salary').innerText = app.salary;
+      document.getElementById('modal-platform').innerText = app.platform;
+      document.getElementById('modal-recency').innerText = app.days;
+      document.getElementById('modal-task').innerText = app.task || 'No pending tasks recorded';
+      
+      const linkEl = document.getElementById('modal-job-link');
+      if (app.jobUrl) {
+        linkEl.href = app.jobUrl;
+        linkEl.style.display = 'inline-flex';
+      } else {
+        linkEl.style.display = 'none';
+      }
+
+      document.getElementById('detail-modal').classList.remove('hidden');
+    }
+
+    function closeDetailModal() {
+      document.getElementById('detail-modal').classList.add('hidden');
+    }
+
+    function openAddJobModal() {
+      showToast('Opening Add Job Modal...');
+    }
+
+    // Initial Execution
+    applyAllFilters();
+  </script>
+</body>
+</html>

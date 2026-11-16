@@ -9,21 +9,33 @@ export interface JobTypeBadgesProps {
   workLocation?: WorkLocation;
   employmentType?: EmploymentType;
   size?: 'xs' | 'sm';
+  variant?: 'pill' | 'text' | 'subtle';
   className?: string;
 }
 
 /**
  * Renders optional Work Type (Remote/Hybrid/Onsite) and Job Type
- * (Full-time/Part-time/Contract/Internship) chips. Renders nothing
- * when both values are unset.
+ * (Full-time/Part-time/Contract/Internship) chips or calm typographic metadata.
+ * Renders nothing when both values are unset.
  */
 export const JobTypeBadges: React.FC<JobTypeBadgesProps> = ({
   workLocation,
   employmentType,
   size = 'xs',
+  variant = 'pill',
   className = '',
 }) => {
   if (!workLocation && !employmentType) return null;
+
+  if (variant === 'text') {
+    return (
+      <span className={`inline-flex items-center gap-1 font-mono text-[11px] text-slate-500 whitespace-nowrap ${className}`}>
+        {workLocation && <span>{workLocation}</span>}
+        {workLocation && employmentType && <span className="text-slate-300">·</span>}
+        {employmentType && <span>{employmentType}</span>}
+      </span>
+    );
+  }
 
   const sizeStyles =
     size === 'sm'

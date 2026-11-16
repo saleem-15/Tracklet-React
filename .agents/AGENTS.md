@@ -14,14 +14,17 @@ Tracklet is a **commercial, closed-source B2C SaaS web application and Chrome Ex
   - Product & Business Truth: `PRODUCT.md`, `STRATEGY.md`, `DESIGN.md`.
   - SpecKit Constitution: `.specify/memory/constitution.md`.
   - Feature Specs: `specs/` (e.g., `specs/012-contact-email-log`).
-  - Architecture Decision Records: `docs/adr/0001` through `0011`.
+  - Architecture Decision Records: `docs/adr/0001` through `0015`.
+  - Design Decision Records: `docs/ddr/0001` (Canvas Ambient Calm) and `docs/ddr/0002` (Dual-Lens Layout Dynamics & Single-Stage Table Affinity).
+  - Documentation Standards: `.agents/rules/documentation-standards.md`.
 
 ## 3. Mandatory Architectural Guardrails
 1. **Auth & Multi-Tenancy:** All Firestore collections and Cloud Storage paths must be strictly scoped to `users/{userId}/...` (ADR 0003).
 2. **SaaS Entitlements:** Always account for `user.planTier` (`'free' | 'pro'`) when modifying application creation, scraping (`api/scrape-job.ts`), ATS autofill, resume uploads, or analytics views (`StatsView.tsx`).
 3. **API Security:** Never expose unauthenticated serverless endpoints in `/api`. Always verify the caller's Firebase Auth ID token.
 4. **Telemetry:** ADR 0004 (conditional/opt-in telemetry) is superseded by ADR 0011. Error tracking (Sentry) and funnel analytics (PostHog) are standard across authenticated views with PII scrubbing.
-5. **UI/UX Craft:** Adhere strictly to `.agents/rules/ui-ux-standards.md` and `DESIGN.md`.
+5. **UI/UX Craft & Ambient Calm:** Adhere strictly to `.agents/rules/ui-ux-standards.md`, `.agents/rules/anti-slop-standards.md`, and `DESIGN.md`. Full-width ambient warning banners on operational canvases are banned (DDR 0001), and dual-lens single-stage filters enforce table affinity (DDR 0002).
+6. **Documentation Governance:** Follow `.agents/rules/documentation-standards.md`. Apply the 4-Gate Decision Test before creating new ADRs or DDRs to prevent documentation bloat. ADRs and DDRs are immutable; never rewrite history.
 
 ## 4. Workflow & SpecKit Usage
 - When planning or building a new feature, check `.specify/memory/constitution.md` and `PRODUCT.md` first.

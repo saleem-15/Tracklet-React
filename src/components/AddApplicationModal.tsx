@@ -49,6 +49,7 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
   const [workLocation, setWorkLocation] = useState<WorkLocation | ''>('');
   const [employmentType, setEmploymentType] = useState<EmploymentType | ''>('');
   const [jobLocation, setJobLocation] = useState('');
+  const [salary, setSalary] = useState('');
   const [dateApplied, setDateApplied] = useState(todayStr);
   const [status, setStatus] = useState<ApplicationStatus>('Saved');
   const [jobLink, setJobLink] = useState('');
@@ -67,6 +68,7 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
     workLocation !== '' ||
     employmentType !== '' ||
     jobLocation.trim() !== '' ||
+    salary.trim() !== '' ||
     contacts.length > 0 ||
     tasks.length > 0;
 
@@ -86,6 +88,7 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
     setWorkLocation('');
     setEmploymentType('');
     setJobLocation('');
+    setSalary('');
     setDateApplied(todayStr);
     setStatus('Saved');
     setJobLink('');
@@ -182,6 +185,7 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
       workLocation: workLocation || undefined,
       employmentType: employmentType || undefined,
       location: jobLocation.trim() || undefined,
+      salary: salary.trim() || undefined,
       dateApplied: dateApplied || todayStr,
       status,
       jobLink: formattedJobLink || undefined,
@@ -263,6 +267,8 @@ export const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
                   onEmploymentTypeChange={setEmploymentType}
                   jobLocation={jobLocation}
                   onJobLocationChange={setJobLocation}
+                  salary={salary}
+                  onSalaryChange={setSalary}
                 />
 
                 <AddApplicationContactsSection

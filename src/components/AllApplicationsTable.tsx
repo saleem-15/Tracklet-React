@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { Application, SortField, SortState, ApplicationStatus } from '../types';
 import { StatusBadge } from './StatusBadge';
+import { StageSelectorDropdown } from './StageSelectorDropdown';
 import { CompanyLogo } from './CompanyLogo';
 import { JobTypeBadges } from './JobTypeBadges';
 import { EmptyState } from './EmptyState';
@@ -31,6 +32,7 @@ interface AllApplicationsTableProps {
   sort: SortState;
   onSortChange: (field: SortField) => void;
   onBulkUpdateStatus: (ids: string[], newStatus: ApplicationStatus) => void;
+  onUpdateStatus?: (id: string, newStatus: ApplicationStatus) => void;
   onBulkDelete: (ids: string[]) => void;
   onShowToast?: (type: 'success' | 'error' | 'info' | 'warning', title: string, description?: string) => void;
 }
@@ -68,6 +70,7 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
   sort,
   onSortChange,
   onBulkUpdateStatus,
+  onUpdateStatus,
   onBulkDelete,
   onShowToast,
 }) => {
@@ -202,6 +205,12 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
   // Keyboard navigation across table rows (Arrows, Enter, Space/x, PageUp/PageDown, Home/End)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Let the stage selector dropdown own its keyboard interaction
+      const target = e.target as HTMLElement | null;
+      if (target?.closest?.('[aria-haspopup="listbox"], [role="listbox"]')) {
+        return;
+      }
+
       // Ignore if typing in input, textarea, select or editable modal
       const activeEl = document.activeElement;
       if (
@@ -280,7 +289,7 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
   };
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 bg-white text-slate-900">
+    <div className="flex-1 bg-slate-50/60 flex flex-col h-full min-h-0 overflow-hidden relative p-3 sm:p-4 md:p-6 text-slate-900">
       {/* Floating Bulk Actions Bar */}
       <BulkActionsBar
         selectedCount={selectedIds.size}
@@ -299,10 +308,11 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
         onCancel={() => setIsDeleteConfirmOpen(false)}
       />
 
-      {/* Main Table */}
-      <div className="flex-1 overflow-auto" ref={tableContainerRef}>
-        <table className="w-full text-left border-collapse text-xs">
-          <thead className="bg-slate-50/80 border-b border-slate-200/80 sticky top-0 z-10 text-[11px] font-mono text-slate-500 uppercase tracking-wider backdrop-blur-xs select-none">
+      {/* Main Table Framed Card Container */}
+      <div className="flex-1 flex flex-col min-h-0 bg-white border border-slate-200/90 rounded-2xl shadow-2xs overflow-hidden relative">
+        <div className="flex-1 overflow-auto" ref={tableContainerRef}>
+          <table className="w-full text-left border-collapse text-xs">
+            <thead className="bg-slate-50/90 border-b border-slate-200/80 sticky top-0 z-10 text-[11px] font-mono text-slate-500 uppercase tracking-wider backdrop-blur-xs select-none">
             <tr>
               <th className="w-10 px-3 py-2.5 text-center">
                 <button
@@ -457,7 +467,7 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
                     }}
                     tabIndex={0}
                     onFocus={() => setFocusedIndex(index)}
-                    className={`h-[38px] group cursor-pointer transition-colors outline-hidden ${
+                    className={`h-[46px] group cursor-pointer transition-colors outline-hidden ${
                       isCurrentRowActive
                         ? 'bg-blue-50/90 font-medium ring-1 ring-inset ring-blue-300/80'
                         : isKeyboardFocused
@@ -510,26 +520,29 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
                       </div>
                     </td>
 
-                    {/* Role */}
-                    <td className="px-3 py-1 text-slate-700 font-medium truncate max-w-[220px] align-middle">
-                      <span className="flex items-center gap-1.5">
-                        <span dir="auto" className="truncate text-start">{app.role}</span>
+                    {/* Role & Work Metadata */}
+                    <td className="px-3 py-1 text-slate-700 align-middle max-w-[260px]">
+                      <div className="flex flex-col justify-center min-w-0">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span dir="auto" className="truncate text-start font-medium text-slate-900">{app.role}</span>
+                          {app.emails && app.emails.length > 0 && (
+                            <span
+                              className="inline-flex items-center gap-0.5 text-[10px] font-mono font-semibold text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded border border-purple-200/70 shrink-0"
+                              title={`${app.emails.length} logged email(s)`}
+                            >
+                              <Mail className="w-2.5 h-2.5 text-purple-600" />
+                              <span>{app.emails.length}</span>
+                            </span>
+                          )}
+                        </div>
                         {(app.workLocation || app.employmentType) && (
                           <JobTypeBadges
                             workLocation={app.workLocation}
                             employmentType={app.employmentType}
+                            variant="text"
                           />
                         )}
-                        {app.emails && app.emails.length > 0 && (
-                          <span
-                            className="inline-flex items-center gap-0.5 text-[10px] font-mono font-semibold text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded border border-purple-200/70 shrink-0"
-                            title={`${app.emails.length} logged email(s)`}
-                          >
-                            <Mail className="w-2.5 h-2.5 text-purple-600" />
-                            <span>{app.emails.length}</span>
-                          </span>
-                        )}
-                      </span>
+                      </div>
                     </td>
 
                     {/* Platform */}
@@ -545,8 +558,20 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
                     </td>
 
                     {/* Status */}
-                    <td className="px-3 py-1 whitespace-nowrap align-middle">
-                      <StatusBadge status={app.status} size="sm" />
+                    <td className="px-3 py-1 whitespace-nowrap align-middle" onClick={(e) => e.stopPropagation()}>
+                      <StageSelectorDropdown
+                        currentStatus={app.status}
+                        onSelectStatus={(newStatus) => {
+                          if (onUpdateStatus) {
+                            onUpdateStatus(app.id, newStatus);
+                          } else {
+                            onBulkUpdateStatus([app.id], newStatus);
+                          }
+                        }}
+                        size="sm"
+                        variant="badge"
+                        align="left"
+                      />
                     </td>
 
                     {/* Days in stage */}
@@ -566,5 +591,6 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
         </table>
       </div>
     </div>
-  );
+  </div>
+);
 };

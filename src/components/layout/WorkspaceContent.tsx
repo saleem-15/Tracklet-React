@@ -1,7 +1,9 @@
 import { AlertTriangle, X } from 'lucide-react';
+import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { WorkspaceLoadingState } from './WorkspaceLoadingState';
 import { AllApplicationsTable } from '../AllApplicationsTable';
 import { ActivePipelineBoard, ActiveQuotaInfo } from '../ActivePipelineBoard';
+import { ArchiveRoutingBanner } from '../ArchiveRoutingBanner';
 import { ACTIVE_STATUSES, TERMINAL_STATUSES } from '../../lib/constants';
 import { ContactsView } from '../ContactsView';
 import { StatsView } from '../StatsView';
@@ -47,7 +49,13 @@ export function WorkspaceContent({ isLoading = false, activeQuota }: WorkspaceCo
     resetFilters,
     openMobileSidebar,
     openOnboardingModal,
+    layout,
+    setLayout,
+    filter,
+    setFilter,
   } = useNavigation();
+
+  const prefersReducedMotion = useReducedMotion();
 
   const {
     applications,
@@ -60,11 +68,9 @@ export function WorkspaceContent({ isLoading = false, activeQuota }: WorkspaceCo
     handleSortChange,
     handleBulkUpdateStatus,
     handleBulkDelete,
+    handleDeleteApplication,
     handleUpdatePipelineStatus,
-    handleExportCSV,
-    handleBatchImportApplications,
     handleSeedDemoData,
-    handleAccountDeleted,
   } = useApplicationsContext();
 
   const {
@@ -76,8 +82,6 @@ export function WorkspaceContent({ isLoading = false, activeQuota }: WorkspaceCo
   } = useContactsContext();
 
   const {
-    expirySettings,
-    updateExpirySettings,
     expiryThresholdHours,
   } = useSettings();
 
@@ -92,7 +96,7 @@ export function WorkspaceContent({ isLoading = false, activeQuota }: WorkspaceCo
     openOnboardingModal,
   });
 
-  const handleGuardedPipelineStatusUpdate = (id: string, newStatus: string) => {
+  const handleGuardedPipelineStatusUpdate = (id: string, newStatus: string, newOrder?: number) => {
     const targetApp = applications.find((a) => a.id === id);
     if (targetApp) {
       const isReactivating =
@@ -107,7 +111,7 @@ export function WorkspaceContent({ isLoading = false, activeQuota }: WorkspaceCo
         return;
       }
     }
-    handleUpdatePipelineStatus(id, newStatus);
+    handleUpdatePipelineStatus(id, newStatus, newOrder);
   };
 
   const handleGuardedBulkUpdateStatus = (ids: string[], newStatus: any) => {
@@ -126,24 +130,6 @@ export function WorkspaceContent({ isLoading = false, activeQuota }: WorkspaceCo
       }
     }
     return handleBulkUpdateStatus(ids, newStatus);
-  };
-
-  const handleGuardedBatchImport = (
-    newApps: any[]
-  ) => {
-    if (activeQuota) {
-      const newActiveCount = newApps.filter((a) => ACTIVE_STATUSES.includes(a.status as any)).length;
-      if (newActiveCount > 0 && activeQuota.current + newActiveCount > activeQuota.max) {
-        addToast(
-          'warning',
-          'Pipeline Capacity Reached',
-          `Importing ${newActiveCount} active application${newActiveCount === 1 ? '' : 's'} would exceed your Free tier limit of ${activeQuota.max}. Upgrade to Pro for unlimited applications.`
-        );
-        activeQuota.onUpgradeClick?.();
-        return;
-      }
-    }
-    return handleBatchImportApplications(newApps);
   };
 
   const handleGuardedOpenAddModal = () => {
@@ -208,35 +194,71 @@ export function WorkspaceContent({ isLoading = false, activeQuota }: WorkspaceCo
         </div>
       )}
 
-      {activeTab === 'all' && (
-        <AllApplicationsTable
-          applications={filteredApplications}
-          totalAppCount={applications.length}
-          onOpenAddModal={handleGuardedOpenAddModal}
-          onResetFilters={resetFilters}
-          onSeedDemoData={handleSeedDemoData}
-          selectedAppId={selectedAppId}
-          onSelectApp={(app) => setSelectedAppId(app.id)}
-          sort={sort}
-          onSortChange={handleSortChange}
-          onBulkUpdateStatus={handleGuardedBulkUpdateStatus}
-          onBulkDelete={handleBulkDelete}
-          onShowToast={addToast}
+      {/* Archive / Rejected Smart Routing Notice Banner */}
+      {(activeTab === 'all' || activeTab === 'pipeline') && (
+        <ArchiveRoutingBanner
+          status={filter.status}
+          onResetToActive={() => {
+            setFilter((prev) => ({ ...prev, status: 'Active' }));
+            setLayout('board');
+          }}
         />
       )}
 
-      {activeTab === 'pipeline' && (
-        <ActivePipelineBoard
-          applications={filteredApplications}
-          totalAppCount={applications.length}
-          onOpenAddModal={handleGuardedOpenAddModal}
-          onResetFilters={resetFilters}
-          onSeedDemoData={handleSeedDemoData}
-          selectedAppId={selectedAppId}
-          onSelectApp={(app) => setSelectedAppId(app.id)}
-          onUpdateStatus={handleGuardedPipelineStatusUpdate}
-          activeQuota={activeQuota}
-        />
+      {/* Unified Applications Hub Canvas: Dual-lens toggle between Board and Table */}
+      {(activeTab === 'all' || activeTab === 'pipeline') && (
+        <div className="flex-1 min-h-0 overflow-hidden relative">
+          <AnimatePresence initial={false}>
+            {layout === 'board' ? (
+              <motion.div
+                key="board"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: prefersReducedMotion ? 0 : 0.1, ease: 'easeOut' }}
+                className="absolute inset-0 flex flex-col min-h-0"
+              >
+                <ActivePipelineBoard
+                  applications={filteredApplications}
+                  totalAppCount={applications.length}
+                  onOpenAddModal={handleGuardedOpenAddModal}
+                  onResetFilters={resetFilters}
+                  onSeedDemoData={handleSeedDemoData}
+                  selectedAppId={selectedAppId}
+                  onSelectApp={(app) => setSelectedAppId(app.id)}
+                  onUpdateStatus={handleGuardedPipelineStatusUpdate}
+                  onDeleteApp={handleDeleteApplication}
+                  activeQuota={activeQuota}
+                />
+              </motion.div>
+            ) : (
+              <motion.div
+                key="table"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: prefersReducedMotion ? 0 : 0.1, ease: 'easeOut' }}
+                className="absolute inset-0 flex flex-col min-h-0"
+              >
+                <AllApplicationsTable
+                  applications={filteredApplications}
+                  totalAppCount={applications.length}
+                  onOpenAddModal={handleGuardedOpenAddModal}
+                  onResetFilters={resetFilters}
+                  onSeedDemoData={handleSeedDemoData}
+                  selectedAppId={selectedAppId}
+                  onSelectApp={(app) => setSelectedAppId(app.id)}
+                  sort={sort}
+                  onSortChange={handleSortChange}
+                  onBulkUpdateStatus={handleGuardedBulkUpdateStatus}
+                  onUpdateStatus={(id, newStatus) => handleGuardedPipelineStatusUpdate(id, newStatus)}
+                  onBulkDelete={handleBulkDelete}
+                  onShowToast={addToast}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       )}
 
       {activeTab === 'contacts' && (

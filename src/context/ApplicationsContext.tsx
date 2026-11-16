@@ -33,13 +33,13 @@ export interface ApplicationsContextType {
   handleBulkDelete: (ids: string[]) => Promise<void>;
   handleMergeAllDuplicates: () => Promise<void>;
   handleExportCSV: () => void;
-  handleUpdatePipelineStatus: (id: string, newStatus: string) => void;
+  handleUpdatePipelineStatus: (id: string, newStatus: string, newOrder?: number) => void;
   handleAccountDeleted: () => void;
   handleSeedDemoData: () => Promise<void>;
   registerContactSeeder: (fn: (() => Promise<void>) | null) => void;
 }
 
-const ApplicationsContext = createContext<ApplicationsContextType | null>(null);
+export const ApplicationsContext = createContext<ApplicationsContextType | null>(null);
 
 /**
  * ApplicationsProvider
@@ -89,12 +89,23 @@ export const ApplicationsProvider: React.FC<{ children: React.ReactNode }> = ({ 
     setIsDuplicateBannerDismissed(false);
   }, [user?.uid]);
 
-  const handleUpdatePipelineStatus = useCallback((id: string, newStatus: string) => {
-    handleUpdateApplication(id, {
-      status: newStatus as ApplicationStatus,
-      stageUpdatedAt: new Date().toISOString(),
-    });
-  }, [handleUpdateApplication]);
+  const handleUpdatePipelineStatus = useCallback((id: string, newStatus: string, newOrder?: number) => {
+    const currentApp = applicationsRef.current.find((a) => a.id === id);
+    const isStageChanged = currentApp && currentApp.status !== newStatus;
+
+    if (isStageChanged) {
+      handleUpdateApplication(id, {
+        status: newStatus as ApplicationStatus,
+        stageUpdatedAt: new Date().toISOString(),
+        ...(typeof newOrder === 'number' ? { order: newOrder } : {}),
+      });
+    } else if (typeof newOrder === 'number') {
+      // Reordering within the same stage: update order only, preserve stageUpdatedAt and no stage change toast
+      handleUpdateApplication(id, {
+        order: newOrder,
+      });
+    }
+  }, [applicationsRef, handleUpdateApplication]);
 
   const handleAccountDeleted = useCallback(() => {
     setApplications([]);

@@ -10,6 +10,8 @@ export interface StageSelectorDropdownProps {
   currentStatus: ApplicationStatus;
   onSelectStatus: (newStatus: ApplicationStatus) => void;
   size?: 'sm' | 'md';
+  variant?: 'default' | 'badge';
+  align?: 'left' | 'right';
   className?: string;
 }
 
@@ -17,9 +19,12 @@ export const StageSelectorDropdown: React.FC<StageSelectorDropdownProps> = ({
   currentStatus,
   onSelectStatus,
   size = 'sm',
+  variant = 'default',
+  align = 'right',
   className = '',
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [openUp, setOpenUp] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState<number>(-1);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const triggerButtonRef = useRef<HTMLButtonElement>(null);
@@ -35,6 +40,11 @@ export const StageSelectorDropdown: React.FC<StageSelectorDropdownProps> = ({
   useEffect(() => {
     if (isOpen) {
       setHighlightedIndex(currentIndex >= 0 ? currentIndex : 0);
+      if (triggerButtonRef.current) {
+        const rect = triggerButtonRef.current.getBoundingClientRect();
+        const spaceBelow = window.innerHeight - rect.bottom;
+        setOpenUp(spaceBelow < 280);
+      }
     }
   }, [isOpen, currentIndex]);
 
@@ -91,10 +101,16 @@ export const StageSelectorDropdown: React.FC<StageSelectorDropdownProps> = ({
     triggerButtonRef.current?.focus();
   };
 
+  const isBadge = variant === 'badge';
+
   const sizeClasses =
     size === 'sm'
       ? 'h-7 text-[11px] px-2 rounded-[10px]'
       : `${UI_TOKENS.controlMd} text-xs px-2.5`;
+
+  const triggerClasses = isBadge
+    ? `inline-flex items-center gap-1.5 border text-[11px] font-mono px-2 py-0.5 rounded-md font-medium tracking-tight transition-colors duration-150 cursor-pointer shadow-2xs group hover:brightness-95 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 ${currentConfig.bg} ${currentConfig.text} ${currentConfig.border}`
+    : `inline-flex items-center gap-1.5 border font-semibold tracking-tight transition-colors duration-150 cursor-pointer shadow-2xs group hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 ${sizeClasses} ${currentConfig.bg} ${currentConfig.text} ${currentConfig.border}`;
 
   return (
     <div className={`relative inline-block text-left ${className}`} ref={dropdownRef}>
@@ -111,14 +127,16 @@ export const StageSelectorDropdown: React.FC<StageSelectorDropdownProps> = ({
           e.stopPropagation();
           setIsOpen((prev) => !prev);
         }}
-        className={`inline-flex items-center gap-1.5 border font-semibold tracking-tight transition-all cursor-pointer shadow-2xs group hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 ${sizeClasses} ${currentConfig.bg} ${currentConfig.text} ${currentConfig.border}`}
+        className={triggerClasses}
       >
         <span className={`w-1.5 h-1.5 rounded-full ${currentConfig.dot} shrink-0`} />
-        <span>{currentStatus}</span>
+        <span className="whitespace-nowrap">{currentStatus}</span>
         <ChevronDown
-          className={`w-3 h-3 transition-transform duration-200 opacity-70 group-hover:opacity-100 ${
-            isOpen ? 'rotate-180' : ''
-          }`}
+          className={`transition-transform duration-200 ${
+            isBadge
+              ? 'w-2.5 h-2.5 opacity-40 group-hover:opacity-90 ml-0.5'
+              : 'w-3 h-3 opacity-70 group-hover:opacity-100'
+          } ${isOpen ? 'rotate-180' : ''}`}
         />
       </button>
 
@@ -134,8 +152,14 @@ export const StageSelectorDropdown: React.FC<StageSelectorDropdownProps> = ({
             initial="closed"
             animate="open"
             exit="closed"
-            style={{ transformOrigin: 'top right' }}
-            className="absolute right-0 mt-1.5 w-44 rounded-[12px] bg-white/95 backdrop-blur-md border border-slate-200/90 shadow-xl z-50 p-1.5 space-y-0.5 will-change-transform"
+            style={{
+              transformOrigin: openUp
+                ? align === 'left' ? 'bottom left' : 'bottom right'
+                : align === 'left' ? 'top left' : 'top right',
+            }}
+            className={`absolute ${align === 'left' ? 'left-0' : 'right-0'} ${
+              openUp ? 'bottom-full mb-1.5' : 'top-full mt-1.5'
+            } w-44 rounded-[12px] bg-white/95 backdrop-blur-md border border-slate-200/90 shadow-xl z-50 p-1.5 space-y-0.5 will-change-transform`}
           >
           <div className="px-2 py-1 text-[11px] font-mono font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-100 mb-1">
             Advance Stage
