@@ -34,6 +34,13 @@ export const LIFT_SPRING = { type: 'spring', stiffness: 520, damping: 34, mass: 
 /** Spring used for fluid card reordering, placeholder opening, and counter morphs */
 export const FLOW_SPRING = { type: 'spring', stiffness: 420, damping: 36, mass: 0.9 } as const;
 
+/** Standard dnd-kit drop easing curve: fast departure, smooth deceleration into slot */
+export const DROP_EASE = [0.25, 1, 0.5, 1] as const;
+
+/** Drop flight duration (<= 250ms pro SaaS motion standard) */
+export const DROP_DURATION_MS = 220;
+export const DROP_DURATION_SEC = 0.22;
+
 // ---------------------------------------------------------------------------
 // Base Transitions
 // ---------------------------------------------------------------------------

@@ -158,7 +158,7 @@ describe('PipelineCard Visual Hierarchy & Typography Discipline', () => {
     expect(dot?.textContent).toBe('·');
   });
 
-  it('formats task chip compactly preventing awkward cutoffs: Prepare architecture deck (Thu)', async () => {
+  it('renders quiet task count indicator in footer without dumping raw task text on card face', async () => {
     const app: Application = {
       id: 'app-linear',
       userId: 'user-1',
@@ -184,15 +184,16 @@ describe('PipelineCard Visual Hierarchy & Typography Discipline', () => {
       root.render(<PipelineCardShell app={app} />);
     });
 
-    const taskChip = container.querySelector('.bg-slate-50.border-slate-200\\/60');
-    expect(taskChip).not.toBeNull();
-    expect(taskChip?.className).toContain('text-slate-600');
-    expect(taskChip?.className).toContain('px-2');
-    expect(taskChip?.className).toContain('py-1');
-    expect(taskChip?.textContent).toBe('Prepare architecture deck (Thu)');
+    // Does NOT render noisy full task string on card face
+    expect(container.textContent).not.toContain('Prepare architecture deck');
+
+    // Renders quiet, compact task count in footer
+    const taskCountEl = container.querySelector('span[title="1 open task"]');
+    expect(taskCountEl).not.toBeNull();
+    expect(taskCountEl?.textContent).toBe('1');
   });
 
-  it('drops redundant "ago" suffix for active applications (e.g. 5d, Today)', async () => {
+  it('omits passive ticking day counters (e.g. 5d, Today) to maintain canvas calm', async () => {
     const app: Application = {
       id: 'app-active',
       userId: 'user-1',
@@ -210,11 +211,12 @@ describe('PipelineCard Visual Hierarchy & Typography Discipline', () => {
       root.render(<PipelineCardShell app={app} />);
     });
 
-    expect(container.textContent).toContain('5d');
-    expect(container.textContent).not.toContain('5d ago');
+    expect(container.textContent).not.toContain('5d');
+    expect(container.textContent).not.toContain('Today');
+    expect(container.textContent).not.toContain('ago');
   });
 
-  it('signals staleness directly on the timestamp (>14 days) and maintains clean card border', async () => {
+  it('eliminates anxiety-inducing stale warning badges and maintains clean card border', async () => {
     const app: Application = {
       id: 'app-stale',
       userId: 'user-1',
@@ -223,7 +225,7 @@ describe('PipelineCard Visual Hierarchy & Typography Discipline', () => {
       status: 'Applied',
       platform: 'Otta',
       dateApplied: '2026-06-01',
-      stageUpdatedAt: new Date(Date.now() - 18 * 24 * 60 * 60 * 1000).toISOString(), // 18d stale
+      stageUpdatedAt: new Date(Date.now() - 18 * 24 * 60 * 60 * 1000).toISOString(),
       createdAt: '2026-06-01T00:00:00.000Z',
       updatedAt: '2026-06-01T00:00:00.000Z',
     };
@@ -232,14 +234,11 @@ describe('PipelineCard Visual Hierarchy & Typography Discipline', () => {
       root.render(<PipelineCardShell app={app} />);
     });
 
-    // Timestamp shows amber indicator dot and status text
-    const staleTag = container.querySelector('span.text-amber-600.font-mono');
-    expect(staleTag).not.toBeNull();
-    expect(staleTag?.textContent).toContain('18d stale');
-    const amberDot = staleTag?.querySelector('.bg-amber-500');
-    expect(amberDot).not.toBeNull();
+    // No anxiety-inducing amber stale tags
+    expect(container.textContent).not.toContain('stale');
+    expect(container.querySelector('.bg-amber-500')).toBeNull();
 
-    // Card border must be clean slate-200/80, NOT ambiguous pink/rose border
+    // Card border remains clean slate-200/80
     const cardEl = container.firstElementChild as HTMLElement;
     expect(cardEl.className).toContain('border-slate-200/80');
     expect(cardEl.className).not.toContain('border-rose-200');
@@ -271,5 +270,39 @@ describe('PipelineCard Visual Hierarchy & Typography Discipline', () => {
     expect(cardEl.className).toContain('duration-150');
     expect(cardEl.className).toContain('cursor-grab');
     expect(cardEl.className).not.toContain('transition-all');
+  });
+
+  it('maintains resting card visual look (clean slate border and white background) during drag without blue border or blue ring', async () => {
+    const app: Application = {
+      id: 'app-drag',
+      userId: 'user-1',
+      company: 'Linear',
+      role: 'Staff Product Designer',
+      status: 'Interview',
+      platform: 'Referral',
+      dateApplied: '2026-07-20',
+      stageUpdatedAt: '2026-07-20T00:00:00.000Z',
+      createdAt: '2026-07-20T00:00:00.000Z',
+      updatedAt: '2026-07-20T00:00:00.000Z',
+    };
+
+    await act(async () => {
+      root.render(<PipelineCardShell app={app} isFloating={true} isDropping={false} />);
+    });
+
+    const cardEl = container.firstElementChild as HTMLElement;
+    // Exactly matches resting card border and background
+    expect(cardEl.className).toContain('bg-white');
+    expect(cardEl.className).toContain('border-slate-200/80');
+    expect(cardEl.className).not.toContain('border-blue-400');
+    expect(cardEl.className).not.toContain('ring-blue-500');
+
+    // Natural elevation shadow and subtle ring
+    expect(cardEl.className).toContain('shadow-xl');
+    expect(cardEl.className).toContain('ring-slate-900/5');
+
+    // Renders context menu button placeholder so header layout does not shift
+    const menuPlaceholder = container.querySelector('.w-6.h-6');
+    expect(menuPlaceholder).not.toBeNull();
   });
 });

@@ -229,8 +229,8 @@ export function readUrlState(): UrlState {
 
   const rawLayout = params.get(QP.LAYOUT);
   let layout: ApplicationLayout = 'board';
-  if (filter.status === 'Archived' || filter.status === 'Rejected') {
-    // Smart Status routing: terminal/archived records always prefer table layout for dense audit
+  if (filter.status !== 'All' && filter.status !== 'Active') {
+    // Smart Status routing: specific single-status filtering always opens in table layout for focused ledger audit
     layout = 'table';
   } else if (rawLayout === 'board' || rawLayout === 'table') {
     layout = rawLayout;

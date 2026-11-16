@@ -1,9 +1,8 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { CheckSquare, ChevronRight } from 'lucide-react';
+import { CheckSquare, ChevronRight, MoreHorizontal } from 'lucide-react';
 import { Application, ApplicationStatus } from '../../types';
 import { CompanyLogo } from '../CompanyLogo';
-import { calculateDaysInStage } from '../../lib/sampleData';
 import { FLOW_SPRING } from '../../lib/motion';
 import { formatSalaryCompact } from '../../lib/salaryUtils';
 import { PipelineCardContextMenu } from './PipelineCardContextMenu';
@@ -12,6 +11,7 @@ export interface PipelineCardShellProps {
   app: Application;
   colTitle?: string;
   isFloating?: boolean;
+  isDropping?: boolean;
   isSelected?: boolean;
   nextColumn?: { status: ApplicationStatus; title: string } | null;
   onQuickAdvance?: (e: React.SyntheticEvent, nextStatus: ApplicationStatus) => void;
@@ -60,42 +60,11 @@ function getDisplaySalary(app: Application): string | null {
   return null;
 }
 
-function formatTaskLabel(task: { title: string; dueDate?: string }): string {
-  let title = task.title.trim();
-
-  const dayMatch = title.match(/\b(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)\b/i);
-  const dayName = dayMatch ? dayMatch[1].slice(0, 3) : null;
-
-  title = title
-    .replace(/\s+(?:for|on)\s+(?:the\s+)?(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)(?:\s+(?:panel|interview|call|round|loop))?/i, '')
-    .trim();
-
-  if (dayName && !title.includes('(')) {
-    return `${title} (${dayName})`;
-  }
-
-  if (task.dueDate) {
-    const rawDue = task.dueDate.trim();
-    if (/^\d{4}-\d{2}-\d{2}$/.test(rawDue)) {
-      try {
-        const [y, m, d] = rawDue.split('-').map(Number);
-        const dt = new Date(y, m - 1, d);
-        const shortDay = dt.toLocaleDateString('en-US', { weekday: 'short' });
-        return `${title} (${shortDay})`;
-      } catch {
-        return `${title} (${rawDue})`;
-      }
-    }
-    return `${title} (${rawDue})`;
-  }
-
-  return title;
-}
-
 export const PipelineCardShell: React.FC<PipelineCardShellProps> = ({
   app,
   colTitle: _colTitle,
   isFloating = false,
+  isDropping = false,
   isSelected = false,
   nextColumn,
   onQuickAdvance,
@@ -105,52 +74,11 @@ export const PipelineCardShell: React.FC<PipelineCardShellProps> = ({
   onToggleMenu,
   onCloseMenu,
 }) => {
-  const daysInStage = calculateDaysInStage(app.stageUpdatedAt);
   const jobMetaParts = getJobMetaParts(app);
   const rawSalary = getDisplaySalary(app);
   const compactSalary = formatSalaryCompact(rawSalary);
-
   const pendingTasks = app.tasks?.filter((t) => !t.completed) || [];
-  const rawInterview = app as unknown as { nextInterview?: string; interviewDate?: string };
-  const interviewInfo = rawInterview.nextInterview || rawInterview.interviewDate;
-
-  let actionableSignal: React.ReactNode = null;
-  if (interviewInfo) {
-    actionableSignal = (
-      <div className="max-w-full text-xs font-medium text-purple-700 bg-purple-50/80 border border-purple-200/60 rounded-md px-2 py-1 flex items-center gap-1.5 min-w-0">
-        <span className="w-1.5 h-1.5 rounded-full bg-purple-500 shrink-0" />
-        <span className="max-w-[200px] truncate min-w-0">{interviewInfo}</span>
-      </div>
-    );
-  } else if (pendingTasks.length > 0) {
-    const firstTask = pendingTasks[0];
-    const taskLabel = formatTaskLabel(firstTask);
-    actionableSignal = (
-      <div className="max-w-full text-xs font-medium text-slate-600 bg-slate-50 border border-slate-200/60 rounded-md px-2 py-1 flex items-center gap-1.5 min-w-0">
-        <CheckSquare className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-        <span className="max-w-[200px] truncate min-w-0">{taskLabel}</span>
-      </div>
-    );
-  }
-
-  const isStale = daysInStage > 14;
-
-  const recencyDisplay = isStale ? (
-    <span
-      className="inline-flex items-center gap-1 text-amber-600 font-mono text-xs shrink-0 font-medium"
-      title={`In ${app.status} stage for ${daysInStage} days (action recommended)`}
-    >
-      <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
-      <span>{daysInStage}d stale</span>
-    </span>
-  ) : (
-    <span
-      className="text-slate-500 font-mono text-xs shrink-0"
-      title={`In ${app.status} stage for ${daysInStage} day${daysInStage === 1 ? '' : 's'}`}
-    >
-      {daysInStage === 0 ? 'Today' : `${daysInStage}d`}
-    </span>
-  );
+  const hasFooter = Boolean(compactSalary || pendingTasks.length > 0 || (nextColumn && onQuickAdvance));
 
   return (
     <div
@@ -158,10 +86,12 @@ export const PipelineCardShell: React.FC<PipelineCardShellProps> = ({
         isMenuOpen ? 'relative z-40' : ''
       } ${
         isFloating
-          ? 'bg-white border-blue-400 ring-2 ring-blue-500/30 shadow-[0_16px_32px_-12px_rgb(0_0_0/0.28)]'
+          ? isDropping
+            ? 'bg-white border-slate-200/80 shadow-md ring-1 ring-slate-900/10 transition-shadow duration-200'
+            : 'bg-white border-slate-200/80 shadow-xl shadow-slate-900/12 ring-1 ring-slate-900/5'
           : isSelected
           ? 'bg-blue-50/70 border-blue-500/80 ring-1 ring-blue-500/20 shadow-xs'
-          : 'bg-white rounded-xl border border-slate-200/80 shadow-2xs hover:border-slate-300 hover:shadow-xs'
+          : 'bg-white border-slate-200/80 shadow-2xs hover:border-slate-300 hover:shadow-xs'
       }`}
     >
       {/* Line 1: [Uniform Logo Container] Company Title + [··· Context Menu Button] */}
@@ -179,7 +109,14 @@ export const PipelineCardShell: React.FC<PipelineCardShellProps> = ({
           </span>
         </div>
 
-        {!isFloating && (
+        {isFloating ? (
+          <div
+            aria-hidden="true"
+            className="w-6 h-6 rounded-md text-slate-400 flex items-center justify-center shrink-0 opacity-60"
+          >
+            <MoreHorizontal className="w-3.5 h-3.5" />
+          </div>
+        ) : (
           <PipelineCardContextMenu
             app={app}
             isOpen={isMenuOpen}
@@ -198,7 +135,7 @@ export const PipelineCardShell: React.FC<PipelineCardShellProps> = ({
 
       {/* Line 3: Work Mode & Location in Clean Sans */}
       {jobMetaParts.length > 0 ? (
-        <p className="font-sans text-xs text-slate-500 truncate text-start mb-2.5">
+        <p className={`font-sans text-xs text-slate-500 truncate text-start ${hasFooter ? 'mb-2.5' : ''}`}>
           {jobMetaParts.map((part, idx) => (
             <React.Fragment key={idx}>
               {idx > 0 && <span className="text-slate-300 mx-1 select-none">·</span>}
@@ -208,41 +145,44 @@ export const PipelineCardShell: React.FC<PipelineCardShellProps> = ({
         </p>
       ) : null}
 
-      {/* Line 4: Compact Single-Line Task Chip / Actionable Signal */}
-      {actionableSignal ? (
-        <div className="mb-2.5 min-w-0">
-          {actionableSignal}
-        </div>
-      ) : null}
-
-      {/* Footer: Standardized Compact Salary + Recency / Staleness */}
-      <div className="flex items-center justify-between text-xs pt-2.5 border-t border-slate-100/80 gap-2">
-        {compactSalary ? (
-          <span className="font-mono tabular-nums text-xs font-semibold text-slate-700 truncate">
-            {compactSalary}
-          </span>
-        ) : (
-          <span />
-        )}
-
-        <div className="flex items-center gap-2 shrink-0">
-          {recencyDisplay}
-
-          {/* Mobile Touch Quick Stage Advance Affordance */}
-          {nextColumn && onQuickAdvance && (
-            <button
-              type="button"
-              onClick={(e) => onQuickAdvance(e, nextColumn.status)}
-              title={`Advance to ${nextColumn.title}`}
-              aria-label={`Advance to ${nextColumn.title}`}
-              className="md:hidden flex items-center gap-0.5 font-mono text-[11px] font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 px-2 py-0.5 rounded-md border border-blue-200/80 transition-colors cursor-pointer min-h-[26px]"
-            >
-              <span>{nextColumn.title}</span>
-              <ChevronRight className="w-3 h-3 text-blue-600" />
-            </button>
+      {/* Footer: Standardized Compact Salary + Optional Quiet Task Count + Mobile Advance */}
+      {hasFooter && (
+        <div className="flex items-center justify-between text-xs pt-2.5 border-t border-slate-100/80 gap-2">
+          {compactSalary ? (
+            <span className="font-mono tabular-nums text-xs font-semibold text-slate-700 truncate">
+              {compactSalary}
+            </span>
+          ) : (
+            <span />
           )}
+
+          <div className="flex items-center gap-2 shrink-0">
+            {pendingTasks.length > 0 && (
+              <span
+                className="inline-flex items-center gap-1 font-mono text-[11px] font-medium text-slate-400 hover:text-slate-600 transition-colors"
+                title={`${pendingTasks.length} open task${pendingTasks.length === 1 ? '' : 's'}`}
+              >
+                <CheckSquare className="w-3 h-3 text-slate-400 shrink-0" />
+                <span>{pendingTasks.length}</span>
+              </span>
+            )}
+
+            {/* Mobile Touch Quick Stage Advance Affordance */}
+            {nextColumn && onQuickAdvance && (
+              <button
+                type="button"
+                onClick={(e) => onQuickAdvance(e, nextColumn.status)}
+                title={`Advance to ${nextColumn.title}`}
+                aria-label={`Advance to ${nextColumn.title}`}
+                className="md:hidden flex items-center gap-0.5 font-mono text-[11px] font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 px-2 py-0.5 rounded-md border border-blue-200/80 transition-colors cursor-pointer min-h-[26px]"
+              >
+                <span>{nextColumn.title}</span>
+                <ChevronRight className="w-3 h-3 text-blue-600" />
+              </button>
+            )}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

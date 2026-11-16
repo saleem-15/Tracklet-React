@@ -207,7 +207,7 @@ export function WorkspaceContent({ isLoading = false, activeQuota }: WorkspaceCo
 
       {/* Unified Applications Hub Canvas: Dual-lens toggle between Board and Table */}
       {(activeTab === 'all' || activeTab === 'pipeline') && (
-        <div className="flex-1 flex flex-col min-h-0 overflow-hidden relative">
+        <div className="flex-1 min-h-0 overflow-hidden relative">
           <AnimatePresence initial={false}>
             {layout === 'board' ? (
               <motion.div
@@ -215,8 +215,8 @@ export function WorkspaceContent({ isLoading = false, activeQuota }: WorkspaceCo
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                transition={{ duration: prefersReducedMotion ? 0 : 0.15, ease: 'easeOut' }}
-                className="flex-1 flex flex-col min-h-0 h-full w-full"
+                transition={{ duration: prefersReducedMotion ? 0 : 0.1, ease: 'easeOut' }}
+                className="absolute inset-0 flex flex-col min-h-0"
               >
                 <ActivePipelineBoard
                   applications={filteredApplications}
@@ -237,8 +237,8 @@ export function WorkspaceContent({ isLoading = false, activeQuota }: WorkspaceCo
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                transition={{ duration: prefersReducedMotion ? 0 : 0.15, ease: 'easeOut' }}
-                className="flex-1 flex flex-col min-h-0 h-full w-full"
+                transition={{ duration: prefersReducedMotion ? 0 : 0.1, ease: 'easeOut' }}
+                className="absolute inset-0 flex flex-col min-h-0"
               >
                 <AllApplicationsTable
                   applications={filteredApplications}
@@ -251,6 +251,7 @@ export function WorkspaceContent({ isLoading = false, activeQuota }: WorkspaceCo
                   sort={sort}
                   onSortChange={handleSortChange}
                   onBulkUpdateStatus={handleGuardedBulkUpdateStatus}
+                  onUpdateStatus={(id, newStatus) => handleGuardedPipelineStatusUpdate(id, newStatus)}
                   onBulkDelete={handleBulkDelete}
                   onShowToast={addToast}
                 />

@@ -3,6 +3,8 @@ import React, { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { ActivePipelineBoard, calculateNewOrder } from '../../src/components/ActivePipelineBoard';
 import { Application } from '../../src/types';
+import { PipelineCardShell } from '../../src/components/pipeline/PipelineCard';
+import { DROP_EASE, DROP_DURATION_SEC } from '../../src/lib/motion';
 
 // Mock sample applications with full valid schema
 const mockApplications: Application[] = [
@@ -101,7 +103,7 @@ describe('ActivePipelineBoard Motion, Drag & Gesture Architecture', () => {
     expect(container.textContent).toContain('Figma');
   });
 
-  it('preserves ambient canvas calm without banner noise and displays in-context card staleness', async () => {
+  it('preserves ambient canvas calm without banner noise or anxiety-inducing stale counters', async () => {
     await act(async () => {
       root.render(
         <ActivePipelineBoard
@@ -117,8 +119,10 @@ describe('ActivePipelineBoard Motion, Drag & Gesture Architecture', () => {
     expect(container.textContent).not.toContain('Attention Needed');
     expect(container.querySelector('button[title="Dismiss announcement"]')).toBeNull();
 
-    // Contextual staleness: surfaced directly on the affected card
-    expect(container.textContent).toContain('16d stale');
+    // Calm cards: no guilt-inducing stale warning counters
+    expect(container.textContent).not.toContain('stale');
+    const cardDots = container.querySelectorAll('[data-kanban-card] .bg-amber-500');
+    expect(cardDots.length).toBe(0);
   });
 
   it('selects application when card is clicked without dragging', async () => {
@@ -558,6 +562,31 @@ describe('ActivePipelineBoard Motion, Drag & Gesture Architecture', () => {
       // High priority (order: 1000) must render first despite older date
       expect(renderedCards[0].getAttribute('data-kanban-card')).toBe('app-high-priority');
       expect(renderedCards[1].getAttribute('data-kanban-card')).toBe('app-low-priority');
+    });
+  });
+
+  describe('dnd-kit Drop Animation Architecture', () => {
+    it('exports and conforms to dnd-kit drop easing curve and duration tokens', () => {
+      expect(DROP_EASE).toEqual([0.25, 1, 0.5, 1]);
+      expect(DROP_DURATION_SEC).toBe(0.22);
+    });
+
+    it('renders PipelineCardShell in dropping state with softened shadow and ring transition', async () => {
+      await act(async () => {
+        root.render(
+          <PipelineCardShell
+            app={mockApplications[0]}
+            isFloating={true}
+            isDropping={true}
+          />
+        );
+      });
+
+      const cardEl = container.firstElementChild as HTMLElement;
+      expect(cardEl.className).toContain('shadow-md');
+      expect(cardEl.className).toContain('ring-slate-900/10');
+      expect(cardEl.className).toContain('transition-shadow');
+      expect(cardEl.className).toContain('duration-200');
     });
   });
 });

@@ -1,12 +1,12 @@
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence, LayoutGroup, useMotionValue, useReducedMotion } from 'motion/react';
+import { motion, AnimatePresence, LayoutGroup, useMotionValue, useReducedMotion, animate } from 'motion/react';
 import { Application, ApplicationStatus } from '../types';
 import { EmptyState } from './EmptyState';
 import { OnboardingEmptyState } from './OnboardingEmptyState';
 import { PipelineCard, PipelineCardShell } from './pipeline/PipelineCard';
 import { PipelineScrollRail } from './pipeline/PipelineScrollRail';
 import { ArrowRight } from 'lucide-react';
-import { LIFT_SPRING, FLOW_SPRING } from '../lib/motion';
+import { LIFT_SPRING, FLOW_SPRING, DROP_EASE, DROP_DURATION_SEC } from '../lib/motion';
 
 export interface ActiveQuotaInfo {
   current: number;
@@ -99,6 +99,7 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
 }) => {
   const [drag, setDrag] = useState<DragState | null>(null);
   const [slot, setSlot] = useState<Slot | null>(null);
+  const [isDropping, setIsDropping] = useState(false);
   const [grabbed, setGrabbed] = useState<string | null>(null);
   const [activeMenuAppId, setActiveMenuAppId] = useState<string | null>(null);
   const [announcement, setAnnouncement] = useState('');
@@ -116,6 +117,8 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
 
   const dragRef = useRef<DragState | null>(null);
   const slotRef = useRef<Slot | null>(null);
+  const isDroppingRef = useRef(false);
+  const dropAnimControlsRef = useRef<{ stop: () => void } | null>(null);
   const snapRef = useRef(new Map<ApplicationStatus, number[]>());
   const originSlotRef = useRef<{ col: ApplicationStatus; index: number } | null>(null);
   const dragOccurredRef = useRef(false);
@@ -134,6 +137,12 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
   useEffect(() => {
     applicationsRef.current = applications;
   }, [applications]);
+
+  useEffect(() => {
+    return () => {
+      dropAnimControlsRef.current?.stop();
+    };
+  }, []);
 
   // Horizontal edge fade detection
   const syncEdges = useCallback(() => {
@@ -259,28 +268,158 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
     autoScroll.current = 0;
   }, []);
 
+  const cancelPointerDrag = useCallback(() => {
+    if (isDroppingRef.current) return;
+    const d = dragRef.current;
+    if (!d) return;
+
+    stopAutoScroll();
+    pendingDragRef.current = null;
+
+    const originEl = cardRefs.current.get(d.taskId);
+    const originRect = originEl?.getBoundingClientRect();
+
+    if (reduceMotion || !originRect || (originRect.width === 0 && originRect.height === 0)) {
+      dragRef.current = null;
+      slotRef.current = null;
+      setDrag(null);
+      setSlot(null);
+      return;
+    }
+
+    setIsDropping(true);
+    isDroppingRef.current = true;
+
+    let doneCount = 0;
+    const finish = () => {
+      doneCount++;
+      if (doneCount >= 2) {
+        dragRef.current = null;
+        slotRef.current = null;
+        isDroppingRef.current = false;
+        setIsDropping(false);
+        setDrag(null);
+        setSlot(null);
+      }
+    };
+
+    try {
+      const ctrlX = animate(x, originRect.left, {
+        duration: DROP_DURATION_SEC,
+        ease: DROP_EASE,
+        onComplete: finish,
+      });
+      const ctrlY = animate(y, originRect.top, {
+        duration: DROP_DURATION_SEC,
+        ease: DROP_EASE,
+        onComplete: finish,
+      });
+      dropAnimControlsRef.current = {
+        stop: () => {
+          ctrlX.stop();
+          ctrlY.stop();
+        },
+      };
+    } catch {
+      dragRef.current = null;
+      slotRef.current = null;
+      isDroppingRef.current = false;
+      setIsDropping(false);
+      setDrag(null);
+      setSlot(null);
+    }
+  }, [reduceMotion, stopAutoScroll, x, y]);
+
   const endDrag = useCallback(() => {
+    if (isDroppingRef.current) return;
     const d = dragRef.current;
     const s = slotRef.current;
-    if (d && s) {
-      const destApps = applicationsRef.current
-        .filter((app) => app.status === s.col && app.id !== d.taskId)
-        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-
-      const newOrder = calculateNewOrder(s.index, destApps);
-      onUpdateStatus(d.taskId, s.col, newOrder);
+    if (!d || !s) {
+      dragRef.current = null;
+      slotRef.current = null;
+      pendingDragRef.current = null;
+      stopAutoScroll();
+      setDrag(null);
+      setSlot(null);
+      return;
     }
-    dragRef.current = null;
-    slotRef.current = null;
-    pendingDragRef.current = null;
+
+    const destApps = applicationsRef.current
+      .filter((app) => app.status === s.col && app.id !== d.taskId)
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+
+    const newOrder = calculateNewOrder(s.index, destApps);
+
     stopAutoScroll();
-    setDrag(null);
-    setSlot(null);
-  }, [onUpdateStatus, stopAutoScroll]);
+    pendingDragRef.current = null;
+
+    // Find the placeholder DOM node to measure destination rect
+    const placeholderEl = document.querySelector('[data-kanban-placeholder]') as HTMLElement | null;
+    const targetRect = placeholderEl?.getBoundingClientRect();
+
+    const hasValidTarget = targetRect && targetRect.width > 0 && targetRect.height > 0;
+
+    if (reduceMotion || !hasValidTarget) {
+      // In reduced motion or headless test environments, commit immediately
+      onUpdateStatus(d.taskId, s.col, newOrder);
+      dragRef.current = null;
+      slotRef.current = null;
+      setDrag(null);
+      setSlot(null);
+      return;
+    }
+
+    // Begin @dnd-kit style drop flight animation
+    setIsDropping(true);
+    isDroppingRef.current = true;
+
+    let doneCount = 0;
+    const finish = () => {
+      doneCount++;
+      if (doneCount >= 2) {
+        onUpdateStatus(d.taskId, s.col, newOrder);
+        dragRef.current = null;
+        slotRef.current = null;
+        isDroppingRef.current = false;
+        setIsDropping(false);
+        setDrag(null);
+        setSlot(null);
+      }
+    };
+
+    try {
+      const ctrlX = animate(x, targetRect.left, {
+        duration: DROP_DURATION_SEC,
+        ease: DROP_EASE,
+        onComplete: finish,
+      });
+      const ctrlY = animate(y, targetRect.top, {
+        duration: DROP_DURATION_SEC,
+        ease: DROP_EASE,
+        onComplete: finish,
+      });
+      dropAnimControlsRef.current = {
+        stop: () => {
+          ctrlX.stop();
+          ctrlY.stop();
+        },
+      };
+    } catch {
+      // Fallback
+      onUpdateStatus(d.taskId, s.col, newOrder);
+      dragRef.current = null;
+      slotRef.current = null;
+      isDroppingRef.current = false;
+      setIsDropping(false);
+      setDrag(null);
+      setSlot(null);
+    }
+  }, [onUpdateStatus, reduceMotion, stopAutoScroll, x, y]);
 
   // Pointer drag event handlers
   useEffect(() => {
     const onMove = (e: PointerEvent) => {
+      if (isDroppingRef.current) return;
       const pending = pendingDragRef.current;
       if (pending && !dragRef.current) {
         const dist = Math.hypot(e.clientX - pending.startX, e.clientY - pending.startY);
@@ -331,6 +470,7 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
     };
 
     const onUp = () => {
+      if (isDroppingRef.current) return;
       if (dragRef.current) {
         endDrag();
       } else {
@@ -339,17 +479,26 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
       }
     };
 
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && dragRef.current && !isDroppingRef.current) {
+        e.preventDefault();
+        cancelPointerDrag();
+      }
+    };
+
     window.addEventListener('pointermove', onMove);
     window.addEventListener('pointerup', onUp);
     window.addEventListener('pointercancel', onUp);
+    window.addEventListener('keydown', onKeyDown);
 
     return () => {
       window.removeEventListener('pointermove', onMove);
       window.removeEventListener('pointerup', onUp);
       window.removeEventListener('pointercancel', onUp);
+      window.removeEventListener('keydown', onKeyDown);
       stopAutoScroll();
     };
-  }, [endDrag, slotAt, snapshot, startAutoScroll, stopAutoScroll, x, y]);
+  }, [cancelPointerDrag, endDrag, slotAt, snapshot, startAutoScroll, stopAutoScroll, x, y]);
 
   const handlePointerDownCard = (
     e: React.PointerEvent<HTMLDivElement>,
@@ -357,6 +506,7 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
     colStatus: ApplicationStatus,
     index: number
   ) => {
+    if (isDroppingRef.current) return;
     if (e.button !== 0) return;
     if ((e.target as HTMLElement).closest('button, a')) return;
     dragOccurredRef.current = false;
@@ -461,6 +611,15 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
     return drag ? applications.find((a) => a.id === drag.taskId) ?? null : null;
   }, [applications, drag]);
 
+  const draggedNextColumn = useMemo(() => {
+    if (!draggedApp) return null;
+    const colIndex = PIPELINE_COLUMNS.findIndex((c) => c.status === draggedApp.status);
+    if (colIndex >= 0 && colIndex < PIPELINE_COLUMNS.length - 1) {
+      return PIPELINE_COLUMNS[colIndex + 1];
+    }
+    return null;
+  }, [draggedApp]);
+
   return (
     <div className="flex-1 bg-slate-50/60 flex flex-col h-full min-h-0 overflow-hidden relative">
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
@@ -542,7 +701,7 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
                   const columnApps = applications
                     .filter((app) => app.status === col.status)
                     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-                  const isTargeting = slot?.col === col.status && !!drag;
+                  const isTargeting = slot?.col === col.status && (!!drag || isDropping);
                   const prevColumn = index > 0 ? PIPELINE_COLUMNS[index - 1] : null;
                   const nextColumn = index < PIPELINE_COLUMNS.length - 1 ? PIPELINE_COLUMNS[index + 1] : null;
 
@@ -592,14 +751,18 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
                                       layout
                                       data-kanban-placeholder
                                       initial={{ opacity: 0, scaleY: 0.7 }}
-                                      animate={{ opacity: 1, scaleY: 1 }}
+                                      animate={{ opacity: isDropping ? 0.35 : 1, scaleY: 1 }}
                                       exit={{ opacity: 0, scaleY: 0.7 }}
                                       transition={FLOW_SPRING}
                                       style={{ height: drag?.height || 88 }}
-                                      className="origin-top rounded-xl border-2 border-dashed border-blue-400 bg-blue-50/70 flex items-center justify-center gap-1.5 text-blue-700 text-xs font-semibold shrink-0"
+                                      className={`origin-top rounded-xl border-2 border-dashed flex items-center justify-center gap-1.5 text-xs font-semibold shrink-0 transition-colors duration-150 ${
+                                        isDropping
+                                          ? 'border-blue-300 bg-blue-50/30 text-blue-400'
+                                          : 'border-blue-400 bg-blue-50/70 text-blue-700'
+                                      }`}
                                     >
                                       <ArrowRight className="w-3.5 h-3.5" />
-                                      <span>Drop application here</span>
+                                      <span>{isDropping ? 'Placing application...' : 'Drop application here'}</span>
                                     </motion.div>
                                   )}
                                   <PipelineCard
@@ -643,14 +806,18 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
                                 layout
                                 data-kanban-placeholder
                                 initial={{ opacity: 0, scaleY: 0.7 }}
-                                animate={{ opacity: 1, scaleY: 1 }}
+                                animate={{ opacity: isDropping ? 0.35 : 1, scaleY: 1 }}
                                 exit={{ opacity: 0, scaleY: 0.7 }}
                                 transition={FLOW_SPRING}
                                 style={{ height: drag?.height || 88 }}
-                                className="origin-top rounded-xl border-2 border-dashed border-blue-400 bg-blue-50/70 flex items-center justify-center gap-1.5 text-blue-700 text-xs font-semibold shrink-0"
+                                className={`origin-top rounded-xl border-2 border-dashed flex items-center justify-center gap-1.5 text-xs font-semibold shrink-0 transition-colors duration-150 ${
+                                  isDropping
+                                    ? 'border-blue-300 bg-blue-50/30 text-blue-400'
+                                    : 'border-blue-400 bg-blue-50/70 text-blue-700'
+                                }`}
                               >
                                 <ArrowRight className="w-3.5 h-3.5" />
-                                <span>Drop application here</span>
+                                <span>{isDropping ? 'Placing application...' : 'Drop application here'}</span>
                               </motion.div>
                             )}
                           </>
@@ -673,12 +840,24 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
             <motion.div
               style={{ x, y, width: drag.width }}
               initial={{ scale: 1, rotate: 0, opacity: 1 }}
-              animate={{ scale: reduceMotion ? 1 : 1.03, rotate: reduceMotion ? 0 : 1.6, opacity: 1 }}
+              animate={{
+                scale: 1,
+                rotate: 0,
+                opacity: 1,
+              }}
               exit={{ scale: 1, rotate: 0, opacity: 0 }}
-              transition={LIFT_SPRING}
+              transition={{
+                duration: isDropping ? DROP_DURATION_SEC : 0.15,
+                ease: DROP_EASE,
+              }}
               className="pointer-events-none fixed left-0 top-0 z-50 origin-top-left"
             >
-              <PipelineCardShell app={draggedApp} isFloating />
+              <PipelineCardShell
+                app={draggedApp}
+                isFloating
+                isDropping={isDropping}
+                nextColumn={draggedNextColumn}
+              />
             </motion.div>
           )}
         </AnimatePresence>

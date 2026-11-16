@@ -15,7 +15,7 @@ Tracklet is a **commercial, closed-source B2C SaaS web application and Chrome Ex
   - SpecKit Constitution: `.specify/memory/constitution.md`.
   - Feature Specs: `specs/` (e.g., `specs/012-contact-email-log`).
   - Architecture Decision Records: `docs/adr/0001` through `0015`.
-  - Design Decision Records: `docs/ddr/0001` (Canvas Ambient Calm & Notification Severity Hierarchy).
+  - Design Decision Records: `docs/ddr/0001` (Canvas Ambient Calm) and `docs/ddr/0002` (Dual-Lens Layout Dynamics & Single-Stage Table Affinity).
   - Documentation Standards: `.agents/rules/documentation-standards.md`.
 
 ## 3. Mandatory Architectural Guardrails
@@ -23,7 +23,7 @@ Tracklet is a **commercial, closed-source B2C SaaS web application and Chrome Ex
 2. **SaaS Entitlements:** Always account for `user.planTier` (`'free' | 'pro'`) when modifying application creation, scraping (`api/scrape-job.ts`), ATS autofill, resume uploads, or analytics views (`StatsView.tsx`).
 3. **API Security:** Never expose unauthenticated serverless endpoints in `/api`. Always verify the caller's Firebase Auth ID token.
 4. **Telemetry:** ADR 0004 (conditional/opt-in telemetry) is superseded by ADR 0011. Error tracking (Sentry) and funnel analytics (PostHog) are standard across authenticated views with PII scrubbing.
-5. **UI/UX Craft & Ambient Calm:** Adhere strictly to `.agents/rules/ui-ux-standards.md`, `.agents/rules/anti-slop-standards.md`, and `DESIGN.md`. Full-width ambient warning banners on operational canvases are banned (DDR 0001).
+5. **UI/UX Craft & Ambient Calm:** Adhere strictly to `.agents/rules/ui-ux-standards.md`, `.agents/rules/anti-slop-standards.md`, and `DESIGN.md`. Full-width ambient warning banners on operational canvases are banned (DDR 0001), and dual-lens single-stage filters enforce table affinity (DDR 0002).
 6. **Documentation Governance:** Follow `.agents/rules/documentation-standards.md`. Apply the 4-Gate Decision Test before creating new ADRs or DDRs to prevent documentation bloat. ADRs and DDRs are immutable; never rewrite history.
 
 ## 4. Workflow & SpecKit Usage

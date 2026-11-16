@@ -68,6 +68,7 @@ This document establishes the mandatory interaction rules, visual standards, and
 1. **No `transition-all` on Complex Box Models**: Never use `transition-all` on navigation items, sidebar tabs, or cards where borders, rings, or font-weights change. Use `transition-colors duration-150` instead.
 2. **Constant Font-Weights**: Do not transition from `font-normal` to `font-bold` between inactive and active states. Browsers snap font-weight abruptly, altering character widths and causing layout jumps. Keep font-weights constant (e.g. `font-semibold` in both states).
 3. **Zero Layout Shift Borders**: If an active state displays a border (e.g. `border border-slate-200`), ensure the inactive state has an identical width transparent border (`border border-transparent`) so activating the item does not alter its dimensions.
+4. **Spatial View Transition Layering**: When switching between full-canvas view modes (e.g. Board $\leftrightarrow$ Table in `WorkspaceContent.tsx`), use spatial layering (`className="absolute inset-0 flex flex-col min-h-0"`) inside a relative container with a fast 100ms opacity crossfade. Avoid Framer Motion's `mode="wait"`, which causes layout-collapse empty flashes and unmount delays that break synchronous component tests.
 
 ---
 
@@ -315,4 +316,35 @@ If deep architectural or guideline context is needed, consult the distilled repo
 
 3. **Account-Level Exceptions**:
    - Only true system-blocking account states (e.g. hard plan quota enforcement or unverified email preventing writes) may render persistent banners, and they MUST be located in the top-level application shell (`App.tsx`), never inside nested workspace views.
+
+---
+
+## 21. Dual-Lens View Dynamics & Single-Stage Table Affinity (DDR-0002)
+
+**Rule**: In the Unified Applications Hub (`/applications?layout=table|board`), the system must maintain the structural integrity of Kanban columns and automatically route users to the appropriate lens based on filter intent.
+
+1. **Single-Stage Filter Auto-Routes to Table**:
+   - In Kanban boards, horizontal columns represent lifecycle stages. Isolating a single stage (`Saved`, `Applied`, `Screening`, `Interview`, `Offer`, `Rejected`, `Archived`) leaves 4 of 5 columns empty, destroying spatial scannability (the "Ghost Town" trap).
+   - Selecting any single status in `ApplicationsFilterBar.tsx` MUST auto-switch the layout to `'table'` (`onLayoutChange('table')`) and display a `Table` hint badge in the dropdown.
+   - Umbrella multi-stage filters (`Active` and `All`) are valid in both Board and Table views.
+
+2. **Board Return Active Reset**:
+   - Switching from Table to Board view while an isolated single status is active MUST automatically reset the status filter to `'Active'`. This guarantees that the Board always mounts with a complete 5-stage active pipeline.
+
+---
+
+## 22. Popover Anchor Grounding vs. Button-Swallowing Morph Traps
+
+**Rule**: Interactive trigger buttons must maintain spatial grounding and clear visual affordance.
+
+1. **The Button-Swallowing Morph Prohibition**:
+   - Never morph or expand a trigger button into a dropdown menu or dialog container (e.g. mobile Dynamic Island expanding animations).
+   - Button-swallowing morphs destroy the user's spatial anchor point, cause corner shadow artifacts/border clipping, and signal an experimental "AI tech-demo" gimmick rather than a grounded executive command center.
+
+2. **Anchored Popover Surfaces**:
+   - The trigger button MUST remain a stable, solid, tactile anchor styled with `UI_TOKENS.btnOutline` (`bg-white`, `border-slate-200`, `shadow-2xs`).
+   - The popover surface MUST mount directly below the trigger at `top: calc(100% + 6px)` via `AnimatePresence`.
+
+3. **Internal Micro-Delight**:
+   - Tactile craft belongs *inside* the menu: 2-step in-place drilldown (Field $\rightarrow$ Value) and magnetic gliding hover containers (`styles.highlight`) that slide smoothly between items without unmounting or flickering.
 

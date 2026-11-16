@@ -8,6 +8,7 @@ import { AppProviders } from '../../src/context';
 import { NavigationContext, NavigationContextType } from '../../src/context/NavigationContext';
 import { ApplicationsContext, ApplicationsContextType } from '../../src/context/ApplicationsContext';
 import { Application, FilterState, ApplicationLayout } from '../../src/types';
+import { AllApplicationsTable } from '../../src/components/AllApplicationsTable';
 import { readUrlState } from '../../src/lib/routeUtils';
 import { useUrlNavigation } from '../../src/hooks/useUrlNavigation';
 
@@ -377,7 +378,7 @@ describe('Unified Applications Hub: Routing, Toolbar, and Canvas Wiring', () => 
     expect(host!.textContent).toContain('Meta');
   });
 
-  it('enforces table layout when status is Archived or Rejected even if layout=board is in URL (smart routing edge case)', () => {
+  it('enforces table layout when status is Archived, Rejected, or any specific stage even if layout=board is in URL (smart routing edge case)', () => {
     window.history.pushState(null, '', '/applications?status=Archived&layout=board');
     const stateArchived = readUrlState();
     expect(stateArchived.filter.status).toBe('Archived');
@@ -387,6 +388,11 @@ describe('Unified Applications Hub: Routing, Toolbar, and Canvas Wiring', () => 
     const stateRejected = readUrlState();
     expect(stateRejected.filter.status).toBe('Rejected');
     expect(stateRejected.layout).toBe('table');
+
+    window.history.pushState(null, '', '/applications?status=Interview&layout=board');
+    const stateInterview = readUrlState();
+    expect(stateInterview.filter.status).toBe('Interview');
+    expect(stateInterview.layout).toBe('table');
   });
 
   it('resets status to Active when switching to Board layout from Archived or Rejected', () => {
@@ -542,5 +548,89 @@ describe('Unified Applications Hub: Routing, Toolbar, and Canvas Wiring', () => 
       expect(btn.className).toContain('w-7');
       expect(btn.className).toContain('h-7');
     });
+  });
+
+  it('keeps Filter trigger button calm without redundant badges while active filter chips render in toolbar', () => {
+    const filterWithFilters: FilterState = {
+      search: '',
+      platform: 'LinkedIn',
+      status: 'Active',
+      workLocation: 'Remote',
+      employmentType: 'All',
+      dateRange: 'all',
+    };
+
+    act(() => {
+      root!.render(
+        <AppProviders>
+          <TopBar
+            filter={filterWithFilters}
+            setFilter={vi.fn()}
+            layout="board"
+            onLayoutChange={vi.fn()}
+            totalFilteredCount={1}
+          />
+        </AppProviders>
+      );
+    });
+
+    const trigger = host!.querySelector('[data-filter-trigger]') as HTMLButtonElement;
+    expect(trigger).not.toBeNull();
+    // Filter button must remain a clean trigger without noise
+    expect(trigger.textContent?.trim()).toBe('Filter');
+    expect(host!.querySelector('[data-testid="filter-active-count"]')).toBeNull();
+
+    // Active filter chips are rendered visibly right in the toolbar
+    const chips = Array.from(host!.querySelectorAll('button[aria-label^="Remove filter"]'));
+    expect(chips.length).toBe(3); // Status: Active Only, Platform: LinkedIn, Work: Remote
+  });
+
+  it('supports inline quick stage transition in AllApplicationsTable row via StageSelectorDropdown without row selection', () => {
+    const onSelectApp = vi.fn();
+    const onUpdateStatus = vi.fn();
+    const onBulkUpdateStatus = vi.fn();
+
+    const app = makeApp('app-42', { company: 'Linear', status: 'Applied' });
+
+    act(() => {
+      root!.render(
+        <AllApplicationsTable
+          applications={[app]}
+          totalAppCount={1}
+          selectedAppId={null}
+          onSelectApp={onSelectApp}
+          sort={{ field: 'dateApplied', order: 'desc' }}
+          onSortChange={vi.fn()}
+          onBulkUpdateStatus={onBulkUpdateStatus}
+          onUpdateStatus={onUpdateStatus}
+          onBulkDelete={vi.fn()}
+        />
+      );
+    });
+
+    // Verify StageSelectorDropdown trigger rendered with variant="badge"
+    const stageTrigger = host!.querySelector('button[aria-label^="Current stage: Applied"]') as HTMLButtonElement;
+    expect(stageTrigger).not.toBeNull();
+    expect(stageTrigger.textContent).toContain('Applied');
+
+    // Click stage trigger to open menu
+    act(() => {
+      stageTrigger.click();
+    });
+
+    // onSelectApp must NOT be called (row click stopped)
+    expect(onSelectApp).not.toHaveBeenCalled();
+
+    // The listbox menu opens
+    const interviewOption = host!.querySelector('[id$="-opt-Interview"]') as HTMLButtonElement;
+    expect(interviewOption).not.toBeNull();
+
+    // Select Interview
+    act(() => {
+      interviewOption.click();
+    });
+
+    expect(onUpdateStatus).toHaveBeenCalledWith('app-42', 'Interview');
+    expect(onSelectApp).not.toHaveBeenCalled();
   });
 });

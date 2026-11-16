@@ -114,7 +114,8 @@ Dropping Lucide icons next to every plain label, table header, or metadata attri
 Wrapping every entity attribute in a colored pill badge (`rounded-full px-2.5 py-0.5 text-xs bg-slate-100`). This creates a chaotic rainbow of static badges that drowns out critical pipeline status.
 
 ### The Rule
-- **Max 1–2 Badges per Card**: Only active lifecycle stages (`StatusBadge`) and standardized work attributes (`JobTypeBadges`) may be rendered as badges.
+- **Max 1–2 Badges per Card**: On Kanban cards (`PipelineCard.tsx`), only active lifecycle stages (`StatusBadge`) and standardized work attributes (`JobTypeBadges`) may be rendered as badges.
+- **Strictly ONE Badge in Table Rows**: In dense data tables and grids (`AllApplicationsTable.tsx`), enforce strictly ONE visual hero badge per row: the `StatusBadge`. Secondary work attributes like job type (`Full-time`) and work mode (`Remote`) MUST be demoted to typographic text via `<JobTypeBadges variant="text" />` (`Remote · Full-time` in `font-mono text-[11px] text-slate-500`). Pill badges for job types inside table rows are strictly forbidden.
 - **Action-Only Navigation Badges**: Persistent navigation tabs must never display static inventory counts. Badges are strictly reserved for urgent/actionable deadlines (e.g. overdue follow-ups).
 - **Typographic Demotion for Metadata**: Format creation dates, salaries, platforms, and locations as raw typographic text (`font-mono text-xs text-slate-500`), separated by lightweight dots (`·` in `text-slate-300`) or slashes (`/`).
 

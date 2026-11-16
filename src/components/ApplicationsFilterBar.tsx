@@ -79,7 +79,7 @@ export const ApplicationsFilterBar: React.FC<ApplicationsFilterBarProps> = ({
   }, [onOpenAddModal]);
 
   const handleLayoutSwitch = (newLayout: ApplicationLayout) => {
-    if (newLayout === 'board' && (filter.status === 'Archived' || filter.status === 'Rejected')) {
+    if (newLayout === 'board' && filter.status !== 'Active' && filter.status !== 'All') {
       setFilter((prev) => ({ ...prev, status: 'Active' }));
     }
     onLayoutChange(newLayout);
@@ -99,11 +99,11 @@ export const ApplicationsFilterBar: React.FC<ApplicationsFilterBarProps> = ({
       options: [
         { value: 'Active', label: 'Active Only', hint: 'Pipeline' },
         { value: 'All', label: 'All Statuses' },
-        { value: 'Saved', label: 'Saved', icon: <span className="w-2 h-2 rounded-full bg-slate-400 shrink-0" /> },
-        { value: 'Applied', label: 'Applied', icon: <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0" /> },
-        { value: 'Screening', label: 'Screening', icon: <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" /> },
-        { value: 'Interview', label: 'Interview', icon: <span className="w-2 h-2 rounded-full bg-purple-500 shrink-0" /> },
-        { value: 'Offer', label: 'Offer', icon: <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" /> },
+        { value: 'Saved', label: 'Saved', icon: <span className="w-2 h-2 rounded-full bg-slate-400 shrink-0" />, hint: 'Table' },
+        { value: 'Applied', label: 'Applied', icon: <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0" />, hint: 'Table' },
+        { value: 'Screening', label: 'Screening', icon: <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />, hint: 'Table' },
+        { value: 'Interview', label: 'Interview', icon: <span className="w-2 h-2 rounded-full bg-purple-500 shrink-0" />, hint: 'Table' },
+        { value: 'Offer', label: 'Offer', icon: <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />, hint: 'Table' },
         { value: 'Rejected', label: 'Rejected', icon: <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0" />, hint: 'Table' },
         { value: 'Archived', label: 'Archived', icon: <span className="w-2 h-2 rounded-full bg-slate-500 shrink-0" />, hint: 'Table' },
       ],
@@ -176,7 +176,7 @@ export const ApplicationsFilterBar: React.FC<ApplicationsFilterBarProps> = ({
     setFilter((prev) => {
       if (field.id === 'status') {
         const rawStatus = chip.value === 'Active Only' ? 'Active' : (chip.value || chip.label);
-        if (rawStatus === 'Archived' || rawStatus === 'Rejected') {
+        if (rawStatus !== 'All' && rawStatus !== 'Active') {
           onLayoutChange('table');
         }
         return { ...prev, status: rawStatus as any };
