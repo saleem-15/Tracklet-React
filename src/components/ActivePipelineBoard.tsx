@@ -3,6 +3,7 @@ import { motion, AnimatePresence, LayoutGroup, useMotionValue, useReducedMotion,
 import { Application, ApplicationStatus } from '../types';
 import { EmptyState } from './EmptyState';
 import { OnboardingEmptyState } from './OnboardingEmptyState';
+import { MetricRoller } from './MetricRoller';
 import { PipelineCard, PipelineCardShell } from './pipeline/PipelineCard';
 import { PipelineScrollRail } from './pipeline/PipelineScrollRail';
 import { ArrowRight } from 'lucide-react';
@@ -654,9 +655,11 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
               >
                 <span className={`w-2 h-2 rounded-full ${col.dot}`} />
                 <span>{col.title}</span>
-                <span className="font-mono text-[11px] text-slate-500 font-bold bg-slate-100 px-1.5 py-0.5 rounded-full tabular-nums">
-                  {count}
-                </span>
+                <MetricRoller
+                  value={count}
+                  className="font-mono text-[11px] text-slate-500 font-bold bg-slate-100 px-1.5 py-0.5 rounded-full tabular-nums"
+                  valueClassName="text-slate-500"
+                />
               </button>
             );
           })}
@@ -729,23 +732,28 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
                   return (
                     <div
                       key={col.status}
+                      data-pipeline-column={col.status}
                       ref={(el) => {
                         if (el) colRefs.current.set(col.status, el);
                         else colRefs.current.delete(col.status);
                       }}
-                      className={`w-[85vw] sm:w-[320px] md:w-auto shrink-0 snap-center md:shrink md:snap-align-none rounded-xl border border-slate-200/80 bg-slate-100/80 p-3 flex flex-col space-y-2.5 transition-colors duration-150 min-h-[400px] ${
-                        isTargeting ? 'bg-blue-50/40 border-blue-300' : ''
+                      className={`w-[85vw] sm:w-[320px] md:w-auto shrink-0 snap-center md:shrink md:snap-align-none rounded-2xl p-2 flex flex-col space-y-2 transition-colors duration-150 min-h-[400px] ${
+                        isTargeting ? 'bg-blue-50/40 ring-1 ring-blue-300/60 rounded-2xl' : ''
                       }`}
                     >
-                      {/* Integrated Lane Header: Anchored header card with status dot, title, and committed count badge */}
-                      <div className="bg-white/90 border border-slate-200/70 shadow-2xs rounded-lg px-3 py-2 flex items-center justify-between shrink-0 select-none">
-                        <div className="flex items-center gap-2 font-heading font-bold text-slate-800 text-xs tracking-tight">
-                          <span className={`w-2 h-2 rounded-full ${col.dot} shadow-xs shrink-0`} />
-                          <span>{col.title}</span>
+                      {/* Seamless Lane Header: Unboxed native header directly on column runway */}
+                      <div className="px-1.5 pt-0.5 pb-1.5 flex items-center justify-between shrink-0 select-none">
+                        <div className="flex items-center gap-2">
+                          <span className={`w-2 h-2 rounded-full ${col.dot} shrink-0`} />
+                          <span className="font-heading font-semibold text-slate-800 text-xs tracking-tight">
+                            {col.title}
+                          </span>
+                          <MetricRoller
+                            value={columnApps.length}
+                            className="font-mono text-[11px] font-medium text-slate-400 tabular-nums"
+                            valueClassName="text-slate-400"
+                          />
                         </div>
-                        <span className="font-mono text-[11px] font-semibold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded-full tabular-nums">
-                          {columnApps.length}
-                        </span>
                       </div>
 
                       {/* Cards List Container */}
@@ -757,8 +765,10 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
                         className="flex flex-col gap-2.5 flex-1 min-h-[140px]"
                       >
                         {filteredApps.length === 0 && !isTargeting ? (
-                          <div className="flex-1 min-h-[140px] flex items-center justify-center p-6 text-center text-slate-500 font-mono text-[11px] border border-dashed border-slate-200/80 rounded-xl my-1 bg-white/60">
-                            No applications in {col.title.toLowerCase()}
+                          <div className="flex-1 min-h-[140px] flex items-center justify-center p-4 text-center select-none">
+                            <span className="font-mono text-[11px] text-slate-400/80 tracking-tight">
+                              No applications in {col.title.toLowerCase()}
+                            </span>
                           </div>
                         ) : (
                           <>
