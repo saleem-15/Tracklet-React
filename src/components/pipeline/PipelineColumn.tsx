@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { ArrowRight } from 'lucide-react';
 import { Application, ApplicationStatus } from '../../types';
 import { PipelineCard } from './PipelineCard';
+import { MetricRoller } from '../MetricRoller';
 import { FLOW_SPRING } from '../../lib/motion';
 
 export interface PipelineColumnConfig {
@@ -75,19 +76,24 @@ export const PipelineColumn: React.FC<PipelineColumnProps> = ({
   return (
     <div
       ref={colRef}
-      className={`w-[85vw] sm:w-[320px] md:w-72 lg:w-80 shrink-0 bg-slate-100/80 border border-slate-200/80 rounded-xl p-3 flex flex-col snap-start min-h-0 transition-colors duration-150 ${
-        isTargeting ? 'ring-2 ring-blue-400/40 bg-blue-50/20' : ''
+      data-pipeline-column={col.status}
+      className={`w-[85vw] sm:w-[320px] md:w-72 lg:w-80 shrink-0 snap-start rounded-2xl p-2 flex flex-col space-y-2 transition-colors duration-150 min-h-[400px] ${
+        isTargeting ? 'bg-blue-50/40 ring-1 ring-blue-300/60 rounded-2xl' : ''
       }`}
     >
-      {/* Integrated Column Header Bar with Badge Counter (Committed State Only) */}
-      <div className="flex items-center justify-between pb-2.5 mb-2.5 border-b border-slate-200/70 font-heading font-bold text-xs text-slate-800 bg-white/90 px-3 py-2 rounded-lg border border-slate-200/70 shadow-2xs select-none">
+      {/* Seamless Lane Header: Unboxed native header directly on column runway */}
+      <div className="px-1.5 pt-0.5 pb-1.5 flex items-center justify-between shrink-0 select-none">
         <div className="flex items-center gap-2">
-          <span className={`w-2.5 h-2.5 rounded-full ${col.dot} shadow-xs shrink-0`} />
-          <span>{col.title}</span>
+          <span className={`w-2 h-2 rounded-full ${col.dot} shrink-0`} />
+          <span className="font-heading font-semibold text-slate-800 text-xs tracking-tight">
+            {col.title}
+          </span>
+          <MetricRoller
+            value={columnApps.length}
+            className="font-mono text-[11px] font-medium text-slate-400 tabular-nums"
+            valueClassName="text-slate-400"
+          />
         </div>
-        <span className="font-mono text-[11px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200/80 tabular-nums">
-          {columnApps.length}
-        </span>
       </div>
 
       {/* Cards List Container */}
@@ -96,9 +102,10 @@ export const PipelineColumn: React.FC<PipelineColumnProps> = ({
         className="flex flex-col gap-2.5 flex-1 min-h-[140px] overflow-y-auto pr-0.5"
       >
         {filteredApps.length === 0 && !isTargeting ? (
-          <div className="h-28 border-2 border-dashed border-slate-200/90 rounded-xl flex flex-col items-center justify-center text-center p-3 text-slate-400 select-none bg-white/50 my-auto">
-            <span className="text-xs font-semibold text-slate-500">No applications in {col.title}</span>
-            <span className="text-[11px] text-slate-400 mt-0.5">Drag cards here or click + Add Job</span>
+          <div className="flex-1 min-h-[140px] flex items-center justify-center p-4 text-center select-none">
+            <span className="font-mono text-[11px] text-slate-400/80 tracking-tight">
+              No applications in {col.title.toLowerCase()}
+            </span>
           </div>
         ) : (
           <>

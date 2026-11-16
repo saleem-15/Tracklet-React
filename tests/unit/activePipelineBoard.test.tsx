@@ -463,7 +463,7 @@ describe('ActivePipelineBoard Motion, Drag & Gesture Architecture', () => {
     expect(handleDeleteApp).toHaveBeenCalledWith('app-1');
   });
 
-  it('renders 3-tier surface contrast: canvas, column tracks, and integrated lane headers', async () => {
+  it('renders borderless column runways with seamless lane headers and ambient calm empty states', async () => {
     await act(async () => {
       root.render(
         <ActivePipelineBoard
@@ -479,13 +479,17 @@ describe('ActivePipelineBoard Motion, Drag & Gesture Architecture', () => {
     const canvas = container.querySelector('.bg-slate-50\\/60');
     expect(canvas).not.toBeNull();
 
-    // Column tracks
-    const columnTracks = container.querySelectorAll('.bg-slate-100\\/80');
+    // Borderless column runways
+    const columnTracks = container.querySelectorAll('[data-pipeline-column]');
     expect(columnTracks.length).toBe(5);
 
-    // Integrated lane headers inside column tracks
-    const laneHeaders = container.querySelectorAll('.bg-white\\/90');
-    expect(laneHeaders.length).toBe(5);
+    // Seamless lane headers (no nested white card container)
+    const nestedLaneHeaders = container.querySelectorAll('.bg-white\\/90');
+    expect(nestedLaneHeaders.length).toBe(0);
+
+    // Ambient calm empty lanes: no heavy white boxes or dashed construction wireframes at rest
+    const dashedBorders = container.querySelectorAll('.border-dashed');
+    expect(dashedBorders.length).toBe(0);
 
     // Physical white cards
     const card = container.querySelector('[data-kanban-card="app-1"] .bg-white.rounded-xl.border');
