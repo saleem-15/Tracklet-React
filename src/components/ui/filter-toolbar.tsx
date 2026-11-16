@@ -716,7 +716,7 @@ export function FilterMenu({
 
   function chooseValue(row: Row, keyboard: boolean) {
     if (!field) return;
-    onSelect({ id: field.id, label: field.label, value: row.label }, field);
+    onSelect({ id: field.id, label: field.label, value: row.key }, field);
     closeMenu(keyboard ? 'keyboard' : 'pointer');
   }
 
@@ -740,7 +740,7 @@ export function FilterMenu({
   const valueRows: Row[] = field
     ? field.options.map(toOption).map((entry) => {
         const text = optionText(entry),
-          checked = current(field) === text;
+          checked = current(field) === entry.value;
         return {
           key: entry.value,
           label: text,

@@ -205,6 +205,12 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
   // Keyboard navigation across table rows (Arrows, Enter, Space/x, PageUp/PageDown, Home/End)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Let the stage selector dropdown own its keyboard interaction
+      const target = e.target as HTMLElement | null;
+      if (target?.closest?.('[aria-haspopup="listbox"], [role="listbox"]')) {
+        return;
+      }
+
       // Ignore if typing in input, textarea, select or editable modal
       const activeEl = document.activeElement;
       if (

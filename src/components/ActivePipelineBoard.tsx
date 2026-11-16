@@ -52,21 +52,36 @@ export function calculateNewOrder(
     return BASE_GAP;
   }
 
+  // Normalize ranks to a strictly increasing sequence
+  const ranks: number[] = [];
+  let lastRank = -Infinity;
+  for (let i = 0; i < destinationCards.length; i++) {
+    const explicit = destinationCards[i].order;
+    let rank: number;
+    if (typeof explicit === 'number' && explicit > lastRank) {
+      rank = explicit;
+    } else if (lastRank === -Infinity) {
+      rank = typeof explicit === 'number' ? explicit : BASE_GAP;
+    } else {
+      rank = lastRank + BASE_GAP;
+    }
+    ranks.push(rank);
+    lastRank = rank;
+  }
+
   // Dropped at the very top (index 0)
   if (slotIndex <= 0) {
-    const firstOrder = destinationCards[0].order ?? BASE_GAP;
-    return firstOrder - BASE_GAP;
+    return ranks[0] - BASE_GAP;
   }
 
   // Dropped at the very bottom
-  if (slotIndex >= destinationCards.length) {
-    const lastOrder = destinationCards[destinationCards.length - 1].order ?? (destinationCards.length * BASE_GAP);
-    return lastOrder + BASE_GAP;
+  if (slotIndex >= ranks.length) {
+    return ranks[ranks.length - 1] + BASE_GAP;
   }
 
   // Dropped between two cards
-  const prevOrder = destinationCards[slotIndex - 1].order ?? (slotIndex * BASE_GAP);
-  const nextOrder = destinationCards[slotIndex].order ?? ((slotIndex + 1) * BASE_GAP);
+  const prevOrder = ranks[slotIndex - 1];
+  const nextOrder = ranks[slotIndex];
 
   return (prevOrder + nextOrder) / 2;
 }
@@ -522,6 +537,9 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
   };
 
   const handleCardKeyDown = (e: React.KeyboardEvent<HTMLDivElement>, app: Application) => {
+    if (e.target !== e.currentTarget) {
+      return;
+    }
     const isGrabbed = grabbed === app.id;
 
     if (e.key === ' ') {
@@ -694,8 +712,9 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
               ref={trackRef}
               onScroll={syncEdges}
               style={mask ? ({ maskImage: mask, WebkitMaskImage: mask } as React.CSSProperties) : undefined}
-              className="flex-1 flex md:grid md:grid-cols-5 min-h-0 overflow-x-auto md:overflow-y-auto snap-x snap-mandatory md:snap-none scroll-smooth p-3 md:p-3.5 gap-3 md:gap-3 md:min-w-[900px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              className="flex-1 min-h-0 min-w-0 w-full overflow-x-auto md:overflow-y-auto snap-x snap-mandatory md:snap-none scroll-smooth p-3 md:p-3.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             >
+              <div className="flex md:grid md:grid-cols-5 min-h-full gap-3 md:gap-3 md:min-w-[900px]">
               <LayoutGroup>
                 {PIPELINE_COLUMNS.map((col, index) => {
                   const columnApps = applications
@@ -827,6 +846,7 @@ export const ActivePipelineBoard: React.FC<ActivePipelineBoardProps> = ({
                   );
                 })}
               </LayoutGroup>
+              </div>
             </div>
 
             {/* Draggable Persistent Scroll Rail */}

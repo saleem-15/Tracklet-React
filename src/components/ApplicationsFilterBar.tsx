@@ -175,7 +175,10 @@ export const ApplicationsFilterBar: React.FC<ApplicationsFilterBarProps> = ({
   const handleAddFilterChip = (chip: FilterChip, field: FilterField) => {
     setFilter((prev) => {
       if (field.id === 'status') {
-        const rawStatus = chip.value === 'Active Only' ? 'Active' : (chip.value || chip.label);
+        const rawVal = chip.value || chip.label;
+        const rawStatus = rawVal === 'Active Only'
+          ? 'Active'
+          : (rawVal === 'All Statuses' || rawVal === 'All' ? 'All' : rawVal);
         if (rawStatus !== 'All' && rawStatus !== 'Active') {
           onLayoutChange('table');
         }

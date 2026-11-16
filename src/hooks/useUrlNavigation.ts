@@ -144,10 +144,6 @@ export function useUrlNavigation(): UseUrlNavigationReturn {
         }
         const searchStr = searchParams.toString() ? `?${searchParams.toString()}` : '';
         window.history.replaceState(null, '', `/applications${searchStr}`);
-        setActiveTabState('all');
-        setLayoutState(targetLayout);
-        layoutRef.current = targetLayout;
-        return;
       }
 
       const { filter: uFilter, selectedAppId: uSelectedAppId, isAddModalOpen: uIsAddModalOpen, layout: uLayout } =

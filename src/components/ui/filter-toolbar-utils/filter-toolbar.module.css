@@ -7,12 +7,14 @@
   min-height: 34px;
   font-family: inherit;
   max-width: 100%;
+  min-width: 0;
 }
 
 .frame {
   display: flex;
   align-items: center;
   position: relative;
+  min-width: 0;
 }
 
 .chips {

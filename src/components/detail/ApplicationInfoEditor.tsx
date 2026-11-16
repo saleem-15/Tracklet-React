@@ -41,7 +41,7 @@ export const ApplicationInfoEditor: React.FC<ApplicationInfoEditorProps> = ({
         workLocation: editWorkLocation || undefined,
         employmentType: editEmploymentType || undefined,
         location: editJobLocation.trim() || undefined,
-        salary: editSalary.trim() || undefined,
+        salary: editSalary.trim(),
         dateApplied: editDateApplied,
         jobLink: editJobLink.trim() || undefined,
         emailThreadUrl: editEmailThreadUrl.trim() || undefined,
