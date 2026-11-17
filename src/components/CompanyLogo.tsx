@@ -91,7 +91,7 @@ export const CompanyLogo: React.FC<CompanyLogoProps> = ({
   return (
     <div
       className={`relative shrink-0 flex items-center justify-center overflow-hidden select-none ${box} ${className}`}
-      title={title !== undefined ? (title ? title : undefined) : (company || 'Company')}
+      title={title || undefined}
     >
       {!hasFailed && currentUrl ? (
         <img
