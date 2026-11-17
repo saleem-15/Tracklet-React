@@ -156,15 +156,12 @@ export type SortField =
   | 'lastActivity';
 export type SortOrder = 'asc' | 'desc';
 
-/** Grouping mode for the applications table view */
-export type TableGrouping = 'none' | 'status';
-
 /**
  * Persisted view preferences for the table lens.
- * Optional columns can be toggled without losing their data.
+ * The table is a flat lens (no stage grouping); optional columns can be
+ * toggled without losing their data.
  */
 export interface TableViewPrefs {
-  grouping: TableGrouping;
   showLocation: boolean;
   showSalary: boolean;
   showLastActivity: boolean;
@@ -172,7 +169,6 @@ export interface TableViewPrefs {
 }
 
 export const DEFAULT_TABLE_VIEW_PREFS: TableViewPrefs = {
-  grouping: 'none',
   showLocation: true,
   showSalary: true,
   showLastActivity: true,

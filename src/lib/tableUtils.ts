@@ -1,10 +1,10 @@
 /**
  * Table view utility functions: last-activity computation, salary comparison,
- * stage-aging tiers, and status grouping for the applications table lens.
+ * stage-aging tiers, and preference persistence for the applications table lens.
  */
 
 import { Application, ApplicationStatus, SortField, SortState, TableViewPrefs, DEFAULT_TABLE_VIEW_PREFS } from '../types';
-import { APPLICATION_STATUSES, LOCAL_STORAGE_KEYS } from './constants';
+import { LOCAL_STORAGE_KEYS } from './constants';
 
 /** Fields that read most naturally newest/largest first */
 const DESC_FIRST_FIELDS = new Set<SortField>(['dateApplied', 'daysInStage', 'lastActivity', 'salary']);
@@ -144,39 +144,10 @@ export const STAGE_AGING_STYLES: Record<StageAgingTier, { bar: string; text: str
   critical: { bar: 'bg-rose-500', text: 'text-slate-800' },
 };
 
-export interface StatusGroup {
-  status: ApplicationStatus;
-  applications: Application[];
-}
-
-/**
- * Groups applications by status in canonical pipeline order, keeping the
- * caller's existing sort within each group. Empty groups are omitted.
- */
-export function groupApplicationsByStatus(applications: Application[]): StatusGroup[] {
-  const byStatus = new Map<ApplicationStatus, Application[]>();
-  for (const app of applications) {
-    const list = byStatus.get(app.status);
-    if (list) {
-      list.push(app);
-    } else {
-      byStatus.set(app.status, [app]);
-    }
-  }
-
-  const groups: StatusGroup[] = [];
-  for (const status of APPLICATION_STATUSES) {
-    const list = byStatus.get(status);
-    if (list && list.length > 0) {
-      groups.push({ status, applications: list });
-    }
-  }
-  return groups;
-}
-
 /**
  * Loads persisted table view preferences from localStorage, merging with
- * defaults so newly-added keys always have values.
+ * defaults so newly-added keys always have values. Unknown keys (including the
+ * retired `grouping` key from older installs) are dropped.
  */
 export function loadTableViewPrefs(): TableViewPrefs {
   try {
@@ -186,7 +157,6 @@ export function loadTableViewPrefs(): TableViewPrefs {
     // Pick only known keys so prefs removed in later versions don't linger
     return {
       ...DEFAULT_TABLE_VIEW_PREFS,
-      ...(parsed.grouping !== undefined && { grouping: parsed.grouping }),
       ...(parsed.showLocation !== undefined && { showLocation: parsed.showLocation }),
       ...(parsed.showSalary !== undefined && { showSalary: parsed.showSalary }),
       ...(parsed.showLastActivity !== undefined && { showLastActivity: parsed.showLastActivity }),
