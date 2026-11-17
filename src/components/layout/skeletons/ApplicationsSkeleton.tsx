@@ -49,14 +49,14 @@ export function ApplicationsTableSkeleton() {
             <th className="w-10 px-3 py-2.5 text-center">
               <div className="w-3.5 h-3.5 rounded bg-slate-200/60 inline-block" />
             </th>
-            <th className="px-3 py-2.5 font-semibold text-slate-500">Company</th>
-            <th className="px-3 py-2.5 font-semibold text-slate-500">Location</th>
+            <th className="w-[260px] px-3 py-2.5 font-semibold text-slate-500">Company & Role</th>
+            <th className="w-44 px-3 py-2.5 font-semibold text-slate-500">Location</th>
             <th className="px-3 py-2.5 font-semibold text-slate-500">Status</th>
             <th className="px-3 py-2.5 font-semibold text-slate-500">Source</th>
-            <th className="w-24 px-3 py-2.5 font-semibold text-slate-500 text-right">Salary</th>
-            <th className="w-20 px-3 py-2.5 font-semibold text-slate-500 text-right">Activity</th>
-            <th className="w-20 px-3 py-2.5 font-semibold text-slate-500">Applied</th>
-            <th className="w-20 pr-4 px-3 py-2.5 font-semibold text-slate-500 text-right">In Stage</th>
+            <th className="w-24 px-3 py-2.5 font-semibold text-slate-500">Salary</th>
+            <th className="w-20 px-3 py-2.5 font-semibold text-slate-500">Activity</th>
+            <th className="w-[105px] px-3 py-2.5 font-semibold text-slate-500">Applied</th>
+            <th className="w-24 px-3 py-2.5 font-semibold text-slate-500">In Stage</th>
             <th className="px-2 py-2.5 font-semibold text-slate-500 text-right">Actions</th>
           </tr>
         </thead>
@@ -69,7 +69,7 @@ export function ApplicationsTableSkeleton() {
               <td className="px-3 py-1 text-center align-middle">
                 <div className="w-3.5 h-3.5 rounded bg-slate-200/50 inline-block" />
               </td>
-              <td className="px-3 py-1.5 align-middle">
+              <td className="w-[260px] px-3 py-1.5 align-middle">
                 <div className="flex items-center gap-2.5">
                   <div className="w-5 h-5 rounded bg-slate-200/60 shrink-0" />
                   <div className="flex flex-col gap-1.5 min-w-0">
@@ -78,8 +78,8 @@ export function ApplicationsTableSkeleton() {
                   </div>
                 </div>
               </td>
-              <td className="px-3 py-1 align-middle">
-                <div className="w-16 sm:w-20 h-3 bg-slate-200/40 rounded" />
+              <td className="w-44 px-3 py-1 align-middle">
+                <div className="w-24 sm:w-28 h-3 bg-slate-200/40 rounded" />
               </td>
               <td className="px-3 py-1 align-middle">
                 <div className="w-16 h-5 bg-slate-200/50 rounded-md" />
@@ -87,17 +87,17 @@ export function ApplicationsTableSkeleton() {
               <td className="px-3 py-1 align-middle">
                 <div className="w-12 h-3 bg-slate-200/40 rounded" />
               </td>
-              <td className="w-24 px-3 py-1 align-middle text-right">
-                <div className="w-14 h-3 bg-slate-200/40 rounded ml-auto" />
-              </td>
-              <td className="w-20 px-3 py-1 align-middle text-right">
-                <div className="w-8 h-3 bg-slate-200/40 rounded ml-auto" />
-              </td>
-              <td className="w-20 px-3 py-1 align-middle">
+              <td className="w-24 px-3 py-1 align-middle">
                 <div className="w-14 h-3 bg-slate-200/40 rounded" />
               </td>
-              <td className="w-20 px-3 py-1 align-middle text-right pr-4">
-                <div className="w-6 h-3 bg-slate-200/40 rounded ml-auto" />
+              <td className="w-20 px-3 py-1 align-middle">
+                <div className="w-8 h-3 bg-slate-200/40 rounded" />
+              </td>
+              <td className="w-[105px] px-3 py-1 align-middle">
+                <div className="w-14 h-3 bg-slate-200/40 rounded" />
+              </td>
+              <td className="w-24 px-3 py-1 align-middle">
+                <div className="w-6 h-3 bg-slate-200/40 rounded" />
               </td>
               <td className="px-2 py-1 align-middle text-right">
                 <div className="w-4 h-4 rounded bg-slate-200/30 inline-block" />

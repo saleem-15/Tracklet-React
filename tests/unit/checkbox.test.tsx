@@ -82,4 +82,15 @@ describe('Checkbox Component', () => {
     });
     expect(onChange).not.toHaveBeenCalled();
   });
+
+  it('renders indeterminate state with mixed aria-checked and horizontal stroke', () => {
+    render({ checked: 'indeterminate' });
+    const box = host!.querySelector('button[role="checkbox"]') as HTMLButtonElement;
+    expect(box.getAttribute('aria-checked')).toBe('mixed');
+    expect(box.className).toContain('data-[state=indeterminate]:bg-blue-600');
+
+    const path = box.querySelector('svg path');
+    expect(path).not.toBeNull();
+    expect(path!.getAttribute('d')).toBe('M2.5 6H9.5');
+  });
 });

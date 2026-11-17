@@ -13,6 +13,7 @@ export interface CompanyLogoProps {
   companyDomain?: string;
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
   className?: string;
+  title?: string;
 }
 
 const SIZE_MAP = {
@@ -30,6 +31,7 @@ export const CompanyLogo: React.FC<CompanyLogoProps> = ({
   companyDomain,
   size = 'md',
   className = '',
+  title,
 }) => {
   const cacheKey = getCompanyCacheKey(company, companyDomain);
   const imgRef = useRef<HTMLImageElement | null>(null);
@@ -89,7 +91,7 @@ export const CompanyLogo: React.FC<CompanyLogoProps> = ({
   return (
     <div
       className={`relative shrink-0 flex items-center justify-center overflow-hidden select-none ${box} ${className}`}
-      title={company || 'Company'}
+      title={title !== undefined ? (title ? title : undefined) : (company || 'Company')}
     >
       {!hasFailed && currentUrl ? (
         <img

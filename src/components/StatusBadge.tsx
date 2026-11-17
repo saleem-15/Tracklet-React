@@ -10,7 +10,7 @@ interface StatusBadgeProps {
 export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, size = 'sm' }) => {
   const config = STAGE_CONFIG_MAP[status] || STAGE_CONFIG_MAP['Applied'];
   const sizeClasses = size === 'sm' 
-    ? 'text-[11px] font-mono px-2 py-0.5 rounded-md font-medium' 
+    ? 'text-[11px] font-mono px-[7px] py-[3px] rounded-md font-medium' 
     : 'text-xs font-mono px-2.5 py-1 rounded-md font-semibold';
 
   return (

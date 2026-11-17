@@ -109,7 +109,7 @@ export const StageSelectorDropdown: React.FC<StageSelectorDropdownProps> = ({
       : `${UI_TOKENS.controlMd} text-xs px-2.5`;
 
   const triggerClasses = isBadge
-    ? `inline-flex items-center gap-1.5 border text-[11px] font-mono px-2 py-0.5 rounded-md font-medium tracking-tight transition-colors duration-150 cursor-pointer shadow-2xs group hover:brightness-95 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 ${currentConfig.bg} ${currentConfig.text} ${currentConfig.border}`
+    ? `inline-flex items-center gap-1.5 border text-[11px] font-mono px-[7px] py-[3px] rounded-md font-medium tracking-tight transition-colors duration-150 cursor-pointer shadow-2xs group hover:brightness-95 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 ${currentConfig.bg} ${currentConfig.text} ${currentConfig.border}`
     : `inline-flex items-center gap-1.5 border font-semibold tracking-tight transition-colors duration-150 cursor-pointer shadow-2xs group hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 ${sizeClasses} ${currentConfig.bg} ${currentConfig.text} ${currentConfig.border}`;
 
   return (

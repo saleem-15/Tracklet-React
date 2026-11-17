@@ -4,9 +4,6 @@ import {
   ArrowUp,
   ArrowDown,
   ExternalLink,
-  CheckSquare,
-  MinusSquare,
-  Square,
   ChevronDown,
 } from 'lucide-react';
 import {
@@ -15,6 +12,7 @@ import {
   SortState,
   ApplicationStatus,
 } from '../types';
+import { Checkbox } from './Checkbox';
 import { StageSelectorDropdown } from './StageSelectorDropdown';
 import { CompanyLogo } from './CompanyLogo';
 import { EmptyState } from './EmptyState';
@@ -326,14 +324,11 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
     thClassName = ''
   ) => {
     const isRight = align === 'right';
-    // For right-aligned columns the (inactive) sort icon reserves its space on the
-    // LEFT of the label, so the visible label's right edge lines up exactly with
-    // the right-aligned cell values below.
     const icon = renderSortIcon(field);
     return (
       <th
         aria-sort={sort.field === field ? (sort.order === 'asc' ? 'ascending' : 'descending') : 'none'}
-        className={`px-3 py-2.5 font-semibold ${thClassName} ${isRight ? 'text-right' : ''}`}
+        className={`px-3 py-2.5 font-semibold whitespace-nowrap ${thClassName} ${isRight ? 'text-right' : ''}`}
       >
         <button
           type="button"
@@ -412,23 +407,15 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
           className="sticky left-0 z-[1] bg-inherit px-3 py-1 text-center align-middle"
           onClick={(e) => toggleSelectOne(e, app.id)}
         >
-          <button
-            type="button"
-            role="checkbox"
-            aria-checked={isSelected}
-            aria-label={`Select application for ${app.company}`}
-            className="text-slate-500 hover:text-slate-700 align-middle transition-colors cursor-pointer"
-          >
-            {isSelected ? (
-              <CheckSquare className="w-3.5 h-3.5 text-blue-600" />
-            ) : (
-              <Square className="w-3.5 h-3.5 group-hover:text-slate-600" />
-            )}
-          </button>
+          <Checkbox
+            checked={isSelected}
+            onChange={() => toggleSelectOne(null, app.id)}
+            ariaLabel={`Select application for ${app.company}`}
+          />
         </td>
 
         {/* Identity: Company — Role (sticky) */}
-        <td className={`sticky left-10 z-[1] bg-inherit px-3 py-1.5 align-middle max-w-[300px] min-w-[220px]`}>
+        <td className={`sticky left-10 z-[1] bg-inherit px-3 py-1.5 align-middle w-[260px] max-w-[270px]`}>
           <div className="flex items-center gap-2.5 min-w-0">
             <span className={`shrink-0 ${isTerminal ? 'opacity-50' : ''}`}>
               <CompanyLogo
@@ -468,21 +455,34 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
 
         {/* Location */}
         {prefs.showLocation && (
-          <td className={`px-3 py-1 align-middle max-w-[150px] text-xs ${isTerminal ? faintText : secondaryText}`}>
-            {app.location || app.workLocation ? (
-              <div className="flex items-center gap-1.5 min-w-0">
-                <span dir="auto" className="truncate text-start">
-                  {app.location || ''}
-                </span>
-                {app.workLocation && (
-                  <span className="font-mono text-[10px] text-slate-500 border border-slate-200/80 bg-slate-50 px-1.5 py-px rounded whitespace-nowrap shrink-0">
-                    {app.workLocation}
+          <td className={`w-44 px-3 py-1 align-middle text-xs whitespace-nowrap ${isTerminal ? faintText : secondaryText}`}>
+            {(() => {
+              const loc = app.location?.trim();
+              const workLoc = app.workLocation?.trim();
+              if (!loc && !workLoc) return <span className={faintText}>—</span>;
+              if (loc && workLoc) {
+                if (loc.toLowerCase().includes(workLoc.toLowerCase())) {
+                  return (
+                    <span dir="auto" className="truncate text-start" title={loc}>
+                      {loc}
+                    </span>
+                  );
+                }
+                return (
+                  <span dir="auto" className="truncate text-start" title={`${loc} · ${workLoc}`}>
+                    {loc}
+                    <span className="text-slate-300 mx-1">·</span>
+                    <span className="text-slate-500 font-medium">{workLoc}</span>
                   </span>
-                )}
-              </div>
-            ) : (
-              <span className={faintText}>—</span>
-            )}
+                );
+              }
+              const single = loc || workLoc;
+              return (
+                <span dir="auto" className="truncate text-start" title={single}>
+                  {single}
+                </span>
+              );
+            })()}
           </td>
         )}
 
@@ -504,11 +504,13 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
 
         {/* Salary */}
         {prefs.showSalary && (
-          <td className={`w-24 px-3 py-1 align-middle text-right text-xs tabular-nums whitespace-nowrap ${isTerminal ? faintText : secondaryText}`}>
+          <td className={`w-24 px-3 py-1 align-middle text-xs tabular-nums whitespace-nowrap ${isTerminal ? faintText : secondaryText}`}>
             {app.salary ? (
               <span title={app.salary}>{formatSalaryCompact(app.salary)}</span>
             ) : (
-              <span className={faintText}>—</span>
+              <span className={faintText} title="Salary not provided">
+                —
+              </span>
             )}
           </td>
         )}
@@ -522,7 +524,7 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
 
         {/* Last activity (only when it diverges from the stage change) */}
         {prefs.showLastActivity && (
-          <td className={`w-20 px-3 py-1 align-middle text-right font-mono text-[11px] tabular-nums whitespace-nowrap ${isTerminal ? faintText : 'text-slate-500'}`}>
+          <td className={`w-20 px-3 py-1 align-middle font-mono text-[11px] tabular-nums whitespace-nowrap ${isTerminal ? faintText : 'text-slate-500'}`}>
             {lastActivityTs && hasNewerActivity ? (
               <span title={`Last activity: ${new Date(lastActivityTs).toLocaleString('en-US')}`}>
                 {formatRelativeActivity(lastActivityTs)}
@@ -537,16 +539,16 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
 
         {/* Applied date */}
         <td
-          className={`w-20 px-3 py-1 align-middle font-mono text-[11px] tabular-nums whitespace-nowrap ${isTerminal ? faintText : 'text-slate-500'}`}
+          className={`w-[105px] px-3 py-1 align-middle font-mono text-[11px] tabular-nums whitespace-nowrap ${isTerminal ? faintText : 'text-slate-500'}`}
           title={`Applied on ${app.dateApplied}`}
         >
           {formatAppDate(app.dateApplied)}
         </td>
 
         {/* Days in stage with stage-aware aging bar */}
-        <td className={`w-20 px-3 py-1 align-middle text-right pr-4 whitespace-nowrap ${agingStyle.text}`}>
-          <span className="inline-flex flex-col items-end gap-1" title={`${daysInStage} days in ${app.status} stage`}>
-            <span className="font-mono text-[11px] tabular-nums leading-none">{daysInStage}d</span>
+        <td className="w-24 px-3 py-1 align-middle whitespace-nowrap">
+          <span className="inline-flex flex-col items-start gap-1" title={`${daysInStage} days in ${app.status} stage`}>
+            <span className={`font-mono text-[11px] tabular-nums leading-none ${agingStyle.text}`}>{daysInStage}d</span>
             <span className={`block h-0.5 w-6 rounded-full ${agingStyle.bar}`} aria-hidden="true" />
           </span>
         </td>
@@ -634,35 +636,24 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
             <thead className="bg-slate-50/90 border-b border-slate-200/80 sticky top-0 z-10 text-[11px] font-mono text-slate-500 uppercase tracking-wider backdrop-blur-xs select-none">
             <tr>
               <th className="sticky left-0 z-[2] bg-inherit w-10 px-3 py-2.5 text-center">
-                <button
-                  type="button"
-                  role="checkbox"
-                  aria-checked={allSelected ? true : someSelected ? 'mixed' : false}
-                  onClick={toggleSelectAll}
-                  aria-label={allSelected ? "Deselect all applications" : "Select all applications"}
-                  className="text-slate-500 hover:text-slate-700 align-middle transition-colors cursor-pointer"
-                >
-                  {allSelected ? (
-                    <CheckSquare className="w-3.5 h-3.5 text-blue-600" />
-                  ) : someSelected ? (
-                    <MinusSquare className="w-3.5 h-3.5 text-blue-600" />
-                  ) : (
-                    <Square className="w-3.5 h-3.5" />
-                  )}
-                </button>
+                <Checkbox
+                  checked={allSelected}
+                  onCheckedChange={() => toggleSelectAll()}
+                  ariaLabel={allSelected ? 'Deselect all applications' : 'Select all applications'}
+                />
               </th>
 
-              {renderSortableHeader('Company', 'company')}
+              {renderSortableHeader('Company & Role', 'company', 'left', 'w-[260px] max-w-[270px]')}
 
-              {prefs.showLocation && <th className="px-3 py-2.5 font-semibold">Location</th>}
+              {prefs.showLocation && <th className="w-44 px-3 py-2.5 font-semibold whitespace-nowrap">Location</th>}
               {renderSortableHeader('Status', 'status')}
               {renderSortableHeader('Source', 'platform')}
-              {prefs.showSalary && renderSortableHeader('Salary', 'salary', 'right', 'w-24')}
-              {prefs.showEmploymentType && <th className="w-24 px-3 py-2.5 font-semibold">Type</th>}
-              {prefs.showLastActivity && renderSortableHeader('Activity', 'lastActivity', 'right', 'w-20')}
+              {prefs.showSalary && renderSortableHeader('Salary', 'salary', 'left', 'w-24')}
+              {prefs.showEmploymentType && <th className="w-24 px-3 py-2.5 font-semibold whitespace-nowrap">Type</th>}
+              {prefs.showLastActivity && renderSortableHeader('Activity', 'lastActivity', 'left', 'w-20')}
 
-              {renderSortableHeader('Applied', 'dateApplied', 'left', 'w-20')}
-              {renderSortableHeader('In Stage', 'daysInStage', 'right', 'pr-4 w-20')}
+              {renderSortableHeader('Applied', 'dateApplied', 'left', 'w-[105px]')}
+              {renderSortableHeader('In Stage', 'daysInStage', 'left', 'w-24')}
 
               <th className="px-2 py-2.5 font-semibold text-right">
                 <span className="sr-only">Row actions</span>
