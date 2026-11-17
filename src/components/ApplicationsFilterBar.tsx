@@ -98,7 +98,6 @@ export const ApplicationsFilterBar: React.FC<ApplicationsFilterBarProps> = ({
       icon: <Kanban className="w-3.5 h-3.5 text-blue-600" />,
       options: [
         { value: 'Active', label: 'Active Only', hint: 'Pipeline' },
-        { value: 'All', label: 'All Statuses' },
         { value: 'Saved', label: 'Saved', icon: <span className="w-2 h-2 rounded-full bg-slate-400 shrink-0" />, hint: 'Table' },
         { value: 'Applied', label: 'Applied', icon: <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0" />, hint: 'Table' },
         { value: 'Screening', label: 'Screening', icon: <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />, hint: 'Table' },

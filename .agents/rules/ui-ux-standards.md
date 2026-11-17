@@ -331,6 +331,9 @@ If deep architectural or guideline context is needed, consult the distilled repo
 2. **Board Return Active Reset**:
    - Switching from Table to Board view while an isolated single status is active MUST automatically reset the status filter to `'Active'`. This guarantees that the Board always mounts with a complete 5-stage active pipeline.
 
+### Ban on Table Stage Grouping (Dual-Lens Affinity)
+Never add Group by Status or collapsible stage accordion rows to the All Applications Table (AllApplicationsTable.tsx). Grouping by lifecycle stage is exclusively owned by the Kanban Board (layout=board). The table lens is strictly reserved for continuous, flat, dense scanning and global multi-column sorting (DDR 0002). Grouping by status destroys global sorting (such as sorting by highest salary or oldest applied across all jobs) and disrupts vertical eye tracking.
+
 ---
 
 ## 22. Popover Anchor Grounding vs. Button-Swallowing Morph Traps

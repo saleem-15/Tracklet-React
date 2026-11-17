@@ -1,10 +1,9 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
   ExternalLink,
-  ChevronDown,
 } from 'lucide-react';
 import {
   Application,
@@ -29,10 +28,8 @@ import {
   formatRelativeActivity,
   getStageAgingTier,
   STAGE_AGING_STYLES,
-  groupApplicationsByStatus,
 } from '../lib/tableUtils';
 import { useTableViewPrefs } from '../hooks/useTableViewPrefs';
-import { STAGE_CONFIG_MAP } from '../lib/constants';
 
 export interface AllApplicationsTableProps {
   applications: Application[];
@@ -75,19 +72,9 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [focusedIndex, setFocusedIndex] = useState<number>(-1);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
-  const [collapsedGroups, setCollapsedGroups] = useState<Set<ApplicationStatus>>(new Set());
   const tableContainerRef = useRef<HTMLDivElement>(null);
   const rowRefs = useRef<(HTMLTableRowElement | null)[]>([]);
   const { prefs, updatePrefs } = useTableViewPrefs();
-
-  const isGrouped = prefs.grouping === 'status';
-
-  // Flat position of every application, so row refs & keyboard focus survive grouping
-  const flatIndexById = useMemo(() => {
-    const map = new Map<string, number>();
-    applications.forEach((app, i) => map.set(app.id, i));
-    return map;
-  }, [applications]);
 
   // Prune selectedIds when visible applications change (e.g., search/filter updates)
   // so hidden records are never retained or deleted inadvertently (Issue #52)
@@ -185,18 +172,6 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
     } else {
       onBulkUpdateStatus([id], newStatus);
     }
-  };
-
-  const toggleGroupCollapsed = (status: ApplicationStatus) => {
-    setCollapsedGroups((prev) => {
-      const next = new Set(prev);
-      if (next.has(status)) {
-        next.delete(status);
-      } else {
-        next.add(status);
-      }
-      return next;
-    });
   };
 
   // Auto-scroll the table with a 1-item buffer (keeps next/prev item visible before scrolling)
@@ -352,8 +327,7 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
   // checkbox | identity | source | location? | type? | salary? | activity? | applied | status | in stage | actions
   const totalColumnCount = 6 + optionalColumnCount + 1;
 
-  const renderRow = (app: Application) => {
-    const flatIndex = flatIndexById.get(app.id) ?? 0;
+  const renderRow = (app: Application, flatIndex: number) => {
     const isSelected = selectedIds.has(app.id);
     const isCurrentRowActive = selectedAppId === app.id;
     const isKeyboardFocused = focusedIndex === flatIndex;
@@ -584,48 +558,15 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
       );
     }
 
-    if (isGrouped) {
-      const groups = groupApplicationsByStatus(applications);
-      return groups.map(({ status, applications: groupApps }) => {
-        const config = STAGE_CONFIG_MAP[status];
-        const isCollapsed = collapsedGroups.has(status);
-        return (
-          <React.Fragment key={status}>
-            <tr className="bg-slate-100/80 select-none">
-              <td colSpan={totalColumnCount} className="px-3 py-1.5">
-                <button
-                  type="button"
-                  aria-expanded={!isCollapsed}
-                  onClick={() => toggleGroupCollapsed(status)}
-                  className="sticky left-10 inline-flex items-center gap-2 text-[11px] font-mono font-semibold uppercase tracking-wider text-slate-600 hover:text-slate-900 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 rounded"
-                >
-                  <ChevronDown
-                    className={`w-3 h-3 text-slate-400 transition-transform duration-200 ${isCollapsed ? '-rotate-90' : ''}`}
-                  />
-                  <span className={`w-1.5 h-1.5 rounded-full ${config.dot}`} aria-hidden="true" />
-                  <span>{config.label}</span>
-                  <span className="text-slate-400 tabular-nums normal-case">({groupApps.length})</span>
-                </button>
-              </td>
-            </tr>
-            {!isCollapsed && groupApps.map((app) => renderRow(app))}
-          </React.Fragment>
-        );
-      });
-    }
-
-    return applications.map((app) => renderRow(app));
+    return applications.map((app, index) => renderRow(app, index));
   };
 
   return (
     <div className="flex-1 bg-slate-50/60 flex flex-col h-full min-h-0 overflow-hidden relative p-3 sm:p-4 md:p-6 text-slate-900">
       {/* Main Table Framed Card Container */}
       <div className="flex-1 flex flex-col min-h-0 bg-white border border-slate-200/90 rounded-2xl shadow-2xs overflow-hidden relative">
-        {/* View bar: summary chips + view settings */}
+        {/* View bar: column visibility */}
         <TableViewBar
-          allApplications={allApplications ?? applications}
-          activeStatusFilter={statusFilter}
-          onStatusFilterChange={onStatusFilterChange}
           prefs={prefs}
           onPrefsChange={updatePrefs}
           visibleRowCount={applications.length}

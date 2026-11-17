@@ -15,7 +15,6 @@ export interface ProgressiveFilterBarProps {
 
 const STATUS_OPTIONS: SelectOption<string>[] = [
   { label: 'Active Only', value: 'Active' },
-  { label: 'All', value: 'All' },
   { label: 'Saved', value: 'Saved' },
   { label: 'Applied', value: 'Applied' },
   { label: 'Screening', value: 'Screening' },

@@ -3,7 +3,6 @@ import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { WorkspaceLoadingState } from './WorkspaceLoadingState';
 import { AllApplicationsTable } from '../AllApplicationsTable';
 import { ActivePipelineBoard, ActiveQuotaInfo } from '../ActivePipelineBoard';
-import { ArchiveRoutingBanner } from '../ArchiveRoutingBanner';
 import { ACTIVE_STATUSES, TERMINAL_STATUSES } from '../../lib/constants';
 import { ContactsView } from '../ContactsView';
 import { StatsView } from '../StatsView';
@@ -192,17 +191,6 @@ export function WorkspaceContent({ isLoading = false, activeQuota }: WorkspaceCo
             </button>
           </div>
         </div>
-      )}
-
-      {/* Archive / Rejected Smart Routing Notice Banner */}
-      {(activeTab === 'all' || activeTab === 'pipeline') && (
-        <ArchiveRoutingBanner
-          status={filter.status}
-          onResetToActive={() => {
-            setFilter((prev) => ({ ...prev, status: 'Active' }));
-            setLayout('board');
-          }}
-        />
       )}
 
       {/* Unified Applications Hub Canvas: Dual-lens toggle between Board and Table */}

@@ -219,7 +219,7 @@ describe('Unified Applications Hub: Routing, Toolbar, and Canvas Wiring', () => 
     expect(onLayoutChange).toHaveBeenCalledWith('table');
   });
 
-  it('renders ArchiveRoutingBanner in WorkspaceContent when viewing Archived or Rejected status', () => {
+  it('does not render intrusive banners in WorkspaceContent when viewing Archived or Rejected status (DDR 0001 ambient calm)', () => {
     const apps: Application[] = [
       makeApp('app-archived-1', { status: 'Archived', company: 'Past Corp' }),
     ];
@@ -275,22 +275,9 @@ describe('Unified Applications Hub: Routing, Toolbar, and Canvas Wiring', () => 
       );
     });
 
-    // Banner is rendered
-    expect(host!.textContent).toContain('Viewing Archived Applications');
-    expect(host!.textContent).toContain('Automatically switched to Table layout');
-
-    // Click "Back to Active Board"
-    const backBtn = Array.from(host!.querySelectorAll('button')).find(
-      (b) => b.textContent?.includes('Back to Active Board')
-    );
-    expect(backBtn).toBeDefined();
-
-    act(() => {
-      backBtn!.click();
-    });
-
-    expect(setFilter).toHaveBeenCalled();
-    expect(setLayout).toHaveBeenCalledWith('board');
+    // Intrusive banner is NOT rendered (preserving Ambient Calm DDR 0001)
+    expect(host!.textContent).not.toContain('Viewing Archived Applications');
+    expect(host!.textContent).not.toContain('Automatically switched to Table layout');
   });
 
   it('renders ActivePipelineBoard when layout is board and AllApplicationsTable when layout is table', () => {

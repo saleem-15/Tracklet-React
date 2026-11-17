@@ -5,8 +5,8 @@ import { loadTableViewPrefs, saveTableViewPrefs } from '../lib/tableUtils';
 /**
  * useTableViewPrefs
  *
- * Persists the table lens view preferences (grouping, optional
- * columns) to localStorage so returning users keep their preferred layout.
+ * Persists the table lens view preferences (optional columns) to
+ * localStorage so returning users keep their preferred layout.
  */
 export function useTableViewPrefs(): {
   prefs: TableViewPrefs;
