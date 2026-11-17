@@ -23,6 +23,8 @@ interface CustomSelectDropdownProps<T = string | number> {
   buttonClassName?: string;
   menuClassName?: string;
   disabled?: boolean;
+  /** Optional menu opening direction. Defaults to 'down'. */
+  menuPlacement?: 'down' | 'up';
   /** Optional id of an external element that names the trigger (overrides the generated aria-label). */
   ariaLabelledBy?: string;
 }
@@ -40,6 +42,7 @@ export function CustomSelectDropdown<T extends string | number = string>({
   buttonClassName = '',
   menuClassName = '',
   disabled = false,
+  menuPlacement = 'down',
   ariaLabelledBy,
 }: CustomSelectDropdownProps<T>): React.ReactElement {
   const [isOpen, setIsOpen] = useState(false);
@@ -189,8 +192,8 @@ export function CustomSelectDropdown<T extends string | number = string>({
             initial="closed"
             animate="open"
             exit="closed"
-            style={{ transformOrigin: 'top left' }}
-            className={`absolute top-full left-0 mt-1.5 z-50 min-w-[160px] max-h-60 overflow-y-auto bg-white border border-slate-200/90 rounded-[12px] shadow-xl p-1.5 will-change-transform ${menuClassName}`}
+            style={{ transformOrigin: menuPlacement === 'up' ? 'bottom left' : 'top left' }}
+            className={`absolute ${menuPlacement === 'up' ? 'bottom-full mb-1.5' : 'top-full mt-1.5'} left-0 z-50 min-w-[160px] max-h-60 overflow-y-auto bg-white border border-slate-200/90 rounded-[12px] shadow-xl p-1.5 will-change-transform ${menuClassName}`}
           >
           {options.map((opt, idx) => {
             const isSelected = opt.value === value;

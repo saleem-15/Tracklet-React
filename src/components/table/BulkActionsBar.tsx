@@ -8,6 +8,7 @@ export interface BulkActionsBarProps {
   onReject: () => void;
   onDelete: () => void;
   onClearSelection: () => void;
+  className?: string;
 }
 
 /**
@@ -25,6 +26,7 @@ export const BulkActionsBar: React.FC<BulkActionsBarProps> = ({
   onReject,
   onDelete,
   onClearSelection,
+  className = 'bottom-14 sm:bottom-16',
 }) => {
   if (selectedCount === 0) return null;
 
@@ -35,7 +37,7 @@ export const BulkActionsBar: React.FC<BulkActionsBarProps> = ({
     <div
       role="toolbar"
       aria-label="Bulk actions for selected applications"
-      className="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 max-w-[calc(100%-2rem)] bg-slate-900/95 backdrop-blur-md border border-slate-700/60 shadow-2xl rounded-xl px-3 py-2 flex items-center gap-2 text-xs text-white animate-in fade-in slide-in-from-bottom-2 duration-200 motion-reduce:animate-none overflow-x-auto select-none"
+      className={`absolute ${className} left-1/2 -translate-x-1/2 z-30 max-w-[calc(100%-2rem)] bg-slate-900/95 backdrop-blur-md border border-slate-700/60 shadow-2xl rounded-xl px-3 py-2 flex items-center gap-2 text-xs text-white animate-in fade-in slide-in-from-bottom-2 duration-200 motion-reduce:animate-none overflow-x-auto select-none`}
     >
       <div className="flex items-center gap-2.5 shrink-0">
         <span className="font-mono text-[11px] font-semibold bg-white/10 text-white px-2 py-0.5 rounded-md tabular-nums">
