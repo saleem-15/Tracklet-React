@@ -152,6 +152,7 @@ export const STATUS_ACTIVE_STYLES: Record<ApplicationStatus, string> = {
 };
 
 export const LOCAL_STORAGE_KEYS = {
+  TABLE_VIEW: 'tracklet_table_view_v1',
   CONTACTS_LAYOUT: 'tracklet_contacts_layout_v1',
   CONTACTS_MIGRATED: 'tracklet_contacts_migrated',
   EXPIRY_SETTINGS: 'tracklet_expiry_settings_v1',

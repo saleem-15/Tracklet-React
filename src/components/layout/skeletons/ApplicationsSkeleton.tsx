@@ -27,63 +27,86 @@ export function ApplicationsToolbarSkeleton() {
 }
 
 /**
- * Table View Skeleton matching AllApplicationsTable.tsx (38px rows, 0 CLS).
+ * Table View Skeleton matching AllApplicationsTable.tsx (54px rows, 0 CLS).
+ * Includes the view-bar strip so the framed card silhouette matches exactly.
  */
 export function ApplicationsTableSkeleton() {
   return (
-    <div className="flex-1 overflow-auto flex flex-col">
-      <table className="w-full text-left border-collapse text-xs">
+    <div className="flex-1 flex flex-col min-h-0">
+      {/* View bar skeleton (summary chips left, settings right) */}
+      <div className="shrink-0 border-b border-slate-200/70 bg-white flex items-center justify-between gap-3 pl-3 pr-2 py-1.5 h-[38px]">
+        <div className="flex items-center gap-1.5">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="h-6 w-16 rounded-full bg-slate-200/50 animate-pulse motion-reduce:animate-none" />
+          ))}
+        </div>
+        <div className="h-6 w-16 rounded-md bg-slate-200/40 animate-pulse motion-reduce:animate-none mr-1" />
+      </div>
+      <div className="flex-1 overflow-auto flex flex-col">
+      <table className="w-full text-left border-collapse text-xs min-w-[880px]">
         <thead className="bg-slate-50/80 border-b border-slate-200/80 sticky top-0 z-10 text-[11px] font-mono text-slate-500 uppercase tracking-wider backdrop-blur-xs h-[37px]">
           <tr>
             <th className="w-10 px-3 py-2.5 text-center">
               <div className="w-3.5 h-3.5 rounded bg-slate-200/60 inline-block" />
             </th>
-            <th className="px-3 py-2.5 font-semibold text-slate-500">Company</th>
-            <th className="px-3 py-2.5 font-semibold text-slate-500">Role</th>
-            <th className="px-3 py-2.5 font-semibold text-slate-500">Platform</th>
-            <th className="px-3 py-2.5 font-semibold text-slate-500">Applied</th>
-            <th className="px-3 py-2.5 font-semibold text-slate-500">Stage</th>
+            <th className="w-[260px] px-3 py-2.5 font-semibold text-slate-500">Company & Role</th>
+            <th className="w-44 px-3 py-2.5 font-semibold text-slate-500">Location</th>
             <th className="px-3 py-2.5 font-semibold text-slate-500">Status</th>
-            <th className="px-3 py-2.5 font-semibold text-slate-500 text-right pr-4">Actions</th>
+            <th className="px-3 py-2.5 font-semibold text-slate-500">Source</th>
+            <th className="w-24 px-3 py-2.5 font-semibold text-slate-500">Salary</th>
+            <th className="w-20 px-3 py-2.5 font-semibold text-slate-500">Activity</th>
+            <th className="w-[105px] px-3 py-2.5 font-semibold text-slate-500">Applied</th>
+            <th className="w-24 px-3 py-2.5 font-semibold text-slate-500">In Stage</th>
+            <th className="px-2 py-2.5 font-semibold text-slate-500 text-right">Actions</th>
           </tr>
         </thead>
         <tbody>
           {[...Array(8)].map((_, i) => (
             <tr
               key={i}
-              className="h-[38px] border-b border-slate-100/80 animate-pulse motion-reduce:animate-none"
+              className="h-[54px] border-b border-slate-100/80 animate-pulse motion-reduce:animate-none"
             >
               <td className="px-3 py-1 text-center align-middle">
                 <div className="w-3.5 h-3.5 rounded bg-slate-200/50 inline-block" />
               </td>
-              <td className="px-3 py-1 align-middle">
-                <div className="flex items-center gap-2">
+              <td className="w-[260px] px-3 py-1.5 align-middle">
+                <div className="flex items-center gap-2.5">
                   <div className="w-5 h-5 rounded bg-slate-200/60 shrink-0" />
-                  <div className="w-24 sm:w-28 h-3.5 bg-slate-200/60 rounded" />
+                  <div className="flex flex-col gap-1.5 min-w-0">
+                    <div className="w-28 sm:w-32 h-3 bg-slate-200/60 rounded" />
+                    <div className="w-36 sm:w-44 h-2.5 bg-slate-200/40 rounded" />
+                  </div>
                 </div>
               </td>
-              <td className="px-3 py-1 align-middle">
-                <div className="w-28 sm:w-36 h-3 bg-slate-200/50 rounded" />
+              <td className="w-44 px-3 py-1 align-middle">
+                <div className="w-24 sm:w-28 h-3 bg-slate-200/40 rounded" />
               </td>
               <td className="px-3 py-1 align-middle">
-                <div className="w-16 h-3 bg-slate-200/40 rounded" />
+                <div className="w-16 h-5 bg-slate-200/50 rounded-md" />
               </td>
               <td className="px-3 py-1 align-middle">
-                <div className="w-16 h-3 bg-slate-200/40 rounded" />
+                <div className="w-12 h-3 bg-slate-200/40 rounded" />
               </td>
-              <td className="px-3 py-1 align-middle">
-                <div className="w-14 h-4 bg-slate-200/40 rounded" />
+              <td className="w-24 px-3 py-1 align-middle">
+                <div className="w-14 h-3 bg-slate-200/40 rounded" />
               </td>
-              <td className="px-3 py-1 align-middle">
-                <div className="w-16 h-5 bg-slate-200/50 rounded-full" />
+              <td className="w-20 px-3 py-1 align-middle">
+                <div className="w-8 h-3 bg-slate-200/40 rounded" />
               </td>
-              <td className="px-3 py-1 align-middle text-right pr-4">
+              <td className="w-[105px] px-3 py-1 align-middle">
+                <div className="w-14 h-3 bg-slate-200/40 rounded" />
+              </td>
+              <td className="w-24 px-3 py-1 align-middle">
+                <div className="w-6 h-3 bg-slate-200/40 rounded" />
+              </td>
+              <td className="px-2 py-1 align-middle text-right">
                 <div className="w-4 h-4 rounded bg-slate-200/30 inline-block" />
               </td>
             </tr>
           ))}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }

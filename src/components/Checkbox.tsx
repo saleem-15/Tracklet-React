@@ -78,7 +78,7 @@ export function Checkbox({
           event.stopPropagation();
           onClick?.(event);
         }}
-        className={`relative flex size-4 shrink-0 items-center justify-center rounded-[4px] border border-slate-300 bg-white text-white outline-none transition-[background-color,border-color,box-shadow] duration-150 ease-[cubic-bezier(0.16,1,0.3,1)] hover:border-blue-500 hover:bg-blue-50 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:border-blue-600 data-[state=checked]:bg-blue-600 data-[state=checked]:shadow-sm data-[state=checked]:hover:border-blue-600 data-[state=checked]:hover:bg-blue-600 ${className}`}
+        className={`relative flex size-4 shrink-0 items-center justify-center rounded-[4px] border border-slate-300 bg-white text-white outline-none transition-[background-color,border-color,box-shadow] duration-150 ease-[cubic-bezier(0.16,1,0.3,1)] hover:border-blue-500 hover:bg-blue-50 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:border-blue-600 data-[state=checked]:bg-blue-600 data-[state=checked]:shadow-sm data-[state=checked]:hover:border-blue-600 data-[state=checked]:hover:bg-blue-600 data-[state=indeterminate]:border-blue-600 data-[state=indeterminate]:bg-blue-600 data-[state=indeterminate]:shadow-sm data-[state=indeterminate]:hover:border-blue-600 data-[state=indeterminate]:hover:bg-blue-600 ${className}`}
         {...props}
       >
         <motion.svg
@@ -87,18 +87,29 @@ export function Checkbox({
           fill="none"
           initial={false}
         >
-          <motion.path
-            d="M2.5 6L4.5 8L9.5 3"
-            stroke="currentColor"
-            strokeWidth="1.65"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            fill="none"
-            initial={false}
-            animate={checked === true ? 'checked' : 'unchecked'}
-            variants={checkVariants}
-            transition={prefersReducedMotion ? { duration: 0 } : undefined}
-          />
+          {checked === 'indeterminate' ? (
+            <motion.path
+              d="M2.5 6H9.5"
+              stroke="currentColor"
+              strokeWidth="1.65"
+              strokeLinecap="round"
+              fill="none"
+              initial={false}
+            />
+          ) : (
+            <motion.path
+              d="M2.5 6L4.5 8L9.5 3"
+              stroke="currentColor"
+              strokeWidth="1.65"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              fill="none"
+              initial={false}
+              animate={checked === true ? 'checked' : 'unchecked'}
+              variants={checkVariants}
+              transition={prefersReducedMotion ? { duration: 0 } : undefined}
+            />
+          )}
         </motion.svg>
       </CheckboxPrimitive.Root>
     </motion.div>
