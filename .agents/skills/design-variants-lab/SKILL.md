@@ -25,13 +25,21 @@ This directory is **permanent product tooling**, not prototyping residue. It is 
 
 | File | Responsibility |
 | :--- | :--- |
-| `src/dev/DesignLabBar.tsx` | Floating, draggable, portaled toolbar (variant switcher, surface toggle, notes, scenarios). |
-| `src/dev/DesignLabBarChrome.tsx` | Obsidian/porcelain chrome primitives, drag handle, variant pills. |
-| `src/dev/DesignLabBarControls.tsx` | Expanded controls, utility group, scenario trigger wiring. |
-| `src/dev/DesignLabPopovers.tsx` | Variant notes card and custom scenario menu (never a native `<select>`). |
+| `src/dev/DesignLabBar.tsx` | Floating, whole-bar draggable, portaled capsule with smooth pixel-width morphing and tooltip session provider. |
+| `src/dev/DesignLabBarChrome.tsx` | Agentation-matched charcoal/white chrome primitives, local container-relative active pill with hover ghost tint, active trigger highlights, and directional `44x44` collapsed orb. |
+| `src/dev/DesignLabBarControls.tsx` | Expanded controls: variants, pinned variables, scenario menu, Hold-to-Peek (`Eye`), Variables (`SlidersHorizontal`), Notes (`Info`), 1-click Copy Decision (`Copy`), Settings (`Settings`), and Collapse (`X`). |
+| `src/dev/DesignLabPopovers.tsx` | Blur-morph variant notes card (with Rule out/Restore + Copy decision), settings popover (Dark/Light switch), and scenario menu. |
+| `src/dev/DesignLabPopoverChrome.tsx` | Shared popover skins, viewport-aware flip anchors, and Agentation blur-morph curves. |
+| `src/dev/DesignLabVariablesPopover.tsx` | Declarative multi-variable popover (`choice`, `boolean`, `range`, `color`), Pin-to-Bar toggles, Reset, and Saved Snapshots. |
+| `src/dev/DesignLabPinnedVars.tsx` | Compact inline chips for up to 2 pinned variables on the main capsule bar. |
+| `src/dev/DesignLabTooltip.tsx` | Agentation-style custom session tooltips (350ms warm-up, 0ms sibling glide, auto-suppressed on drag/popover). |
 | `src/dev/useDesignLabState.ts` | Controlled variant selection + `?variant=` deep-link sync + cycling. |
-| `src/dev/useLabDrag.ts` | Pointer/keyboard drag, viewport re-clamping, session storage, polite announcements. |
-| `src/dev/designLabUtils.ts` | Pure helpers: clamping, default position, storage, URL, editable-target detection. |
+| `src/dev/useDesignLabVariables.ts` | Declarative multi-variable hook with URL sync, session snapshots, and pin overrides. |
+| `src/dev/useLabBarInteractions.ts` | `Alt+1..9` switching, `Alt+0`/pointer Hold-to-Peek baseline, shortlist elimination, and decision copy. |
+| `src/dev/useLabDrag.ts` | Zero-re-render GPU drag, deferred pointer capture, 20px soft edge magnetism, center-anchored morphing. |
+| `src/dev/designLabDecision.ts` | Pure `formatDesignLabDecision` Markdown prompt snippet formatter + safe clipboard helper. |
+| `src/dev/designLabVariables.ts` | Pure variable schema types, clamping/validation, URL sync, and session helpers. |
+| `src/dev/designLabUtils.ts` | Pure helpers: clamping, soft edge snapping, default position, metrics, storage, URL, editable-target detection. |
 | `src/dev/index.ts` | Barrel export. Import everything from `../dev`. |
 
 ### What the bar guarantees
@@ -39,10 +47,12 @@ This directory is **permanent product tooling**, not prototyping residue. It is 
 - Mounts in `document.body` at `z-[9990]` — above `Modal` (`z-50`) and `ContactDetailPanel` (`z-[60]`), just under `Tooltip` (`z-[9999]`).
 - Optional `topLayer` prop uses the native Popover API so the bar can float above `<dialog>.showModal()`.
 - Stops `mousedown` / `pointerdown` / `click` propagation, so it never closes an enclosing modal backdrop.
-- Draggable grip: 4px movement threshold, GPU transform while dragging, arrow-key movement (15px), `Home` / double-click reset.
-- `Alt+1..9` switches variants, `Alt+[` / `Alt+]` cycles, `Alt+L` collapses, `Escape` closes popovers without closing an underlying modal.
-- Dark obsidian and light porcelain surfaces, persisted per lab in `sessionStorage`, with WCAG AA contrast on both.
-- Polite `aria-live` announcements for keyboard movement, plus `role="toolbar"` / `role="group"` / separators / `aria-pressed` semantics.
+- Handle-less whole-bar dragging with subtle drag lift (`scale(1.02)` + deeper shadow), 20px soft edge magnetism (corners & top/bottom center), 4px drag threshold, deferred pointer capture, and smooth pixel-width morphing between the capsule and `44x44` circular orb (`Layers` + directional `1/N` roll).
+- Local container-relative sliding selection pill with hover ghost highlight and right-click (or Notes) variant elimination/shortlisting.
+- Declarative multi-variable experimentation (`useDesignLabVariables`) supporting `choice`, `boolean`, `range` (double-click readout to reset), and `color` controls, Pin-to-Bar, URL sync, and named Snapshots.
+- Optional `baselineVariant` Hold-to-Peek (`Eye` button or hold `Alt+0`) for zero-eye-movement before/after blink comparison, plus 1-click Copy Decision Prompt export.
+- `Alt+1..9` switches variants; `Escape` follows Tracklet's LIFO overlay stack (closes open popovers first, then collapses the expanded bar into the circular orb).
+- Agentation charcoal (`bg-neutral-900`) and crisp white (`bg-white`) surfaces toggled via an animated switch in Settings, custom session tooltips (zero native `title`), and polite `aria-live` announcements.
 
 ---
 
