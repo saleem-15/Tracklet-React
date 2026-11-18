@@ -317,10 +317,13 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
 
   // Keep focusedIndex within bounds if paginatedApplications change
   useEffect(() => {
-    if (focusedIndex >= paginatedApplications.length) {
-      setFocusedIndex(paginatedApplications.length - 1);
-    }
-  }, [paginatedApplications.length, focusedIndex]);
+    setFocusedIndex((prev) => {
+      if (prev < 0) return -1;
+      return prev >= paginatedApplications.length
+        ? Math.max(-1, paginatedApplications.length - 1)
+        : prev;
+    });
+  }, [paginatedApplications.length]);
 
   const renderSortIcon = (field: SortField) => {
     if (sort.field !== field) {

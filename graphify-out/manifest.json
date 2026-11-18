@@ -655,8 +655,8 @@
     "semantic_hash": ""
   },
   "src/components/AllApplicationsTable.tsx": {
-    "mtime": 1794931361.7044709,
-    "ast_hash": "bdd1c173f5a95a5636b379b7be9ebd05",
+    "mtime": 1794989798.0508742,
+    "ast_hash": "08ce4f81622f68e5b8e3119d61d9ea89",
     "semantic_hash": ""
   },
   "src/components/ApplicationDetailPanel.tsx": {
@@ -4440,8 +4440,8 @@
     "semantic_hash": ""
   },
   "src/components/table/TablePaginationBar.tsx": {
-    "mtime": 1794931180.9318483,
-    "ast_hash": "6838198aad9b618b46fe94243b455b70",
+    "mtime": 1794989798.0508742,
+    "ast_hash": "f6833eb6ef94c570ebbf17169ec835f8",
     "semantic_hash": ""
   },
   "src/hooks/useTablePagination.ts": {
@@ -4455,8 +4455,8 @@
     "semantic_hash": ""
   },
   "tests/unit/allApplicationsTablePagination.test.tsx": {
-    "mtime": 1794931180.9410472,
-    "ast_hash": "9e3a9d8927d636e58045c215419f641f",
+    "mtime": 1794989818.305793,
+    "ast_hash": "5a7a29a25a2aeaede9b619dff52d73ae",
     "semantic_hash": ""
   },
   "tests/unit/paginationUtils.test.ts": {

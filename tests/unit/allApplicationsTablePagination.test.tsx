@@ -103,7 +103,7 @@ describe('AllApplicationsTable Viewport Pagination', () => {
       );
     });
 
-    const nextBtn = host!.querySelector('[data-testid="pagination-next-page"]') as HTMLButtonElement;
+    const nextBtn = host!.querySelector('button[aria-label="Next page"]') as HTMLButtonElement;
     expect(nextBtn).not.toBeNull();
     expect(nextBtn.disabled).toBe(false);
 
@@ -148,16 +148,28 @@ describe('AllApplicationsTable Viewport Pagination', () => {
     });
 
     // Tab to next-page button in footer
-    const nextBtn = host!.querySelector('[data-testid="pagination-next-page"]') as HTMLButtonElement;
-    nextBtn.focus();
+    const nextBtn = host!.querySelector('button[aria-label="Next page"]') as HTMLButtonElement;
+    expect(nextBtn).not.toBeNull();
+    act(() => {
+      nextBtn.focus();
+    });
 
-    // Trigger Space/Enter on next button
+    // Bubbling Enter/Space on a focused button must not reach the row keydown handler
     await act(async () => {
-      nextBtn.click();
+      nextBtn.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    });
+    await act(async () => {
+      nextBtn.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
     });
 
     // Verify row was NOT selected/opened by row keydown handler
     expect(onSelectApp).not.toHaveBeenCalled();
+
+    // Explicit activation still advances the page
+    await act(async () => {
+      nextBtn.click();
+    });
+
     // And page advanced
     expect(host!.textContent).toContain('Page 2 of 3');
   });
@@ -256,7 +268,7 @@ describe('AllApplicationsTable Viewport Pagination', () => {
     });
 
     // Advance to page 3 (items 51-70)
-    const nextBtn = host!.querySelector('[data-testid="pagination-next-page"]') as HTMLButtonElement;
+    const nextBtn = host!.querySelector('button[aria-label="Next page"]') as HTMLButtonElement;
     await act(async () => {
       nextBtn.click();
     });

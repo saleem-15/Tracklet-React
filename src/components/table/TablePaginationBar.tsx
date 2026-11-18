@@ -56,7 +56,7 @@ export const TablePaginationBar: React.FC<TablePaginationBarProps> = ({
   return (
     <nav
       aria-label="Table pagination"
-      className={`border-t border-slate-200/80 bg-slate-50/95 px-3.5 py-2 flex flex-wrap items-center justify-between gap-3 text-xs select-none backdrop-blur-xs ${className}`}
+      className={`border-t border-slate-200/80 bg-slate-50/95 px-3.5 py-2 flex flex-wrap items-center justify-between gap-3 text-xs select-none ${className}`}
       data-testid="table-pagination-bar"
     >
       {/* Left: Range and total summary */}
