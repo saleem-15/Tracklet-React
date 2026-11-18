@@ -1,27 +1,42 @@
-import type { PointerEvent as ReactPointerEvent, KeyboardEvent as ReactKeyboardEvent, ReactNode } from 'react';
+import {
+  useState,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type PointerEvent as ReactPointerEvent,
+  type ReactNode,
+} from 'react';
 import { motion } from 'motion/react';
-import { ChevronDown, ChevronUp, GripVertical, Layers } from 'lucide-react';
-import type { DesignLabSurface, DesignLabVariant } from './designLabUtils';
+import { ChevronDown, Layers } from 'lucide-react';
+import { LabTooltip } from './DesignLabTooltip';
+import { isActTestEnvironment, type DesignLabSurface } from './designLabUtils';
+
+/** Agentation toolbar morph & content reveal easing curves. */
+export const AGENTATION_MORPH_EASE: [number, number, number, number] = [0.19, 1, 0.22, 1];
+export const AGENTATION_CONTENT_EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
 export const LAB_SURFACE_ROOT: Record<DesignLabSurface, string> = {
-  dark:
-    'bg-slate-950/92 text-slate-100 border-slate-800/85 ring-white/10 shadow-[0_12px_36px_rgba(2,6,23,0.45),0_2px_8px_rgba(2,6,23,0.28)]',
-  light:
-    'bg-white/95 text-slate-900 border-slate-200/90 ring-slate-900/5 shadow-[0_12px_36px_rgba(15,23,42,0.14),0_2px_8px_rgba(15,23,42,0.08)]',
+  dark: 'bg-neutral-900 text-white shadow-[0_2px_8px_rgba(0,0,0,0.2),0_4px_16px_rgba(0,0,0,0.1),0_0_0_1px_rgba(255,255,255,0.08)]',
+  light: 'bg-white text-neutral-900 shadow-[0_2px_8px_rgba(0,0,0,0.08),0_4px_16px_rgba(0,0,0,0.06),0_0_0_1px_rgba(0,0,0,0.04)]',
 };
 
-export const LAB_TRANSITION = 'transition-colors duration-150';
-export const LAB_FOCUS_RING =
-  'outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 motion-reduce:transition-none';
+export const LAB_SURFACE_DRAG_LIFT: Record<DesignLabSurface, string> = {
+  dark: 'scale-[1.02] shadow-[0_10px_28px_rgba(0,0,0,0.34),0_4px_12px_rgba(0,0,0,0.22),0_0_0_1px_rgba(255,255,255,0.12)]',
+  light: 'scale-[1.02] shadow-[0_10px_28px_rgba(0,0,0,0.14),0_4px_12px_rgba(0,0,0,0.08),0_0_0_1px_rgba(0,0,0,0.06)]',
+};
+
+export const LAB_SURFACE_TRANSITION =
+  'transition-[background-color,color,box-shadow,scale] duration-250 ease-out motion-reduce:transition-none';
+
+export const LAB_TRANSITION = 'transition-[color,background-color,box-shadow,transform] duration-150 ease-out';
+export const LAB_FOCUS_RING = 'outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 motion-reduce:transition-none';
 
 const UTILITY: Record<DesignLabSurface, string> = {
-  dark: 'text-slate-300 hover:text-white hover:bg-white/10',
-  light: 'text-slate-600 hover:text-slate-900 hover:bg-slate-900/5',
+  dark: 'text-white/85 hover:text-white hover:bg-white/[0.12]',
+  light: 'text-neutral-600 hover:text-neutral-900 hover:bg-black/[0.06]',
 };
 
-export const LAB_CHIP: Record<DesignLabSurface, string> = {
-  dark: 'bg-white/10 text-slate-200',
-  light: 'bg-slate-900/5 text-slate-600',
+const UTILITY_ACTIVE: Record<DesignLabSurface, string> = {
+  dark: 'bg-white/[0.16] text-white',
+  light: 'bg-black/[0.09] text-neutral-900',
 };
 
 export function LabSeparator({ surface }: { surface: DesignLabSurface }) {
@@ -29,173 +44,143 @@ export function LabSeparator({ surface }: { surface: DesignLabSurface }) {
     <span
       role="separator"
       aria-orientation="vertical"
-      className={`h-4 w-px shrink-0 ${surface === 'dark' ? 'bg-white/10' : 'bg-slate-900/10'}`}
+      className={`h-3 w-px shrink-0 mx-0.5 ${surface === 'dark' ? 'bg-white/15' : 'bg-black/10'}`}
     />
-  );
-}
-
-export function LabTitleChip({ title, surface }: { title: string; surface: DesignLabSurface }) {
-  const isDark = surface === 'dark';
-
-  return (
-    <div className="flex items-center gap-1.5 pl-0.5 pr-1 select-none">
-      <span
-        className={`rounded px-1 py-0.5 font-mono text-[9px] uppercase tracking-wider font-semibold ${LAB_CHIP[surface]}`}
-      >
-        LAB
-      </span>
-      <span
-        className={`font-heading text-xs font-semibold tracking-tight ${isDark ? 'text-slate-100' : 'text-slate-900'}`}
-      >
-        {title}
-      </span>
-    </div>
   );
 }
 
 interface LabIconButtonProps {
   label: string;
-  title?: string;
+  tooltip?: string;
+  shortcut?: string;
+  barTop?: number;
+  isActive?: boolean;
+  badge?: number;
   ariaExpanded?: boolean;
+  ariaHasPopup?: 'dialog' | 'menu';
   surface: DesignLabSurface;
-  onClick: () => void;
+  onClick?: () => void;
+  onPointerDown?: (event: ReactPointerEvent<HTMLButtonElement>) => void;
+  onPointerUp?: (event: ReactPointerEvent<HTMLButtonElement>) => void;
+  onPointerLeave?: (event: ReactPointerEvent<HTMLButtonElement>) => void;
+  onPointerCancel?: (event: ReactPointerEvent<HTMLButtonElement>) => void;
   children: ReactNode;
   testId?: string;
 }
 
 export function LabIconButton({
   label,
-  title,
+  tooltip,
+  shortcut,
+  barTop = 300,
+  isActive = false,
+  badge,
   ariaExpanded,
+  ariaHasPopup,
   surface,
   onClick,
+  onPointerDown,
+  onPointerUp,
+  onPointerLeave,
+  onPointerCancel,
   children,
   testId,
 }: LabIconButtonProps) {
-  return (
-    <button
-      type="button"
-      aria-label={label}
-      aria-expanded={ariaExpanded}
-      title={title ?? label}
-      data-testid={testId}
-      onClick={onClick}
-      className={`inline-flex min-h-7 min-w-7 items-center justify-center rounded-md select-none cursor-pointer ${LAB_TRANSITION} ${LAB_FOCUS_RING} ${UTILITY[surface]}`}
-    >
-      {children}
-    </button>
-  );
-}
-
-interface VariantSwitcherProps<T extends string> {
-  labId: string;
-  variants: readonly DesignLabVariant<T>[];
-  activeVariant: T;
-  onVariantChange: (variant: T) => void;
-  surface: DesignLabSurface;
-  reducedMotion: boolean;
-}
-
-export function VariantSwitcher<T extends string>({
-  labId,
-  variants,
-  activeVariant,
-  onVariantChange,
-  surface,
-  reducedMotion,
-}: VariantSwitcherProps<T>) {
   const isDark = surface === 'dark';
-
   return (
-    <div
-      role="group"
-      aria-label="Design variants"
-      className={`flex items-center gap-0.5 rounded-lg p-0.5 ${isDark ? 'bg-white/5' : 'bg-slate-900/5'}`}
-    >
-      {variants.map((variant, index) => {
-        const isActive = variant.id === activeVariant;
-
-        return (
-          <button
-            key={variant.id}
-            type="button"
-            aria-pressed={isActive}
-            onClick={() => onVariantChange(variant.id)}
-            className={`relative flex items-center gap-1 rounded-md px-2 py-1 font-sans text-[11px] font-semibold select-none cursor-pointer ${LAB_TRANSITION} ${LAB_FOCUS_RING} ${
-              isActive
-                ? isDark
-                  ? 'text-white'
-                  : 'text-slate-900'
-                : isDark
-                  ? 'text-slate-300 hover:text-white'
-                  : 'text-slate-500 hover:text-slate-900'
+    <LabTooltip label={tooltip ?? label} shortcut={shortcut} surface={surface} barTop={barTop}>
+      <button
+        type="button"
+        aria-label={label}
+        aria-expanded={ariaExpanded}
+        aria-haspopup={ariaHasPopup}
+        data-active={isActive ? 'true' : undefined}
+        data-testid={testId}
+        onClick={onClick}
+        onPointerDown={onPointerDown}
+        onPointerUp={onPointerUp}
+        onPointerLeave={onPointerLeave}
+        onPointerCancel={onPointerCancel}
+        className={`relative inline-flex h-8 w-8 items-center justify-center rounded-full select-none cursor-pointer active:scale-[0.92] ${LAB_TRANSITION} ${LAB_FOCUS_RING} ${
+          isActive ? UTILITY_ACTIVE[surface] : UTILITY[surface]
+        }`}
+      >
+        {children}
+        {badge !== undefined && badge > 0 && (
+          <span
+            aria-hidden="true"
+            data-testid={testId ? `${testId}-badge` : undefined}
+            className={`pointer-events-none absolute -top-0.5 -right-0.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full px-1 font-mono text-[9px] font-bold leading-none tabular-nums ${
+              isDark
+                ? 'bg-white text-neutral-900 ring-2 ring-neutral-900'
+                : 'bg-neutral-900 text-white ring-2 ring-white'
             }`}
           >
-            {isActive && (
-              <motion.span
-                layoutId={`design-lab-active-${labId}`}
-                aria-hidden="true"
-                transition={
-                  reducedMotion ? { duration: 0 } : { type: 'spring', stiffness: 450, damping: 36 }
-                }
-                className={`absolute inset-0 rounded-md ${
-                  isDark
-                    ? 'bg-white/10 ring-1 ring-inset ring-white/10'
-                    : 'bg-white ring-1 ring-inset ring-slate-900/10'
-                }`}
-              />
-            )}
-            <span
-              className={`relative z-10 font-mono text-[9px] ${isDark ? 'text-slate-300' : 'text-slate-500'}`}
-            >
-              {index + 1}
-            </span>
-            <span className="relative z-10">{variant.shortLabel || variant.label}</span>
-          </button>
-        );
-      })}
-    </div>
+            {badge}
+          </span>
+        )}
+      </button>
+    </LabTooltip>
   );
 }
 
-export interface PointerDragHandlers {
-  onPointerDown?: (event: ReactPointerEvent<HTMLElement>) => void;
-  onPointerMove?: (event: ReactPointerEvent<HTMLElement>) => void;
-  onPointerUp?: (event: ReactPointerEvent<HTMLElement>) => void;
-  onPointerCancel?: (event: ReactPointerEvent<HTMLElement>) => void;
-  onLostPointerCapture?: (event: ReactPointerEvent<HTMLElement>) => void;
-}
-
-export interface LabCollapsedPillProps extends PointerDragHandlers {
+interface LabCollapsedPillProps {
   label: string;
+  activeIndex: number;
+  variantCount: number;
   surface: DesignLabSurface;
+  barTop: number;
+  reducedMotion: boolean;
   onClick: () => void;
+  onKeyDown: (event: ReactKeyboardEvent<HTMLElement>) => void;
 }
 
-export function LabCollapsedPill({ label, surface, onClick, ...dragHandlers }: LabCollapsedPillProps) {
+export function LabCollapsedPill({
+  label,
+  activeIndex,
+  variantCount,
+  surface,
+  barTop,
+  reducedMotion,
+  onClick,
+  onKeyDown,
+}: LabCollapsedPillProps) {
   const isDark = surface === 'dark';
+  const instant = reducedMotion || isActTestEnvironment();
+  const [tracker, setTracker] = useState({ index: activeIndex, direction: 1 });
+  if (tracker.index !== activeIndex) {
+    setTracker({ index: activeIndex, direction: activeIndex > tracker.index ? 1 : -1 });
+  }
+  const direction = tracker.direction;
+  const positionTag = `${activeIndex + 1}/${Math.max(1, variantCount)}`;
 
   return (
-    <button
-      type="button"
-      aria-expanded={false}
-      aria-label="Expand design lab bar (Alt+L)"
-      title="Expand design lab bar (Alt+L)"
-      data-testid="design-lab-expand"
-      onClick={onClick}
-      {...dragHandlers}
-      className={`flex items-center gap-1.5 rounded-full px-1.5 py-1 touch-none select-none cursor-pointer ${LAB_TRANSITION} ${LAB_FOCUS_RING} ${
-        isDark ? 'hover:bg-white/10' : 'hover:bg-slate-900/5'
-      }`}
-    >
-      <Layers size={13} aria-hidden="true" className={isDark ? 'text-slate-300' : 'text-slate-500'} />
-      <span
-        className={`font-mono text-[10px] uppercase tracking-wider font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}
+    <LabTooltip label={`${label} · Expand`} surface={surface} barTop={barTop}>
+      <button
+        type="button"
+        aria-expanded={false}
+        aria-label={`Expand design lab bar (${label}, ${activeIndex + 1} of ${Math.max(1, variantCount)})`}
+        data-testid="design-lab-expand"
+        onClick={onClick}
+        onKeyDown={onKeyDown}
+        className={`flex h-11 w-11 flex-col items-center justify-center gap-0.5 rounded-full touch-none select-none cursor-grab active:cursor-grabbing active:scale-[0.95] ${LAB_TRANSITION} ${LAB_FOCUS_RING} ${
+          isDark ? 'hover:bg-neutral-800' : 'hover:bg-neutral-100'
+        }`}
       >
-        {label}
-      </span>
-      <ChevronUp className="w-3 h-3" aria-hidden="true" />
-    </button>
+        <Layers size={15} aria-hidden="true" className={isDark ? 'text-white' : 'text-neutral-900'} />
+        <motion.span
+          key={positionTag}
+          initial={instant ? false : { opacity: 0, y: direction > 0 ? 6 : -6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={instant ? { duration: 0 } : { duration: 0.16, ease: AGENTATION_CONTENT_EASE }}
+          className={`font-mono text-[9px] font-bold leading-none tabular-nums tracking-tight ${
+            isDark ? 'text-white/70' : 'text-neutral-600'
+          }`}
+        >
+          {positionTag}
+        </motion.span>
+      </button>
+    </LabTooltip>
   );
 }
 
@@ -203,6 +188,7 @@ interface LabScenarioTriggerProps {
   label: string;
   isOpen: boolean;
   surface: DesignLabSurface;
+  barTop: number;
   onClick: () => void;
   children: ReactNode;
 }
@@ -211,61 +197,41 @@ export function LabScenarioTrigger({
   label,
   isOpen,
   surface,
+  barTop,
   onClick,
   children,
 }: LabScenarioTriggerProps) {
   const isDark = surface === 'dark';
-
   return (
     <div className="relative">
-      <button
-        type="button"
-        aria-haspopup="menu"
-        aria-expanded={isOpen}
-        aria-label="Switch scenario preset"
-        data-testid="design-lab-scenario-trigger"
-        onClick={onClick}
-        className={`flex items-center gap-1 rounded-md px-1.5 py-1 text-[11px] font-semibold select-none cursor-pointer ${LAB_TRANSITION} ${LAB_FOCUS_RING} ${UTILITY[surface]}`}
-      >
-        <span
-          className={`font-mono text-[9px] uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-500'}`}
-        >
-          Scenario
-        </span>
-        <span className="max-w-[110px] truncate">{label}</span>
-        <ChevronDown
-          aria-hidden="true"
-          className={`w-3 h-3 shrink-0 transition-transform duration-150 motion-reduce:transition-none ${
-            isOpen ? 'rotate-180' : ''
+      <LabTooltip label="Switch scenario" surface={surface} barTop={barTop} disabled={isOpen}>
+        <button
+          type="button"
+          aria-haspopup="menu"
+          aria-expanded={isOpen}
+          aria-label="Switch scenario preset"
+          data-active={isOpen ? 'true' : undefined}
+          data-testid="design-lab-scenario-trigger"
+          onClick={onClick}
+          className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold select-none cursor-pointer active:scale-[0.95] ${LAB_TRANSITION} ${LAB_FOCUS_RING} ${
+            isOpen ? UTILITY_ACTIVE[surface] : UTILITY[surface]
           }`}
-        />
-      </button>
+        >
+          <span className={`font-mono text-[9px] uppercase tracking-wider ${isDark ? 'text-white/60' : 'text-neutral-500'}`}>
+            Scenario
+          </span>
+          <span className="max-w-[110px] truncate">{label}</span>
+          <ChevronDown
+            aria-hidden="true"
+            className={`w-3 h-3 shrink-0 transition-transform duration-150 motion-reduce:transition-none ${
+              isOpen ? 'rotate-180' : ''
+            }`}
+          />
+        </button>
+      </LabTooltip>
       {children}
     </div>
   );
 }
 
-export interface LabDragHandleProps extends PointerDragHandlers {
-  title: string;
-  surface: DesignLabSurface;
-  onKeyDown: (event: ReactKeyboardEvent<HTMLElement>) => void;
-  onDoubleClick: () => void;
-}
-
-export function LabDragHandle({ title, surface, onKeyDown, onDoubleClick, ...dragHandlers }: LabDragHandleProps) {
-  return (
-    <button
-      type="button"
-      aria-label={`${title} drag handle. Use arrow keys to move, double-click to reset position.`}
-      title="Drag to move (arrow keys, double-click to reset)"
-      data-testid="design-lab-drag-handle"
-      {...dragHandlers}
-      onKeyDown={onKeyDown}
-      onDoubleClick={onDoubleClick}
-      className={`inline-flex shrink-0 items-center justify-center rounded-md p-1 cursor-grab active:cursor-grabbing touch-none select-none ${LAB_TRANSITION} ${LAB_FOCUS_RING} ${UTILITY[surface]}`}
-      style={{ WebkitUserSelect: 'none', userSelect: 'none' }}
-    >
-      <GripVertical className="w-3.5 h-3.5" aria-hidden="true" />
-    </button>
-  );
-}
+export { VariantSwitcher, type VariantSwitcherProps } from './DesignLabVariantSwitcher';

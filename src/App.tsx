@@ -10,6 +10,9 @@ const DevAgentation = import.meta.env.DEV
         })
     )
   : null;
+const DevDesignLabDemo = import.meta.env.DEV
+  ? lazy(() => import('./dev/DesignLabDemo').then((mod) => ({ default: mod.DesignLabDemo })))
+  : null;
 import { Sidebar } from './components/Sidebar';
 import { TopBar } from './components/TopBar';
 import { ToastContainer } from './components/Toast';
@@ -206,6 +209,21 @@ function TrackletAppContent() {
 }
 
 export default function App() {
+  const isLabDemo =
+    import.meta.env.DEV &&
+    typeof window !== 'undefined' &&
+    new URLSearchParams(window.location.search).get('lab') === 'demo';
+
+  if (isLabDemo && DevDesignLabDemo) {
+    return (
+      <AppProviders>
+        <Suspense fallback={null}>
+          <DevDesignLabDemo />
+        </Suspense>
+      </AppProviders>
+    );
+  }
+
   return (
     <AppProviders>
       <TrackletAppContent />

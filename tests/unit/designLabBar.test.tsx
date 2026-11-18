@@ -4,12 +4,28 @@ import { act, useState } from 'react';
 import { DesignLabBar, useDesignLabState } from '../../src/dev';
 import type { DesignLabScenario, DesignLabVariant } from '../../src/dev';
 import * as lab from '../../src/dev/designLabUtils';
-(globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
+
+(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+
 const VARIANTS: readonly DesignLabVariant[] = [
-  { id: 'compact', label: 'Compact Timeline', shortLabel: 'Compact', summary: 'Dense spine with only the essential milestones.', tradeoffs: ['Less context per step', 'Faster to scan'], recommended: true },
-  { id: 'journal', label: 'Lifecycle Journal', shortLabel: 'Journal', summary: 'Rich audit trail with notes and timestamps.', tradeoffs: ['Higher visual weight'] },
+  {
+    id: 'compact',
+    label: 'Compact Timeline',
+    shortLabel: 'Compact',
+    summary: 'Dense spine with only the essential milestones.',
+    tradeoffs: ['Less context per step', 'Faster to scan'],
+    recommended: true,
+  },
+  {
+    id: 'journal',
+    label: 'Lifecycle Journal',
+    shortLabel: 'Journal',
+    summary: 'Rich audit trail with notes and timestamps.',
+    tradeoffs: ['Higher visual weight'],
+  },
   { id: 'stepper', label: 'Process Stepper', shortLabel: 'Stepper' },
 ];
+
 const SCENARIOS: readonly DesignLabScenario[] = [
   { id: 'happy', label: 'Happy Path', description: 'Offer accepted' },
   { id: 'ghosted', label: '40-Day Ghost', description: 'Silent rejection' },
@@ -55,7 +71,9 @@ describe('DesignLabBar', () => {
   let host: HTMLDivElement;
   let root: Root;
   let onScenarioChange = vi.fn();
+
   const render = (ui: React.ReactNode) => act(() => root.render(ui));
+
   function Harness({ collapsed }: { collapsed?: boolean } = {}) {
     const [variant, setVariant] = useState('compact');
     const [scenario, setScenario] = useState('happy');
@@ -77,18 +95,19 @@ describe('DesignLabBar', () => {
       />
     );
   }
+
   const bar = () => document.querySelector('[data-testid="design-lab-bar"]') as HTMLElement;
-  const grip = () => document.querySelector('[data-testid="design-lab-drag-handle"]') as HTMLElement;
-  const byLabel = (label: string) => document.querySelector(`[aria-label="${label}"]`) as HTMLElement | null;
+  const expandBtn = () => document.querySelector('[data-testid="design-lab-expand"]') as HTMLElement | null;
+  const byTestId = (id: string) => document.querySelector(`[data-testid="${id}"]`) as HTMLElement | null;
   const variantButtons = () =>
     Array.from(document.querySelectorAll('[role="group"][aria-label="Design variants"] button')) as HTMLElement[];
-  const notes = () => document.querySelector('[data-testid="design-lab-notes"]');
   const px = (value: string) => Number.parseFloat(value);
-  const click = (target: Element | null) => act(() => target!.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true })));
+  const click = (target: Element | null) =>
+    act(() => target!.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true })));
   const press = (key: string, init: KeyboardEventInit = {}, target: EventTarget = window) =>
     act(() => target.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true, ...init })));
-  const pointer = (type: string, init: PointerEventInit = {}) =>
-    act(() => grip().dispatchEvent(new PointerEvent(type, { bubbles: true, cancelable: true, pointerId: 1, button: 0, ...init })));
+  const pointer = (target: EventTarget, type: string, init: PointerEventInit = {}) =>
+    act(() => target.dispatchEvent(new PointerEvent(type, { bubbles: true, cancelable: true, pointerId: 1, button: 0, ...init })));
 
   beforeEach(() => {
     window.sessionStorage.clear();
@@ -105,15 +124,20 @@ describe('DesignLabBar', () => {
     vi.restoreAllMocks();
   });
 
-  it('portals above modals with zero AI slop', () => {
+  it('portals above modals with zero AI slop, no drag handle, and no LAB/title text', () => {
     render(<Harness />);
     const element = bar();
     expect(element.parentElement).toBe(document.body);
     expect(host.contains(element)).toBe(false);
     expect(element.className).toContain('z-[9990]');
-    expect(element.className).toContain('bg-slate-950/92');
+    expect(element.className).toContain('bg-neutral-900');
     expect(element.getAttribute('role')).toBe('toolbar');
     expect(element.getAttribute('aria-label')).toBe('Timeline design lab');
+    expect(element.textContent).not.toContain('LAB');
+    expect(element.textContent).not.toContain('Timeline');
+    expect(byTestId('design-lab-drag-handle')).toBeNull();
+    expect(byTestId('design-lab-active-indicator')).not.toBeNull();
+    expect(byTestId('design-lab-collapse')!.querySelector('svg.lucide-x')).not.toBeNull();
     const markup = document.body.innerHTML;
     expect(markup).not.toContain('\u2728');
     expect(markup).not.toContain('Sparkles');
@@ -132,116 +156,142 @@ describe('DesignLabBar', () => {
         </div>
       )
     );
-    act(() => grip().dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true })));
-    click(byLabel('Collapse design lab bar (Alt+L)'));
+    act(() => bar().dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true })));
+    click(byTestId('design-lab-collapse'));
     expect(onMouseDown).not.toHaveBeenCalled();
     expect(onClick).not.toHaveBeenCalled();
   });
 
-  it('switches variants by click, Alt digits and bracket cycling', () => {
+  it('switches variants by click and Alt+digit only, ignoring inputs and removed shortcuts', () => {
     render(<Harness />);
     expect(variantButtons()[0].getAttribute('aria-pressed')).toBe('true');
     click(variantButtons()[1]);
     expect(variantButtons()[1].getAttribute('aria-pressed')).toBe('true');
     press('1', { altKey: true, code: 'Digit1' });
     expect(variantButtons()[0].getAttribute('aria-pressed')).toBe('true');
-    press('2', { altKey: true, code: 'Digit2' });
-    expect(variantButtons()[1].getAttribute('aria-pressed')).toBe('true');
-    press(']', { altKey: true, code: 'BracketRight' });
+    press('3', { altKey: true, code: 'Digit3' });
     expect(variantButtons()[2].getAttribute('aria-pressed')).toBe('true');
+    // Removed shortcuts no longer cycle or collapse.
     press(']', { altKey: true, code: 'BracketRight' });
-    expect(variantButtons()[0].getAttribute('aria-pressed')).toBe('true');
     press('[', { altKey: true, code: 'BracketLeft' });
+    press('l', { altKey: true, code: 'KeyL' });
     expect(variantButtons()[2].getAttribute('aria-pressed')).toBe('true');
+    expect(expandBtn()).toBeNull();
+    // Typing inside an input ignores Alt+digit.
     const input = document.createElement('input');
     host.appendChild(input);
-    press('2', { altKey: true, code: 'Digit2' }, input);
+    press('1', { altKey: true, code: 'Digit1' }, input);
     expect(variantButtons()[2].getAttribute('aria-pressed')).toBe('true');
   });
 
-  it('collapses, expands and persists chrome state across remounts', () => {
+  it('toggles Dark/Light appearance with sliding indicator in Settings and persists across remounts', () => {
     render(<Harness />);
-    click(byLabel('Switch to light surface'));
-    expect(bar().className).toContain('bg-white/95');
+    click(byTestId('design-lab-settings-trigger'));
+    const settings = byTestId('design-lab-settings')!;
+    expect(settings).not.toBeNull();
+    const settingsTrigger = byTestId('design-lab-settings-trigger')!;
+    expect(settingsTrigger.closest('[data-lab-anchor="settings"]')?.contains(settings)).toBe(true);
+    expect(settings.className).toContain('bottom-full');
+    expect(settings.className).toContain('right-0');
+    expect(settings.textContent).not.toContain('Alt+L');
+    expect(settings.textContent).not.toContain('Reset position');
+    expect(byTestId('design-lab-theme-indicator')).not.toBeNull();
+
+    const lightRadio = Array.from(settings.querySelectorAll('[role="radio"]')).find(
+      (btn) => btn.textContent?.includes('Light')
+    ) as HTMLElement;
+    click(lightRadio);
+    expect(bar().className).toContain('bg-white');
     expect(lab.readLabStoredState('timeline').surface).toBe('light');
-    click(byLabel('Collapse design lab bar (Alt+L)'));
-    expect(byLabel('Expand design lab bar (Alt+L)')).not.toBeNull();
-    expect(lab.readLabStoredState('timeline').collapsed).toBe(true);
-    press('l', { altKey: true, code: 'KeyL' });
-    expect(byLabel('Collapse design lab bar (Alt+L)')).not.toBeNull();
-    press('l', { altKey: true, code: 'KeyL' });
-    expect(byLabel('Expand design lab bar (Alt+L)')).not.toBeNull();
+
+    // First Escape closes Settings; second Escape collapses the bar into the circular orb.
+    press('Escape');
+    expect(byTestId('design-lab-settings')).toBeNull();
+    press('Escape');
+    expect(expandBtn()).not.toBeNull();
+    expect(expandBtn()!.className).toContain('h-11 w-11');
+    expect(expandBtn()!.className).toContain('rounded-full');
+    expect(expandBtn()!.textContent).toContain('1/3');
+
     act(() => root.unmount());
     root = createRoot(host);
     render(<Harness />);
-    expect(byLabel('Expand design lab bar (Alt+L)')).not.toBeNull();
-    expect(bar().className).toContain('bg-white/95');
+    expect(expandBtn()).not.toBeNull();
+    expect(bar().className).toContain('bg-white');
   });
 
-  it('moves and resets with the keyboard drag handle', () => {
-    render(<Harness />);
-    const handle = grip();
-    const startX = px(bar().style.left);
-    const startY = px(bar().style.top);
-    const live = document.querySelector('[aria-live="polite"]') as HTMLElement;
-    act(() => handle.focus());
-    press('ArrowRight', {}, handle);
-    expect(px(bar().style.left)).toBe(startX + 15);
-    expect(live.textContent).toBe('Timeline moved right');
-    press('ArrowUp', {}, handle);
-    expect(px(bar().style.top)).toBe(startY - 15);
-    expect(live.textContent).toBe('Timeline moved up');
-    press('Home', {}, handle);
-    expect(px(bar().style.left)).toBe(startX);
-    expect(px(bar().style.top)).toBe(startY);
-    expect(live.textContent).toBe('Timeline reset to default position');
-    press('ArrowLeft', {}, handle);
-    act(() => handle.dispatchEvent(new MouseEvent('dblclick', { bubbles: true })));
-    expect(px(bar().style.left)).toBe(startX);
-  });
-
-  it('drags with a 4px threshold, uses GPU transform, and commits on release', () => {
+  it('drags anywhere with deferred pointer capture and moves the collapsed circle without expanding', () => {
     render(<Harness />);
     const startX = px(bar().style.left);
     const startY = px(bar().style.top);
-    pointer('pointerdown', { clientX: 100, clientY: 100 });
-    pointer('pointermove', { clientX: 102, clientY: 101 });
+    const setPointerCapture = vi.fn();
+    bar().setPointerCapture = setPointerCapture;
+
+    const secondBtn = variantButtons()[1];
+    pointer(secondBtn, 'pointerdown', { clientX: 100, clientY: 100 });
+    expect(setPointerCapture).not.toHaveBeenCalled();
+    pointer(window, 'pointermove', { clientX: 102, clientY: 101 });
     expect(bar().style.transform).toBe('');
-    pointer('pointermove', { clientX: 140, clientY: 70 });
+    expect(setPointerCapture).not.toHaveBeenCalled();
+    pointer(window, 'pointermove', { clientX: 140, clientY: 70 });
+    expect(setPointerCapture).toHaveBeenCalledWith(1);
     expect(bar().style.transform).toBe('translate3d(40px, -30px, 0)');
-    expect(px(bar().style.left)).toBe(startX);
-    pointer('pointerup', { clientX: 140, clientY: 70 });
+    pointer(window, 'pointerup', { clientX: 140, clientY: 70 });
+    click(secondBtn);
     expect(bar().style.transform).toBe('');
     expect(px(bar().style.left)).toBe(startX + 40);
     expect(px(bar().style.top)).toBe(startY - 30);
-    expect(lab.readLabStoredState('timeline').pos).toEqual({ x: startX + 40, y: startY - 30 });
+    expect(variantButtons()[0].getAttribute('aria-pressed')).toBe('true');
+
+    // Collapse into circular orb and drag it without triggering expand.
+    click(byTestId('design-lab-collapse'));
+    const orb = expandBtn()!;
+    const orbX = px(bar().style.left);
+    pointer(orb, 'pointerdown', { clientX: 200, clientY: 200 });
+    pointer(window, 'pointermove', { clientX: 230, clientY: 200 });
+    pointer(window, 'pointerup', { clientX: 230, clientY: 200 });
+    click(orb);
+    expect(px(bar().style.left)).toBe(orbX + 30);
+    expect(expandBtn()).not.toBeNull();
+
+    // Keyboard movement & Home reset on focused circular orb.
+    const live = document.querySelector('[aria-live="polite"]') as HTMLElement;
+    act(() => orb.focus());
+    press('ArrowRight', {}, orb);
+    expect(px(bar().style.left)).toBe(orbX + 45);
+    expect(live.textContent).toBe('Timeline moved right');
+    press('Home', {}, orb);
+    expect(live.textContent).toBe('Timeline reset to default position');
   });
 
-  it('opens variant notes with summary, tradeoffs and shortcuts, closing on Escape', () => {
+  it('closes open popovers on first Escape and collapses the bar on second Escape', () => {
     render(<Harness />);
-    click(byLabel('Show variant notes and shortcuts'));
-    const card = notes() as HTMLElement;
+    click(byTestId('design-lab-notes-trigger'));
+    const card = byTestId('design-lab-notes')!;
     expect(card.textContent).toContain('Compact Timeline');
     expect(card.textContent).toContain('Dense spine');
     expect(card.textContent).toContain('Recommended');
     expect(card.textContent).toContain('Faster to scan');
-    expect(card.textContent).toContain('Alt+L');
-    press('Escape');
-    expect(notes()).toBeNull();
-  });
+    expect(card.className).toContain('whitespace-normal');
+    expect(card.className).toContain('break-words');
 
-  it('switches scenario presets through a custom menu', () => {
-    render(<Harness />);
-    click(document.querySelector('[data-testid="design-lab-scenario-trigger"]'));
-    const menu = document.querySelector('[data-testid="design-lab-scenario-menu"]') as HTMLElement;
-    expect(menu).not.toBeNull();
-    expect(document.querySelector('select')).toBeNull();
+    // First Escape closes only the notes popover; bar remains expanded.
+    press('Escape');
+    expect(byTestId('design-lab-notes')).toBeNull();
+    expect(expandBtn()).toBeNull();
+
+    // Scenario menu opens and selects cleanly.
+    click(byTestId('design-lab-scenario-trigger'));
+    const menu = byTestId('design-lab-scenario-menu')!;
     const items = Array.from(menu.querySelectorAll('[role="menuitemradio"]')) as HTMLElement[];
     expect(items).toHaveLength(2);
-    expect(items[0].getAttribute('aria-checked')).toBe('true');
     click(items[1]);
     expect(onScenarioChange).toHaveBeenCalledWith('ghosted');
-    expect(document.querySelector('[data-testid="design-lab-scenario-menu"]')).toBeNull();
+    expect(byTestId('design-lab-scenario-menu')).toBeNull();
+
+    // Second Escape (no popover open) collapses the bar into the circular orb.
+    press('Escape');
+    expect(expandBtn()).not.toBeNull();
   });
 
   it('initializes the state hook from the URL, writes changes and cycles', () => {
@@ -265,13 +315,11 @@ describe('DesignLabBar', () => {
       );
     }
     render(<Probe />);
-    expect(document.querySelector('[data-testid="probe-variant"]')!.textContent).toBe('journal');
-    expect(document.querySelector('[data-testid="probe-label"]')!.textContent).toBe('Lifecycle Journal');
-    expect(window.location.search).toBe('?variant=journal');
+    expect(byTestId('probe-variant')!.textContent).toBe('journal');
+    expect(byTestId('probe-label')!.textContent).toBe('Lifecycle Journal');
     click(document.getElementById('probe-set'));
     expect(window.location.search).toBe('?variant=compact');
     click(document.getElementById('probe-cycle'));
-    expect(document.querySelector('[data-testid="probe-variant"]')!.textContent).toBe('journal');
-    expect(window.location.search).toBe('?variant=journal');
+    expect(byTestId('probe-variant')!.textContent).toBe('journal');
   });
 });

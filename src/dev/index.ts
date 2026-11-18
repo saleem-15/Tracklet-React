@@ -1,6 +1,12 @@
 export { DesignLabBar, type DesignLabBarProps } from './DesignLabBar';
 export { useDesignLabState, type UseDesignLabStateOptions, type UseDesignLabStateResult } from './useDesignLabState';
+export { useDesignLabVariables, type UseDesignLabVariablesOptions } from './useDesignLabVariables';
 export { useLabDrag, type UseLabDragOptions, type UseLabDragResult } from './useLabDrag';
+export {
+  copyTextToClipboard,
+  formatDesignLabDecision,
+  type DesignLabDecisionInput,
+} from './designLabDecision';
 export {
   DRAG_THRESHOLD_PX,
   KEYBOARD_MOVE_STEP_PX,
@@ -10,9 +16,12 @@ export {
   getDefaultLabPosition,
   getMovementAnnouncement,
   getStorageKey,
+  isActTestEnvironment,
   isEditableEventTarget,
+  readLabBarMetrics,
   readLabStoredState,
   readVariantFromUrl,
+  snapLabPosition,
   writeLabStoredState,
   writeVariantToUrl,
   type DesignLabPosition,
@@ -20,4 +29,33 @@ export {
   type DesignLabStoredState,
   type DesignLabSurface,
   type DesignLabVariant,
+  type LabBarMetrics,
 } from './designLabUtils';
+export {
+  clampRangeValue,
+  countModifiedVariables,
+  getVariableDefaults,
+  getVariableUrlParamName,
+  getVariablesStorageKey,
+  normalizeChoiceOptions,
+  readVariablesFromUrl,
+  readVariablesSession,
+  resolvePinnedKeys,
+  validateVariableValue,
+  writeVariablesSession,
+  writeVariablesToUrl,
+  type ChoiceVariableOption,
+  type ColorVariableOption,
+  type DesignLabBooleanVariable,
+  type DesignLabChoiceVariable,
+  type DesignLabColorVariable,
+  type DesignLabRangeVariable,
+  type DesignLabVariableDef,
+  type DesignLabVariablePrimitive,
+  type DesignLabVariableSchema,
+  type DesignLabVariableSnapshot,
+  type DesignLabVariableValue,
+  type DesignLabVariableValues,
+  type DesignLabVariablesBinding,
+  type DesignLabVariablesController,
+} from './designLabVariables';

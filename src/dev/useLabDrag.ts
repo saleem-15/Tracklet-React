@@ -5,7 +5,9 @@ import {
   clampLabPosition,
   getDefaultLabPosition,
   getMovementAnnouncement,
+  readLabBarMetrics,
   readLabStoredState,
+  snapLabPosition,
   writeLabStoredState,
   type DesignLabPosition,
 } from './designLabUtils';
@@ -15,21 +17,16 @@ export interface UseLabDragOptions {
   title: string;
   containerRef: React.RefObject<HTMLDivElement | null>;
   initialPos?: DesignLabPosition;
-  /** Layout-affecting values (e.g. collapsed state) that should trigger a re-clamp. */
+  /** Layout-affecting values (e.g. collapsed state) that trigger re-clamping & centering. */
   deps?: unknown[];
 }
 
 export interface UseLabDragResult {
   position: DesignLabPosition;
-  dragDelta: { dx: number; dy: number };
   isDragging: boolean;
   announcement: string;
   suppressClickRef: React.RefObject<boolean>;
   handlePointerDown: (event: React.PointerEvent<HTMLElement>) => void;
-  handlePointerMove: (event: React.PointerEvent<HTMLElement>) => void;
-  handlePointerUp: (event: React.PointerEvent<HTMLElement>) => void;
-  handlePointerCancel: (event: React.PointerEvent<HTMLElement>) => void;
-  handleLostPointerCapture: (event: React.PointerEvent<HTMLElement>) => void;
   handleKeyDown: (event: React.KeyboardEvent<HTMLElement>) => void;
   resetPosition: () => void;
 }
@@ -46,7 +43,8 @@ interface PointerStart {
 
 /**
  * Pointer + keyboard positioning for the floating lab bar: 4px drag threshold,
- * GPU transform during drag, clamped commits, and polite announcements.
+ * deferred pointer capture (so child button clicks are never hijacked),
+ * zero-re-render GPU transforms during drag, and center-anchored collapse/expand.
  */
 export function useLabDrag({
   labId,
@@ -59,30 +57,24 @@ export function useLabDrag({
   const [position, setPosition] = useState<DesignLabPosition | null>(
     () => storedState.pos ?? initialPos ?? null
   );
-  const [dragDelta, setDragDelta] = useState({ dx: 0, dy: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [announcement, setAnnouncement] = useState('');
   const suppressClickRef = useRef(false);
   const pointerStartRef = useRef<PointerStart | null>(null);
-  const captureTargetRef = useRef<HTMLElement | null>(null);
   const isDraggingRef = useRef(false);
   const dragDeltaRef = useRef({ dx: 0, dy: 0 });
   const announcementTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cleanupListenersRef = useRef<(() => void) | null>(null);
+  const lastWidthRef = useRef(0);
+  const anchorCenterXRef = useRef<number | null>(null);
+  const anchorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const didMountRef = useRef(false);
 
-  const measure = useCallback(() => {
-    const element = containerRef.current;
-    const rect = element?.getBoundingClientRect?.();
-    return {
-      width: rect?.width || element?.offsetWidth || 0,
-      height: rect?.height || element?.offsetHeight || 0,
-      viewportWidth: typeof window === 'undefined' ? 0 : window.innerWidth,
-      viewportHeight: typeof window === 'undefined' ? 0 : window.innerHeight,
-    };
-  }, [containerRef]);
+  const measure = useCallback(() => readLabBarMetrics(containerRef.current), [containerRef]);
 
   const computeDefaultPosition = useCallback(() => {
-    const { width, height, viewportWidth, viewportHeight } = measure();
-    return getDefaultLabPosition(width, height, viewportWidth, viewportHeight);
+    const m = measure();
+    return getDefaultLabPosition(m.width, m.height, m.viewportWidth, m.viewportHeight);
   }, [measure]);
 
   const announce = useCallback((message: string) => {
@@ -91,24 +83,43 @@ export function useLabDrag({
     announcementTimerRef.current = setTimeout(() => setAnnouncement(''), 1000);
   }, []);
 
-  useEffect(
-    () => () => {
-      if (announcementTimerRef.current) clearTimeout(announcementTimerRef.current);
-    },
-    []
-  );
+  useEffect(() => () => {
+    if (announcementTimerRef.current) clearTimeout(announcementTimerRef.current);
+    if (anchorTimerRef.current) clearTimeout(anchorTimerRef.current);
+    cleanupListenersRef.current?.();
+  }, []);
 
   const reclamp = useCallback(() => {
-    const { width, height, viewportWidth, viewportHeight } = measure();
-    setPosition((previous) => {
-      const current = previous ?? getDefaultLabPosition(width, height, viewportWidth, viewportHeight);
-      const clamped = clampLabPosition(current.x, current.y, width, height, viewportWidth, viewportHeight);
-      return clamped.x === current.x && clamped.y === current.y ? previous ?? clamped : clamped;
+    const m = measure();
+    lastWidthRef.current = m.width;
+    const anchorCenterX = anchorCenterXRef.current;
+
+    setPosition((prev) => {
+      const current = prev ?? getDefaultLabPosition(m.width, m.height, m.viewportWidth, m.viewportHeight);
+      const targetX =
+        anchorCenterX !== null && m.width > 0 ? anchorCenterX - m.width / 2 : current.x;
+      const clamped = clampLabPosition(
+        targetX, current.y, m.width, m.height, m.viewportWidth, m.viewportHeight
+      );
+      return clamped.x === current.x && clamped.y === current.y ? prev ?? clamped : clamped;
     });
   }, [measure]);
 
-  // Position once before paint, then re-clamp whenever layout-affecting props change.
   useLayoutEffect(() => {
+    const { width } = measure();
+    if (didMountRef.current) {
+      const knownWidth = width > 0 ? width : lastWidthRef.current;
+      if (knownWidth > 0 && position) {
+        anchorCenterXRef.current = position.x + knownWidth / 2;
+        if (anchorTimerRef.current) clearTimeout(anchorTimerRef.current);
+        anchorTimerRef.current = setTimeout(() => {
+          anchorCenterXRef.current = null;
+        }, 500);
+      }
+    } else {
+      didMountRef.current = true;
+      lastWidthRef.current = width;
+    }
     reclamp();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reclamp, labId, ...deps]);
@@ -116,14 +127,12 @@ export function useLabDrag({
   useEffect(() => {
     const handleResize = () => reclamp();
     window.addEventListener('resize', handleResize);
-
     let observer: ResizeObserver | null = null;
     const element = containerRef.current;
     if (typeof ResizeObserver !== 'undefined' && element) {
       observer = new ResizeObserver(() => reclamp());
       observer.observe(element);
     }
-
     return () => {
       window.removeEventListener('resize', handleResize);
       observer?.disconnect();
@@ -143,114 +152,115 @@ export function useLabDrag({
     commitPosition(computeDefaultPosition(), `${title} reset to default position`);
   }, [commitPosition, computeDefaultPosition, title]);
 
+  const finishDrag = useCallback(
+    (commit: boolean) => {
+      cleanupListenersRef.current?.();
+      cleanupListenersRef.current = null;
+
+      const start = pointerStartRef.current;
+      if (!start) return;
+      pointerStartRef.current = null;
+
+      const element = containerRef.current;
+      if (element?.hasPointerCapture?.(start.pointerId)) {
+        try {
+          element.releasePointerCapture(start.pointerId);
+        } catch {
+          // Capture already released.
+        }
+      }
+
+      const wasDragging = isDraggingRef.current;
+      isDraggingRef.current = false;
+      if (wasDragging) setIsDragging(false);
+      if (element) element.style.transform = '';
+
+      const { dx, dy } = dragDeltaRef.current;
+      dragDeltaRef.current = { dx: 0, dy: 0 };
+      if (!wasDragging) {
+        suppressClickRef.current = false;
+        return;
+      }
+
+      setTimeout(() => { suppressClickRef.current = false; }, 0);
+      if (!commit) return;
+      const m = measure();
+      commitPosition(
+        snapLabPosition(start.originX + dx, start.originY + dy, m.width, m.height, m.viewportWidth, m.viewportHeight)
+      );
+    },
+    [commitPosition, containerRef, measure]
+  );
+
   const handlePointerDown = useCallback(
     (event: React.PointerEvent<HTMLElement>) => {
       if (event.button !== 0) return;
+      if ((event.target as HTMLElement | null)?.closest('[data-lab-popover]')) return;
+
+      anchorCenterXRef.current = null;
+      cleanupListenersRef.current?.();
 
       const origin = position ?? computeDefaultPosition();
-      pointerStartRef.current = {
+      const start: PointerStart = {
         pointerId: event.pointerId,
         startX: event.clientX,
         startY: event.clientY,
         originX: origin.x,
         originY: origin.y,
       };
-      dragDeltaRef.current = { dx: 0, dy: 0 };
-      captureTargetRef.current = event.currentTarget;
-
-      const target = event.currentTarget;
-      if (typeof target.setPointerCapture === 'function') {
-        try {
-          target.setPointerCapture(event.pointerId);
-        } catch {
-          // Pointer capture unsupported (Happy-DOM): document-level fallback still works.
-        }
-      }
-    },
-    [computeDefaultPosition, position]
-  );
-
-  const handlePointerMove = useCallback(
-    (event: React.PointerEvent<HTMLElement>) => {
-      const start = pointerStartRef.current;
-      if (!start) return;
-
-      const rawDx = event.clientX - start.startX;
-      const rawDy = event.clientY - start.startY;
-
-      if (!isDraggingRef.current) {
-        if (Math.abs(rawDx) < DRAG_THRESHOLD_PX && Math.abs(rawDy) < DRAG_THRESHOLD_PX) return;
-        isDraggingRef.current = true;
-        suppressClickRef.current = true;
-        setIsDragging(true);
-      }
-
-      const m = measure();
-      const clamped = clampLabPosition(
-        start.originX + rawDx,
-        start.originY + rawDy,
-        m.width,
-        m.height,
-        m.viewportWidth,
-        m.viewportHeight
-      );
-      const delta = { dx: clamped.x - start.originX, dy: clamped.y - start.originY };
-      dragDeltaRef.current = delta;
-      setDragDelta(delta);
-    },
-    [measure]
-  );
-
-  const finishDrag = useCallback(
-    (commit: boolean) => {
-      const start = pointerStartRef.current;
-      if (!start) return;
-
-      pointerStartRef.current = null;
-      const captureTarget = captureTargetRef.current;
-      captureTargetRef.current = null;
-
-      if (captureTarget && typeof captureTarget.releasePointerCapture === 'function') {
-        try {
-          captureTarget.releasePointerCapture(start.pointerId);
-        } catch {
-          // Capture may already be gone after pointercancel / lostpointercapture.
-        }
-      }
-
-      const wasDragging = isDraggingRef.current;
-      isDraggingRef.current = false;
-      setIsDragging(false);
-      setDragDelta({ dx: 0, dy: 0 });
-
-      const { dx, dy } = dragDeltaRef.current;
+      pointerStartRef.current = start;
       dragDeltaRef.current = { dx: 0, dy: 0 };
 
-      if (!wasDragging) return;
+      const onMove = (moveEvent: PointerEvent) => {
+        if (moveEvent.pointerId !== start.pointerId) return;
+        const rawDx = moveEvent.clientX - start.startX;
+        const rawDy = moveEvent.clientY - start.startY;
 
-      // A trailing click fires right after pointerup; clear the suppression on the next tick.
-      setTimeout(() => {
-        suppressClickRef.current = false;
-      }, 0);
+        if (!isDraggingRef.current) {
+          if (Math.abs(rawDx) < DRAG_THRESHOLD_PX && Math.abs(rawDy) < DRAG_THRESHOLD_PX) return;
+          isDraggingRef.current = true;
+          suppressClickRef.current = true;
+          setIsDragging(true);
+          // Defer pointer capture until a real drag begins so normal clicks on child buttons work natively.
+          const el = containerRef.current;
+          if (el && typeof el.setPointerCapture === 'function') {
+            try {
+              el.setPointerCapture(start.pointerId);
+            } catch {
+              // Window listeners remain active as fallback.
+            }
+          }
+        }
 
-      if (!commit) return;
+        const m = measure();
+        const clamped = clampLabPosition(
+          start.originX + rawDx, start.originY + rawDy, m.width, m.height, m.viewportWidth, m.viewportHeight
+        );
+        const delta = { dx: clamped.x - start.originX, dy: clamped.y - start.originY };
+        dragDeltaRef.current = delta;
 
-      const m = measure();
-      commitPosition(
-        clampLabPosition(start.originX + dx, start.originY + dy, m.width, m.height, m.viewportWidth, m.viewportHeight)
-      );
+        const el = containerRef.current;
+        if (el) el.style.transform = `translate3d(${delta.dx}px, ${delta.dy}px, 0)`;
+      };
+
+      const onUp = (upEvent: PointerEvent) => { if (upEvent.pointerId === start.pointerId) finishDrag(true); };
+      const onCancel = (cancelEvent: PointerEvent) => { if (cancelEvent.pointerId === start.pointerId) finishDrag(false); };
+
+      window.addEventListener('pointermove', onMove);
+      window.addEventListener('pointerup', onUp);
+      window.addEventListener('pointercancel', onCancel);
+      cleanupListenersRef.current = () => {
+        window.removeEventListener('pointermove', onMove);
+        window.removeEventListener('pointerup', onUp);
+        window.removeEventListener('pointercancel', onCancel);
+      };
     },
-    [commitPosition, measure]
+    [computeDefaultPosition, containerRef, finishDrag, measure, position]
   );
-
-  const handlePointerUp = useCallback(() => finishDrag(true), [finishDrag]);
-  const handlePointerCancel = useCallback(() => finishDrag(false), [finishDrag]);
-  const handleLostPointerCapture = useCallback(() => finishDrag(true), [finishDrag]);
 
   const handleKeyDown = useCallback(
     (event: React.KeyboardEvent<HTMLElement>) => {
       if (event.altKey || event.ctrlKey || event.metaKey) return;
-
       if (event.key === 'Home') {
         event.preventDefault();
         resetPosition();
@@ -266,7 +276,6 @@ export function useLabDrag({
       else return;
 
       event.preventDefault();
-
       const current = position ?? computeDefaultPosition();
       const m = measure();
       commitPosition(
@@ -279,15 +288,10 @@ export function useLabDrag({
 
   return {
     position: position ?? initialPos ?? FALLBACK_POSITION,
-    dragDelta,
     isDragging,
     announcement,
     suppressClickRef,
     handlePointerDown,
-    handlePointerMove,
-    handlePointerUp,
-    handlePointerCancel,
-    handleLostPointerCapture,
     handleKeyDown,
     resetPosition,
   };

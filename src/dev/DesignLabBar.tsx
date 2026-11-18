@@ -1,32 +1,40 @@
-import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
-import { useReducedMotion } from 'motion/react';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useEscapeKey } from '../lib/useEscapeKey';
 import { useLabDrag } from './useLabDrag';
+import { useLabBarInteractions } from './useLabBarInteractions';
 import { DesignLabExpandedControls } from './DesignLabBarControls';
 import {
+  AGENTATION_MORPH_EASE,
+  LAB_SURFACE_DRAG_LIFT,
   LAB_SURFACE_ROOT,
+  LAB_SURFACE_TRANSITION,
   LabCollapsedPill,
-  LabDragHandle,
 } from './DesignLabBarChrome';
+import { getLabBarContentMotion } from './DesignLabPopoverChrome';
+import { LabTooltipProvider } from './DesignLabTooltip';
 import {
-  isEditableEventTarget,
+  isActTestEnvironment,
   readLabStoredState,
   writeLabStoredState,
   type DesignLabScenario,
   type DesignLabSurface,
   type DesignLabVariant,
 } from './designLabUtils';
+import type { DesignLabVariablesBinding } from './designLabVariables';
 
 export interface DesignLabBarProps<T extends string = string, S extends string = string> {
   labId: string;
   title: string;
   variants: readonly DesignLabVariant<T>[];
   activeVariant: T;
-  onVariantChange: (variant: T) => void;
+  onVariantChange: (variant: NoInfer<T>) => void;
+  baselineVariant?: NoInfer<T>;
+  variables?: DesignLabVariablesBinding;
   scenarios?: readonly DesignLabScenario<S>[];
   activeScenario?: S;
-  onScenarioChange?: (scenario: S) => void;
+  onScenarioChange?: (scenario: NoInfer<S>) => void;
   defaultCollapsed?: boolean;
   defaultSurface?: DesignLabSurface;
   topLayer?: boolean;
@@ -34,11 +42,7 @@ export interface DesignLabBarProps<T extends string = string, S extends string =
   forceRender?: boolean;
 }
 
-function resolveDigitIndex(event: KeyboardEvent): number | null {
-  if (/^[1-9]$/.test(event.key)) return Number(event.key) - 1;
-  const match = /^(?:Digit|Numpad)([1-9])$/.exec(event.code ?? '');
-  return match ? Number(match[1]) - 1 : null;
-}
+type ActivePopover = 'notes' | 'variables' | 'scenario' | 'settings' | null;
 
 export function DesignLabBar<T extends string = string, S extends string = string>({
   labId,
@@ -46,6 +50,8 @@ export function DesignLabBar<T extends string = string, S extends string = strin
   variants,
   activeVariant,
   onVariantChange,
+  baselineVariant,
+  variables,
   scenarios,
   activeScenario,
   onScenarioChange,
@@ -55,51 +61,61 @@ export function DesignLabBar<T extends string = string, S extends string = strin
   forceRender = false,
 }: DesignLabBarProps<T, S>) {
   const reducedMotion = Boolean(useReducedMotion());
+  const instantMotion = reducedMotion || isActTestEnvironment();
   const containerRef = useRef<HTMLDivElement>(null);
+  const expandedMeasureRef = useRef<HTMLDivElement>(null);
   const [storedState] = useState(() => readLabStoredState(labId));
   const [isCollapsed, setIsCollapsed] = useState(() => storedState.collapsed ?? defaultCollapsed);
   const [surface, setSurface] = useState<DesignLabSurface>(() => storedState.surface ?? defaultSurface);
-  const [isNotesOpen, setIsNotesOpen] = useState(false);
-  const [isScenarioMenuOpen, setIsScenarioMenuOpen] = useState(false);
+  const [activePopover, setActivePopover] = useState<ActivePopover>(null);
+  const [isMorphing, setIsMorphing] = useState(false);
+  const [expandedWidth, setExpandedWidth] = useState<number | null>(null);
 
   const {
-    position,
-    dragDelta,
-    isDragging,
-    announcement,
-    suppressClickRef,
-    handlePointerDown,
-    handlePointerMove,
-    handlePointerUp,
-    handlePointerCancel,
-    handleLostPointerCapture,
-    handleKeyDown,
-    resetPosition,
+    position, isDragging, announcement, suppressClickRef, handlePointerDown, handleKeyDown,
   } = useLabDrag({ labId, title, containerRef, deps: [isCollapsed] });
 
-  const activeVariantObj = variants.find((variant) => variant.id === activeVariant);
-  const activeScenarioObj = scenarios?.find((scenario) => scenario.id === activeScenario);
-  const collapsedLabel = activeVariantObj?.shortLabel || activeVariantObj?.label || activeVariant;
+  const {
+    eliminatedIds, toggleEliminate, canPeekBaseline, isPeekingBaseline,
+    startPeekBaseline, stopPeekBaseline, copiedDecision, handleCopyDecision, statusAnnouncement,
+  } = useLabBarInteractions({
+    labId, title, variants, activeVariant, onVariantChange,
+    baselineVariant, scenarios, activeScenario, variables,
+  });
 
-  const closePopovers = useCallback(() => {
-    setIsNotesOpen(false);
-    setIsScenarioMenuOpen(false);
+  const foundIndex = variants.findIndex((variant) => variant.id === activeVariant);
+  const activeIndex = foundIndex === -1 ? 0 : foundIndex;
+  const activeVariantObj = variants[activeIndex];
+  const baselineObj = baselineVariant ? variants.find((v) => v.id === baselineVariant) : undefined;
+  const activeScenarioObj = scenarios?.find((scenario) => scenario.id === activeScenario);
+  const activeScenarioLabel = activeScenarioObj?.label ?? 'Select';
+  const collapsedLabel = activeVariantObj?.shortLabel || activeVariantObj?.label || activeVariant;
+  const pinnedSignature = variables ? variables.pinnedKeys.join(',') : '';
+
+  useLayoutEffect(() => {
+    if (isCollapsed) return;
+    const node = expandedMeasureRef.current;
+    if (!node) return;
+    const measure = () => {
+      const next = Math.ceil(node.offsetWidth);
+      if (next > 0) setExpandedWidth((prev) => (prev === next ? prev : next));
+    };
+    measure();
+    if (typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [isCollapsed, variants.length, activeScenarioLabel, pinnedSignature, canPeekBaseline]);
+
+  const closePopovers = useCallback(() => setActivePopover(null), []);
+  const togglePopover = useCallback((target: Exclude<ActivePopover, null>) => {
+    setActivePopover((previous) => (previous === target ? null : target));
   }, []);
 
-  const cycleVariant = useCallback(
-    (direction: 1 | -1) => {
-      if (variants.length === 0) return;
-      const index = variants.findIndex((variant) => variant.id === activeVariant);
-      const nextIndex = ((index === -1 ? 0 : index) + direction + variants.length) % variants.length;
-      onVariantChange(variants[nextIndex].id);
-    },
-    [activeVariant, onVariantChange, variants]
-  );
-
-  const toggleCollapsed = useCallback(() => {
-    setIsCollapsed((previous) => !previous);
-    closePopovers();
-  }, [closePopovers]);
+  const collapseBar = useCallback(() => {
+    setActivePopover(null);
+    setIsCollapsed(true);
+  }, []);
 
   useEffect(() => {
     writeLabStoredState(labId, { collapsed: isCollapsed });
@@ -110,172 +126,158 @@ export function DesignLabBar<T extends string = string, S extends string = strin
   }, [labId, surface]);
 
   useEffect(() => {
-    if (!isNotesOpen && !isScenarioMenuOpen) return;
-
+    if (!activePopover) return;
     const handleOutsidePointer = (event: MouseEvent) => {
       if (containerRef.current?.contains(event.target as Node)) return;
-      closePopovers();
+      setActivePopover(null);
     };
-
     document.addEventListener('mousedown', handleOutsidePointer);
     return () => document.removeEventListener('mousedown', handleOutsidePointer);
-  }, [closePopovers, isNotesOpen, isScenarioMenuOpen]);
+  }, [activePopover]);
 
   useEffect(() => {
     if (!topLayer) return;
     const element = containerRef.current as (HTMLDivElement & { showPopover?: () => void }) | null;
     if (!element || typeof element.showPopover !== 'function') return;
-
     try {
       element.showPopover();
     } catch {
-      // Already open or the Popover API is unavailable in this browser.
+      // Already open or Popover API unsupported.
     }
   }, [topLayer]);
 
-  // Escape only closes the lab popover; the LIFO overlay stack keeps an underlying Modal open.
-  useEscapeKey(closePopovers, isNotesOpen || isScenarioMenuOpen);
-
-  useEffect(() => {
-    const handleGlobalKeyDown = (event: KeyboardEvent) => {
-      if (isEditableEventTarget(event.target) || event.ctrlKey || event.metaKey) return;
-
-      if (event.altKey) {
-        const digitIndex = resolveDigitIndex(event);
-        if (digitIndex !== null) {
-          if (digitIndex < variants.length) {
-            event.preventDefault();
-            onVariantChange(variants[digitIndex].id);
-          }
-          return;
-        }
-
-        if (event.key === '[' || event.code === 'BracketLeft') {
-          event.preventDefault();
-          cycleVariant(-1);
-          return;
-        }
-
-        if (event.key === ']' || event.code === 'BracketRight') {
-          event.preventDefault();
-          cycleVariant(1);
-          return;
-        }
-
-        if (event.key.toLowerCase() === 'l' || event.code === 'KeyL') {
-          event.preventDefault();
-          toggleCollapsed();
-          return;
-        }
-      }
-    };
-
-    window.addEventListener('keydown', handleGlobalKeyDown);
-    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
-  }, [
-    cycleVariant,
-    onVariantChange,
-    toggleCollapsed,
-    variants,
-  ]);
+  // LIFO Escape order: open popover closes first; otherwise Escape collapses the expanded bar.
+  useEscapeKey(collapseBar, !isCollapsed);
+  useEscapeKey(closePopovers, activePopover !== null);
 
   if (!import.meta.env.DEV && !forceRender) return null;
   if (typeof document === 'undefined') return null;
 
-  const handleExpand = () => {
-    if (suppressClickRef.current) {
-      suppressClickRef.current = false;
-      return;
-    }
-    setIsCollapsed(false);
-  };
-
   const rootStyle: CSSProperties = {
     left: position.x,
     top: position.y,
+    height: 44,
     margin: 0,
-    transform: isDragging ? `translate3d(${dragDelta.dx}px, ${dragDelta.dy}px, 0)` : undefined,
+    overflow: isMorphing && !activePopover ? 'hidden' : 'visible',
     willChange: isDragging ? 'transform' : undefined,
     ...(topLayer ? { right: 'auto', bottom: 'auto' } : {}),
   };
 
+  const innerContent = isCollapsed ? (
+    <LabCollapsedPill
+      label={collapsedLabel}
+      activeIndex={activeIndex}
+      variantCount={variants.length}
+      surface={surface}
+      barTop={position.y}
+      reducedMotion={reducedMotion}
+      onClick={() => setIsCollapsed(false)}
+      onKeyDown={handleKeyDown}
+    />
+  ) : (
+    <DesignLabExpandedControls
+      title={title}
+      variants={variants}
+      activeVariant={activeVariant}
+      onVariantChange={onVariantChange}
+      eliminatedIds={eliminatedIds}
+      onToggleEliminate={toggleEliminate}
+      canPeekBaseline={canPeekBaseline}
+      isPeekingBaseline={isPeekingBaseline}
+      baselineLabel={baselineObj?.shortLabel || baselineObj?.label}
+      onStartPeekBaseline={startPeekBaseline}
+      onStopPeekBaseline={stopPeekBaseline}
+      variables={variables}
+      scenarios={scenarios}
+      activeScenario={activeScenario}
+      activeScenarioLabel={activeScenarioLabel}
+      surface={surface}
+      reducedMotion={reducedMotion}
+      isNotesOpen={activePopover === 'notes'}
+      isVariablesOpen={activePopover === 'variables'}
+      isScenarioMenuOpen={activePopover === 'scenario'}
+      isSettingsOpen={activePopover === 'settings'}
+      copiedDecision={copiedDecision}
+      onToggleNotes={() => togglePopover('notes')}
+      onToggleVariables={() => togglePopover('variables')}
+      onToggleScenarioMenu={() => togglePopover('scenario')}
+      onToggleSettings={() => togglePopover('settings')}
+      onSelectScenario={(scenario) => {
+        onScenarioChange?.(scenario);
+        setActivePopover(null);
+      }}
+      onCopyDecision={handleCopyDecision}
+      onSurfaceChange={setSurface}
+      onCollapse={collapseBar}
+      barTop={position.y}
+      barLeft={position.x}
+    />
+  );
+
+  const bodyClass = `flex h-full items-center whitespace-nowrap ${isCollapsed ? '' : 'w-max gap-1.5 px-1.5'}`;
+  const contentAnim = getLabBarContentMotion(isCollapsed);
+
+  const animatedBody = instantMotion ? (
+    <div ref={isCollapsed ? undefined : expandedMeasureRef} className={bodyClass}>
+      {innerContent}
+    </div>
+  ) : (
+    <AnimatePresence mode="popLayout" initial={false}>
+      <motion.div
+        key={isCollapsed ? 'collapsed' : 'expanded'}
+        ref={isCollapsed ? undefined : expandedMeasureRef}
+        initial={contentAnim.initial}
+        animate={contentAnim.animate}
+        exit={contentAnim.exit}
+        className={bodyClass}
+      >
+        {innerContent}
+      </motion.div>
+    </AnimatePresence>
+  );
+
+  const liveAnnouncement = statusAnnouncement || announcement;
+
   const toolbar = (
-    <div
+    <motion.div
       ref={containerRef}
       role="toolbar"
       aria-label={`${title} design lab`}
       aria-orientation="horizontal"
       data-testid="design-lab-bar"
       data-surface={surface}
+      data-dragging={isDragging ? 'true' : undefined}
       {...(topLayer ? ({ popover: 'manual' } as Record<string, string>) : {})}
-      className={`fixed z-[9990] flex items-center backdrop-blur-md border ring-1 ring-inset font-sans select-none ${
-        isCollapsed ? 'gap-1 rounded-full pl-1.5 pr-2.5 py-1' : 'gap-1.5 rounded-2xl px-2 py-1.5'
-      } ${LAB_SURFACE_ROOT[surface]}`}
+      initial={false}
+      animate={{ width: isCollapsed ? 44 : (expandedWidth ?? 'auto'), borderRadius: 22 }}
+      transition={instantMotion ? { duration: 0 } : { duration: 0.42, ease: AGENTATION_MORPH_EASE }}
+      onAnimationStart={() => { if (!instantMotion) setIsMorphing(true); }}
+      onAnimationComplete={() => { if (!instantMotion) setIsMorphing(false); }}
+      className={`fixed z-[9990] flex items-center justify-center rounded-full font-sans select-none touch-none ${
+        isDragging ? `cursor-grabbing ${LAB_SURFACE_DRAG_LIFT[surface]}` : 'cursor-grab'
+      } ${LAB_SURFACE_TRANSITION} ${LAB_SURFACE_ROOT[surface]}`}
       style={rootStyle}
+      onPointerDown={(event) => {
+        event.stopPropagation();
+        handlePointerDown(event);
+      }}
       onMouseDown={(event) => event.stopPropagation()}
-      onPointerDown={(event) => event.stopPropagation()}
+      onClickCapture={(event) => {
+        if (suppressClickRef.current) {
+          event.preventDefault();
+          event.stopPropagation();
+          suppressClickRef.current = false;
+        }
+      }}
       onClick={(event) => event.stopPropagation()}
     >
-      <LabDragHandle
-        title={title}
-        surface={surface}
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerCancel}
-        onLostPointerCapture={handleLostPointerCapture}
-        onKeyDown={handleKeyDown}
-        onDoubleClick={resetPosition}
-      />
-
-      {isCollapsed ? (
-        <LabCollapsedPill
-          label={collapsedLabel}
-          surface={surface}
-          onClick={handleExpand}
-          onPointerDown={handlePointerDown}
-          onPointerMove={handlePointerMove}
-          onPointerUp={handlePointerUp}
-          onPointerCancel={handlePointerCancel}
-          onLostPointerCapture={handleLostPointerCapture}
-        />
-      ) : (
-        <DesignLabExpandedControls
-          labId={labId}
-          title={title}
-          variants={variants}
-          activeVariant={activeVariant}
-          onVariantChange={onVariantChange}
-          scenarios={scenarios}
-          activeScenario={activeScenario}
-          activeScenarioLabel={activeScenarioObj?.label ?? 'Select'}
-          surface={surface}
-          reducedMotion={reducedMotion}
-          isNotesOpen={isNotesOpen}
-          isScenarioMenuOpen={isScenarioMenuOpen}
-          onToggleNotes={() => {
-            setIsNotesOpen((previous) => !previous);
-            setIsScenarioMenuOpen(false);
-          }}
-          onToggleScenarioMenu={() => {
-            setIsScenarioMenuOpen((previous) => !previous);
-            setIsNotesOpen(false);
-          }}
-          onSelectScenario={(scenario) => {
-            onScenarioChange?.(scenario);
-            setIsScenarioMenuOpen(false);
-          }}
-          onToggleSurface={() => setSurface((previous) => (previous === 'dark' ? 'light' : 'dark'))}
-          onCollapse={toggleCollapsed}
-          barTop={position.y}
-          barLeft={position.x}
-        />
-      )}
-
+      <LabTooltipProvider suppressed={isDragging || activePopover !== null}>
+        {animatedBody}
+      </LabTooltipProvider>
       <span className="sr-only" aria-live="polite" aria-atomic="true">
-        {announcement}
+        {liveAnnouncement}
       </span>
-    </div>
+    </motion.div>
   );
 
   return createPortal(toolbar, document.body);

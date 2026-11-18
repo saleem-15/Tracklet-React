@@ -25,6 +25,7 @@ export interface DesignLabStoredState {
   pos?: DesignLabPosition;
   collapsed?: boolean;
   surface?: DesignLabSurface;
+  eliminatedIds?: string[];
 }
 
 export const LAB_BAR_MARGIN = 12;
@@ -34,6 +35,32 @@ export const KEYBOARD_MOVE_STEP_PX = 15;
 
 const finiteOr = (value: number, fallback: number): number =>
   Number.isFinite(value) ? value : fallback;
+
+/**
+ * True inside React's `act()` harness. Motion collapses to instant there so
+ * assertions stay synchronous instead of waiting on exit animation frames.
+ */
+export function isActTestEnvironment(): boolean {
+  return Boolean((globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT);
+}
+
+export interface LabBarMetrics {
+  width: number;
+  height: number;
+  viewportWidth: number;
+  viewportHeight: number;
+}
+
+/** Viewport-aware layout metrics; Happy-DOM returns zeros, which clamp safely. */
+export function readLabBarMetrics(element: HTMLElement | null): LabBarMetrics {
+  const rect = element?.getBoundingClientRect?.();
+  return {
+    width: rect?.width || element?.offsetWidth || 0,
+    height: rect?.height || element?.offsetHeight || 0,
+    viewportWidth: typeof window === 'undefined' ? 0 : window.innerWidth,
+    viewportHeight: typeof window === 'undefined' ? 0 : window.innerHeight,
+  };
+}
 
 /** Keeps the lab bar fully inside the viewport with a consistent breathing margin. */
 export function clampLabPosition(
@@ -105,12 +132,17 @@ export function readLabStoredState(labId: string): DesignLabStoredState {
         ? { x: storedPosition.x, y: storedPosition.y }
         : undefined;
 
+    const eliminatedIds = Array.isArray(state.eliminatedIds)
+      ? state.eliminatedIds.filter((id): id is string => typeof id === 'string')
+      : undefined;
+
     return {
       ...(pos ? { pos } : {}),
       ...(typeof state.collapsed === 'boolean' ? { collapsed: state.collapsed } : {}),
       ...(state.surface === 'dark' || state.surface === 'light'
         ? { surface: state.surface }
         : {}),
+      ...(eliminatedIds ? { eliminatedIds } : {}),
     };
   } catch {
     return {};
@@ -172,4 +204,54 @@ export function isEditableEventTarget(target: EventTarget | null): boolean {
   if (element.isContentEditable) return true;
   const editable = element.getAttribute?.('contenteditable');
   return Boolean(editable) && editable !== 'false';
+}
+
+/** Threshold in pixels for snap-to-anchor behavior in DesignLabBar. */
+export const LAB_SNAP_THRESHOLD_PX = 20;
+
+/**
+ * Snaps the lab position to one of 6 clean resting anchors (or returns clamped
+ * free-floating position) based on Euclidean distance.
+ */
+export function snapLabPosition(
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  viewportWidth: number,
+  viewportHeight: number,
+  margin = LAB_BAR_MARGIN,
+  threshold = LAB_SNAP_THRESHOLD_PX
+): DesignLabPosition {
+  const clamped = clampLabPosition(x, y, width, height, viewportWidth, viewportHeight, margin);
+  const safeWidth = Math.max(0, finiteOr(width, 0));
+  const safeHeight = Math.max(0, finiteOr(height, 0));
+  const clamp = (ax: number, ay: number) =>
+    clampLabPosition(ax, ay, safeWidth, safeHeight, viewportWidth, viewportHeight, margin);
+
+  const centerX = (viewportWidth - safeWidth) / 2;
+  const rightX = viewportWidth - safeWidth - margin;
+  const bottomY = viewportHeight - safeHeight - LAB_BAR_BOTTOM_OFFSET;
+
+  const anchors: DesignLabPosition[] = [
+    getDefaultLabPosition(safeWidth, safeHeight, viewportWidth, viewportHeight, margin),
+    clamp(centerX, margin),
+    clamp(margin, margin),
+    clamp(rightX, margin),
+    clamp(margin, bottomY),
+    clamp(rightX, bottomY),
+  ];
+
+  let bestAnchor = clamped;
+  let bestDist = Infinity;
+
+  for (const anchor of anchors) {
+    const dist = Math.hypot(clamped.x - anchor.x, clamped.y - anchor.y);
+    if (dist < bestDist) {
+      bestDist = dist;
+      bestAnchor = anchor;
+    }
+  }
+
+  return bestDist <= threshold ? bestAnchor : clamped;
 }
