@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   ArrowUpDown,
   ArrowUp,
@@ -19,6 +19,7 @@ import { OnboardingEmptyState } from './OnboardingEmptyState';
 import { BulkActionsBar } from './table/BulkActionsBar';
 import { BulkDeleteConfirmModal } from './table/BulkDeleteConfirmModal';
 import { TableViewBar } from './table/TableViewBar';
+import { TablePaginationBar } from './table/TablePaginationBar';
 import { RowActions } from './table/RowActions';
 import { calculateDaysInStage, formatAppDate } from '../lib/dateUtils';
 import { exportApplicationsToCSV } from '../lib/exportCsv';
@@ -30,6 +31,7 @@ import {
   STAGE_AGING_STYLES,
 } from '../lib/tableUtils';
 import { useTableViewPrefs } from '../hooks/useTableViewPrefs';
+import { useTablePagination } from '../hooks/useTablePagination';
 
 export interface AllApplicationsTableProps {
   applications: Application[];
@@ -76,6 +78,20 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
   const rowRefs = useRef<(HTMLTableRowElement | null)[]>([]);
   const { prefs, updatePrefs } = useTableViewPrefs();
 
+  // Client-side viewport pagination engine
+  const pagination = useTablePagination({
+    totalItems: applications.length,
+    resetDeps: [statusFilter, sort.field, sort.order],
+  });
+
+  const paginatedApplications = useMemo(() => {
+    return applications.slice(pagination.startIndex, pagination.endIndex);
+  }, [applications, pagination.startIndex, pagination.endIndex]);
+
+  // Reset row focus when navigating pages
+  useEffect(() => {
+    setFocusedIndex(-1);
+  }, [pagination.currentPage]);
   // Prune selectedIds when visible applications change (e.g., search/filter updates)
   // so hidden records are never retained or deleted inadvertently (Issue #52)
   useEffect(() => {
@@ -102,21 +118,42 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
     }
   }, [selectedIds.size, isDeleteConfirmOpen]);
 
-  const allSelected =
-    applications.length > 0 && selectedIds.size === applications.length;
-  const someSelected = selectedIds.size > 0 && selectedIds.size < applications.length;
+  // Multi-page selection states
+  const isPageAllSelected =
+    paginatedApplications.length > 0 &&
+    paginatedApplications.every((a) => selectedIds.has(a.id));
+  const isPageSomeSelected =
+    paginatedApplications.some((a) => selectedIds.has(a.id)) && !isPageAllSelected;
+
+  const headerCheckedState: boolean | 'indeterminate' = isPageAllSelected
+    ? true
+    : isPageSomeSelected
+    ? 'indeterminate'
+    : false;
 
   const toggleSelectAll = () => {
-    if (allSelected) {
-      setSelectedIds(new Set());
+    if (isPageAllSelected) {
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        paginatedApplications.forEach((a) => next.delete(a.id));
+        return next;
+      });
     } else {
-      setSelectedIds(new Set(applications.map((a) => a.id)));
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        paginatedApplications.forEach((a) => next.add(a.id));
+        return next;
+      });
     }
+  };
+
+  const handleSelectAllMatching = () => {
+    setSelectedIds(new Set(applications.map((a) => a.id)));
   };
 
   const toggleSelectOne = (e?: React.MouseEvent, id?: string) => {
     if (e) e.stopPropagation();
-    const targetId = id || (focusedIndex >= 0 && focusedIndex < applications.length ? applications[focusedIndex].id : undefined);
+    const targetId = id || (focusedIndex >= 0 && focusedIndex < paginatedApplications.length ? paginatedApplications[focusedIndex].id : undefined);
     if (!targetId) return;
 
     const next = new Set(selectedIds);
@@ -209,9 +246,13 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
   // Keyboard navigation across table rows (Arrows, Enter, Space/x, PageUp/PageDown, Home/End)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Let the stage selector dropdown own its keyboard interaction
+      // Do not hijack keyboard actions when focused on buttons, links, inputs, or menus
       const target = e.target as HTMLElement | null;
-      if (target?.closest?.('[aria-haspopup="listbox"], [role="listbox"]')) {
+      if (
+        target?.closest?.(
+          'button, a, input, textarea, select, [role="listbox"], [role="menu"], [aria-haspopup], [contenteditable="true"]'
+        )
+      ) {
         return;
       }
 
@@ -227,18 +268,18 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
         return;
       }
 
-      if (applications.length === 0) return;
+      if (paginatedApplications.length === 0) return;
 
       if (e.key === 'ArrowDown') {
         e.preventDefault();
-        setFocusedIndex((prev) => (prev < applications.length - 1 ? prev + 1 : prev));
+        setFocusedIndex((prev) => (prev < paginatedApplications.length - 1 ? prev + 1 : prev));
       } else if (e.key === 'ArrowUp') {
         e.preventDefault();
         setFocusedIndex((prev) => (prev > 0 ? prev - 1 : 0));
       } else if (e.key === 'PageDown') {
         e.preventDefault();
         // Jump ~8 rows forward
-        setFocusedIndex((prev) => Math.min(applications.length - 1, (prev < 0 ? 0 : prev) + 8));
+        setFocusedIndex((prev) => Math.min(paginatedApplications.length - 1, (prev < 0 ? 0 : prev) + 8));
       } else if (e.key === 'PageUp') {
         e.preventDefault();
         // Jump ~8 rows backward
@@ -248,23 +289,23 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
         setFocusedIndex(0);
       } else if (e.key === 'End') {
         e.preventDefault();
-        setFocusedIndex(applications.length - 1);
+        setFocusedIndex(paginatedApplications.length - 1);
       } else if (e.key === 'Enter') {
-        if (focusedIndex >= 0 && focusedIndex < applications.length) {
+        if (focusedIndex >= 0 && focusedIndex < paginatedApplications.length) {
           e.preventDefault();
-          onSelectApp(applications[focusedIndex]);
+          onSelectApp(paginatedApplications[focusedIndex]);
         }
       } else if (e.key === ' ' || e.key === 'x') {
-        if (focusedIndex >= 0 && focusedIndex < applications.length) {
+        if (focusedIndex >= 0 && focusedIndex < paginatedApplications.length) {
           e.preventDefault();
-          toggleSelectOne(undefined, applications[focusedIndex].id);
+          toggleSelectOne(undefined, paginatedApplications[focusedIndex].id);
         }
       } else if (e.key === 'Delete' || e.key === 'Backspace') {
         e.preventDefault();
         if (selectedIds.size > 0) {
           setIsDeleteConfirmOpen(true);
-        } else if (focusedIndex >= 0 && focusedIndex < applications.length) {
-          const appToDelete = applications[focusedIndex];
+        } else if (focusedIndex >= 0 && focusedIndex < paginatedApplications.length) {
+          const appToDelete = paginatedApplications[focusedIndex];
           onBulkDelete([appToDelete.id]);
         }
       }
@@ -272,14 +313,17 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [applications, focusedIndex, selectedIds, onSelectApp, isDeleteConfirmOpen, onBulkDelete]);
+  }, [paginatedApplications, focusedIndex, selectedIds, onSelectApp, isDeleteConfirmOpen, onBulkDelete]);
 
-  // Keep focusedIndex within bounds if applications change
+  // Keep focusedIndex within bounds if paginatedApplications change
   useEffect(() => {
-    if (focusedIndex >= applications.length) {
-      setFocusedIndex(applications.length - 1);
-    }
-  }, [applications.length, focusedIndex]);
+    setFocusedIndex((prev) => {
+      if (prev < 0) return -1;
+      return prev >= paginatedApplications.length
+        ? Math.max(-1, paginatedApplications.length - 1)
+        : prev;
+    });
+  }, [paginatedApplications.length]);
 
   const renderSortIcon = (field: SortField) => {
     if (sort.field !== field) {
@@ -361,6 +405,7 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
     return (
       <tr
         key={app.id}
+        aria-rowindex={pagination.startIndex + flatIndex + 2}
         ref={(el) => {
           rowRefs.current[flatIndex] = el;
         }}
@@ -558,7 +603,7 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
       );
     }
 
-    return applications.map((app, index) => renderRow(app, index));
+    return paginatedApplications.map((app, index) => renderRow(app, index));
   };
 
   return (
@@ -572,15 +617,47 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
           visibleRowCount={applications.length}
         />
 
+        {/* Multi-page selection banner */}
+        {isPageAllSelected && applications.length > paginatedApplications.length && (
+          <div className="bg-blue-50/90 border-b border-blue-100 px-4 py-2 text-xs text-blue-900 flex items-center justify-center gap-2 select-none">
+            {selectedIds.size === applications.length ? (
+              <span>
+                All <strong className="font-semibold text-blue-950">{applications.length}</strong> applications matching filter are selected.{' '}
+                <button
+                  type="button"
+                  onClick={clearSelection}
+                  className="font-semibold text-blue-700 hover:text-blue-900 underline ml-1 cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-500 rounded"
+                >
+                  Clear selection
+                </button>
+              </span>
+            ) : (
+              <span>
+                All <strong className="font-semibold text-blue-950">{paginatedApplications.length}</strong> applications on this page are selected.{' '}
+                <button
+                  type="button"
+                  onClick={handleSelectAllMatching}
+                  className="font-semibold text-blue-700 hover:text-blue-900 underline ml-1 cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-500 rounded"
+                >
+                  Select all {applications.length} applications matching filter
+                </button>
+              </span>
+            )}
+          </div>
+        )}
+
         <div className="flex-1 overflow-auto" ref={tableContainerRef}>
-          <table className="w-full text-left border-collapse text-xs min-w-[880px]">
+          <table
+            className="w-full text-left border-collapse text-xs min-w-[880px]"
+            aria-rowcount={applications.length + 1}
+          >
             <thead className="bg-slate-50/90 border-b border-slate-200/80 sticky top-0 z-10 text-[11px] font-mono text-slate-500 uppercase tracking-wider backdrop-blur-xs select-none">
             <tr>
               <th className="sticky left-0 z-[2] bg-inherit w-10 px-3 py-2.5 text-center">
                 <Checkbox
-                  checked={allSelected}
+                  checked={headerCheckedState}
                   onCheckedChange={() => toggleSelectAll()}
-                  ariaLabel={allSelected ? 'Deselect all applications' : 'Select all applications'}
+                  ariaLabel={isPageAllSelected ? 'Deselect all applications on page' : 'Select all applications on page'}
                 />
               </th>
 
@@ -607,6 +684,25 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
           </tbody>
         </table>
       </div>
+
+        {/* Viewport Pagination Bar */}
+        {applications.length > 0 && (
+          <TablePaginationBar
+            currentPage={pagination.currentPage}
+            totalPages={pagination.totalPages}
+            totalItems={pagination.totalItems}
+            pageSize={pagination.pageSize}
+            displayStart={pagination.displayStart}
+            displayEnd={pagination.displayEnd}
+            hasNextPage={pagination.hasNextPage}
+            hasPrevPage={pagination.hasPrevPage}
+            onPageSizeChange={pagination.setPageSize}
+            onNextPage={pagination.nextPage}
+            onPrevPage={pagination.prevPage}
+            onFirstPage={pagination.firstPage}
+            onLastPage={pagination.lastPage}
+          />
+        )}
 
         {/* Floating bulk actions toast */}
         <BulkActionsBar
