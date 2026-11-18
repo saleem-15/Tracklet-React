@@ -276,10 +276,11 @@ export const AllApplicationsTable: React.FC<AllApplicationsTableProps> = ({
 
   // Keep focusedIndex within bounds if applications change
   useEffect(() => {
-    if (focusedIndex >= applications.length) {
-      setFocusedIndex(applications.length - 1);
-    }
-  }, [applications.length, focusedIndex]);
+    setFocusedIndex((prev) => {
+      if (prev < 0) return -1;
+      return prev >= applications.length ? Math.max(-1, applications.length - 1) : prev;
+    });
+  }, [applications.length]);
 
   const renderSortIcon = (field: SortField) => {
     if (sort.field !== field) {

@@ -655,8 +655,8 @@
     "semantic_hash": ""
   },
   "src/components/AllApplicationsTable.tsx": {
-    "mtime": 1794925132.7811742,
-    "ast_hash": "193f95dfc54403a4cb92f78568c97156",
+    "mtime": 1794989200.6885524,
+    "ast_hash": "ee3ba432a5ae76f056d07473253677b0",
     "semantic_hash": ""
   },
   "src/components/ApplicationDetailPanel.tsx": {
