@@ -8,6 +8,7 @@ import { ContactsView } from '../ContactsView';
 import { StatsView } from '../StatsView';
 import { SettingsView } from '../SettingsView';
 import { NotFoundView } from '../NotFoundView';
+import { useCompanyLogoDesignLab } from '../../dev';
 import { useNavigation } from '../../context/NavigationContext';
 import { useApplicationsContext } from '../../context/ApplicationsContext';
 import { useContactsContext } from '../../context/ContactsContext';
@@ -94,6 +95,9 @@ export function WorkspaceContent({ isLoading = false, activeQuota }: WorkspaceCo
     totalAppCount: applications.length,
     openOnboardingModal,
   });
+
+  // Dynamically registers the Company Logo DesignLab with the global floating DesignLabBar
+  useCompanyLogoDesignLab(activeTab === 'all' || activeTab === 'pipeline');
 
   const handleGuardedPipelineStatusUpdate = (id: string, newStatus: string, newOrder?: number) => {
     const targetApp = applications.find((a) => a.id === id);

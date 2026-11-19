@@ -8,6 +8,7 @@ export {
   useRegisterDesignLab,
   type RegisteredDesignLab,
 } from './designLabRegistry';
+export { useCompanyLogoDesignLab, LOGO_LAB_VARIANTS } from './useCompanyLogoDesignLab';
 export { useDesignLabState, type UseDesignLabStateOptions, type UseDesignLabStateResult } from './useDesignLabState';
 export { useDesignLabVariables, type UseDesignLabVariablesOptions } from './useDesignLabVariables';
 export { useLabDrag, type UseLabDragOptions, type UseLabDragResult } from './useLabDrag';
