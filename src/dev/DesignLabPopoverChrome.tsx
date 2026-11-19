@@ -24,23 +24,23 @@ export interface LabSurfaceSkin {
 export const LAB_POPOVER_SKINS: Record<DesignLabSurface, LabSurfaceSkin> = {
   dark: {
     panel:
-      'bg-neutral-900 text-white shadow-[0_4px_20px_rgba(0,0,0,0.3),0_0_0_1px_rgba(255,255,255,0.08)]',
+      'bg-[#1a1a1a] text-white shadow-[0_4px_20px_rgba(0,0,0,0.3),0_0_0_1px_rgba(255,255,255,0.08)]',
     heading: 'text-white',
     body: 'text-white/75',
     meta: 'text-white/60',
-    divider: 'border-white/10',
+    divider: 'border-white/[0.07]',
     pill: 'bg-white/[0.12] text-white/90',
     bullet: 'bg-white/40',
     kbd: 'bg-white/[0.12] text-white/85',
-    itemHover: 'hover:bg-white/10',
+    itemHover: 'hover:bg-white/[0.10]',
   },
   light: {
     panel:
       'bg-white text-neutral-900 shadow-[0_2px_8px_rgba(0,0,0,0.08),0_4px_16px_rgba(0,0,0,0.06),0_0_0_1px_rgba(0,0,0,0.04)]',
     heading: 'text-neutral-900',
     body: 'text-neutral-600',
-    meta: 'text-neutral-600',
-    divider: 'border-black/[0.08]',
+    meta: 'text-neutral-500',
+    divider: 'border-black/[0.07]',
     pill: 'bg-black/[0.06] text-neutral-700',
     bullet: 'bg-neutral-400',
     kbd: 'bg-black/[0.06] text-neutral-700',
@@ -121,14 +121,14 @@ export function getLabBarContentMotion(isCollapsed: boolean): LabPopoverMotion {
         opacity: 1,
         scale: 1,
         filter: 'blur(0px)',
-        transition: { duration: 0.28, delay: 0.12, ease: AGENTATION_CONTENT_EASE },
+        transition: { duration: 0.32, ease: MOTION_EASE.command },
         transitionEnd: { filter: 'none' },
       },
       exit: {
         opacity: 0,
         scale: 0.65,
         filter: 'blur(4px)',
-        transition: { duration: 0.16, ease: MOTION_EASE.exit },
+        transition: { duration: 0.18, ease: MOTION_EASE.exit },
       },
     };
   }
@@ -138,14 +138,14 @@ export function getLabBarContentMotion(isCollapsed: boolean): LabPopoverMotion {
       opacity: 1,
       scale: 1,
       filter: 'blur(0px)',
-      transition: { duration: 0.34, delay: 0.06, ease: AGENTATION_CONTENT_EASE },
+      transition: { duration: 0.32, ease: MOTION_EASE.command },
       transitionEnd: { filter: 'none' },
     },
     exit: {
       opacity: 0,
       scale: 0.78,
       filter: 'blur(6px)',
-      transition: { duration: 0.24, ease: AGENTATION_CONTENT_EASE },
+      transition: { duration: 0.18, ease: MOTION_EASE.exit },
     },
   };
 }
@@ -234,7 +234,7 @@ export function LabAppearanceToggle({
             role="radio"
             aria-checked={selected}
             onClick={() => onChange(option)}
-            className={`relative z-10 flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold cursor-pointer active:scale-[0.95] ${LAB_TRANSITION} ${LAB_FOCUS_RING} ${fallback} ${
+            className={`relative z-10 flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold cursor-pointer active:scale-[0.92] ${LAB_TRANSITION} ${LAB_FOCUS_RING} ${fallback} ${
               selected
                 ? isDark
                   ? 'text-white'

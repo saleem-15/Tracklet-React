@@ -14,7 +14,7 @@ export const AGENTATION_MORPH_EASE: [number, number, number, number] = [0.19, 1,
 export const AGENTATION_CONTENT_EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
 export const LAB_SURFACE_ROOT: Record<DesignLabSurface, string> = {
-  dark: 'bg-neutral-900 text-white shadow-[0_2px_8px_rgba(0,0,0,0.2),0_4px_16px_rgba(0,0,0,0.1),0_0_0_1px_rgba(255,255,255,0.08)]',
+  dark: 'bg-[#1a1a1a] text-white shadow-[0_2px_8px_rgba(0,0,0,0.2),0_4px_16px_rgba(0,0,0,0.1),0_0_0_1px_rgba(255,255,255,0.08)]',
   light: 'bg-white text-neutral-900 shadow-[0_2px_8px_rgba(0,0,0,0.08),0_4px_16px_rgba(0,0,0,0.06),0_0_0_1px_rgba(0,0,0,0.04)]',
 };
 
@@ -27,7 +27,8 @@ export const LAB_SURFACE_TRANSITION =
   'transition-[background-color,color,box-shadow,scale] duration-250 ease-out motion-reduce:transition-none';
 
 export const LAB_TRANSITION = 'transition-[color,background-color,box-shadow,transform] duration-150 ease-out';
-export const LAB_FOCUS_RING = 'outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 motion-reduce:transition-none';
+export const LAB_FOCUS_RING =
+  'outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#1a1a1a] focus-visible:ring-offset-white motion-reduce:transition-none';
 
 const UTILITY: Record<DesignLabSurface, string> = {
   dark: 'text-white/85 hover:text-white hover:bg-white/[0.12]',
@@ -44,7 +45,7 @@ export function LabSeparator({ surface }: { surface: DesignLabSurface }) {
     <span
       role="separator"
       aria-orientation="vertical"
-      className={`h-3 w-px shrink-0 mx-0.5 ${surface === 'dark' ? 'bg-white/15' : 'bg-black/10'}`}
+      className={`h-3 w-px shrink-0 mx-0.5 ${surface === 'dark' ? 'bg-white/[0.12]' : 'bg-black/[0.10]'}`}
     />
   );
 }
@@ -213,7 +214,7 @@ export function LabScenarioTrigger({
           data-active={isOpen ? 'true' : undefined}
           data-testid="design-lab-scenario-trigger"
           onClick={onClick}
-          className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold select-none cursor-pointer active:scale-[0.95] ${LAB_TRANSITION} ${LAB_FOCUS_RING} ${
+          className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold select-none cursor-pointer active:scale-[0.92] ${LAB_TRANSITION} ${LAB_FOCUS_RING} ${
             isOpen ? UTILITY_ACTIVE[surface] : UTILITY[surface]
           }`}
         >

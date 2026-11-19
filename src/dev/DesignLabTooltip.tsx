@@ -74,8 +74,8 @@ export function LabTooltipProvider({
 const TOOLTIP_SKIN: Record<DesignLabSurface, { bubble: string; caret: string; shortcut: string }> = {
   dark: {
     bubble:
-      'bg-neutral-900 text-white/95 shadow-[0_2px_8px_rgba(0,0,0,0.3),0_0_0_1px_rgba(255,255,255,0.08)]',
-    caret: 'bg-neutral-900',
+      'bg-[#1a1a1a] text-white/95 shadow-[0_2px_8px_rgba(0,0,0,0.2),0_4px_16px_rgba(0,0,0,0.1),0_0_0_1px_rgba(255,255,255,0.08)]',
+    caret: 'bg-[#1a1a1a]',
     shortcut: 'text-white/50',
   },
   light: {

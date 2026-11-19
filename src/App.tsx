@@ -13,6 +13,9 @@ const DevAgentation = import.meta.env.DEV
 const DevDesignLabDemo = import.meta.env.DEV
   ? lazy(() => import('./dev/DesignLabDemo').then((mod) => ({ default: mod.DesignLabDemo })))
   : null;
+const DevGlobalDesignLab = import.meta.env.DEV
+  ? lazy(() => import('./dev/GlobalDesignLab').then((mod) => ({ default: mod.GlobalDesignLab })))
+  : null;
 import { Sidebar } from './components/Sidebar';
 import { TopBar } from './components/TopBar';
 import { ToastContainer } from './components/Toast';
@@ -227,6 +230,11 @@ export default function App() {
   return (
     <AppProviders>
       <TrackletAppContent />
+      {import.meta.env.DEV && DevGlobalDesignLab && (
+        <Suspense fallback={null}>
+          <DevGlobalDesignLab />
+        </Suspense>
+      )}
       {import.meta.env.DEV && DevAgentation && (
         <Suspense fallback={null}>
           <DevAgentation endpoint={import.meta.env.VITE_AGENTATION_ENDPOINT || 'http://localhost:4747'} />

@@ -1,4 +1,13 @@
 export { DesignLabBar, type DesignLabBarProps } from './DesignLabBar';
+export { GlobalDesignLab, type GlobalDesignLabProps, type GlobalWorkspaceVariant } from './GlobalDesignLab';
+export {
+  registerDesignLab,
+  getActiveDesignLab,
+  subscribeDesignLab,
+  useActiveDesignLab,
+  useRegisterDesignLab,
+  type RegisteredDesignLab,
+} from './designLabRegistry';
 export { useDesignLabState, type UseDesignLabStateOptions, type UseDesignLabStateResult } from './useDesignLabState';
 export { useDesignLabVariables, type UseDesignLabVariablesOptions } from './useDesignLabVariables';
 export { useLabDrag, type UseLabDragOptions, type UseLabDragResult } from './useLabDrag';

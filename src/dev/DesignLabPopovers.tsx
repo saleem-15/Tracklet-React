@@ -112,7 +112,7 @@ export function DesignLabNotesPopover({
                     type="button"
                     data-testid="design-lab-eliminate-toggle"
                     onClick={onToggleEliminate}
-                    className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-semibold cursor-pointer ${LAB_TRANSITION} ${LAB_FOCUS_RING} ${skin.meta} ${skin.itemHover}`}
+                    className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-semibold cursor-pointer active:scale-[0.92] ${LAB_TRANSITION} ${LAB_FOCUS_RING} ${skin.meta} ${skin.itemHover}`}
                   >
                     {isEliminated ? (
                       <>
@@ -132,7 +132,7 @@ export function DesignLabNotesPopover({
                     type="button"
                     data-testid="design-lab-notes-copy-decision"
                     onClick={onCopyDecision}
-                    className={`ml-auto inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-semibold cursor-pointer ${LAB_TRANSITION} ${LAB_FOCUS_RING} ${skin.pill} ${skin.itemHover}`}
+                    className={`ml-auto inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-semibold cursor-pointer active:scale-[0.92] ${LAB_TRANSITION} ${LAB_FOCUS_RING} ${skin.pill} ${skin.itemHover}`}
                   >
                     {copiedDecision ? (
                       <>

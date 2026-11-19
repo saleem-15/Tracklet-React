@@ -130,7 +130,7 @@ describe('DesignLabBar', () => {
     expect(element.parentElement).toBe(document.body);
     expect(host.contains(element)).toBe(false);
     expect(element.className).toContain('z-[9990]');
-    expect(element.className).toContain('bg-neutral-900');
+    expect(element.className).toContain('bg-[#1a1a1a]');
     expect(element.getAttribute('role')).toBe('toolbar');
     expect(element.getAttribute('aria-label')).toBe('Timeline design lab');
     expect(element.textContent).not.toContain('LAB');

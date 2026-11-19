@@ -4,8 +4,8 @@ import { LabTooltip } from './DesignLabTooltip';
 import type { DesignLabSurface, DesignLabVariant } from './designLabUtils';
 
 const ACTIVE_PILL: Record<DesignLabSurface, string> = {
-  dark: 'bg-white/[0.15]',
-  light: 'bg-white shadow-[0_1px_2px_rgba(0,0,0,0.08),0_0_0_1px_rgba(0,0,0,0.05)]',
+  dark: 'bg-white/[0.18]',
+  light: 'bg-white shadow-[0_1px_3px_rgba(0,0,0,0.12)]',
 };
 
 export interface VariantSwitcherProps<T extends string> {
@@ -108,7 +108,7 @@ export function VariantSwitcher<T extends string>({
                 event.preventDefault();
                 onToggleEliminate(variant.id);
               }}
-              className={`relative z-10 flex items-center gap-1 rounded-full px-2.5 py-1 font-sans text-[11px] font-semibold select-none cursor-pointer active:scale-[0.95] ${LAB_TRANSITION} ${LAB_FOCUS_RING} ${
+              className={`relative z-10 flex items-center gap-1 rounded-full px-2.5 py-1 font-sans text-[11px] font-semibold select-none cursor-pointer active:scale-[0.92] ${LAB_TRANSITION} ${LAB_FOCUS_RING} ${
                 fallbackPill ? ACTIVE_PILL[surface] : ''
               } ${hoverGhost} ${isEliminated ? 'opacity-45 line-through' : ''} ${
                 isActive

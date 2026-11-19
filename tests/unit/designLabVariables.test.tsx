@@ -151,6 +151,7 @@ describe('DesignLabBar v2 features', () => {
     click(trigger);
     expect(trigger.getAttribute('data-active')).toBe('true');
     expect(byTestId('design-lab-variables')).not.toBeNull();
+    expect(byTestId('design-lab-choice-indicator-density')).not.toBeNull();
 
     // Toggle boolean, change color, change range then double-click readout to reset.
     click(byTestId('design-lab-var-showMeta'));

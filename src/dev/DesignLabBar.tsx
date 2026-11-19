@@ -12,6 +12,7 @@ import {
   LAB_SURFACE_TRANSITION,
   LabCollapsedPill,
 } from './DesignLabBarChrome';
+import { MOTION_EASE } from '../lib/motion';
 import { getLabBarContentMotion } from './DesignLabPopoverChrome';
 import { LabTooltipProvider } from './DesignLabTooltip';
 import {
@@ -250,7 +251,7 @@ export function DesignLabBar<T extends string = string, S extends string = strin
       {...(topLayer ? ({ popover: 'manual' } as Record<string, string>) : {})}
       initial={false}
       animate={{ width: isCollapsed ? 44 : (expandedWidth ?? 'auto'), borderRadius: 22 }}
-      transition={instantMotion ? { duration: 0 } : { duration: 0.42, ease: AGENTATION_MORPH_EASE }}
+      transition={instantMotion ? { duration: 0 } : { duration: 0.44, ease: MOTION_EASE.command }}
       onAnimationStart={() => { if (!instantMotion) setIsMorphing(true); }}
       onAnimationComplete={() => { if (!instantMotion) setIsMorphing(false); }}
       className={`fixed z-[9990] flex items-center justify-center rounded-full font-sans select-none touch-none ${

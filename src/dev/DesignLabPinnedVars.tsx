@@ -25,12 +25,12 @@ function renderPinnedControl(
   barTop: number
 ) {
   const isDark = surface === 'dark';
-  const chipBase = `flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold select-none cursor-pointer active:scale-[0.95] ${LAB_TRANSITION} ${LAB_FOCUS_RING}`;
+  const chipBase = `flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold select-none cursor-pointer active:scale-[0.92] ${LAB_TRANSITION} ${LAB_FOCUS_RING}`;
   const inactiveChip = isDark
     ? 'bg-white/[0.06] text-white/80 hover:text-white hover:bg-white/[0.12]'
     : 'bg-black/[0.05] text-neutral-700 hover:text-neutral-900 hover:bg-black/[0.09]';
   const activeChip = isDark
-    ? 'bg-white/[0.16] text-white'
+    ? 'bg-white/[0.18] text-white'
     : 'bg-neutral-900 text-white';
 
   if (def.type === 'boolean') {
