@@ -78,8 +78,10 @@ npm run build
 ```
 
 #### Experimental Harness Verification:
-- **Zero Prototyping Residue**: Ensure no temporary variant switchers (e.g. `*LabSwitcher.tsx`, floating comparison bars, debug toggles) remain in the working tree.
-- **Single Canonical Implementation**: Confirm all secondary exploratory variants have been purged and only the user-selected canonical component is wired.
+- **Keep Permanent Dev Infrastructure**: Dev-only lab tooling under `src/dev/` (e.g. `DesignLabBar.tsx`, `useDesignLabState.ts`, `designLabUtils.ts`) is permanent, `import.meta.env.DEV`-guarded, and tree-shaken from production builds. It is expected to remain in the repo and must not be deleted as prototyping residue.
+- **Purge Active Lab Mounts**: Every temporary `<DesignLabBar ... />` mount, `useDesignLabState(...)` call, and temporary preset harness must be removed from `src/components/` and `src/App.tsx` before shipping. A live mount keeps unused variant modules in the build graph.
+- **Zero Prototyping Residue**: Ensure no `*LabSwitcher.tsx` files, hand-rolled floating comparison bars, or debug toggles remain in the working tree.
+- **Single Canonical Implementation**: Confirm all secondary exploratory variant components and branches have been deleted and only the user-selected canonical component is wired.
 
 If code files were added or modified in Tracklet, update the persistent knowledge graph:
 ```bash
