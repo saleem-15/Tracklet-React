@@ -26,6 +26,8 @@ This directory is **permanent product tooling**, not prototyping residue. It is 
 | File | Responsibility |
 | :--- | :--- |
 | `src/dev/DesignLabBar.tsx` | Floating, whole-bar draggable, portaled capsule with smooth pixel-width morphing and tooltip session provider. |
+| `src/dev/GlobalDesignLab.tsx` | Global dev-only floating bar mounted at the application root (`App.tsx`), managing workspace layout and binding to registered feature labs. |
+| `src/dev/designLabRegistry.ts` | Lightweight pub/sub registry (`useRegisterDesignLab`, `useActiveDesignLab`) allowing feature views to dynamically bind to the global floating bar. |
 | `src/dev/DesignLabBarChrome.tsx` | Agentation-matched charcoal/white chrome primitives, local container-relative active pill with hover ghost tint, active trigger highlights, and directional `44x44` collapsed orb. |
 | `src/dev/DesignLabBarControls.tsx` | Expanded controls: variants, pinned variables, scenario menu, Hold-to-Peek (`Eye`), Variables (`SlidersHorizontal`), Notes (`Info`), 1-click Copy Decision (`Copy`), Settings (`Settings`), and Collapse (`X`). |
 | `src/dev/DesignLabPopovers.tsx` | Blur-morph variant notes card (with Rule out/Restore + Copy decision), settings popover (Dark/Light switch), and scenario menu. |
