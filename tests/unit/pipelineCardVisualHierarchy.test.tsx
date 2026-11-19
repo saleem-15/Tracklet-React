@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import React, { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { PipelineCardShell } from '../../src/components/pipeline/PipelineCard';
+import { setSavedLogoPattern } from '../../src/lib/logoUtils';
 import { Application } from '../../src/types';
 
 describe('PipelineCard Visual Hierarchy & Typography Discipline', () => {
@@ -9,6 +10,7 @@ describe('PipelineCard Visual Hierarchy & Typography Discipline', () => {
   let root: Root;
 
   beforeEach(() => {
+    localStorage.clear();
     container = document.createElement('div');
     document.body.appendChild(container);
     root = createRoot(container);
@@ -19,6 +21,7 @@ describe('PipelineCard Visual Hierarchy & Typography Discipline', () => {
       root.unmount();
     });
     container.remove();
+    localStorage.clear();
   });
 
   it('renders standardized compact salary notation with tabular-nums', async () => {
@@ -96,7 +99,8 @@ describe('PipelineCard Visual Hierarchy & Typography Discipline', () => {
     expect(container.textContent).not.toContain('$');
   });
 
-  it('harmonizes company logo container to uniform 24px frame (w-6 h-6 rounded-md bg-slate-50)', async () => {
+  it('harmonizes company logo container to the uniform xs frame (w-7 h-7 rounded-md bg-slate-50)', async () => {
+    setSavedLogoPattern('original');
     const app: Application = {
       id: 'app-linear',
       userId: 'user-1',
@@ -114,7 +118,7 @@ describe('PipelineCard Visual Hierarchy & Typography Discipline', () => {
       root.render(<PipelineCardShell app={app} />);
     });
 
-    const logoBox = container.querySelector('.w-6.h-6.rounded-md.bg-slate-50');
+    const logoBox = container.querySelector('.w-7.h-7.rounded-md.bg-slate-50');
     expect(logoBox).not.toBeNull();
     expect(logoBox?.className).toContain('border-slate-200/70');
     expect(logoBox?.className).toContain('p-0.5');

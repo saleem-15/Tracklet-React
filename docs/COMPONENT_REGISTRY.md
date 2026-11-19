@@ -296,9 +296,15 @@ export const DetailNavigation: React.FC<{ active: DetailTab; onChange: (t: Detai
 ### Class 6: Media, Brand & Company Logos
 
 #### Canonical Component: `CompanyLogo`
-- **File Path**: `src/components/CompanyLogo.tsx`
+- **File Path**: `src/components/CompanyLogo.tsx` (supported by `src/lib/logoGeometry.ts` and `src/lib/logoUtils.ts`)
 - **When to Use**: Application cards, table rows, detail drawers, company headings.
-- **Key Capabilities**: Multi-tiered logo resolution (Direct URL $\rightarrow$ Clearbit $\rightarrow$ Google Favicon $\rightarrow$ Monogram Fallback), instant in-memory session cache lookup (frame 0 render, zero flicker), rejection of low-resolution 16x16 Google globe fallbacks, and standard size presets (`xs`, `sm`, `md`, `lg`, `xl`).
+- **Key Capabilities**: 
+  - **Smart Keyline Architecture (DDR 0003)**: Seamless transparent squircle framed with an inner hairline keyline (`ring-1 ring-inset ring-slate-900/[0.07]`) and `mix-blend-mode: multiply`.
+  - **Dynamic 8-Point Geometric Classification (`src/lib/logoGeometry.ts`)**: Samples 4 inset corners and 4 cardinal tangent midpoints on an offscreen 32x32 canvas. Full-bleed circular marks (Postman, Spotify) receive calibrated optical breathing room (`p-0.5` = 2px on `xs`, `p-1` on larger) to prevent keyline collision, while square tiles (Figma, Ramp, Retool) stay `p-0` full bleed.
+  - **Zero-CLS Frame-0 Cache**: Synchronous in-memory lookup via `logoGeometryCache` guarantees zero layout shifts or visual flicker during table scrolling or tab navigation.
+  - **Multi-tiered Logo Resolution**: Direct URL $\rightarrow$ Brandfetch Icon $\rightarrow$ Brandfetch Symbol $\rightarrow$ Unavatar $\rightarrow$ Google Favicon $\rightarrow$ Monogram Fallback.
+  - **CORS-Safe**: Visible `<img>` tags omit `crossOrigin` to prevent Google Favicon breakage, while offscreen sampling uses safe `try/catch`.
+  - **Standard Size Presets**: `xs` (28x28px), `sm` (38x38px), `md` (48x48px), `lg` (56x56px), `xl` (76x76px).
 
 #### TypeScript Interface & Prop Contract:
 ```typescript
@@ -309,6 +315,11 @@ export interface CompanyLogoProps {
   companyDomain?: string;
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
   className?: string;
+  title?: string;
+  /** Explicit display mode for previews/labs. Falls back to global mode. */
+  pattern?: 'ghost-squircle' | 'pure-borderless' | 'smart-keyline' | 'original';
+  /** Explicit logo source for previews/labs. Falls back to global source. */
+  source?: 'google' | 'brandfetch-symbol' | 'brandfetch-icon';
 }
 ```
 
@@ -316,12 +327,13 @@ export interface CompanyLogoProps {
 ```tsx
 import { CompanyLogo } from '../components/CompanyLogo';
 
-export const CompanyHeader: React.FC<{ company: string; logoUrl?: string }> = ({
+export const CompanyHeader: React.FC<{ company: string; logoUrl?: string; domain?: string }> = ({
   company,
   logoUrl,
+  domain,
 }) => (
   <div className="flex items-center gap-3">
-    <CompanyLogo company={company} logoUrl={logoUrl} size="md" />
+    <CompanyLogo company={company} logoUrl={logoUrl} companyDomain={domain} size="md" />
     <h2 className="text-base font-bold text-slate-900 tracking-tight">{company}</h2>
   </div>
 );

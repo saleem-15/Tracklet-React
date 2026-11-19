@@ -15,7 +15,7 @@ Tracklet is a **commercial, closed-source B2C SaaS web application and Chrome Ex
   - SpecKit Constitution: `.specify/memory/constitution.md`.
   - Feature Specs: `specs/` (e.g., `specs/012-contact-email-log`).
   - Architecture Decision Records: `docs/adr/0001` through `0015`.
-  - Design Decision Records: `docs/ddr/0001` (Canvas Ambient Calm) and `docs/ddr/0002` (Dual-Lens Layout Dynamics & Single-Stage Table Affinity).
+  - Design Decision Records: `docs/ddr/0001` (Canvas Ambient Calm), `docs/ddr/0002` (Dual-Lens Layout Dynamics & Single-Stage Table Affinity), and `docs/ddr/0003` (Company Logo Display Modes & Geometric Silhouette Adaptation).
   - Documentation Standards: `.agents/rules/documentation-standards.md`.
 
 ## 3. Mandatory Architectural Guardrails
